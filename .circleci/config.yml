@@ -1,0 +1,80 @@
+
+jobs:
+  test:
+    docker:
+      - image: circleci/python:2
+    working_directory: ~/work
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: install deps
+          command: sudo apt-get update; sudo apt-get install shunit2 make
+      - run:
+          name: deps
+          command: sudo pip install pytest # todo cache these
+      - run:
+          name: deps
+          command: sudo pip install -r requirements.txt # todo cache these
+      - run:
+          name: tests
+          command: make test
+
+  build_k8s_packages:
+    docker:
+      - image: replicated/python-boto
+    working_directory: ~/work
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run: apk add make
+      - run: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS quay.io
+      - run:
+          name: build & push
+          command: |
+            cd bundles/k8s-ubuntu1604
+            make build push
+            cd ../k8s-rhel7
+            make build push
+
+  build_docker_packages:
+    docker:
+      - image: replicated/python-boto
+    working_directory: ~/work
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run: apk add make
+      - run: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS quay.io
+      - run:
+          name: build & push
+          command: |
+            cd bundles/docker-ubuntu1604
+            make build push
+            cd ../docker-rhel74
+            make build push
+
+  deploy_old:
+    docker:
+      - image: replicated/python-boto
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run: docker build -t quay.io/replicatedcom/install-scripts:${CIRCLE_SHA1:0:7} -f ./deploy/Dockerfile.prod .
+      - run: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS quay.io
+      - run: docker push quay.io/replicatedcom/install-scripts:${CIRCLE_SHA1:0:7}
+      - run: pip install boto
+      - run: python deploy/deploy.py
+
+workflows:
+  version: 2
+  build_accept_deploy:
+    jobs:
+      - test
+      - deploy_old:
+          requires:
+            - test
+          filters:
+            branches:
+              only:
+                - master

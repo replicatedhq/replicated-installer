@@ -1,0 +1,89 @@
+# NOTE: supported prior to replicated v2.10.0
+
+# optional query parameters:
+# - data_dir_path
+# - log_level
+# - operator_tags
+# - public_address
+# - ui_bind_port
+
+version: '2'
+
+volumes:
+  replicated-sock-volume:
+  replicated-operator-sock-volume:
+
+services:
+  replicated:
+    image: "quay.io/replicated/replicated:{{ replicated_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+    container_name: "replicated"
+    environment:
+      DAEMON_TOKEN: f27e60fa0eb15b4253ab413fd8473434
+      RELEASE_CHANNEL: "{{ channel_name|default('stable', true) }}"
+      LOG_LEVEL: "{{ log_level|default('info', true) }}"{% if replicated_env == "staging" %}
+      MARKET_BASE_URL: https://api.staging.replicated.com/market
+      DATA_BASE_URL: https://data.staging.replicated.com/market
+      VENDOR_REGISTRY: registry.staging.replicated.com
+      INSTALLER_URL: https://get.staging.replicated.com
+      REPLICATED_IMAGE_TAG_SUFFIX: .staging{% endif %}
+    volumes:
+      - "{{ data_dir_path }}/replicated:{{ data_dir_path }}/replicated"
+      - replicated-sock-volume:/var/run/replicated
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - /etc:/host/etc:ro
+      - /etc/os-release:/host/etc/os-release:ro
+    restart: unless-stopped
+    entrypoint: [sh, -c]
+    command: |
+      'sh -s <<EOF
+      cat > /etc/replicated.conf <<EON
+      {
+        "ReplicatedTmpPath": "{{ data_dir_path }}/replicated/tmp",
+        "DatabasePath": "{{ data_dir_path }}/replicated/db",
+        "SchedulerDatabasePath": "{{ data_dir_path }}/replicated/schedulerdb",
+        "TaskOutputDatabasePath": "{{ data_dir_path }}/replicated/taskoutputdb",
+        "TlsPath": "{{ data_dir_path }}/replicated/secrets",
+        "GraphiteNginxTmpPath": "{{ data_dir_path }}/replicated/nginx",
+        "TrustDataPath": "{{ data_dir_path }}/replicated/trust",
+        "SnapshotsPath": "{{ data_dir_path }}/replicated/snapshots",
+        "StatsdDataPath": "{{ data_dir_path }}/replicated/statsd"
+      }
+      EON
+      replicated -d --config_file=/etc/replicated.conf
+      EOF'
+
+  replicated-ui:
+    image: "quay.io/replicated/replicated-ui:{{ replicated_ui_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+    container_name: "replicated-ui"
+    environment:
+      RELEASE_CHANNEL: "{{ channel_name|default('stable', true) }}"
+      LOG_LEVEL: "{{ log_level|default('info', true) }}"
+    volumes:
+      - replicated-sock-volume:/var/run/replicated
+    ports:
+      - "{{ ui_bind_port|default('8800', true) }}:8800"
+    depends_on:
+      - replicated
+    restart: unless-stopped
+
+  replicated-operator:
+    image: "quay.io/replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+    container_name: "replicated-operator"
+    environment:
+      AUTOCONFIG_PATH: "{{ data_dir_path }}/replicated-operator/replicated-operator.conf"
+      DATA_DIRECTORY: "{{ data_dir_path }}/replicated-operator"
+      DAEMON_ENDPOINT: replicated:9879
+      DAEMON_TOKEN: f27e60fa0eb15b4253ab413fd8473434
+      RELEASE_CHANNEL: "{{ channel_name|default('stable', true) }}"
+      LOG_LEVEL: "{{ log_level|default('info', true) }}"
+      PUBLIC_ADDRESS: "{{ public_address|default('127.0.0.1', true) }}"
+      TAGS: "{{ operator_tags|default('local', true) }}"
+    volumes:
+      - "{{ data_dir_path }}/replicated-operator:{{ data_dir_path }}/replicated-operator"
+      - replicated-operator-sock-volume:/var/run/replicated-operator
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - /etc:/host/etc:ro
+      - /etc/os-release:/host/etc/os-release:ro
+    restart: unless-stopped

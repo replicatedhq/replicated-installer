@@ -1,0 +1,41 @@
+[Unit]
+Description=Replicated Service
+After=docker.service
+Requires=docker.service
+
+[Service]
+PermissionsStartOnly=true
+TimeoutStartSec=0
+KillMode=none
+EnvironmentFile=${CONFDIR}/replicated
+User=${REPLICATED_USER_ID}
+Group=${DOCKER_GROUP_ID}
+ExecStartPre=-/usr/bin/docker rm -f replicated
+ExecStartPre=/bin/mkdir -p /var/run/replicated /var/lib/replicated /var/lib/replicated/statsd {{ premkit_data_dir }}
+ExecStartPre=/bin/chown -R ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} /var/run/replicated /var/lib/replicated {{ premkit_data_dir }}
+ExecStartPre=-/bin/chmod -R 755 /var/lib/replicated/tmp
+ExecStart=/usr/bin/docker run --name=replicated \\
+    -p {{ replicated_port_range }} \\
+    -u ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} \\{% if replicated_root_volume_mount %}
+    {{ replicated_root_volume_mount }} \\
+{%- endif %}
+    -v /var/lib/replicated:/var/lib/replicated \\
+    -v /var/run/docker.sock:/host/var/run/docker.sock \\
+    -v /proc:/host/proc:ro \\
+    -v /etc:/host/etc:ro \\
+    -v /etc/os-release:/host/etc/os-release:ro \\{% if replicated_additional_etc_mounts %}
+    {{ replicated_additional_etc_mounts }} \\
+{%- endif %}
+    ${REPLICATED_TRUSTED_CERT_MOUNT} \\
+    -v /var/run/replicated:/var/run/replicated \\
+    --security-opt ${SELINUX_REPLICATED_DOMAIN_LABEL} \\
+    -e LOCAL_ADDRESS=\${PRIVATE_ADDRESS} \\
+    -e RELEASE_CHANNEL=\${RELEASE_CHANNEL} \\
+    \$REPLICATED_OPTS \\
+    {{ replicated_docker_host }}/replicated/replicated:current
+ExecStop=/usr/bin/docker stop replicated
+Restart=on-failure
+RestartSec=7
+
+[Install]
+WantedBy=multi-user.target

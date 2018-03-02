@@ -1,0 +1,94 @@
+#!/bin/bash
+set -e
+
+### BEGIN INIT INFO
+# Provides:          replicated
+# Required-Start:    docker
+# Required-Stop:     docker
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Replicated
+# Description:       Replicated Service
+### END INIT INFO
+
+REPLICATED=replicated
+DOCKER=/usr/bin/docker
+DEFAULTS=${CONFDIR}/replicated
+
+[ -r "\${DEFAULTS}" ] && . "\${DEFAULTS}"
+[ -r "/lib/lsb/init-functions" ] && . "/lib/lsb/init-functions"
+[ -r "/etc/rc.d/init.d/functions" ] && . "/etc/rc.d/init.d/functions"
+
+if [ ! -x \${DOCKER} ]; then
+    echo -n >&2 "\${DOCKER} not present or not executable"
+    exit 1
+fi
+
+run_container() {
+    /bin/mkdir -p /var/run/replicated /var/lib/replicated /var/lib/replicated/statsd {{ premkit_data_dir }}
+    /bin/chown -R ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} /var/run/replicated /var/lib/replicated {{ premkit_data_dir }}
+    /bin/chmod -R 755 /var/lib/replicated/tmp 2>/dev/null || true
+    /usr/bin/docker rm -f replicated 2>/dev/null || true
+    exec su -s /bin/sh -c 'exec "\$0" "\$@"' ${REPLICATED_USERNAME} -- \${DOCKER} run -d --name=\${REPLICATED} \\
+        -p {{ replicated_port_range }} \\
+        -u ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} \\{% if replicated_root_volume_mount %}
+    {{ replicated_root_volume_mount }} \\
+{%- endif %}
+        -v /var/lib/replicated:/var/lib/replicated \\
+        -v /var/run/docker.sock:/host/var/run/docker.sock \\
+        -v /proc:/host/proc:ro \\
+        -v /etc:/host/etc:ro \\
+        -v /etc/os-release:/host/etc/os-release:ro \\{% if replicated_additional_etc_mounts %}
+    {{ replicated_additional_etc_mounts }} \\
+{%- endif %}
+        ${REPLICATED_TRUSTED_CERT_MOUNT} \\
+        -v /var/run/replicated:/var/run/replicated \\
+        --security-opt ${SELINUX_REPLICATED_DOMAIN_LABEL} \\
+        -e LOCAL_ADDRESS=\${PRIVATE_ADDRESS} \\
+        -e RELEASE_CHANNEL=\${RELEASE_CHANNEL} \\
+        \$REPLICATED_OPTS \\
+        {{ replicated_docker_host }}/replicated/replicated:current
+}
+
+stop_container() {
+    \${DOCKER} stop \${REPLICATED}
+}
+
+remove_container() {
+    \${DOCKER} rm -f \${REPLICATED}
+}
+
+_status() {
+	if type status_of_proc | grep -i function > /dev/null; then
+	    status_of_proc "\${REPLICATED}" && exit 0 || exit \$?
+	elif type status | grep -i function > /dev/null; then
+		status "\${REPLICATED}" && exit 0 || exit \$?
+	else
+		exit 1
+	fi
+}
+
+case "\$1" in
+    start)
+        echo -n "Starting \${REPLICATED} service: "
+        remove_container 2>/dev/null || true
+        run_container
+        ;;
+    stop)
+        echo -n "Shutting down \${REPLICATED} service: "
+        stop_container
+        ;;
+    status)
+        _status
+        ;;
+    restart|reload)
+        pid=`pidofproc "\${REPLICATED}" 2>/dev/null`
+        [ -n "\$pid" ] && ps -p \$pid > /dev/null 2>&1 \\
+            && \$0 stop
+        \$0 start
+        ;;
+    *)
+        echo "Usage: \${REPLICATED} {start|stop|status|reload|restart"
+        exit 1
+        ;;
+esac
