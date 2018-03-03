@@ -40,6 +40,7 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 {% include 'common/airgap.sh' %}
 {% include 'common/log.sh' %}
 {% include 'common/kubernetes.sh' %}
+{% include 'common/selinux.sh' %}
 
 initKubeadmConfig() {
     mkdir -p /opt/replicated

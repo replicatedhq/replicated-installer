@@ -3,7 +3,7 @@
 #
 # selinux.sh
 #
-# require common.sh docker-version.sh
+# require common.sh docker-version.sh prompt.sh
 #
 #######################################
 
@@ -79,6 +79,31 @@ warn_if_selinux() {
             printf "${YELLOW}SELinux is enforcing. Running docker with the \"--selinux-enabled\" flag may cause some features to become unavailable.${NC}\n\n"
         else
             printf "${YELLOW}SELinux is enabled. Switching to enforcing mode and running docker with the \"--selinux-enabled\" flag may cause some features to become unavailable.${NC}\n\n"
+        fi
+    fi
+}
+
+#######################################
+# Prompts to confirm disabling of SELinux for K8s installs, bails on decline.
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+must_disable_selinux() {
+    # From kubernets kubeadm docs for RHEL:
+    #
+    #    Disabling SELinux by running setenforce 0 is required to allow containers to
+    #    access the host filesystem, which is required by pod networks for example.
+    #    You have to do this until SELinux support is improved in the kubelet.
+    if selinux_enabled && selinux_enforced ; then
+        printf "\n${YELLOW}Kubernetes is incompatible with SELinux. Disable SELinux to continue?${NC} "
+        if confirmY ; then
+            setenforce 0
+        else
+            bail "\nDisable SELinux with 'setenforce 0' before re-running install script"
         fi
     fi
 }
