@@ -1,7 +1,7 @@
 version: '2'
 
 services:
-  install-scirpts:
+  install-scripts:
     build: .
     container_name: "replicated.install-scripts"
     networks:
@@ -16,7 +16,7 @@ services:
       - ENVIRONMENT=dev
       - REPLICATED_INSTALL_URL=http://localhost:8090
       - MYSQL_USER=replicated
-      - MYSQL_PASS=FeReJcBv
+      - MYSQL_PASS=password
       - MYSQL_HOST=mysql
       - MYSQL_PORT=3306
       - MYSQL_DB=replicated
