@@ -1,0 +1,93 @@
+#!/bin/bash
+set -e
+
+### BEGIN INIT INFO
+# Provides:          replicated-operator
+# Required-Start:    docker
+# Required-Stop:     docker
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Replicated Operator
+# Description:       Replicated Operator Service
+### END INIT INFO
+
+REPLICATED_OPERATOR=replicated-operator
+DOCKER=/usr/bin/docker
+DEFAULTS=${CONFDIR}/replicated-operator
+
+[ -r "\${DEFAULTS}" ] && . "\${DEFAULTS}"
+[ -r "/lib/lsb/init-functions" ] && . "/lib/lsb/init-functions"
+[ -r "/etc/rc.d/init.d/functions" ] && . "/etc/rc.d/init.d/functions"
+
+if [ ! -x \${DOCKER} ]; then
+    echo -n >&2 "\${DOCKER} not present or not executable"
+    exit 1
+fi
+
+run_container() {
+    /bin/mkdir -p /var/run/replicated-operator /var/lib/replicated-operator
+    /bin/chown -R ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} /var/run/replicated-operator /var/lib/replicated-operator
+    /usr/bin/docker rm -f replicated-operator 2>/dev/null || true
+    exec su -s /bin/sh -c 'exec "\$0" "\$@"' ${REPLICATED_USERNAME} -- \${DOCKER} run -d --name=\${REPLICATED_OPERATOR} \\
+        -u ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} \\{% if replicated_root_volume_mount %}
+        {{ replicated_root_volume_mount }} \\
+{%- endif %}
+        -v /var/lib/replicated-operator:/var/lib/replicated-operator \\
+        -v /var/run/replicated-operator:/var/run/replicated-operator \\
+        -v /var/run/docker.sock:/host/var/run/docker.sock \\
+        -v /proc:/host/proc:ro \\
+        -v /etc:/host/etc:ro \\
+        -v /etc/os-release:/host/etc/os-release:ro \\{% if replicated_operator_additional_etc_mounts %}
+        {{ replicated_operator_additional_etc_mounts }} \\
+{%- endif %}
+        --security-opt ${SELINUX_REPLICATED_DOMAIN_LABEL} \\
+        -e DAEMON_ENDPOINT=\${DAEMON_ENDPOINT} \\
+        -e DAEMON_TOKEN=\${DAEMON_TOKEN} \\
+        -e NO_PROXY=\${DAEMON_HOST} \\
+        -e PRIVATE_ADDRESS=\${PRIVATE_ADDRESS} \\
+        \$REPLICATED_OPERATOR_OPTS \\
+        {{ replicated_docker_host }}/replicated/replicated-operator:current
+}
+
+stop_container() {
+    \${DOCKER} stop \${REPLICATED_OPERATOR}
+}
+
+remove_container() {
+    \${DOCKER} rm -f \${REPLICATED_OPERATOR}
+}
+
+_status() {
+    if type status_of_proc | grep -i function > /dev/null; then
+        status_of_proc "\${REPLICATED_OPERATOR}" && exit 0 || exit \$?
+    elif type status | grep -i function > /dev/null; then
+        status "\${REPLICATED_OPERATOR}" && exit 0 || exit \$?
+    else
+        exit 1
+    fi
+}
+
+case "\$1" in
+    start)
+        echo -n "Starting \${REPLICATED_OPERATOR} service: "
+        remove_container 2>/dev/null || true
+        run_container
+        ;;
+    stop)
+        echo -n "Shutting down \${REPLICATED_OPERATOR} service: "
+        stop_container
+        ;;
+    status)
+        _status
+        ;;
+    restart|reload)
+        pid=`pidofproc "\${REPLICATED_OPERATOR}" 2>/dev/null`
+        [ -n "\$pid" ] && ps -p \$pid > /dev/null 2>&1 \
+            && \$0 stop
+        \$0 start
+        ;;
+    *)
+        echo "Usage: \${REPLICATED_OPERATOR} {start|stop|status|reload|restart"
+        exit 1
+        ;;
+esac

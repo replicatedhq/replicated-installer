@@ -1,0 +1,40 @@
+[Unit]
+Description=Replicated Operator Service
+After=docker.service
+Requires=docker.service
+
+[Service]
+PermissionsStartOnly=true
+TimeoutStartSec=0
+KillMode=none
+EnvironmentFile=${CONFDIR}/replicated-operator
+User=${REPLICATED_USER_ID}
+Group=${DOCKER_GROUP_ID}
+ExecStartPre=-/usr/bin/docker rm -f replicated-operator
+ExecStartPre=/bin/mkdir -p /var/run/replicated-operator /var/lib/replicated-operator
+ExecStartPre=/bin/chown -R ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} /var/run/replicated-operator /var/lib/replicated-operator
+ExecStart=/usr/bin/docker run --name=replicated-operator \\
+    -u ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} \\{% if replicated_root_volume_mount %}
+    {{ replicated_root_volume_mount }} \\
+{%- endif %}
+    -v /var/lib/replicated-operator:/var/lib/replicated-operator \\
+    -v /var/run/replicated-operator:/var/run/replicated-operator \\
+    -v /var/run/docker.sock:/host/var/run/docker.sock \\
+    -v /proc:/host/proc:ro \\
+    -v /etc:/host/etc:ro \\
+    -v /etc/os-release:/host/etc/os-release:ro \\{% if replicated_operator_additional_etc_mounts %}
+    {{ replicated_operator_additional_etc_mounts }} \\
+{%- endif %}
+    --security-opt ${SELINUX_REPLICATED_DOMAIN_LABEL} \\
+    -e DAEMON_ENDPOINT=\${DAEMON_ENDPOINT} \\
+    -e DAEMON_TOKEN=\${DAEMON_TOKEN} \\
+    -e NO_PROXY=\${DAEMON_HOST} \\
+    -e PRIVATE_ADDRESS=\${PRIVATE_ADDRESS} \\
+    \$REPLICATED_OPERATOR_OPTS \\
+    {{ replicated_docker_host }}/replicated/replicated-operator:current
+ExecStop=/usr/bin/docker stop replicated-operator
+Restart=on-failure
+RestartSec=7
+
+[Install]
+WantedBy=multi-user.target

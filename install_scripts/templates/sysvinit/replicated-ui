@@ -1,0 +1,78 @@
+#!/bin/bash
+set -e
+
+### BEGIN INIT INFO
+# Provides:          replicated-ui
+# Required-Start:    docker
+# Required-Stop:     docker
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Replicated UI
+# Description:       Replicated UI Service
+### END INIT INFO
+
+REPLICATED_UI=replicated-ui
+DOCKER=/usr/bin/docker
+DEFAULTS=${CONFDIR}/replicated
+
+[ -r "\${DEFAULTS}" ] && . "\${DEFAULTS}"
+[ -r "/lib/lsb/init-functions" ] && . "/lib/lsb/init-functions"
+[ -r "/etc/rc.d/init.d/functions" ] && . "/etc/rc.d/init.d/functions"
+
+if [ ! -x \${DOCKER} ]; then
+    echo -n >&2 "\${DOCKER} not present or not executable"
+    exit 1
+fi
+
+run_container() {
+    exec su -s /bin/sh -c 'exec "\$0" "\$@"' ${REPLICATED_USERNAME} -- \${DOCKER} run -d --name=\${REPLICATED_UI} \\
+        -p ${UI_BIND_PORT}:8800/tcp \\
+        -u ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} \\
+        -v /var/run/replicated:/var/run/replicated \\
+        --security-opt ${SELINUX_REPLICATED_DOMAIN_LABEL} \\
+        \$REPLICATED_UI_OPTS \\
+        {{ replicated_docker_host }}/replicated/replicated-ui:current
+}
+
+stop_container() {
+    \${DOCKER} stop \${REPLICATED_UI}
+}
+
+remove_container() {
+    \${DOCKER} rm -f \${REPLICATED_UI}
+}
+
+_status() {
+	if type status_of_proc | grep -i function > /dev/null; then
+	    status_of_proc "\${REPLICATED_UI}" && exit 0 || exit \$?
+	elif type status | grep -i function > /dev/null; then
+		status "\${REPLICATED_UI}" && exit 0 || exit \$?
+	else
+		exit 1
+	fi
+}
+
+case "\$1" in
+    start)
+        echo -n "Starting \${REPLICATED_UI} service: "
+        remove_container 2>/dev/null || true
+        run_container
+        ;;
+    stop)
+        echo -n "Shutting down \${REPLICATED_UI} service: "
+        stop_container
+        ;;
+    status)
+        _status
+        ;;
+    restart|reload)
+        pid=`pidofproc "\${REPLICATED_UI}" 2>/dev/null`
+        [ -n "\$pid" ] && ps -p \$pid > /dev/null 2>&1 \\
+            && \$0 stop
+        \$0 start
+        ;;
+    *)
+        echo "Usage: \${REPLICATED_UI} {start|stop|status|reload|restart"
+        exit 1
+        ;;
+esac

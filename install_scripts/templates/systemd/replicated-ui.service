@@ -1,0 +1,28 @@
+[Unit]
+Description=Replicated Service
+After=docker.service
+Requires=docker.service
+
+[Service]
+PermissionsStartOnly=true
+TimeoutStartSec=0
+KillMode=none
+EnvironmentFile=${CONFDIR}/replicated
+User=${REPLICATED_USER_ID}
+Group=${DOCKER_GROUP_ID}
+ExecStartPre=-/usr/bin/docker rm -f replicated-ui
+ExecStartPre=/bin/mkdir -p /var/run/replicated
+ExecStartPre=/bin/chown -R ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} /var/run/replicated
+ExecStart=/usr/bin/docker run --name=replicated-ui \\
+    -p ${UI_BIND_PORT}:8800/tcp \\
+    -u ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} \\
+    -v /var/run/replicated:/var/run/replicated \\
+    --security-opt ${SELINUX_REPLICATED_DOMAIN_LABEL} \\
+    \$REPLICATED_UI_OPTS \\
+    {{ replicated_docker_host }}/replicated/replicated-ui:current
+ExecStop=/usr/bin/docker stop replicated-ui
+Restart=on-failure
+RestartSec=7
+
+[Install]
+WantedBy=multi-user.target
