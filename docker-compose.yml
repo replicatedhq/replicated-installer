@@ -1,7 +1,7 @@
 version: '2'
 
 services:
-  install-scirpts:
+  install-scripts:
     build: .
     container_name: "replicated.install-scripts"
     networks:
