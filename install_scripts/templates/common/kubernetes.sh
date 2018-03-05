@@ -156,13 +156,7 @@ EOF
     sysctl --system
     service docker restart
 
-    # TODO add a prompt, bail if they decline to disable selinux.
-    # This thing from the docs may help.
-    #
-    #    Disabling SELinux by running setenforce 0 is required to allow containers to
-    #    access the host filesystem, which is required by pod networks for example.
-    #    You have to do this until SELinux support is improved in the kubelet.
-    setenforce 0 # from kubeadm docs. I guess thats one way to do it /shrug
+    must_disable_selinux
 
     docker run \
       -v $PWD:/out \
