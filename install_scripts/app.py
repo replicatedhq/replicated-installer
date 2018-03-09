@@ -400,6 +400,8 @@ def get_replicated_kubernetes(replicated_channel=None,
     else:
         custom_selinux_replicated_domain = True
 
+    customer_base_url = helpers.get_arg('customer_base_url')
+
     response = render_template(
         'kubernetes-yml-generate.sh',
         **helpers.template_args(
@@ -410,7 +412,8 @@ def get_replicated_kubernetes(replicated_channel=None,
             log_level=log_level,
             release_sequence=release_sequence,
             custom_selinux_replicated_domain=custom_selinux_replicated_domain,
-            selinux_replicated_domain=selinux_replicated_domain, ))
+            selinux_replicated_domain=selinux_replicated_domain,
+            customer_base_url_override=customer_base_url, ))
 
     if helpers.get_arg('accept', None) == 'text':
         return Response(response, mimetype='text/plain')
@@ -604,6 +607,14 @@ def get_best_docker_tag():
 def get_replicated_studio():
     studio_path = helpers.get_arg('studio_base_path', '$HOME')
     response = render_template('studio-install.sh',
+                               **helpers.template_args(
+                                   studio_base_path=studio_path, ))
+    return Response(response, mimetype='text/x-shellscript')
+
+@app.route('/studio-k8s')
+def get_replicated_studio_k8s():
+    studio_path = helpers.get_arg('studio_base_path', '$HOME')
+    response = render_template('studio-install-k8s.sh',
                                **helpers.template_args(
                                    studio_base_path=studio_path, ))
     return Response(response, mimetype='text/x-shellscript')

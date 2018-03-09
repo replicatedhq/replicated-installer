@@ -80,9 +80,12 @@ spec:
           value: "{{ channel_name }}"{% if release_sequence %}
         - name: RELEASE_SEQUENCE
           value: "$RELEASE_SEQUENCE"
+{%- endif %}{% if customer_base_url_override %}
+        - name: MARKET_BASE_URL
+          value: "{{customer_base_url_override}}"
 {%- endif %}{% if replicated_env == "staging" %}
         - name: MARKET_BASE_URL
-          value: https://api.staging.replicated.com/market
+          value: {{ customer_base_url_override|default('https://api.staging.replicated.com/market', true) }}
         - name: DATA_BASE_URL
           value: https://data.staging.replicated.com/market
         - name: VENDOR_REGISTRY
