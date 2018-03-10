@@ -397,7 +397,7 @@ fi
 
 if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
     if [ "$OFFLINE_DOCKER_INSTALL" != "1" ]; then
-        installDocker "$PINNED_DOCKER_VERSION" "$MIN_DOCKER_VERSION"
+        installDockerK8s "$PINNED_DOCKER_VERSION" "$MIN_DOCKER_VERSION"
     else
         installDocker_1_12_Offline
     fi
