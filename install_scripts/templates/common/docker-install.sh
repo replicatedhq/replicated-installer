@@ -84,7 +84,6 @@ installDocker_1_12_Offline() {
             tar xvf packages-docker-rhel74.tar -C image/
             tar xvf image/a2bf112873793f191c9e2b9cf0fef6fc7a58b93947c9996e8b842ca9b5eaaed4/layer.tar
             pushd archives/
-                # TODO don't fail if already installed
                 yum install -y -q *.rpm 
             popd
             DID_INSTALL_DOCKER=1
@@ -95,6 +94,28 @@ installDocker_1_12_Offline() {
 
    printf "Offline Docker install is not surpported on ${LSB_DIST} ${DIST_MAJOR}"
    exit 1
+}
+
+######################################
+# For RHEL and derivatives install from yum docker repo
+# Globals:
+#   LSB_DIST
+# Arguments:
+#   Requested Docker Version
+#   Minimum Docker Version
+# Returns:
+#   DID_INSTALL_DOCKER
+######################################
+installDockerK8s() {
+    case "$LSB_DIST" in
+        rhel|centos)
+            yum install -y -q docker
+            DID_INSTALL_DOCKER=1
+            return
+        ;;
+    esac
+
+    installDocker $1 $2
 }
 
 _installDocker() {
