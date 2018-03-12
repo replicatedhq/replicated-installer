@@ -43,7 +43,7 @@ elif [ $INIT_SYSTEM == "systemd" ] ; then
     systemctl stop replicated-ui
     systemctl stop replicated-operator
 else
-    printf "${RED}Failed to stop Replicated components because init system sas not detected${NC}"
+    printf "${RED}Failed to stop Replicated components because init system was not detected${NC}"
     exit 1
 fi
 
