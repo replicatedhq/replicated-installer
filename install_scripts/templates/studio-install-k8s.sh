@@ -2,16 +2,16 @@
 
 #
 # This script is meant for quick & easy install of Replicated Studio via:
-#   'curl -sSL {{ replicated_install_url }}/studio | sudo bash'
+#   'curl -sSL {{ replicated_install_url }}/studio-k8s | sudo bash'
 # or:
-#   'wget -qO- {{ replicated_install_url }}/studio | sudo bash'
+#   'wget -qO- {{ replicated_install_url }}/studio-k8s | sudo bash'
 #
 
 {% include 'common/studio.sh' %}
 
 echo "Installing Replicated"
 
-curl -sSL '{{ replicated_install_url }}/docker?customer_base_url="http://172.17.0.1:8006"' | sudo bash
+curl -sSL '{{ replicated_install_url }}/kubernetes-init.sh?customer_base_url=http://172.17.0.1:8006' | sudo bash
 
 echo "Starting Replicated Studio"
 
