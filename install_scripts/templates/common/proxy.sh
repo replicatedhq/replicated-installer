@@ -113,6 +113,7 @@ requireDockerProxy() {
 # Configures docker to run with an http proxy.
 # Globals:
 #   INIT_SYSTEM
+#   NO_PROXY_IP
 # Arguments:
 #   None
 # Returns:
@@ -126,7 +127,7 @@ configureDockerProxy() {
                 cat > /etc/systemd/system/docker.service.d/http-proxy.conf <<-EOF
 # File created by replicated install script
 [Service]
-Environment="HTTP_PROXY=$PROXY_ADDRESS"
+Environment="HTTP_PROXY=$PROXY_ADDRESS" "NO_PROXY=$NO_PROXY_IP"
 EOF
                 RESTART_DOCKER=1
             fi
