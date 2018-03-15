@@ -41,7 +41,7 @@ while [ "$1" != "" ]; do
         ui-bind-port|ui_bind_port)
             UI_BIND_PORT="$_value"
             ;;
-        pv-base-path|pv_base__path)
+        pv-base-path|pv_base_path)
             PV_BASE_PATH="$_value"
             ;;
         *)
