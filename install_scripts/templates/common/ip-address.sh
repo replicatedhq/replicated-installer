@@ -178,3 +178,17 @@ isValidIpv4() {
         return 1
     fi
 }
+
+#######################################
+# Returns the ip portion of an address.
+# Globals:
+#   None
+# Arguments:
+#   ADDRESS
+# Returns:
+#   PARSED_IPV4
+#######################################
+PARSED_IPV4=
+parseIpv4FromAddress() {
+    PARSED_IPV4=$(echo "$1" | grep --only-matching '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*')
+}

@@ -281,7 +281,18 @@ if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
     checkDockerStorageDriver
 fi
 
+# TODO: docker group
+# TODO: replicated user
+
+initSwarm
+
+SWARM_TOKEN="$(docker swarm join-token -q worker)"
+SWARM_NODE_ID="$(docker info --format "{{ '{{.Swarm.NodeID}}' }}")"
+SWARM_NODE_ADDRESS="$(docker info --format "{{ '{{.Swarm.NodeAddr}}' }}")"
+SWARM_MASTER_ADDRESS="$(docker info --format "{{ '{{with index .Swarm.RemoteManagers 0}}{{.Addr}}{{end}}' }}")"
+
 if [ -n "$PROXY_ADDRESS" ]; then
+    NO_PROXY_IP="$SWARM_NODE_ADDRESS"
     requireDockerProxy
 fi
 
@@ -292,16 +303,6 @@ fi
 if [ -n "$PROXY_ADDRESS" ]; then
     checkDockerProxyConfig
 fi
-
-# TODO: docker group
-# TODO: replicated user
-
-initSwarm
-
-SWARM_TOKEN="$(docker swarm join-token -q worker)"
-SWARM_NODE_ID="$(docker info --format "{{ '{{.Swarm.NodeID}}' }}")"
-SWARM_NODE_ADDRESS="$(docker info --format "{{ '{{.Swarm.NodeAddr}}' }}")"
-SWARM_MASTER_ADDRESS="$(docker info --format "{{ '{{with index .Swarm.RemoteManagers 0}}{{.Addr}}{{end}}' }}")"
 
 # TODO: consider running replicated as registry mirror
 

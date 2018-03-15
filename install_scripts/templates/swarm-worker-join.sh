@@ -157,7 +157,11 @@ if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
     checkDockerStorageDriver
 fi
 
+promptForSwarmMasterAddress
+
 if [ -n "$PROXY_ADDRESS" ]; then
+    parseIpv4FromAddress "$SWARM_MASTER_ADDRESS"
+    NO_PROXY_IP="$PARSED_IPV4"
     requireDockerProxy
 fi
 
@@ -172,7 +176,6 @@ fi
 # TODO: docker group
 # TODO: replicated user
 
-promptForSwarmMasterAddress
 promptForSwarmToken
 
 if [ "$AIRGAP" = "1" ]; then
