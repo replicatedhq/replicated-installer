@@ -118,6 +118,9 @@ stackDeploy() {
     if [ -n "$USER_ID" ]; then
         opts=$opts" user-id=$USER_ID"
     fi
+    if [ -n "$PROXY_ADDRESS" ]; then
+        opts=$opts" http-proxy=$PROXY_ADDRESS"
+    fi
 
     echo "Deploying Replicated stack"
     if [ "$AIRGAP" = "1" ]; then

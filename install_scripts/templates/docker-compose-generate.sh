@@ -61,6 +61,9 @@ while [ "$1" != "" ]; do
         user-id|user_id)
             USER_ID="$_value"
             ;;
+        http-proxy)
+            HTTP_PROXY="$_value"
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -120,6 +123,9 @@ if [ -n "$PUBLIC_ADDRESS" ]; then
 fi
 if [ -n "$RELEASE_SEQUENCE" ]; then
     echo "      - RELEASE_SEQUENCE=${RELEASE_SEQUENCE}"
+fi
+if [ -n "$HTTP_PROXY" ]; then
+    echo "      - HTTP_PROXY=${HTTP_PROXY}"
 fi
 {% if replicated_env == "staging" %}
     echo "      - MARKET_BASE_URL=https://api.staging.replicated.com/market"
@@ -208,6 +214,9 @@ echo "      - RELEASE_CHANNEL={{ channel_name|default('stable', true) }}"
 echo "      - LOG_LEVEL=${LOG_LEVEL}"
 if [ "$AIRGAP" = "1" ]; then
     echo "      - AIRGAP=true"
+fi
+if [ -n "$HTTP_PROXY" ]; then
+    echo "      - HTTP_PROXY=${HTTP_PROXY}"
 fi
 echo "      - SCHEDULER_ENGINE=swarm"
 echo "      - DAEMON_ENDPOINT=replicated:9879"
