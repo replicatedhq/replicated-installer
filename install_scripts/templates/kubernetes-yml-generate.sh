@@ -176,12 +176,16 @@ spec:
     requests:
       storage: 1Gi
 ---
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: replicated-hostpath-provisioner
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      tier: controller
+      kind: storage-provisioner
   template:
     metadata:
       labels:
@@ -205,7 +209,8 @@ spec:
       volumes:
         - name: pv-volume
           hostPath:
-            path: /opt/replicated/hostpath-provisioner
+            path: "$PV_BASE_PATH"
+            type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
