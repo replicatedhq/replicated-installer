@@ -391,6 +391,9 @@ def get_replicated_kubernetes(replicated_channel=None,
                                    '/opt/replicated/hostpath-provisioner')
     log_level = helpers.get_arg('log_level', None)
     release_sequence = helpers.get_arg('release_sequence', None)
+    storage_class = helpers.get_arg('storage_class', 'default')
+    host_path_provisioner = helpers.get_arg('host_path_provisioner', 1)
+    service_type = helpers.get_arg('service_type', 'NodePort')
 
     custom_selinux_replicated_domain = False
     selinux_replicated_domain = helpers.get_arg('selinux_replicated_domain',
@@ -411,6 +414,9 @@ def get_replicated_kubernetes(replicated_channel=None,
             pv_base_path=pv_base_path,
             log_level=log_level,
             release_sequence=release_sequence,
+            storage_class=storage_class,
+            host_path_provisioner=host_path_provisioner,
+            service_type=service_type,
             custom_selinux_replicated_domain=custom_selinux_replicated_domain,
             selinux_replicated_domain=selinux_replicated_domain,
             customer_base_url_override=customer_base_url, ))
