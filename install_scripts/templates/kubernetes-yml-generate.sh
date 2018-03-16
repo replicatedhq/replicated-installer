@@ -252,7 +252,7 @@ spec:
     targetPort: 9881
 EOF
 
-if [ "$SERVICE_TYPE" == "NodePort" ]; then
+if [ "$SERVICE_TYPE" = "NodePort" ]; then
     cat <<EOF
 ---
 apiVersion: v1
@@ -295,7 +295,7 @@ spec:
 EOF
 fi
 
-if [ "$HOST_PATH_PROVISIONER" == "1" ]; then
+if [ "$HOST_PATH_PROVISIONER" = "1" ]; then
     cat <<EOF
 ---
 apiVersion: apps/v1
