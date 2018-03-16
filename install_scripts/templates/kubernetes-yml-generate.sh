@@ -13,13 +13,16 @@ SKIP_DOCKER_PULL=0
 TLS_CERT_PATH=
 UI_BIND_PORT=8800
 USER_ID=
+STORAGE_CLASS="{{ storage_class }}"
+HOST_PATH_PROVISIONER="{{ host_path_provisioner }}"
+SERVICE_TYPE="{{ service_type }}"
 
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"
     _value="$(echo "$1" | grep '=' | cut -d= -f2-)"
     case $_param in
         airgap)
-            # arigap implies "no proxy" and "skip docker"
+            # airgap implies "no proxy" and "skip docker"
             AIRGAP=1
             NO_PROXY=1
             ;;
@@ -44,6 +47,15 @@ while [ "$1" != "" ]; do
         pv-base-path|pv_base_path)
             PV_BASE_PATH="$_value"
             ;;
+        storage-class|storage_class)
+            STORAGE_CLASS="$_value"
+            ;;
+        host-path-provisioner|host_path_provisioner)
+            HOST_PATH_PROVISIONER="$_value"
+            ;;
+        service-type|service_type)
+            SERVICE_TYPE="$_value"
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -54,7 +66,7 @@ while [ "$1" != "" ]; do
 done
 
 cat <<EOF
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: replicated
@@ -62,6 +74,10 @@ metadata:
     app: replicated
     tier: master
 spec:
+  selector:
+    matchLabels:
+      app: replicated
+      tier: master
   template:
     metadata:
       labels:
@@ -104,7 +120,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: K8S_STORAGECLASS
-          value: default
+          value: "$STORAGE_CLASS"
         - name: LOG_LEVEL
           value: "$LOG_LEVEL"{% if custom_selinux_replicated_domain %}
         - name: SELINUX_REPLICATED_DOMAIN
@@ -167,14 +183,120 @@ metadata:
   labels:
     app: replicated
     tier: premkit
-  annotations:
-    volume.beta.kubernetes.io/storage-class: "default"
 spec:
   accessModes:
   - ReadWriteOnce
   resources:
     requests:
       storage: 1Gi
+  storageClassName: "$STORAGE_CLASS"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: replicated-pv-claim
+  labels:
+    app: replicated
+    tier: master
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: "$STORAGE_CLASS"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: replicated-statsd-graphite-storage
+  labels:
+    app: replicated
+    tier: statsd
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: "$STORAGE_CLASS"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: replicated
+  labels:
+    app: replicated
+    tier: master
+spec:
+  type: ClusterIP
+  selector:
+    app: replicated
+    tier: master
+  ports:
+  - name: replicated-ui
+    port: 8800
+    protocol: TCP
+  - name: replicated-registry
+    port: 9874
+    protocol: TCP
+  - name: replicated-iapi
+    port: 9877
+    protocol: TCP
+  - name: replicated-snapshots
+    port: 9878
+    protocol: TCP
+  - name: replicated-support
+    port: 9881
+    protocol: TCP
+    targetPort: 9881
+EOF
+
+if [ "$SERVICE_TYPE" == "NodePort" ]; then
+    cat <<EOF
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: replicated-ui
+  labels:
+    app: replicated
+    tier: master
+spec:
+  type: NodePort
+  selector:
+    app: replicated
+    tier: master
+  ports:
+  - name: replicated-ui
+    port: 8800
+    nodePort: ${UI_BIND_PORT}
+    protocol: TCP
+EOF
+else
+    cat <<EOF
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: replicated-ui
+  labels:
+    app: replicated
+    tier: master
+spec:
+  type: "$SERVICE_TYPE"
+  selector:
+    app: replicated
+    tier: master
+  ports:
+  - name: replicated-ui
+    port: 8800
+    protocol: TCP
+EOF
+fi
+
+if [ "$HOST_PATH_PROVISIONER" == "1" ]; then
+    cat <<EOF
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -212,108 +334,10 @@ spec:
             path: "$PV_BASE_PATH"
             type: DirectoryOrCreate
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: replicated-pv-claim
-  labels:
-    app: replicated
-    tier: master
-  annotations:
-    volume.beta.kubernetes.io/storage-class: "default"
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: replicated-statsd-graphite-storage
-  labels:
-    app: replicated
-    tier: statsd
-  annotations:
-    volume.beta.kubernetes.io/storage-class: "default"
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
----
 kind: StorageClass
-apiVersion: storage.k8s.io/v1beta1
+apiVersion: storage.k8s.io/v1
 metadata:
   name: default
 provisioner: replicated.com/hostpath
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: replicated
-  labels:
-    app: replicated
-    tier: master
-spec:
-  type: ClusterIP
-  selector:
-    app: replicated
-    tier: master
-  ports:
-  - name: replicated-ui
-    port: 8800
-    protocol: TCP
-  - name: replicated-registry
-    port: 9874
-    protocol: TCP
-  - name: replicated-iapi
-    port: 9877
-    protocol: TCP
-  - name: replicated-snapshots
-    port: 9878
-    protocol: TCP
-  - name: replicated-support
-    port: 9881
-    protocol: TCP
-    targetPort: 9881
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: replicated-node
-  labels:
-    app: replicated
-    tier: master
-spec:
-  type: NodePort
-  selector:
-    app: replicated
-    tier: master
-  ports:
-  - name: replicated-ui
-    port: 8800
-    nodePort: ${UI_BIND_PORT}
-    protocol: TCP
-  - name: replicated-registry
-    port: 9874
-    nodePort: 9874
-    protocol: TCP
-  - name: replicated-iapi
-    port: 9877
-    nodePort: 9877
-    protocol: TCP
-  - name: replicated-snapshots
-    port: 9878
-    nodePort: 9878
-    protocol: TCP
-  - name: replicated-support
-    port: 9881
-    nodePort: 9881
-    protocol: TCP
-    targetPort: 9881
-
 EOF
-
+fi
