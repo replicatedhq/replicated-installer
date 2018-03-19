@@ -146,14 +146,6 @@ def get_replicated_two_point_zero(replicated_channel=None,
     return Response(response, mimetype='text/x-shellscript')
 
 
-@app.route('/uninstall')
-def get_replicated_uninstall():
-    response = render_template(
-        'replicated-2.0-uninstall.sh',
-        **helpers.template_args())
-    return Response(response, mimetype='text/plain')
-
-
 @app.route('/operator')
 @app.route('/<replicated_channel>/operator')
 @app.route('/operator/<app_slug>/<app_channel>')
