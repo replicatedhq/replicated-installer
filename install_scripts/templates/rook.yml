@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+    name: rook
+---
+apiVersion: rook.io/v1alpha1
+kind: Cluster
+metadata:
+  name: rook
+  namespace: rook
+spec:
+  versionTag: v0.7.1
+  dataDirHostPath: /var/lib/replicated/rook
+  storage:
+    useAllNodes: true
+    useAllDevices: false
+    storeConfig:
+      storeType: filestore
+      journalSizeMB: 1024
+    directories:
+    - path: "{{ pv_base_path }}"
+---
+apiVersion: rook.io/v1alpha1
+kind: Pool
+metadata:
+  name: replicapool
+  namespace: rook
+spec:
+  replicated:
+    size: 1

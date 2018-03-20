@@ -25,6 +25,7 @@ BOOTSTRAP_TOKEN_TTL="24h"
 KUBERNETES_NAMESPACE="default"
 KUBERNETES_VERSION="{{ kubernetes_version }}"
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
+STORAGE_PROVISIONER="{{ storage_provisioner }}"
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -179,13 +180,29 @@ kubernetesDeploy() {
     if [ "$AIRGAP" -ne "1" ]; then
         $URLGET_CMD "{{ replicated_install_url }}/{{ kubernetes_generate_path }}?{{ kubernetes_manifests_query }}" \
             > /tmp/kubernetes-yml-generate.sh
+
+        if [ "$STORAGE_PROVISIONER" = "1" ]; then
+            $URLGET_CMD "{{ replicated_install_url }}/rook-system.yml" > /tmp/rook-system.yml
+            $URLGET_CMD "{{ replicated_install_url }}/rook.yml" > /tmp/rook.yml
+        fi
     else
         cp kubernetes-yml-generate.sh /tmp/kubernetes-yml-generate.sh
+
+        if [ "$STORAGE_PROVISIONER" = "1" ]; then
+            cp rook-system.yml /tmp/rook-system.yml
+            cp rook.yml /tmp/rook.yml
+        fi
     fi
 
     logStep "generate manifests"
     getYAMLOpts
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS > /tmp/kubernetes.yml
+
+    if [ "$STORAGE_PROVISIONER" = "1" ]; then
+        kubectl apply -f /tmp/rook-system.yml
+        spinnerRookReady
+        kubectl apply -f /tmp/rook.yml
+    fi
 
     kubectl apply -f /tmp/kubernetes.yml -n $KUBERNETES_NAMESPACE
 

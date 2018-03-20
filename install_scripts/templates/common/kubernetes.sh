@@ -38,6 +38,42 @@ installCNIPlugins() {
     mkdir -p /etc/cni/net.d
 }
 
+
+#######################################
+# Install K8s components for OS
+# Globals:
+#   LSB_DIST
+#   LSB_VERSION
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+installKubernetesComponents() {
+    case "$LSB_DIST$DIST_VERSION" in
+        ubuntu16.04)
+            export DEBIAN_FRONTEND=noninteractive
+            installComponentsApt
+            return
+            ;;
+        centos7|rhel7.*)
+            installComponentsYum
+            return
+            ;;
+        *)
+    esac
+
+    # intentionally mixed spaces and tabs here -- tabs are stripped by "<<-'EOF'", spaces are kept in the output
+    cat >&2 <<-'EOF'
+      Either your platform is not easily detectable, is not supported by this
+      installer script (yet - PRs welcome! [hack/install.sh]), or does not yet have
+      a package for Docker.  Please visit the following URL for more detailed
+      installation instructions:
+        https://docs.docker.com/engine/installation/
+EOF
+    exit 1
+}
+
 #######################################
 # Download Components Using Apt. At least works on Ubuntu16
 # Globals:
@@ -219,4 +255,29 @@ spinnerReplicatedReady()
     done
     printf "    \b\b\b\b"
     logSuccess "Replicated Ready!"
+}
+
+#######################################
+# Spinner Rook Ready,
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+spinnerRookReady()
+{
+    logStep "Await rook ready"
+    local delay=0.75
+    local spinstr='|/-\'
+    while [ "$(kubectl -n rook-system get pods | grep rook-operator | grep -E "ContainerCreating|Pending")" ]; do
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
+    printf "    \b\b\b\b"
+    logSuccess "Rook Ready!"
 }

@@ -3,7 +3,7 @@
 set -e
 
 AIRGAP=0
-MIN_DOCKER_VERSION="1.13.1" # secrets compatibility
+MIN_DOCKER_VERSION="1.10.3" # k8s min
 NO_PROXY=1
 PINNED_DOCKER_VERSION="{{ pinned_docker_version }}"
 SKIP_DOCKER_INSTALL=0
@@ -27,20 +27,17 @@ KUBERNETES_MASTER_ADDR="{{ kubernetes_master_addr }}"
 KUBEADM_TOKEN="{{ kubeadm_token }}"
 
 joinKubernetes() {
-    logStep "Verify Kubelet"
-    if ! ps aux | grep -qE "[k]ubelet"; then
-        logStep "Join Kubernetes Node"
-        set +e
-        kubeadm join --token "${KUBEADM_TOKEN}" "${KUBERNETES_MASTER_ADDR}:${KUBERNETES_MASTER_PORT}"
-        _status=$?
-        set -e
-        if [ "$_status" -ne "0" ]; then
-            printf "${RED}Failed to join the kubernetes cluster.${NC}\n" 1>&2
-            exit $?
-        fi
-        logSuccess "Node Joined successfully"
+    logStep "Join Kubernetes Node"
+    set +e
+    # TODO verify token
+    kubeadm join --discovery-token-unsafe-skip-ca-verification --token "${KUBEADM_TOKEN}" "${KUBERNETES_MASTER_ADDR}:${KUBERNETES_MASTER_PORT}"
+    _status=$?
+    set -e
+    if [ "$_status" -ne "0" ]; then
+        printf "${RED}Failed to join the kubernetes cluster.${NC}\n" 1>&2
+        exit $?
     fi
-    logSuccess "Node Kubelet Initalized"
+    logSuccess "Node Joined successfully"
 }
 
 promptForToken() {
@@ -137,12 +134,6 @@ while [ "$1" != "" ]; do
     shift
 done
 
-if [ "$AIRGAP" = "1" ]; then
-    echo $AIRGAP
-    bailNoAirgap
-fi
-
-
 if [ "$NO_PROXY" != "1" ]; then
     echo $NO_PROXY
     bailNoProxy
@@ -154,23 +145,29 @@ if [ -n "$PROXY_ADDRESS" ]; then
 fi
 
 if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
-    installDocker "$PINNED_DOCKER_VERSION" "$MIN_DOCKER_VERSION"
-
+    if [ "$OFFLINE_DOCKER_INSTALL" != "1" ]; then
+        installDockerK8s "$PINNED_DOCKER_VERSION" "$MIN_DOCKER_VERSION"
+    else
+        installDocker_1_12_Offline
+    fi
     checkDockerDriver
     checkDockerStorageDriver
 fi
-
 
 if [ "$RESTART_DOCKER" = "1" ]; then
     restartDocker
 fi
 
+if ps aux | grep -qE "[k]ubelet"; then
+    logSuccess "Node Kubelet Initalized"
+    exit 0
+fi
 
 promptForAddress
 promptForToken
 
 
-downloadComponentsApt
+installKubernetesComponents
 joinKubernetes
 
 exit 0
