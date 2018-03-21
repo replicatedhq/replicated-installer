@@ -16,6 +16,7 @@ USER_ID=
 STORAGE_CLASS="{{ storage_class }}"
 HOST_PATH_PROVISIONER="{{ host_path_provisioner }}"
 SERVICE_TYPE="{{ service_type }}"
+KUBERNETES_NAMESPACE="{{ kubernetes_namespace }}"
 
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"
@@ -66,6 +67,20 @@ while [ "$1" != "" ]; do
 done
 
 cat <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: replicated-admin
+  namespace: "$KUBERNETES_NAMESPACE"
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: "$KUBERNETES_NAMESPACE"
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -84,7 +99,6 @@ spec:
         app: replicated
         tier: master
     spec:
-      serviceAccountName: default
       containers:
       - name: replicated
         image: "{{ replicated_docker_host }}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
