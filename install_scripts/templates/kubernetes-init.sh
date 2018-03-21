@@ -171,50 +171,7 @@ untaintMaster() {
         echo "Taint not found or already removed. The above error can be ignored."
     logSuccess "master taint removed"
 }
-
-createServiceAccount() {
-    logStep "create service account"
-    echo '---
-apiVersion: v1
-kind: List
-items:
-  - metadata:
-      labels:
-        name: replicated
-      name: replicated
-    apiVersion: v1
-    kind: ServiceAccount
-  - metadata:
-      labels:
-        name: replicated
-      name: replicated
-      namespace: kube-system
-    apiVersion: v1
-    kind: ServiceAccount
-  - apiVersion: rbac.authorization.k8s.io/v1beta1
-    kind: ClusterRoleBinding
-    metadata:
-      name: replicated-admin
-      namespace: default
-    roleRef:
-      kind: ClusterRole
-      name: cluster-admin
-      apiGroup: rbac.authorization.k8s.io
-    subjects:
-      - kind: ServiceAccount
-        name: replicated
-        namespace: default
-      - kind: ServiceAccount
-        name: replicated
-        namespace: kube-system
-      - kind: ServiceAccount
-        name: default
-        namespace: default
-      - kind: ServiceAccount
-        name: default
-        namespace: kube-system' | kubectl apply -f -
-    logSuccess "service account"
-}
+ 
 kubernetesDeploy() {
     logStep "deploy replicated components"
 
@@ -431,7 +388,6 @@ logSuccess "Cluster Initialized"
 
 weavenetDeploy
 
-createServiceAccount
 untaintMaster
 
 spinnerNodeReady
@@ -446,7 +402,6 @@ kubectl get pods -n kube-system
 logSuccess "Kubernetes system"
 echo
 
-createServiceAccount
 kubernetesDeploy
 spinnerReplicatedReady
 

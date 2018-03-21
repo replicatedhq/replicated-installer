@@ -66,6 +66,20 @@ while [ "$1" != "" ]; do
 done
 
 cat <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: replicated-admin
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: default
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -84,7 +98,6 @@ spec:
         app: replicated
         tier: master
     spec:
-      serviceAccountName: default
       containers:
       - name: replicated
         image: "{{ replicated_docker_host }}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
