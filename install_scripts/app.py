@@ -387,15 +387,7 @@ def get_replicated_kubernetes(replicated_channel=None,
     storage_provisioner = helpers.get_arg('storage_provisioner', 1)
     service_type = helpers.get_arg('service_type', 'NodePort')
     kubernetes_namespace = helpers.get_arg('kubernetes_namespace', 'default')
-
-    custom_selinux_replicated_domain = False
-    selinux_replicated_domain = helpers.get_arg('selinux_replicated_domain',
-                                                None)
-    if selinux_replicated_domain is None:
-        selinux_replicated_domain = 'spc_t'
-    else:
-        custom_selinux_replicated_domain = True
-
+    ui_bind_port = helpers.get_arg('ui_bind_port', 8800)
     customer_base_url = helpers.get_arg('customer_base_url')
 
     response = render_template(
@@ -411,32 +403,13 @@ def get_replicated_kubernetes(replicated_channel=None,
             storage_provisioner=storage_provisioner,
             service_type=service_type,
             kubernetes_namespace=kubernetes_namespace,
-            custom_selinux_replicated_domain=custom_selinux_replicated_domain,
-            selinux_replicated_domain=selinux_replicated_domain,
+            ui_bind_port=ui_bind_port,
             customer_base_url_override=customer_base_url, ))
 
     if helpers.get_arg('accept', None) == 'text':
         return Response(response, mimetype='text/plain')
     return Response(response, mimetype='application/x-yaml')
 
-@app.route('/rook-system.yml')
-def get_rook_system_yaml():
-    response = render_template('rook-system.yml')
-    if helpers.get_arg('accept', None) == 'text':
-        return Response(response, mimetype='text/plain')
-    return Response(response, mimetype='application/x-yaml')
-
-@app.route('/rook.yml')
-def get_rook_yaml():
-    pv_base_path = helpers.get_arg('pv_base_path',
-                                   '/opt/replicated/rook')
-    response = render_template(
-            'rook.yml',
-            **helpers.template_args(
-                pv_base_path=pv_base_path, ))
-    if helpers.get_arg('accept', None) == 'text':
-        return Response(response, mimetype='text/plain')
-    return Response(response, mimetype='application/x-yaml')
 
 @app.route('/swarm-init')
 @app.route('/<replicated_channel>/swarm-init')
