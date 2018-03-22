@@ -380,11 +380,11 @@ def get_replicated_kubernetes(replicated_channel=None,
                                        replicated_ui_version)
 
     pv_base_path = helpers.get_arg('pv_base_path',
-                                   '/opt/replicated/hostpath-provisioner')
+                                   '/opt/replicated/rook')
     log_level = helpers.get_arg('log_level', None)
     release_sequence = helpers.get_arg('release_sequence', None)
     storage_class = helpers.get_arg('storage_class', 'default')
-    host_path_provisioner = helpers.get_arg('host_path_provisioner', 1)
+    storage_provisioner = helpers.get_arg('storage_provisioner', 1)
     service_type = helpers.get_arg('service_type', 'NodePort')
     kubernetes_namespace = helpers.get_arg('kubernetes_namespace', 'default')
 
@@ -408,7 +408,7 @@ def get_replicated_kubernetes(replicated_channel=None,
             log_level=log_level,
             release_sequence=release_sequence,
             storage_class=storage_class,
-            host_path_provisioner=host_path_provisioner,
+            storage_provisioner=storage_provisioner,
             service_type=service_type,
             kubernetes_namespace=kubernetes_namespace,
             custom_selinux_replicated_domain=custom_selinux_replicated_domain,
@@ -419,6 +419,24 @@ def get_replicated_kubernetes(replicated_channel=None,
         return Response(response, mimetype='text/plain')
     return Response(response, mimetype='application/x-yaml')
 
+@app.route('/rook-system.yml')
+def get_rook_system_yaml():
+    response = render_template('rook-system.yml')
+    if helpers.get_arg('accept', None) == 'text':
+        return Response(response, mimetype='text/plain')
+    return Response(response, mimetype='application/x-yaml')
+
+@app.route('/rook.yml')
+def get_rook_yaml():
+    pv_base_path = helpers.get_arg('pv_base_path',
+                                   '/opt/replicated/rook')
+    response = render_template(
+            'rook.yml',
+            **helpers.template_args(
+                pv_base_path=pv_base_path, ))
+    if helpers.get_arg('accept', None) == 'text':
+        return Response(response, mimetype='text/plain')
+    return Response(response, mimetype='application/x-yaml')
 
 @app.route('/swarm-init')
 @app.route('/<replicated_channel>/swarm-init')
@@ -552,15 +570,21 @@ def get_kubernetes_node_join(replicated_channel=None,
         replicated_channel, app_slug, app_channel)
     pinned_docker_version = helpers.get_pinned_docker_version(
         replicated_version, 'kubernetes')
+    pinned_kubernetes_version = helpers.get_pinned_kubernetes_version(
+        replicated_version
+    )
 
-    master_address = helpers.get_arg('kubernetes_master_addr')
-    token = helpers.get_arg('kubeadm_token')
+    master_address = helpers.get_arg('kubernetes_master_addr', '')
+    token = helpers.get_arg('kubeadm_token', '')
+    token = helpers.get_arg('kubeadm_token_ca_hash', '')
 
     response = render_template('kubernetes-node-join.sh',
                                **helpers.template_args(
                                    pinned_docker_version=pinned_docker_version,
+                                   kubernetes_version=pinned_kubernetes_version,
                                    kubernetes_master_addr=master_address,
-                                   kubeadm_token=token, ))
+                                   kubeadm_token=token,
+                                   kubeadm_token_ca_hash=kubeadm_token_ca_hash, ))
     return Response(response, mimetype='text/x-shellscript')
 
 

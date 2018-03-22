@@ -1,4 +1,3 @@
-
 AIRGAP=0
 GROUP_ID=
 LOG_LEVEL=info
@@ -13,10 +12,10 @@ SKIP_DOCKER_PULL=0
 TLS_CERT_PATH=
 UI_BIND_PORT=8800
 USER_ID=
-STORAGE_CLASS="{{ storage_class }}"
-HOST_PATH_PROVISIONER="{{ host_path_provisioner }}"
 SERVICE_TYPE="{{ service_type }}"
 KUBERNETES_NAMESPACE="{{ kubernetes_namespace }}"
+STORAGE_CLASS="{{ storage_class }}"
+STORAGE_PROVISIONER="{{ storage_provisioner }}"
 
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"
@@ -51,8 +50,8 @@ while [ "$1" != "" ]; do
         storage-class|storage_class)
             STORAGE_CLASS="$_value"
             ;;
-        host-path-provisioner|host_path_provisioner)
-            HOST_PATH_PROVISIONER="$_value"
+        storage-provisioner|storage_provisioner)
+            STORAGE_PROVISIONER="$_value"
             ;;
         service-type|service_type)
             SERVICE_TYPE="$_value"
@@ -66,7 +65,21 @@ while [ "$1" != "" ]; do
     shift
 done
 
+if [ "$STORAGE_PROVISIONER" = "1" ]; then
+    cat <<EOF
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+   name: "$STORAGE_CLASS"
+provisioner: rook.io/block
+parameters:
+  pool: replicapool
+EOF
+fi
+
 cat <<EOF
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -306,52 +319,5 @@ spec:
   - name: replicated-ui
     port: 8800
     protocol: TCP
-EOF
-fi
-
-if [ "$HOST_PATH_PROVISIONER" = "1" ]; then
-    cat <<EOF
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: replicated-hostpath-provisioner
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      tier: controller
-      kind: storage-provisioner
-  template:
-    metadata:
-      labels:
-        tier: controller
-        kind: storage-provisioner
-    spec:
-      containers:
-      - name: provisioner
-        image: quay.io/replicated/replicated-hostpath-provisioner:93a99cb
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: NODE_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        - name: PV_BASE_PATH
-          value: "$PV_BASE_PATH"
-        volumeMounts:
-          - name: pv-volume
-            mountPath: /opt/replicated/hostpath-provisioner
-      volumes:
-        - name: pv-volume
-          hostPath:
-            path: "$PV_BASE_PATH"
-            type: DirectoryOrCreate
----
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: default
-provisioner: replicated.com/hostpath
 EOF
 fi
