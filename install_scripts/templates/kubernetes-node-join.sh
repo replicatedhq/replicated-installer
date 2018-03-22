@@ -25,12 +25,12 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 KUBERNETES_MASTER_PORT="6443"
 KUBERNETES_MASTER_ADDR="{{ kubernetes_master_addr }}"
 KUBEADM_TOKEN="{{ kubeadm_token }}"
+KUBEADM_TOKEN_CA_HASH="{{ kubeadm_token_ca_hash }}"
 
 joinKubernetes() {
     logStep "Join Kubernetes Node"
     set +e
-    # TODO verify token
-    kubeadm join --discovery-token-unsafe-skip-ca-verification --token "${KUBEADM_TOKEN}" "${KUBERNETES_MASTER_ADDR}:${KUBERNETES_MASTER_PORT}"
+    kubeadm join --discovery-token-ca-cert-hash "${KUBEADM_TOKEN_CA_HASH}" --token "${KUBEADM_TOKEN}" "${KUBERNETES_MASTER_ADDR}:${KUBERNETES_MASTER_PORT}"
     _status=$?
     set -e
     if [ "$_status" -ne "0" ]; then
@@ -45,12 +45,28 @@ promptForToken() {
         return
     fi
 
-    printf "Please enter the kubernetes boostrap token.\n"
+    printf "Please enter the kubernetes discovery token.\n"
     while true; do
         printf "Kubernetes join token: "
         prompt
         if [ -n "$PROMPT_RESULT" ]; then
             KUBEADM_TOKEN="$PROMPT_RESULT"
+            return
+        fi
+    done
+}
+
+promptForTokenCAHash() {
+    if [ -n "$KUBEADM_TOKEN_CA_HASH" ]; then
+        return
+    fi
+
+    printf "Please enter the discovery token CA's hash.\n"
+    while true; do
+        printf "Kubernetes discovery token CA hash: "
+        prompt
+        if [ -n "$PROMPT_RESULT" ]; then
+            KUBEADM_TOKEN_CA_HASH="$PROMPT_RESULT"
             return
         fi
     done
@@ -165,6 +181,7 @@ fi
 
 promptForAddress
 promptForToken
+promptForTokenCAHash
 
 
 installKubernetesComponents
