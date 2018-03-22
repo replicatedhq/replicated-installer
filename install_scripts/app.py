@@ -576,13 +576,15 @@ def get_kubernetes_node_join(replicated_channel=None,
 
     master_address = helpers.get_arg('kubernetes_master_addr', '')
     token = helpers.get_arg('kubeadm_token', '')
+    token = helpers.get_arg('kubeadm_token_ca_hash', '')
 
     response = render_template('kubernetes-node-join.sh',
                                **helpers.template_args(
                                    pinned_docker_version=pinned_docker_version,
                                    kubernetes_version=pinned_kubernetes_version,
                                    kubernetes_master_addr=master_address,
-                                   kubeadm_token=token, ))
+                                   kubeadm_token=token,
+                                   kubeadm_token_ca_hash=kubeadm_token_ca_hash, ))
     return Response(response, mimetype='text/x-shellscript')
 
 
