@@ -25,7 +25,6 @@ BOOTSTRAP_TOKEN_TTL="24h"
 KUBERNETES_NAMESPACE="default"
 KUBERNETES_VERSION="{{ kubernetes_version }}"
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
-STORAGE_PROVISIONER="{{ storage_provisioner }}"
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -180,30 +179,19 @@ kubernetesDeploy() {
     if [ "$AIRGAP" -ne "1" ]; then
         $URLGET_CMD "{{ replicated_install_url }}/{{ kubernetes_generate_path }}?{{ kubernetes_manifests_query }}" \
             > /tmp/kubernetes-yml-generate.sh
-
-        if [ "$STORAGE_PROVISIONER" = "1" ]; then
-            $URLGET_CMD "{{ replicated_install_url }}/rook-system.yml" > /tmp/rook-system.yml
-            $URLGET_CMD "{{ replicated_install_url }}/rook.yml" > /tmp/rook.yml
-        fi
     else
         cp kubernetes-yml-generate.sh /tmp/kubernetes-yml-generate.sh
-
-        if [ "$STORAGE_PROVISIONER" = "1" ]; then
-            cp rook-system.yml /tmp/rook-system.yml
-            cp rook.yml /tmp/rook.yml
-        fi
     fi
 
     logStep "generate manifests"
     getYAMLOpts
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS > /tmp/kubernetes.yml
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_system_yaml=1 > /tmp/rook-system.yml
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_cluster_yaml=1 > /tmp/rook.yml
 
-    if [ "$STORAGE_PROVISIONER" = "1" ]; then
-        kubectl apply -f /tmp/rook-system.yml
-        spinnerRookReady
-        kubectl apply -f /tmp/rook.yml
-    fi
-
+    kubectl apply -f /tmp/rook-system.yml
+    spinnerRookReady # creating the cluster before the operator is ready fails
+    kubectl apply -f /tmp/rook.yml
     kubectl apply -f /tmp/kubernetes.yml -n $KUBERNETES_NAMESPACE
 
     kubectl -n $KUBERNETES_NAMESPACE get pods,svc
@@ -215,29 +203,14 @@ getYAMLOpts() {
     if [ "$AIRGAP" = "1" ]; then
         opts=$opts" airgap"
     fi
-    if [ -n "$GROUP_ID" ]; then
-        opts=$opts" group-id=$GROUP_ID"
-    fi
     if [ -n "$LOG_LEVEL" ]; then
         opts=$opts" log-level=$LOG_LEVEL"
-    fi
-    if [ -n "$PUBLIC_ADDRESS" ]; then
-        opts=$opts" public-address=$PUBLIC_ADDRESS"
-    fi
-    if [ -n "$REGISTRY_BIND_PORT" ]; then
-        opts=$opts" registry-bind-port=$REGISTRY_BIND_PORT"
     fi
     if [ -n "$RELEASE_SEQUENCE" ]; then
         opts=$opts" release-sequence=$RELEASE_SEQUENCE"
     fi
-    if [ -n "$TLS_CERT_PATH" ]; then
-        opts=$opts" tls-cert-path=$TLS_CERT_PATH"
-    fi
     if [ -n "$UI_BIND_PORT" ]; then
         opts=$opts" ui-bind-port=$UI_BIND_PORT"
-    fi
-    if [ -n "$USER_ID" ]; then
-        opts=$opts" user-id=$USER_ID"
     fi
     YAML_GENERATE_OPTS="$opts"
 }

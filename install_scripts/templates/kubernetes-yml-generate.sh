@@ -1,48 +1,36 @@
-AIRGAP=0
-GROUP_ID=
-LOG_LEVEL=info
-NO_PROXY=1
-
-PUBLIC_ADDRESS=
-PRIVATE_ADDRESS=
-REGISTRY_BIND_PORT=
-SKIP_DOCKER_INSTALL=0
-PV_BASE_PATH="{{ pv_base_path }}"
-SKIP_DOCKER_PULL=0
-TLS_CERT_PATH=
-UI_BIND_PORT=8800
-USER_ID=
-SERVICE_TYPE="{{ service_type }}"
+AIRGAP="{{ airgap }}"
+LOG_LEVEL="{{ log_level }}"
+RELEASE_SEQUENCE="{{ release_sequence }}"
+UI_BIND_PORT="{{ ui_bind_port }}"
 KUBERNETES_NAMESPACE="{{ kubernetes_namespace }}"
+PV_BASE_PATH="{{ pv_base_path }}"
 STORAGE_CLASS="{{ storage_class }}"
+SERVICE_TYPE="{{ service_type }}"
+# booleans
+AIRGAP="{{ airgap }}"
 STORAGE_PROVISIONER="{{ storage_provisioner }}"
+REPLICATED_YAML=1
+ROOK_SYSTEM_YAML=0
+ROOK_CLUSTER_YAML=0
 
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"
     _value="$(echo "$1" | grep '=' | cut -d= -f2-)"
     case $_param in
         airgap)
-            # airgap implies "no proxy" and "skip docker"
-            AIRGAP=1
-            NO_PROXY=1
+            AIRGAP="$_value"
             ;;
         log-level|log_level)
             LOG_LEVEL="$_value"
             ;;
-        public-address|public_address)
-            PUBLIC_ADDRESS="$_value"
-            ;;
-        private-address|private_address)
-            PRIVATE_ADDRESS="$_value"
-            ;;
         release-sequence|release_sequence)
             RELEASE_SEQUENCE="$_value"
             ;;
-        kubernetes-namespace|kubernetes_namespace)
-            KUBERNETES_NAMESPACE="$_value"
-            ;;
         ui-bind-port|ui_bind_port)
             UI_BIND_PORT="$_value"
+            ;;
+        kubernetes-namespace|kubernetes_namespace)
+            KUBERNETES_NAMESPACE="$_value"
             ;;
         pv-base-path|pv_base_path)
             PV_BASE_PATH="$_value"
@@ -50,23 +38,34 @@ while [ "$1" != "" ]; do
         storage-class|storage_class)
             STORAGE_CLASS="$_value"
             ;;
+        service-type|service_type)
+            SERVICE_TYPE="$_value"
+            ;;
         storage-provisioner|storage_provisioner)
             STORAGE_PROVISIONER="$_value"
             ;;
-        service-type|service_type)
-            SERVICE_TYPE="$_value"
+        replicated-yaml|replicated_yaml)
+            REPLICATED_YAML="$_value"
+            ;;
+        rook-system-yaml|rook_system_yaml)
+            ROOK_SYSTEM_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
+        rook-cluster-yaml|rook_cluster_yaml)
+            ROOK_CLUSTER_YAML="$_value"
+            REPLICATED_YAML=0
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
             ;;
-        # TODO custom SELinux domain
     esac
     shift
 done
 
-if [ "$STORAGE_PROVISIONER" = "1" ]; then
-    cat <<EOF
+if [ "$REPLICATED_YAML" = "1" ]; then
+    if [ "$STORAGE_PROVISIONER" = "1" ]; then
+        cat <<EOF
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -76,9 +75,9 @@ provisioner: rook.io/block
 parameters:
   pool: replicapool
 EOF
-fi
+    fi
 
-cat <<EOF
+    cat <<EOF
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -149,17 +148,13 @@ spec:
         - name: K8S_STORAGECLASS
           value: "$STORAGE_CLASS"
         - name: LOG_LEVEL
-          value: "$LOG_LEVEL"{% if custom_selinux_replicated_domain %}
-        - name: SELINUX_REPLICATED_DOMAIN
-          value: "{{ selinux_replicated_domain }}"
-{%- endif %}
+          value: "$LOG_LEVEL"
+        - name: AIRGAP
+          value: "$AIRGAP"
         ports:
         - containerPort: 9874
         - containerPort: 9877
         - containerPort: 9878
-        securityContext:
-          seLinuxOptions:
-            type: "{{ selinux_replicated_domain }}"
         volumeMounts:
         - name: replicated-persistent
           mountPath: /var/lib/replicated
@@ -182,9 +177,6 @@ spec:
           value: "$LOG_LEVEL"
         ports:
         - containerPort: 8800
-        securityContext:
-          seLinuxOptions:
-            type: "{{ selinux_replicated_domain }}"
         volumeMounts:
         - name: replicated-socket
           mountPath: /var/run/replicated
@@ -279,8 +271,8 @@ spec:
     targetPort: 9881
 EOF
 
-if [ "$SERVICE_TYPE" = "NodePort" ]; then
-    cat <<EOF
+    if [ "$SERVICE_TYPE" = "NodePort" ]; then
+        cat <<EOF
 ---
 apiVersion: v1
 kind: Service
@@ -300,8 +292,8 @@ spec:
     nodePort: ${UI_BIND_PORT}
     protocol: TCP
 EOF
-else
-    cat <<EOF
+    else
+        cat <<EOF
 ---
 apiVersion: v1
 kind: Service
@@ -319,5 +311,207 @@ spec:
   - name: replicated-ui
     port: 8800
     protocol: TCP
+EOF
+    fi
+fi
+
+if [ "$ROOK_SYSTEM_YAML" = "1" ]; then
+    cat <<EOF
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rook-system
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: rook-operator
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - serviceaccounts
+  - secrets
+  - pods
+  - services
+  - nodes
+  - nodes/proxy
+  - configmaps
+  - events
+  - persistentvolumes
+  - persistentvolumeclaims
+  verbs:
+  - get
+  - list
+  - watch
+  - patch
+  - create
+  - update
+  - delete
+- apiGroups:
+  - extensions
+  resources:
+  - thirdpartyresources
+  - deployments
+  - daemonsets
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - delete
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterroles
+  - clusterrolebindings
+  - roles
+  - rolebindings
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - delete
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  verbs:
+  - get
+  - list
+  - watch
+  - delete
+- apiGroups:
+  - rook.io
+  resources:
+  - "*"
+  verbs:
+  - "*"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rook-operator
+  namespace: rook-system
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: rook-operator
+  namespace: rook-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rook-operator
+subjects:
+- kind: ServiceAccount
+  name: rook-operator
+  namespace: rook-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rook-operator
+  namespace: rook-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rook-operator
+  template:
+    metadata:
+      labels:
+        app: rook-operator
+    spec:
+      serviceAccountName: rook-operator
+      containers:
+      - name: rook-operator
+        image: rook/rook:v0.7.1
+        args: ["operator"]
+        env:
+        # To disable RBAC, uncomment the following:
+        # - name: RBAC_ENABLED
+        #  value: "false"
+        # Rook Agent toleration. Will tolerate all taints with all keys.
+        # Choose between NoSchedule, PreferNoSchedule and NoExecute:
+        # - name: AGENT_TOLERATION
+        #  value: "NoSchedule"
+        # (Optional) Rook Agent toleration key. Set this to the key of the taint you want to tolerate
+        # - name: AGENT_TOLERATION_KEY
+        #  value: "<KeyOfTheTaintToTolerate>"
+        # Set the path where the Rook agent can find the flex volumes
+        # - name: FLEXVOLUME_DIR_PATH
+        #  value: "<PathToFlexVolumes>"
+        # The interval to check if every mon is in the quorum.
+        - name: ROOK_MON_HEALTHCHECK_INTERVAL
+          value: "45s"
+        # The duration to wait before trying to failover or remove/replace the
+        # current mon with a new mon (useful for compensating flapping network).
+        - name: ROOK_MON_OUT_TIMEOUT
+          value: "300s"
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+EOF
+fi
+
+if [ "$ROOK_CLUSTER_YAML" = "1" ]; then
+    cat <<EOF
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+    name: rook
+---
+apiVersion: rook.io/v1alpha1
+kind: Cluster
+metadata:
+  name: rook
+  namespace: rook
+spec:
+  versionTag: v0.7.1
+  dataDirHostPath: /var/lib/replicated/rook
+  storage:
+    useAllNodes: true
+    useAllDevices: false
+    storeConfig:
+      storeType: filestore
+      journalSizeMB: 1024
+    directories:
+    - path: "{{ pv_base_path }}"
+---
+apiVersion: rook.io/v1alpha1
+kind: Pool
+metadata:
+  name: replicapool
+  namespace: rook
+spec:
+  replicated:
+    size: 1
 EOF
 fi
