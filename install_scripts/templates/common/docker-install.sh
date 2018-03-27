@@ -133,7 +133,7 @@ _installDocker() {
         compareDockerVersions "17.0.0" "${1}"
         # if docker version is ce
         if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
-            yum -y -q install docker-17.03.2ce
+            yum -y -q install docker-17.06.2ce
         else
             yum -y -q install docker-1.12.6
         fi
