@@ -129,7 +129,7 @@ _installDocker() {
     if [ "$LSB_DIST" = "amzn" ]; then
         # Docker install script no longer supports Amazon Linux
         printf "${GREEN}Installing docker from Yum repository${NC}\n"
-        # 1.12.6 and 17.03.2ce are available
+        # 1.12.6 and 17.06.2ce are available
         compareDockerVersions "17.0.0" "${1}"
         # if docker version is ce
         if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
