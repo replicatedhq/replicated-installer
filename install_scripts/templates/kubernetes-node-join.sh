@@ -21,6 +21,7 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 {% include 'common/proxy.sh' %}
 {% include 'common/log.sh' %}
 {% include 'common/kubernetes.sh' %}
+{% include 'common/selinux.sh' %}
 
 KUBERNETES_MASTER_PORT="6443"
 KUBERNETES_MASTER_ADDR="{{ kubernetes_master_addr }}"
