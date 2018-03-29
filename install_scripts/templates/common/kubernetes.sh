@@ -57,6 +57,8 @@ installKubernetesComponents() {
             return
             ;;
         centos7|rhel7.*)
+            # This needs to be run on Linux 3.x nodes for Rook
+            sudo modprobe rbd
             installComponentsYum
             return
             ;;
