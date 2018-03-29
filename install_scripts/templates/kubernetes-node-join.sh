@@ -186,7 +186,6 @@ promptForAddress
 promptForToken
 promptForTokenCAHash
 
-
 installKubernetesComponents
 joinKubernetes
 
