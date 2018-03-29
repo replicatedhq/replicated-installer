@@ -1,3 +1,12 @@
+
+#######################################
+#
+# kubernetes.sh
+#
+# require selinux.sh
+#
+#######################################
+
 command_exists() {
 	command -v "$@" > /dev/null 2>&1
 }
