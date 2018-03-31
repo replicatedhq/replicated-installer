@@ -169,7 +169,7 @@ airgapLoadKubernetesImages() {
 
     logStep "replicated addons"
     docker load < replicated-sidecar-controller.tar
-    docker load < replicated-hostpath-provisioner.tar
+    docker load < rook.tar
     docker load < replicated-operator.tar
     logSuccess "replicated addons"
 
