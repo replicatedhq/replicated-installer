@@ -146,7 +146,11 @@ getMaxDockerVersion() {
     fi
     # Amazon has their own repo and 1.12.6 and 17.06.2 are available there for now.
     if [ "$LSB_DIST" = "amzn" ]; then
-        MAX_DOCKER_VERSION_RESULT="17.06.2"
+        if [ "$_version" = "2017.03" ]; then 
+           MAX_DOCKER_VERSION_RESULT="17.03.2"
+        else 
+           MAX_DOCKER_VERSION_RESULT="17.06.2"
+        fi
     fi
     # Max Docker version on SUSE Linux Enterprise Server 12 SP1 is 1.12.6.
     if [ "$LSB_DIST" = "sles" ]; then
