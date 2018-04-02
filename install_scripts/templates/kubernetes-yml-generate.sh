@@ -18,7 +18,7 @@ while [ "$1" != "" ]; do
     _value="$(echo "$1" | grep '=' | cut -d= -f2-)"
     case $_param in
         airgap)
-            AIRGAP="$_value"
+            AIRGAP=1
             ;;
         log-level|log_level)
             LOG_LEVEL="$_value"

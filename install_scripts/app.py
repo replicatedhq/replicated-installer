@@ -381,7 +381,7 @@ def get_replicated_kubernetes(replicated_channel=None,
 
     pv_base_path = helpers.get_arg('pv_base_path',
                                    '/opt/replicated/rook')
-    log_level = helpers.get_arg('log_level', None)
+    log_level = helpers.get_arg('log_level', 'info')
     release_sequence = helpers.get_arg('release_sequence', None)
     storage_class = helpers.get_arg('storage_class', 'default')
     storage_provisioner = helpers.get_arg('storage_provisioner', 1)
