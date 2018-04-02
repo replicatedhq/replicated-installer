@@ -90,6 +90,12 @@ promptForAddress() {
     done
 }
 
+outro() {
+    printf "\n"
+    printf "\n"
+    printf "Visit the following URL for help configuring the replication level in your storage cluster"
+    printf "https://help.replicated.com/docs/kubernetes/customer-installations/storage/"
+}
 
 ################################################################################
 # Execution starts here
@@ -189,5 +195,7 @@ promptForTokenCAHash
 
 installKubernetesComponents
 joinKubernetes
+
+outro
 
 exit 0

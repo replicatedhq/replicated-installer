@@ -156,7 +156,7 @@ spec:
         - name: LOG_LEVEL
           value: "$LOG_LEVEL"
         - name: AIRGAP
-          value: "$AIRGAP"
+          value: "true"
         ports:
         - containerPort: 9874
         - containerPort: 9877
