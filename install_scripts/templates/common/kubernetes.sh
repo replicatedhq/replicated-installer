@@ -1,3 +1,12 @@
+
+#######################################
+#
+# kubernetes.sh
+#
+# require selinux.sh
+#
+#######################################
+
 command_exists() {
 	command -v "$@" > /dev/null 2>&1
 }
@@ -57,6 +66,9 @@ installKubernetesComponents() {
             return
             ;;
         centos7|rhel7.*)
+            # This needs to be run on Linux 3.x nodes for Rook
+            modprobe rbd
+            echo 'rbd' > /etc/modules-load.d/replicated.conf
             installComponentsYum
             return
             ;;
@@ -157,7 +169,7 @@ airgapLoadKubernetesImages() {
 
     logStep "replicated addons"
     docker load < replicated-sidecar-controller.tar
-    docker load < replicated-hostpath-provisioner.tar
+    docker load < rook.tar
     docker load < replicated-operator.tar
     logSuccess "replicated addons"
 

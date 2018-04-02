@@ -105,6 +105,8 @@ spec:
     matchLabels:
       app: replicated
       tier: master
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -141,6 +143,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: K8S_MASTER_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
         - name: K8S_NAMESPACE
           valueFrom:
             fieldRef:

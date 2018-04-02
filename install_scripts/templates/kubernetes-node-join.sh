@@ -21,6 +21,7 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 {% include 'common/proxy.sh' %}
 {% include 'common/log.sh' %}
 {% include 'common/kubernetes.sh' %}
+{% include 'common/selinux.sh' %}
 
 KUBERNETES_MASTER_PORT="6443"
 KUBERNETES_MASTER_ADDR="{{ kubernetes_master_addr }}"
@@ -130,11 +131,14 @@ while [ "$1" != "" ]; do
         no-proxy|no_proxy)
             NO_PROXY=1
             ;;
-        kubernetes-master-addr|kubernetes_master_addr)
+        kubernetes-master-address|kubernetes_master_address)
             KUBERNETES_MASTER_ADDR="$_value"
             ;;
         kubeadm-token|kubeadm_token)
             KUBEADM_TOKEN="$_value"
+            ;;
+        kubeadm-token-ca-hash|kubeadm_token_ca_hash)
+            KUBEADM_TOKEN_CA_HASH="$_value"
             ;;
         tags)
             OPERATOR_TAGS="$_value"
@@ -182,7 +186,6 @@ fi
 promptForAddress
 promptForToken
 promptForTokenCAHash
-
 
 installKubernetesComponents
 joinKubernetes
