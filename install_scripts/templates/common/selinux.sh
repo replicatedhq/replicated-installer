@@ -102,6 +102,7 @@ must_disable_selinux() {
         printf "\n${YELLOW}Kubernetes is incompatible with SELinux. Disable SELinux to continue?${NC} "
         if confirmY ; then
             setenforce 0
+            sed -i s/^SELINUX=.*$/SELINUX=permissive/ /etc/selinux/config
         else
             bail "\nDisable SELinux with 'setenforce 0' before re-running install script"
         fi
