@@ -206,7 +206,7 @@ outro() {
     printf "\n"
     printf "\nTo access the cluster with kubectl, reload your shell:\n\n"
     printf "\n"
-    printf "${GREEN}    ${0} -l${NC}"
+    printf "${GREEN}    bash -l${NC}"
     printf "\n"
     printf "\n"
     printf "\nTo continue the installation, visit the following URL in your browser:\n\n"
