@@ -19,6 +19,7 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 {% include 'common/replicated.sh' %}
 {% include 'common/ip-address.sh' %}
 {% include 'common/proxy.sh' %}
+{% include 'common/airgap.sh' %}
 
 CA="{{ ca }}"
 DAEMON_REGISTRY_ADDRESS="{{ daemon_registry_address }}"
@@ -38,39 +39,6 @@ joinSwarm() {
         exit $?
     fi
 }
-
-promptForDaemonRegistryAddress() {
-    if [ -n "$DAEMON_REGISTRY_ADDRESS" ]; then
-        return
-    fi
-
-    printf "Please enter the Replicated on-prem registry address.\n"
-    while true; do
-        printf "On-prem registry address: "
-        prompt
-        if [ -n "$PROMPT_RESULT" ]; then
-            DAEMON_REGISTRY_ADDRESS="$PROMPT_RESULT"
-            return
-        fi
-    done
-}
-
-promptForCA() {
-    if [ -n "$CA" ]; then
-        return
-    fi
-
-    printf "Please enter the Replicated on-prem registry base64 encoded ca certificate pem.\n"
-    while true; do
-        printf "CA: "
-        prompt
-        if [ -n "$PROMPT_RESULT" ]; then
-            CA="$PROMPT_RESULT"
-            return
-        fi
-    done
-}
-
 
 ################################################################################
 # Execution starts here

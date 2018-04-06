@@ -139,11 +139,7 @@ spec:
         - name: REPLICATED_IMAGE_TAG_SUFFIX
           value: .staging
 {%- endif %}
-        - name: LOCAL_ADDRESS # TODO: deprecate this
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
-        - name: K8S_MASTER_ADDRESS
+        - name: LOCAL_ADDRESS
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
@@ -254,25 +250,26 @@ metadata:
     app: replicated
     tier: master
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: replicated
     tier: master
   ports:
-  - name: replicated-ui
-    port: 8800
-    protocol: TCP
   - name: replicated-registry
     port: 9874
+    nodePort: 9874
     protocol: TCP
   - name: replicated-iapi
     port: 9877
+    nodePort: 9877
     protocol: TCP
   - name: replicated-snapshots
     port: 9878
+    nodePort: 9878
     protocol: TCP
   - name: replicated-support
     port: 9881
+    nodePort: 9881
     protocol: TCP
     targetPort: 9881
 EOF
