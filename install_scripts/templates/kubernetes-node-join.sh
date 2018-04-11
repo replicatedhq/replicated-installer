@@ -7,6 +7,7 @@ MIN_DOCKER_VERSION="1.10.3" # k8s min
 NO_PROXY=1
 PINNED_DOCKER_VERSION="{{ pinned_docker_version }}"
 SKIP_DOCKER_INSTALL=0
+OFFLINE_DOCKER_INSTALL=0
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
 
 {% include 'common/common.sh' %}
@@ -113,10 +114,10 @@ while [ "$1" != "" ]; do
     _value="$(echo "$1" | grep '=' | cut -d= -f2-)"
     case $_param in
         airgap)
-            # arigap implies "no proxy" and "skip docker"
+            # arigap implies "no proxy"
             AIRGAP=1
             NO_PROXY=1
-            SKIP_DOCKER_INSTALL=1
+            OFFLINE_DOCKER_INSTALL=1
             ;;
         bypass-storagedriver-warnings|bypass_storagedriver_warnings)
             BYPASS_STORAGEDRIVER_WARNINGS=1
@@ -194,6 +195,13 @@ fi
 promptForAddress
 promptForToken
 promptForTokenCAHash
+
+if [ "$AIRGAP" = "1" ]; then
+    promptForDaemonRegistryAddress
+    mkdir -p "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS"
+    promptForCA
+    echo "$(echo "$CA" | base64 --decode)" > "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS/ca.crt"
+fi
 
 installKubernetesComponents
 joinKubernetes

@@ -3,6 +3,8 @@
 #
 # airgap.sh
 #
+# require prompt.sh
+#
 #######################################
 
 #######################################
@@ -91,3 +93,54 @@ airgapMaybeLoadRetraced() {
     fi
 
 }
+
+#######################################
+# Prompts for daemon registry address if not defined
+# Globals:
+#   DAEMON_REGISTRY_ADDRESS
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+promptForDaemonRegistryAddress() {
+    if [ -n "$DAEMON_REGISTRY_ADDRESS" ]; then
+        return
+    fi
+
+    printf "Please enter the Replicated on-prem registry address.\n"
+    while true; do
+        printf "On-prem registry address: "
+        prompt
+        if [ -n "$PROMPT_RESULT" ]; then
+            DAEMON_REGISTRY_ADDRESS="$PROMPT_RESULT"
+            return
+        fi
+    done
+}
+
+#######################################
+# Prompts for daemon registry CA if not defined
+# Globals:
+#   CA
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+promptForCA() {
+    if [ -n "$CA" ]; then
+        return
+    fi
+
+    printf "Please enter the Replicated on-prem registry base64 encoded ca certificate pem.\n"
+    while true; do
+        printf "CA: "
+        prompt
+        if [ -n "$PROMPT_RESULT" ]; then
+            CA="$PROMPT_RESULT"
+            return
+        fi
+    done
+}
+
