@@ -271,7 +271,6 @@ spec:
     port: 9881
     nodePort: 9881
     protocol: TCP
-    targetPort: 9881
 EOF
 
     if [ "$SERVICE_TYPE" = "NodePort" ]; then
