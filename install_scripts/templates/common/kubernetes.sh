@@ -7,6 +7,8 @@
 #
 #######################################
 
+DAEMON_NODE_KEY=replicated.com/daemon
+
 command_exists() {
 	command -v "$@" > /dev/null 2>&1
 }
@@ -101,7 +103,7 @@ installComponentsApt() {
     fi
 
     logStep "Install kubernetes components"
-    if [ "$AIRGAP" == "1" ]; then
+    if [ "$AIRGAP" = "1" ]; then
         docker load < packages-kubernetes-ubuntu1604.tar
     fi
 
@@ -192,7 +194,7 @@ installComponentsYum() {
 
     logStep "Install kubernetes components"
 
-    if [ "$AIRGAP" == "1" ]; then
+    if [ "$AIRGAP" = "1" ]; then
         docker load < packages-kubernetes-rhel7.tar
     fi
 
@@ -222,7 +224,7 @@ EOF
 #######################################
 # Display a spinner until the node is ready, TODO timeout
 # Globals:
-#   None
+#   AIRGAP
 # Arguments:
 #   None
 # Returns:
@@ -240,6 +242,12 @@ spinnerNodeReady()
         sleep $delay
         printf "\b\b\b\b\b\b"
     done
+
+    if [ "$AIRGAP" = "1"]; then
+        node_name = $(kubectl get nodes | tail -1 | awk '{ print $1 }')
+        kubectl label nodes "$node_name" "$DAEMON_NODE_KEY"
+    fi
+
     printf "    \b\b\b\b"
     logSuccess "Master Node Ready!"
 }

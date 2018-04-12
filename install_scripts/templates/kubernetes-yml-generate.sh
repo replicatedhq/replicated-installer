@@ -13,6 +13,8 @@ REPLICATED_YAML=1
 ROOK_SYSTEM_YAML=0
 ROOK_CLUSTER_YAML=0
 
+{% include 'common/kubernetes.sh' %}
+
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"
     _value="$(echo "$1" | grep '=' | cut -d= -f2-)"
@@ -62,6 +64,20 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
+
+AFFINITY=
+if [ "$AIRGAP" = "1" ]; then
+    AFFINITY=$(cat <<-EOF
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: "$DAEMON_NODE_KEY"
+                operator: Exists
+EOF
+)
+fi
 
 if [ "$REPLICATED_YAML" = "1" ]; then
     if [ "$STORAGE_PROVISIONER" = "1" ]; then
@@ -113,6 +129,7 @@ spec:
         app: replicated
         tier: master
     spec:
+$AFFINITY
       containers:
       - name: replicated
         image: "{{ replicated_docker_host }}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
