@@ -243,10 +243,12 @@ spinnerNodeReady()
         printf "\b\b\b\b\b\b"
     done
 
-    if [ "$AIRGAP" = "1"]; then
-        node_name = $(kubectl get nodes | tail -1 | awk '{ print $1 }')
-        kubectl label nodes "$node_name" "$DAEMON_NODE_KEY"
+    if [ "$AIRGAP" = "1" ]; then
+        node_name=$(kubectl get nodes | tail -1 | awk '{ print $1 }')
+        kubectl label nodes "$node_name" "$DAEMON_NODE_KEY"=
     fi
+
+
 
     printf "    \b\b\b\b"
     logSuccess "Master Node Ready!"
