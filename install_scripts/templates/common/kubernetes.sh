@@ -129,7 +129,7 @@ installComponentsApt() {
 # Returns:
 #   None
 #######################################
-airgapLoadKubernetesImages() {
+airgapLoadKubernetesCommonImages() {
     logStep "common images"
 
     docker load < k8s-images-common.tar
@@ -147,11 +147,22 @@ airgapLoadKubernetesImages() {
     docker tag 222ab9e78a83 weaveworks/weave-kube:2.2.0
     docker tag 765b48853ac0 weaveworks/weave-npc:2.2.0
 
+    docker load < rook.tar
 
     docker images | grep google_containers
     logSuccess "common images"
+}
 
-
+#######################################
+# Unpack kubernetes images
+# Globals:
+#   None
+# Arguments:
+#   Message
+# Returns:
+#   None
+#######################################
+airgapLoadKubernetesControlImages() {
     logStep "control plane images"
 
     docker load < k8s-images-control.tar
@@ -171,7 +182,6 @@ airgapLoadKubernetesImages() {
 
     logStep "replicated addons"
     docker load < replicated-sidecar-controller.tar
-    docker load < rook.tar
     docker load < replicated-operator.tar
     logSuccess "replicated addons"
 

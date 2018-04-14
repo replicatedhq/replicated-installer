@@ -202,6 +202,7 @@ if [ "$AIRGAP" = "1" ]; then
     mkdir -p "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS"
     promptForCA
     echo "$(echo "$CA" | base64 --decode)" > "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS/ca.crt"
+    airgapLoadKubernetesCommonImages
 fi
 
 installKubernetesComponents
