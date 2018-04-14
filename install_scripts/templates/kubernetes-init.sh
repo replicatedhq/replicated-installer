@@ -340,7 +340,8 @@ if [ "$AIRGAP" = "1" ]; then
     airgapLoadSupportImages
     airgapMaybeLoadSupportBundle
     airgapMaybeLoadRetraced
-    airgapLoadKubernetesImages
+    airgapLoadKubernetesCommonImages
+    airgapLoadKubernetesControlImages
 fi
 
 ensureCNIPlugins
