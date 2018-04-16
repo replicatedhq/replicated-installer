@@ -193,6 +193,8 @@ if ps aux | grep -qE "[k]ubelet"; then
     exit 0
 fi
 
+installKubernetesComponents
+
 promptForAddress
 promptForToken
 promptForTokenCAHash
@@ -205,7 +207,6 @@ if [ "$AIRGAP" = "1" ]; then
     airgapLoadKubernetesCommonImages
 fi
 
-installKubernetesComponents
 joinKubernetes
 
 outro
