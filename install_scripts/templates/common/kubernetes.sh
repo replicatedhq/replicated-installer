@@ -109,7 +109,7 @@ installComponentsApt() {
 
     docker run \
       -v $PWD:/out \
-      "replicated/k8s-packages:ubuntu-1604-{{ kubernetes_version }}"
+      "replicated/k8s-packages:ubuntu-1604-{{ kubernetes_version }}.20180416"
 
     pushd archives
         dpkg -i *.deb
