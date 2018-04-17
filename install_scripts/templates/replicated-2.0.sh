@@ -462,7 +462,7 @@ outro() {
 
 if replicated12Installed; then
     echo >&2 "Existing 1.2 install detected; please back up and run migration script before installing"
-    echo >&2 "Instructions at https://www.replicated.com/docs/distributing-an-application/installing/#migrating-from-replicated-v1"
+    echo >&2 "Instructions at https://help.replicated.com/docs/native/customer-installations/upgrading/"
     exit 1
 fi
 
