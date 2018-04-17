@@ -1,5 +1,6 @@
 FROM ubuntu:16.04
 RUN apt-get update
+RUN apt-get upgrade -y
 RUN apt-get -y install curl apt-transport-https
 RUN mkdir -p /packages
 RUN  curl -sSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add

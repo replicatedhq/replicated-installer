@@ -112,7 +112,7 @@ installComponentsApt() {
       "quay.io/replicated/k8s-packages:ubuntu-1604-{{ kubernetes_version }}.20180416"
 
     pushd archives
-        dpkg -i --force-depends-version *.deb
+        dpkg -i *.deb
     popd
     rm -rf archives
     systemctl enable kubelet && systemctl start kubelet
