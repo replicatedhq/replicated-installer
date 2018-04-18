@@ -115,8 +115,8 @@ detectLsbDist() {
                 [ $1 -ge 6 ] && LSB_DIST=$_dist && DIST_VERSION=$_version && DIST_VERSION_MAJOR=$1
                 ;;
             amzn)
-                _error_msg="$_error_msg\nHowever detected version $_version is not one of 2.0, 2017.09, 2017.03, 2016.09, 2016.03, 2015.09, 2015.03, 2014.09, 2014.03."
-                [ "$_version" = "2.0" ] || \
+                _error_msg="$_error_msg\nHowever detected version $_version is not one of 2, 2017.09, 2017.03, 2016.09, 2016.03, 2015.09, 2015.03, 2014.09, 2014.03."
+                [ "$_version" = "2" ] || \
                 [ "$_version" = "2017.03" ] || [ "$_version" = "2017.09" ] || \
                 [ "$_version" = "2016.03" ] || [ "$_version" = "2016.09" ] || \
                 [ "$_version" = "2015.03" ] || [ "$_version" = "2015.09" ] || \
