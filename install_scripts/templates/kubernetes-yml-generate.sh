@@ -79,6 +79,13 @@ EOF
 )
 fi
 
+# For airgap the local address is the hostIP so docker on remote nodes can pull
+# from the local registry.
+LOCAL_ADDRESS_SOURCE=status.podIP
+if [ "$AIRGAP" = "1" ]; then
+    LOCAL_ADDRESS_SOURCE=status.hostIP
+fi
+
 if [ "$REPLICATED_YAML" = "1" ]; then
     if [ "$STORAGE_PROVISIONER" = "1" ]; then
         cat <<EOF
@@ -258,6 +265,9 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: "$STORAGE_CLASS"
+EOF
+    if [ "$AIRGAP" = "1" ]; then
+        cat <<EOF
 ---
 apiVersion: v1
 kind: Service
@@ -289,6 +299,35 @@ spec:
     nodePort: 9881
     protocol: TCP
 EOF
+    else
+        cat <<EOF
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: replicated
+  labels:
+    app: replicated
+    tier: master
+spec:
+  selector:
+    app: replicated
+    tier: master
+  ports:
+  - name: replicated-registry
+    port: 9874
+    protocol: TCP
+  - name: replicated-iapi
+    port: 9877
+    protocol: TCP
+  - name: replicated-snapshots
+    port: 9878
+    protocol: TCP
+  - name: replicated-support
+    port: 9881
+    protocol: TCP
+EOF
+    fi
 
     if [ "$SERVICE_TYPE" = "NodePort" ]; then
         cat <<EOF
