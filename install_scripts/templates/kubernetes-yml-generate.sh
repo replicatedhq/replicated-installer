@@ -89,6 +89,19 @@ EOF
         LOCAL_ADDRESS_SOURCE=status.hostIP
     fi
 
+    # If using podID as the local address (non-airgap) then specify join address
+    # for kubeadm on remote nodes
+    K8S_MASTER_ADDRESS=
+    if [ "$AIRGAP" != "1" ]; then
+        K8S_MASTER_ADDRESS=$(cat <<-EOF
+        - name: K8S_MASTER_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+EOF
+        )
+    fi
+
     cat <<EOF
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -156,6 +169,7 @@ $AFFINITY
           valueFrom:
             fieldRef:
               fieldPath: "$LOCAL_ADDRESS_SOURCE"
+$K8S_MASTER_ADDRESS
         - name: K8S_NAMESPACE
           valueFrom:
             fieldRef:
