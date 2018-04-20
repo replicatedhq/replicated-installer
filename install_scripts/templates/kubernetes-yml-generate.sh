@@ -65,9 +65,12 @@ while [ "$1" != "" ]; do
     shift
 done
 
-AFFINITY=
-if [ "$AIRGAP" = "1" ]; then
-    AFFINITY=$(cat <<-EOF
+render_replicated_specs() {
+    # For airgap the replicated pod has to run on the node where the airgap
+    # package was unpacked
+    AFFINITY=
+    if [ "$AIRGAP" = "1" ]; then
+        AFFINITY=$(cat <<-EOF
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -76,21 +79,27 @@ if [ "$AIRGAP" = "1" ]; then
               - key: "$DAEMON_NODE_KEY"
                 operator: Exists
 EOF
-)
-fi
+        )
+    fi
 
-if [ "$REPLICATED_YAML" = "1" ]; then
-    if [ "$STORAGE_PROVISIONER" = "1" ]; then
-        cat <<EOF
----
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-   name: "$STORAGE_CLASS"
-provisioner: rook.io/block
-parameters:
-  pool: replicapool
+    # For airgap the local address is the hostIP so docker on remote nodes can
+    # pull from the local registry.
+    LOCAL_ADDRESS_SOURCE=status.podIP
+    if [ "$AIRGAP" = "1" ]; then
+        LOCAL_ADDRESS_SOURCE=status.hostIP
+    fi
+
+    # If using podID as the local address (non-airgap) then specify join address
+    # for kubeadm on remote nodes
+    K8S_MASTER_ADDRESS=
+    if [ "$AIRGAP" != "1" ]; then
+        K8S_MASTER_ADDRESS=$(cat <<-EOF
+        - name: K8S_MASTER_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
 EOF
+        )
     fi
 
     cat <<EOF
@@ -159,7 +168,8 @@ $AFFINITY
         - name: LOCAL_ADDRESS
           valueFrom:
             fieldRef:
-              fieldPath: status.hostIP
+              fieldPath: "$LOCAL_ADDRESS_SOURCE"
+$K8S_MASTER_ADDRESS
         - name: K8S_NAMESPACE
           valueFrom:
             fieldRef:
@@ -258,6 +268,41 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: "$STORAGE_CLASS"
+EOF
+}
+
+render_replicated_cluster_ip_service() {
+    cat <<EOF
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: replicated
+  labels:
+    app: replicated
+    tier: master
+spec:
+  selector:
+    app: replicated
+    tier: master
+  ports:
+  - name: replicated-registry
+    port: 9874
+    protocol: TCP
+  - name: replicated-iapi
+    port: 9877
+    protocol: TCP
+  - name: replicated-snapshots
+    port: 9878
+    protocol: TCP
+  - name: replicated-support
+    port: 9881
+    protocol: TCP
+EOF
+}
+
+render_replicated_node_port_service() {
+    cat <<EOF
 ---
 apiVersion: v1
 kind: Service
@@ -289,9 +334,10 @@ spec:
     nodePort: 9881
     protocol: TCP
 EOF
+}
 
-    if [ "$SERVICE_TYPE" = "NodePort" ]; then
-        cat <<EOF
+render_replicated_ui_node_port_service() {
+    cat <<EOF
 ---
 apiVersion: v1
 kind: Service
@@ -311,8 +357,10 @@ spec:
     nodePort: ${UI_BIND_PORT}
     protocol: TCP
 EOF
-    else
-        cat <<EOF
+}
+
+render_replicated_ui_service() {
+    cat <<EOF
 ---
 apiVersion: v1
 kind: Service
@@ -328,13 +376,26 @@ spec:
     tier: master
   ports:
   - name: replicated-ui
-    port: 8800
+    port: ${UI_BIND_PORT}
+    targetPort: 8800
     protocol: TCP
 EOF
-    fi
-fi
+}
 
-if [ "$ROOK_SYSTEM_YAML" = "1" ]; then
+render_rook_storage_class() {
+    cat <<EOF
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+   name: "$STORAGE_CLASS"
+provisioner: rook.io/block
+parameters:
+  pool: replicapool
+EOF
+}
+
+render_rook_system_yaml() {
     cat <<EOF
 ---
 apiVersion: v1
@@ -497,9 +558,9 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
 EOF
-fi
+}
 
-if [ "$ROOK_CLUSTER_YAML" = "1" ]; then
+render_rook_cluster_yaml() {
     cat <<EOF
 ---
 apiVersion: v1
@@ -533,4 +594,35 @@ spec:
   replicated:
     size: 1
 EOF
+}
+
+################################################################################
+# Execution starts here
+################################################################################
+if [ "$ROOK_CLUSTER_YAML" = "1" ]; then
+    render_rook_cluster_yaml
+fi
+
+if [ "$ROOK_SYSTEM_YAML" = "1" ]; then
+    render_rook_system_yaml
+fi
+
+if [ "$REPLICATED_YAML" = "1" ]; then
+    if [ "$STORAGE_PROVISIONER" = "1" ]; then
+        render_rook_storage_class
+    fi
+
+    render_replicated_specs
+
+    if [ "$AIRGAP" = "1" ]; then
+        render_replicated_node_port_service
+    else
+        render_replicated_cluster_ip_service
+    fi
+
+    if [ "$SERVICE_TYPE" = "NodePort" ]; then
+        render_replicated_ui_node_port_service
+    else
+        render_replicated_ui_service
+    fi
 fi
