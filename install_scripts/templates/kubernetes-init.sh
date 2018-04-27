@@ -334,6 +334,7 @@ if [ "$RESTART_DOCKER" = "1" ]; then
 fi
 
 installKubernetesComponents
+systemctl enable kubelet && systemctl start kubelet
 
 if [ "$AIRGAP" = "1" ]; then
     logStep "Loading replicated and replicated-ui images from package\n"
