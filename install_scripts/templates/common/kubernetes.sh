@@ -115,7 +115,6 @@ installComponentsApt() {
         dpkg -i --force-depends-version *.deb
     popd
     rm -rf archives
-    systemctl enable kubelet && systemctl start kubelet
 
     logSuccess "Kubernetes components installed"
 }
@@ -226,7 +225,6 @@ EOF
         yum install -y -q *.rpm
     popd
     rm -rf archives
-    systemctl enable kubelet && systemctl start kubelet
     logSuccess "Kubernetes components downloaded"
 }
 

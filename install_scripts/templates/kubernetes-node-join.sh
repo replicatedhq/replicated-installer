@@ -195,6 +195,7 @@ if ps aux | grep -qE "[k]ubelet"; then
 fi
 
 installKubernetesComponents
+systemctl enable kubelet && systemctl start kubelet
 
 promptForAddress
 promptForToken
