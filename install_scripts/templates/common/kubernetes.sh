@@ -311,3 +311,4 @@ spinnerRookReady()
     printf "    \b\b\b\b"
     logSuccess "Rook Ready!"
 }
+
