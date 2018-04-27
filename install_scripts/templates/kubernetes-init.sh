@@ -41,6 +41,7 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 {% include 'common/log.sh' %}
 {% include 'common/kubernetes.sh' %}
 {% include 'common/selinux.sh' %}
+{% include 'common/swap.sh' %}
 
 initKubeadmConfig() {
     mkdir -p /opt/replicated
@@ -225,6 +226,7 @@ require64Bit
 requireRootUser
 detectLsbDist
 detectInitSystem
+must_swapoff
 
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"

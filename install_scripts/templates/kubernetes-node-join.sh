@@ -109,6 +109,7 @@ require64Bit
 requireRootUser
 detectLsbDist
 detectInitSystem
+must_swapoff
 
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"
