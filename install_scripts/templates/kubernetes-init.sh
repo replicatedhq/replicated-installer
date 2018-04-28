@@ -16,6 +16,7 @@ REGISTRY_BIND_PORT=
 SKIP_DOCKER_INSTALL=0
 OFFLINE_DOCKER_INSTALL=0
 SKIP_DOCKER_PULL=0
+KUBERNETES_ONLY=0
 TLS_CERT_PATH=
 UI_BIND_PORT=8800
 USER_ID=
@@ -23,6 +24,7 @@ USER_ID=
 BOOTSTRAP_TOKEN=
 BOOTSTRAP_TOKEN_TTL="24h"
 KUBERNETES_NAMESPACE="default"
+KUBEADM_JOIN_COMMAND=
 KUBERNETES_VERSION="{{ kubernetes_version }}"
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
 
@@ -113,7 +115,7 @@ maybeGenerateBootstrapToken() {
     # if kubelet is already running this is another run of the isntall script,
     # so create the token in k8s api
     if ps aux | grep -qE "[k]ubelet"; then
-        kubeadm token create $BOOTSTRAP_TOKEN --ttl ${BOOTSTRAP_TOKEN_TTL}
+        KUBEADM_JOIN_COMMAND=$(kubeadm token create $BOOTSTRAP_TOKEN --ttl ${BOOTSTRAP_TOKEN_TTL} --print-join-command)
     fi
 
     logSuccess "bootstrap token set"
@@ -147,7 +149,27 @@ untaintMaster() {
         echo "Taint not found or already removed. The above error can be ignored."
     logSuccess "master taint removed"
 }
- 
+rookDeploy() {
+    logStep "deploy rook"
+
+    getUrlCmd
+    if [ "$AIRGAP" -ne "1" ]; then
+        $URLGET_CMD "{{ replicated_install_url }}/{{ kubernetes_generate_path }}?{{ kubernetes_manifests_query }}" \
+            > /tmp/kubernetes-yml-generate.sh
+    else
+        cp kubernetes-yml-generate.sh /tmp/kubernetes-yml-generate.sh
+    fi
+
+    getYAMLOpts
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_system_yaml=1 > /tmp/rook-system.yml
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_cluster_yaml=1 > /tmp/rook.yml
+
+    kubectl apply -f /tmp/rook-system.yml
+    spinnerRookReady # creating the cluster before the operator is ready fails
+    kubectl apply -f /tmp/rook.yml
+    logSuccess "Rook deployed"
+}
+
 kubernetesDeploy() {
     logStep "deploy replicated components"
 
@@ -162,14 +184,8 @@ kubernetesDeploy() {
     logStep "generate manifests"
     getYAMLOpts
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS > /tmp/kubernetes.yml
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_system_yaml=1 > /tmp/rook-system.yml
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_cluster_yaml=1 > /tmp/rook.yml
 
-    kubectl apply -f /tmp/rook-system.yml
-    spinnerRookReady # creating the cluster before the operator is ready fails
-    kubectl apply -f /tmp/rook.yml
     kubectl apply -f /tmp/kubernetes.yml -n $KUBERNETES_NAMESPACE
-
     kubectl -n $KUBERNETES_NAMESPACE get pods,svc
     logSuccess "Replicated Daemon"
 }
@@ -215,6 +231,47 @@ outro() {
     printf "    ${GREEN}https://%s:%s\n${NC}" "$PUBLIC_ADDRESS" "$UI_BIND_PORT"
     printf "\n"
     printf "\n"
+}
+
+outroKubeadm() {
+    clear
+    echo
+    if [ -z "$PUBLIC_ADDRESS" ]; then
+      if [ -z "$PRIVATE_ADDRESS" ]; then
+        PUBLIC_ADDRESS="<this_server_address>"
+        PRIVATE_ADDRESS="<this_server_address>"
+      else
+        PUBLIC_ADDRESS="$PRIVATE_ADDRESS"
+      fi
+    fi
+
+
+    printf "\n"
+    printf "\t\t${GREEN}Installation${NC}\n"
+    printf "\t\t${GREEN}  Complete ✔${NC}\n"
+    printf "\n"
+    printf "\nTo access the cluster with kubectl, reload your shell:\n\n"
+    printf "\n"
+    printf "${GREEN}    bash -l${NC}"
+    printf "\n"
+    printf "\n"
+    if [ "$AIRGAP" -eq "1" ]; then
+        printf "\nTo add nodes to this installation, copy and unpack this bundle on your other nodes, and run the following:"
+        printf "\n"
+        printf "\n"
+        # This cut -d works in 1.9.3, we will need to test again in later kubeadm versions. Once phases are out of alpha lets use those
+        printf "${GREEN}    cat ./kubernetes-node-join.sh  | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$(echo ${KUBEADM_JOIN_COMMAND} | cut -d ' ' -f 7) \n"
+        printf "${NC}"
+        printf "\n"
+        printf "\n"
+    else
+        printf "\nTo add nodes to this installation, run the following script on your other nodes"
+        printf "\n"
+        printf "${GREEN}    curl {{ replicated_install_url }}/{{ kubernetes_node_join_path }} | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$(echo ${KUBEADM_JOIN_COMMAND} | cut -d ' ' -f 7) \n"
+        printf "${NC}"
+        printf "\n"
+        printf "\n"
+    fi
 }
 
 
@@ -282,6 +339,9 @@ while [ "$1" != "" ]; do
             ;;
         no-ce-on-ee|no_ce_on_ee)
             NO_CE_ON_EE=1
+            ;;
+        kubernetes-only|kubernetes_only)
+            KUBERNETES_ONLY=1
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
@@ -371,17 +431,22 @@ kubectl get pods -n kube-system
 logSuccess "Kubernetes system"
 echo
 
+rookDeploy
+if [ "$KUBERNETES_ONLY" -eq "1" ]; then
+    outroKubeadm
+    exit 0
+fi
+
 kubernetesDeploy
 spinnerReplicatedReady
 
-# TODO ALIAS --
 printf "Installing replicated command alias\n"
 installKubernetesCLIFile '$(kubectl get pods -o=jsonpath="{.items[0].metadata.name}" -l tier=master)'
 installAliasFile
-
-
-
-
 outro
+
+
+
+
 
 exit 0
