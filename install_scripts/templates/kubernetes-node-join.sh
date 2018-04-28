@@ -24,6 +24,7 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 {% include 'common/kubernetes.sh' %}
 {% include 'common/selinux.sh' %}
 {% include 'common/airgap.sh' %}
+{% include 'common/swap.sh' %}
 
 KUBERNETES_MASTER_PORT="6443"
 KUBERNETES_MASTER_ADDR="{{ kubernetes_master_addr }}"
