@@ -12,6 +12,8 @@ STORAGE_PROVISIONER="{{ storage_provisioner }}"
 REPLICATED_YAML=1
 ROOK_SYSTEM_YAML=0
 ROOK_CLUSTER_YAML=0
+WEAVE_YAML=0
+IP_ALLOC_RANGE=10.32.0.0/12  # default for weave
 
 {% include 'common/kubernetes.sh' %}
 
@@ -56,6 +58,13 @@ while [ "$1" != "" ]; do
         rook-cluster-yaml|rook_cluster_yaml)
             ROOK_CLUSTER_YAML="$_value"
             REPLICATED_YAML=0
+            ;;
+        weave-yaml|weave_yaml)
+            WEAVE_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
+        ip-alloc-range|ip_alloc_range)
+            IP_ALLOC_RANGE="$_value"
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
@@ -596,9 +605,264 @@ spec:
 EOF
 }
 
+render_weave_yaml() {
+    cat <<EOF
+---
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: weave-net
+      annotations:
+        cloud.weave.works/launcher-info: |-
+          {
+            "original-request": {
+              "url": "/k8s/v1.8/net.yaml?k8s-version=1.9.3",
+              "date": "Tue Feb 20 2018 02:10:32 GMT+0000 (UTC)"
+            },
+            "email-address": "support@weave.works"
+          }
+      labels:
+        name: weave-net
+      namespace: kube-system
+  - apiVersion: rbac.authorization.k8s.io/v1beta1
+    kind: ClusterRole
+    metadata:
+      name: weave-net
+      annotations:
+        cloud.weave.works/launcher-info: |-
+          {
+            "original-request": {
+              "url": "/k8s/v1.8/net.yaml?k8s-version=1.9.3",
+              "date": "Tue Feb 20 2018 02:10:32 GMT+0000 (UTC)"
+            },
+            "email-address": "support@weave.works"
+          }
+      labels:
+        name: weave-net
+      namespace: kube-system
+    rules:
+      - apiGroups:
+          - ''
+        resources:
+          - pods
+          - namespaces
+          - nodes
+        verbs:
+          - get
+          - list
+          - watch
+      - apiGroups:
+          - networking.k8s.io
+        resources:
+          - networkpolicies
+        verbs:
+          - get
+          - list
+          - watch
+  - apiVersion: rbac.authorization.k8s.io/v1beta1
+    kind: ClusterRoleBinding
+    metadata:
+      name: weave-net
+      annotations:
+        cloud.weave.works/launcher-info: |-
+          {
+            "original-request": {
+              "url": "/k8s/v1.8/net.yaml?k8s-version=1.9.3",
+              "date": "Tue Feb 20 2018 02:10:32 GMT+0000 (UTC)"
+            },
+            "email-address": "support@weave.works"
+          }
+      labels:
+        name: weave-net
+      namespace: kube-system
+    roleRef:
+      kind: ClusterRole
+      name: weave-net
+      apiGroup: rbac.authorization.k8s.io
+    subjects:
+      - kind: ServiceAccount
+        name: weave-net
+        namespace: kube-system
+  - apiVersion: rbac.authorization.k8s.io/v1beta1
+    kind: Role
+    metadata:
+      name: weave-net
+      annotations:
+        cloud.weave.works/launcher-info: |-
+          {
+            "original-request": {
+              "url": "/k8s/v1.8/net.yaml?k8s-version=1.9.3",
+              "date": "Tue Feb 20 2018 02:10:32 GMT+0000 (UTC)"
+            },
+            "email-address": "support@weave.works"
+          }
+      labels:
+        name: weave-net
+      namespace: kube-system
+    rules:
+      - apiGroups:
+          - ''
+        resourceNames:
+          - weave-net
+        resources:
+          - configmaps
+        verbs:
+          - get
+          - update
+      - apiGroups:
+          - ''
+        resources:
+          - configmaps
+        verbs:
+          - create
+  - apiVersion: rbac.authorization.k8s.io/v1beta1
+    kind: RoleBinding
+    metadata:
+      name: weave-net
+      annotations:
+        cloud.weave.works/launcher-info: |-
+          {
+            "original-request": {
+              "url": "/k8s/v1.8/net.yaml?k8s-version=1.9.3",
+              "date": "Tue Feb 20 2018 02:10:32 GMT+0000 (UTC)"
+            },
+            "email-address": "support@weave.works"
+          }
+      labels:
+        name: weave-net
+      namespace: kube-system
+    roleRef:
+      kind: Role
+      name: weave-net
+      apiGroup: rbac.authorization.k8s.io
+    subjects:
+      - kind: ServiceAccount
+        name: weave-net
+        namespace: kube-system
+  - apiVersion: extensions/v1beta1
+    kind: DaemonSet
+    metadata:
+      name: weave-net
+      annotations:
+        cloud.weave.works/launcher-info: |-
+          {
+            "original-request": {
+              "url": "/k8s/v1.8/net.yaml?k8s-version=1.9.3",
+              "date": "Tue Feb 20 2018 02:10:32 GMT+0000 (UTC)"
+            },
+            "email-address": "support@weave.works"
+          }
+      labels:
+        name: weave-net
+      namespace: kube-system
+    spec:
+      template:
+        metadata:
+          labels:
+            name: weave-net
+        spec:
+          containers:
+            - name: weave
+              command:
+                - /home/weave/launch.sh
+              env:
+                - name: HOSTNAME
+                  valueFrom:
+                    fieldRef:
+                      apiVersion: v1
+                      fieldPath: spec.nodeName
+                - name: IPALLOC_RANGE
+                  value: $IP_ALLOC_RANGE
+              image: 'weaveworks/weave-kube:2.2.0'
+              livenessProbe:
+                httpGet:
+                  host: 127.0.0.1
+                  path: /status
+                  port: 6784
+                initialDelaySeconds: 30
+              resources:
+                requests:
+                  cpu: 10m
+              securityContext:
+                privileged: true
+              volumeMounts:
+                - name: weavedb
+                  mountPath: /weavedb
+                - name: cni-bin
+                  mountPath: /host/opt
+                - name: cni-bin2
+                  mountPath: /host/home
+                - name: cni-conf
+                  mountPath: /host/etc
+                - name: dbus
+                  mountPath: /host/var/lib/dbus
+                - name: lib-modules
+                  mountPath: /lib/modules
+                - name: xtables-lock
+                  mountPath: /run/xtables.lock
+            - name: weave-npc
+              args: []
+              env:
+                - name: HOSTNAME
+                  valueFrom:
+                    fieldRef:
+                      apiVersion: v1
+                      fieldPath: spec.nodeName
+              image: 'weaveworks/weave-npc:2.2.0'
+              resources:
+                requests:
+                  cpu: 10m
+              securityContext:
+                privileged: true
+              volumeMounts:
+                - name: xtables-lock
+                  mountPath: /run/xtables.lock
+          hostNetwork: true
+          hostPID: true
+          restartPolicy: Always
+          securityContext:
+            seLinuxOptions: {}
+          serviceAccountName: weave-net
+          tolerations:
+            - effect: NoSchedule
+              operator: Exists
+          volumes:
+            - name: weavedb
+              hostPath:
+                path: /var/lib/weave
+            - name: cni-bin
+              hostPath:
+                path: /opt
+            - name: cni-bin2
+              hostPath:
+                path: /home
+            - name: cni-conf
+              hostPath:
+                path: /etc
+            - name: dbus
+              hostPath:
+                path: /var/lib/dbus
+            - name: lib-modules
+              hostPath:
+                path: /lib/modules
+            - name: xtables-lock
+              hostPath:
+                path: /run/xtables.lock
+      updateStrategy:
+        type: RollingUpdate
+EOF
+}
+
 ################################################################################
 # Execution starts here
 ################################################################################
+if [ "$WEAVE_YAML" = "1" ]; then
+    render_weave_yaml
+fi
+
 if [ "$ROOK_CLUSTER_YAML" = "1" ]; then
     render_rook_cluster_yaml
 fi

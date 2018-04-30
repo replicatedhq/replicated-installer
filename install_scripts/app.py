@@ -512,23 +512,9 @@ def get_kubernetes_init_master(replicated_channel=None,
             pinned_docker_version=pinned_docker_version,
             kubernetes_version=pinned_kubernetes_version,
             kubernetes_generate_path=generate_path,
-            kubernetes_weave_path="kubernetes-weave.yml",
-            kubernetes_weave_query="",
             kubernetes_node_join_path=node_path,
             kubernetes_manifests_query=query, ))
     return Response(response, mimetype='text/x-shellscript')
-
-
-@app.route('/kubernetes-weave.yml')
-@app.route('/<replicated_channel>/kubernetes-weave.yml')
-@app.route('/<app_slug>/<app_channel>/kubernetes-weave.yml')
-@app.route('/<replicated_channel>/<app_slug>/<app_channel>/kubernetes-weave.yml')
-def get_kubernetes_weave(replicated_channel=None,
-                         app_slug=None,
-                         app_channel=None):
-    # todo serve weave version based on k8s version in querystring
-    response = render_template('kubernetes-weave-1-9-3.yml')
-    return Response(response, mimetype='application/x-yaml')
 
 
 @app.route('/kubernetes-node-join')
