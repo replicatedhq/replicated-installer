@@ -24,7 +24,8 @@ common="
 	$repo/k8s-dns-dnsmasq-nanny-amd64:$kube_dns_version
 	$repo/pause-amd64:$pause_version
 	weaveworks/weave-kube:$weave_version
-	weaveworks/weave-npc:$weave_version"
+	weaveworks/weave-npc:$weave_version
+	weaveworks/weaveexec:$weave_version"
 
 control="
 	$repo/kube-apiserver-amd64:$kubernetes_version

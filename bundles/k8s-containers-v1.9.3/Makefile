@@ -18,13 +18,13 @@ build:
 
 retag:
 	docker tag linuxkit/kubernetes-docker-image-cache-common:32f09de29fa8c517e14d8d733f79e467ab5eaf7d-dirty-amd64 replicated/k8s-images-common:v1.9.3-20180222
-	docker tag linuxkit/kubernetes-docker-image-cache-control-plane:003bc342571352ecdf16f720f841cc923b2e32f0-dirty-amd64 replicated/k8s-images-control:v1.9.3-20180222
+	docker tag linuxkit/kubernetes-docker-image-cache-control-plane:e41541ca040a0001e02dd5c8ac40e0ae38110a7a-dirty-amd64 replicated/k8s-images-control:v1.9.3-20180430
 
 
 
 push:
 	docker push replicated/k8s-images-common:v1.9.3-20180222
-	docker push replicated/k8s-images-control:v1.9.3-20180222
+	docker push replicated/k8s-images-control:v1.9.3-20180430
 
 clean:
 	rm -rf ./kubernetes-tmp
