@@ -17,6 +17,7 @@ SKIP_DOCKER_INSTALL=0
 OFFLINE_DOCKER_INSTALL=0
 SKIP_DOCKER_PULL=0
 KUBERNETES_ONLY=0
+RESET=0
 TLS_CERT_PATH=
 UI_BIND_PORT=8800
 USER_ID=
@@ -149,6 +150,7 @@ untaintMaster() {
         echo "Taint not found or already removed. The above error can be ignored."
     logSuccess "master taint removed"
 }
+
 rookDeploy() {
     logStep "deploy rook"
 
@@ -274,6 +276,13 @@ outroKubeadm() {
     fi
 }
 
+outroReset() {
+    clear
+    printf "\n"
+    printf "\t\t${GREEN}Uninstallation${NC}\n"
+    printf "\t\t${GREEN}  Complete ✔${NC}\n"
+    printf "\n"
+}
 
 ################################################################################
 # Execution starts here
@@ -343,6 +352,9 @@ while [ "$1" != "" ]; do
         kubernetes-only|kubernetes_only)
             KUBERNETES_ONLY=1
             ;;
+        reset)
+            RESET=1
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -350,6 +362,22 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
+
+if [ "$RESET" == "1" ]; then
+    kubeadm reset
+
+    weave_reset
+
+    rm -rf /opt/replicated
+    rm -rf /opt/cni
+    rm -rf /etc/kubernetes
+    rm -rf /var/lib/replicated
+    rm -rf /var/lib/etcd
+    rm -f /usr/bin/kubeadm /usr/bin/kubelet /usr/bin/kubectl
+
+    outroReset
+	exit 0
+fi
 
 if [ "$NO_PROXY" != "1" ]; then
     echo $NO_PROXY
@@ -433,6 +461,7 @@ echo
 
 rookDeploy
 if [ "$KUBERNETES_ONLY" -eq "1" ]; then
+    spinnerKubeSystemReady
     outroKubeadm
     exit 0
 fi
