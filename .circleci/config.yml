@@ -26,7 +26,8 @@ jobs:
     working_directory: ~/work
     steps:
       - checkout
-      - setup_remote_docker
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run: apk add make
       - run: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS quay.io
       - run:
@@ -37,13 +38,28 @@ jobs:
             cd ../k8s-rhel7
             make build push
 
+  build_k8s_bundles:
+    machine: true
+      docker_layer_caching: true
+    steps:
+      - checkout
+      - run: docker login --username $DOCKER_USER --password $DOCKER_PASS quay.io
+      - run:
+          name: make
+          command: |
+            cd bundles/k8s-containers-v1.9.
+            make deps update_k8s_manifest build retag push
+            cd ../k8s-cni-v0.6.0
+            make build push
+
   build_docker_packages:
     docker:
       - image: replicated/python-boto
     working_directory: ~/work
     steps:
       - checkout
-      - setup_remote_docker
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run: apk add make
       - run: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS quay.io
       - run:
@@ -72,6 +88,27 @@ workflows:
     jobs:
       - test
       - deploy_old:
+          requires:
+            - test
+          filters:
+            branches:
+              only:
+                - master
+      - build_k8s_bundles:
+          requires:
+            - test
+          filters:
+            branches:
+              only:
+                - master
+      - build_docker_packages:
+          requires:
+            - test
+          filters:
+            branches:
+              only:
+                - master
+      - build_k8s_packages:
           requires:
             - test
           filters:
