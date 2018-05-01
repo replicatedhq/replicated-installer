@@ -39,7 +39,7 @@ jobs:
             make build push
 
   build_k8s_bundles:
-    machine: true
+    machine:
       docker_layer_caching: true
     steps:
       - checkout
