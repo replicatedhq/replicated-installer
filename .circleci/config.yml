@@ -47,7 +47,7 @@ jobs:
       - run:
           name: make
           command: |
-            cd bundles/k8s-containers-v1.9.
+            cd bundles/k8s-containers-v1.9.3
             make deps update_k8s_manifest build retag push
             cd ../k8s-cni-v0.6.0
             make build push
