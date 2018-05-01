@@ -6,8 +6,9 @@ deps:
 
 update_k8s_manifest: clean
 	mkdir -p ./kubernetes-tmp
-	cp -r ${GOPATH}/src/github.com/linuxkit/kubernetes/pkg ./kubernetes-tmp/
-	cp -r ${GOPATH}/src/github.com/linuxkit/kubernetes/.git ./kubernetes-tmp/
+	# CircleCI GOPATH is two paths separated by :
+	cp -r $(shell echo ${GOPATH} | cut -d ':' -f 1)/src/github.com/linuxkit/kubernetes/pkg ./kubernetes-tmp/
+	cp -r $(shell echo ${GOPATH} | cut -d ':' -f 1)/src/github.com/linuxkit/kubernetes/.git ./kubernetes-tmp/
 	./mk-image-cache-lst common > ./kubernetes-tmp/pkg/kubernetes-docker-image-cache-common/images.lst
 	./mk-image-cache-lst control-plane > ./kubernetes-tmp/pkg/kubernetes-docker-image-cache-control-plane/images.lst
 
