@@ -27,17 +27,19 @@ def get_docker():
             tmpl_file = 'docker-install/1-12.sh'
         else:
             tmpl_file = 'docker-install/1-13.sh'
-    elif major == 17 and minor <= 3:
+    elif major == 17 and minor <= 5:
         tmpl_file = 'docker-install/17-03-ce.sh'
-    else:
+    elif major == 17 and minor <= 6:
         tmpl_file = 'docker-install/17-06-ce.sh'
+    else:
+        tmpl_file = 'docker-install/17-12-ce.sh'
     kwargs = {
         'deb_version':
-            helpers.get_docker_deb_pkg_version(docker_version, lsb_dist,
-                                               dist_version),
+        helpers.get_docker_deb_pkg_version(docker_version, lsb_dist,
+                                           dist_version),
         'rpm_version':
-            helpers.get_docker_rpm_pkg_version(docker_version, lsb_dist,
-                                               dist_version),
+        helpers.get_docker_rpm_pkg_version(docker_version, lsb_dist,
+                                           dist_version),
     }
     response = render_template(tmpl_file, **kwargs)
     return Response(response, mimetype='text/x-shellscript')
@@ -363,7 +365,8 @@ def get_replicated_compose_v2(replicated_channel=None,
 @app.route('/kubernetes-yml-generate.sh')
 @app.route('/<replicated_channel>/kubernetes-yml-generate')
 @app.route('/<app_slug>/<app_channel>/kubernetes-yml-generate')
-@app.route('/<replicated_channel>/<app_slug>/<app_channel>/kubernetes-yml-generate')
+@app.route(
+    '/<replicated_channel>/<app_slug>/<app_channel>/kubernetes-yml-generate')
 def get_replicated_kubernetes(replicated_channel=None,
                               app_slug=None,
                               app_channel=None):
@@ -379,8 +382,7 @@ def get_replicated_kubernetes(replicated_channel=None,
     replicated_ui_tag = '{}-{}'.format(replicated_channel,
                                        replicated_ui_version)
 
-    pv_base_path = helpers.get_arg('pv_base_path',
-                                   '/opt/replicated/rook')
+    pv_base_path = helpers.get_arg('pv_base_path', '/opt/replicated/rook')
     log_level = helpers.get_arg('log_level', 'info')
     release_sequence = helpers.get_arg('release_sequence', None)
     storage_class = helpers.get_arg('storage_class', 'default')
@@ -437,13 +439,14 @@ def get_swarm_init_master(replicated_channel=None,
 
     query = urllib.urlencode(request.args)
 
-    response = render_template('swarm-init.sh',
-                               **helpers.template_args(
-                                   pinned_docker_version=pinned_docker_version,
-                                   docker_compose_path=compose_path,
-                                   swarm_worker_join_path=worker_path,
-                                   app_channel_css=helpers.base64_encode(channel_css),
-                                   docker_compose_query=query, ))
+    response = render_template(
+        'swarm-init.sh',
+        **helpers.template_args(
+            pinned_docker_version=pinned_docker_version,
+            docker_compose_path=compose_path,
+            swarm_worker_join_path=worker_path,
+            app_channel_css=helpers.base64_encode(channel_css),
+            docker_compose_query=query, ))
     return Response(response, mimetype='text/x-shellscript')
 
 
@@ -485,8 +488,7 @@ def get_kubernetes_init_master(replicated_channel=None,
         replicated_version, 'kubernetes')
 
     pinned_kubernetes_version = helpers.get_pinned_kubernetes_version(
-        replicated_version
-    )
+        replicated_version)
 
     generate_path = 'kubernetes-yml-generate'
     node_path = 'kubernetes-node-join'
@@ -520,7 +522,8 @@ def get_kubernetes_init_master(replicated_channel=None,
 @app.route('/kubernetes-node-join')
 @app.route('/<replicated_channel>/kubernetes-node-join')
 @app.route('/<app_slug>/<app_channel>/kube-node-join')
-@app.route('/<replicated_channel>/<app_slug>/<app_channel>/kubernetes-node-join')
+@app.route(
+    '/<replicated_channel>/<app_slug>/<app_channel>/kubernetes-node-join')
 def get_kubernetes_node_join(replicated_channel=None,
                              app_slug=None,
                              app_channel=None):
@@ -530,20 +533,21 @@ def get_kubernetes_node_join(replicated_channel=None,
     pinned_docker_version = helpers.get_pinned_docker_version(
         replicated_version, 'kubernetes')
     pinned_kubernetes_version = helpers.get_pinned_kubernetes_version(
-        replicated_version
-    )
+        replicated_version)
 
     kubeadm_token = helpers.get_arg('kubeadm_token', '')
     kubeadm_token_ca_hash = helpers.get_arg('kubeadm_token_ca_hash', '')
-    kubernetes_master_address = helpers.get_arg('kubernetes_master_address', '')
+    kubernetes_master_address = helpers.get_arg('kubernetes_master_address',
+                                                '')
 
-    response = render_template('kubernetes-node-join.sh',
-                               **helpers.template_args(
-                                   pinned_docker_version=pinned_docker_version,
-                                   kubernetes_version=pinned_kubernetes_version,
-                                   kubernetes_master_address=kubernetes_master_address,
-                                   kubeadm_token=kubeadm_token,
-                                   kubeadm_token_ca_hash=kubeadm_token_ca_hash, ))
+    response = render_template(
+        'kubernetes-node-join.sh',
+        **helpers.template_args(
+            pinned_docker_version=pinned_docker_version,
+            kubernetes_version=pinned_kubernetes_version,
+            kubernetes_master_address=kubernetes_master_address,
+            kubeadm_token=kubeadm_token,
+            kubeadm_token_ca_hash=kubeadm_token_ca_hash, ))
     return Response(response, mimetype='text/x-shellscript')
 
 
@@ -593,6 +597,7 @@ def get_replicated_studio():
                                **helpers.template_args(
                                    studio_base_path=studio_path, ))
     return Response(response, mimetype='text/x-shellscript')
+
 
 @app.route('/studio-k8s')
 def get_replicated_studio_k8s():

@@ -144,22 +144,22 @@ getMaxDockerVersion() {
             MAX_DOCKER_VERSION_RESULT="1.9.1"
         fi
     fi
-    # Amazon Linux has Docker 17.06.2ce available to nearly all versions except 2017.03, which is at Docker 17.03.2ce
+    # Max Docker version on Amazon Linux 2 is 17.06.2.
     if [ "$LSB_DIST" = "amzn" ]; then
-        if [ "$_version" = "2017.03" ]; then 
-           MAX_DOCKER_VERSION_RESULT="17.03.2"
-        else 
-           MAX_DOCKER_VERSION_RESULT="17.06.2"
+        if [ "$DIST_VERSION_MAJOR" = "2" ]; then
+            MAX_DOCKER_VERSION_RESULT="17.06.2"
         fi
     fi
-    # Max Docker version on SUSE Linux Enterprise Server 12 SP1 is 1.12.6.
+    # Max Docker version on SUSE Linux Enterprise Server 12 is 17.09.1.
     if [ "$LSB_DIST" = "sles" ]; then
-        MAX_DOCKER_VERSION_RESULT="1.12.6"
+        if [ "$DIST_VERSION_MAJOR" = "12" ]; then
+            MAX_DOCKER_VERSION_RESULT="17.09.1"
+        fi
     fi
-    # Max Docker version on Oracle Linux 6.x seems to be 17.03.1.
+    # Max Docker version on Oracle Linux 6.x seems to be 17.05.0.
     if [ "$LSB_DIST" = "ol" ]; then
         if [ "$DIST_VERSION_MAJOR" = "6" ]; then
-            MAX_DOCKER_VERSION_RESULT="17.03.1"
+            MAX_DOCKER_VERSION_RESULT="17.05.0"
         fi
     fi
 }

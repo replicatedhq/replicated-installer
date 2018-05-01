@@ -129,16 +129,16 @@ _installDocker() {
     if [ "$LSB_DIST" = "amzn" ]; then
         # Docker install script no longer supports Amazon Linux
         printf "${GREEN}Installing docker from Yum repository${NC}\n"
-        # 1.12.6 and 17.06.2ce are available
-        compareDockerVersions "17.06.0" "${1}"
+        # 1.12.6 and 17.12.1ce are available
+        compareDockerVersions "17.12.0" "${1}"
         # if docker version is ce
         
         if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
-            yum -y -q install docker-17.06.2ce
+            yum -y -q install docker-17.12.1ce
         else
             compareDockerVersions "17.0.0" "${1}"
             if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
-               yum -y -q install docker-17.03.2ce
+               yum -y -q install docker-17.12.1ce
             else
                yum -y -q install docker-1.12.6
             fi
@@ -155,7 +155,8 @@ _installDocker() {
         return
     fi
 
-    if { [ "$LSB_DIST" = "rhel" ] || [ "$LSB_DIST" = "ol" ] ; } && [[ "${1}" == *"17.06"* ]]; then
+    # TODO: does this affect 17.12?
+    if { [ "$LSB_DIST" = "rhel" ] || [ "$LSB_DIST" = "ol" ] ; } && [ "$DIST_VERSION_MAJOR" = "7" ] && [[ "${1}" == *"17.06"* ]]; then
         if yum list installed "container-selinux" >/dev/null 2>&1; then
             # container-selinux installed
             printf "Skipping install of container-selinux as a version of it was already present\n"
