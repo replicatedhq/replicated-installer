@@ -28,6 +28,7 @@ KUBERNETES_NAMESPACE="default"
 KUBEADM_JOIN_COMMAND=
 KUBERNETES_VERSION="{{ kubernetes_version }}"
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
+IP_ALLOC_RANGE=
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -129,67 +130,11 @@ ensureCNIPlugins() {
     logSuccess "CNI configured"
 }
 
-weavenetDeploy() {
-    logStep "deploy weave network"
-
-    getUrlCmd
-    # todo if airgap, copy from pkg
-    if [ "$AIRGAP" = "1" ]; then
-        cp kubernetes-weave.yml /tmp/weave.yml
-    else
-        $URLGET_CMD "{{ replicated_install_url }}/{{ kubernetes_weave_path }}?{{ kubernetes_weave_query }}" \
-            > /tmp/weave.yml
-    fi
-    kubectl apply -f /tmp/weave.yml -n kube-system
-    logSuccess "weave network deployed"
-}
-
 untaintMaster() {
     logStep "remove NoSchedule taint from master node"
     kubectl taint nodes --all node-role.kubernetes.io/master:NoSchedule- || \
         echo "Taint not found or already removed. The above error can be ignored."
     logSuccess "master taint removed"
-}
-
-rookDeploy() {
-    logStep "deploy rook"
-
-    getUrlCmd
-    if [ "$AIRGAP" -ne "1" ]; then
-        $URLGET_CMD "{{ replicated_install_url }}/{{ kubernetes_generate_path }}?{{ kubernetes_manifests_query }}" \
-            > /tmp/kubernetes-yml-generate.sh
-    else
-        cp kubernetes-yml-generate.sh /tmp/kubernetes-yml-generate.sh
-    fi
-
-    getYAMLOpts
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_system_yaml=1 > /tmp/rook-system.yml
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_cluster_yaml=1 > /tmp/rook.yml
-
-    kubectl apply -f /tmp/rook-system.yml
-    spinnerRookReady # creating the cluster before the operator is ready fails
-    kubectl apply -f /tmp/rook.yml
-    logSuccess "Rook deployed"
-}
-
-kubernetesDeploy() {
-    logStep "deploy replicated components"
-
-    getUrlCmd
-    if [ "$AIRGAP" -ne "1" ]; then
-        $URLGET_CMD "{{ replicated_install_url }}/{{ kubernetes_generate_path }}?{{ kubernetes_manifests_query }}" \
-            > /tmp/kubernetes-yml-generate.sh
-    else
-        cp kubernetes-yml-generate.sh /tmp/kubernetes-yml-generate.sh
-    fi
-
-    logStep "generate manifests"
-    getYAMLOpts
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS > /tmp/kubernetes.yml
-
-    kubectl apply -f /tmp/kubernetes.yml -n $KUBERNETES_NAMESPACE
-    kubectl -n $KUBERNETES_NAMESPACE get pods,svc
-    logSuccess "Replicated Daemon"
 }
 
 getYAMLOpts() {
@@ -206,7 +151,54 @@ getYAMLOpts() {
     if [ -n "$UI_BIND_PORT" ]; then
         opts=$opts" ui-bind-port=$UI_BIND_PORT"
     fi
+    if [ -n "IP_ALLOC_RANGE" ]; then
+        opts=$opts" ip-alloc-range=$IP_ALLOC_RANGE"
+    fi
     YAML_GENERATE_OPTS="$opts"
+}
+
+getK8sYmlGenerator() {
+    getUrlCmd
+    if [ "$AIRGAP" -ne "1" ]; then
+        $URLGET_CMD "{{ replicated_install_url }}/{{ kubernetes_generate_path }}?{{ kubernetes_manifests_query }}" \
+            > /tmp/kubernetes-yml-generate.sh
+    else
+        cp kubernetes-yml-generate.sh /tmp/kubernetes-yml-generate.sh
+    fi
+
+    getYAMLOpts
+}
+
+weavenetDeploy() {
+    logStep "deploy weave network"
+
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS weave_yaml=1 > /tmp/weave.yml
+
+    kubectl apply -f /tmp/weave.yml -n kube-system
+    logSuccess "weave network deployed"
+}
+
+rookDeploy() {
+    logStep "deploy rook"
+
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_system_yaml=1 > /tmp/rook-system.yml
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_cluster_yaml=1 > /tmp/rook.yml
+
+    kubectl apply -f /tmp/rook-system.yml
+    spinnerRookReady # creating the cluster before the operator is ready fails
+    kubectl apply -f /tmp/rook.yml
+    logSuccess "Rook deployed"
+}
+
+kubernetesDeploy() {
+    logStep "deploy replicated components"
+
+    logStep "generate manifests"
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS > /tmp/kubernetes.yml
+
+    kubectl apply -f /tmp/kubernetes.yml -n $KUBERNETES_NAMESPACE
+    kubectl -n $KUBERNETES_NAMESPACE get pods,svc
+    logSuccess "Replicated Daemon"
 }
 
 outro() {
@@ -318,6 +310,9 @@ while [ "$1" != "" ]; do
             ;;
         http-proxy|http_proxy)
             PROXY_ADDRESS="$_value"
+            ;;
+        ip-alloc-range|ip_alloc_range)
+            IP_ALLOC_RANGE="$_value"
             ;;
         log-level|log_level)
             LOG_LEVEL="$_value"
@@ -442,6 +437,8 @@ initKube
 
 kubectl cluster-info
 logSuccess "Cluster Initialized"
+
+getK8sYmlGenerator
 
 weavenetDeploy
 
