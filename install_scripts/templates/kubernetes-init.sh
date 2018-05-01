@@ -25,7 +25,6 @@ USER_ID=
 BOOTSTRAP_TOKEN=
 BOOTSTRAP_TOKEN_TTL="24h"
 KUBERNETES_NAMESPACE="default"
-KUBEADM_JOIN_COMMAND=
 KUBERNETES_VERSION="{{ kubernetes_version }}"
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
 IP_ALLOC_RANGE=
@@ -87,7 +86,8 @@ initKube() {
 
         kubeadm init \
             --skip-preflight-checks \
-            --config /opt/replicated/kubeadm.conf
+            --config /opt/replicated/kubeadm.conf \
+            | tee /tmp/kubeadm-init
         _status=$?
         set -e
         if [ "$_status" -ne "0" ]; then
@@ -113,14 +113,6 @@ maybeGenerateBootstrapToken() {
     fi
     echo "Kubernetes bootstrap token: ${BOOTSTRAP_TOKEN}"
     echo "This token will expire in 24 hours"
-
-    # if kubelet is already running this is another run of the isntall script,
-    # so create the token in k8s api
-    if ps aux | grep -qE "[k]ubelet"; then
-        KUBEADM_JOIN_COMMAND=$(kubeadm token create $BOOTSTRAP_TOKEN --ttl ${BOOTSTRAP_TOKEN_TTL} --print-join-command)
-    fi
-
-    logSuccess "bootstrap token set"
 }
 
 ensureCNIPlugins() {
@@ -239,6 +231,7 @@ outroKubeadm() {
       fi
     fi
 
+    KUBEADM_TOKEN_CA_HASH=$(cat /tmp/kubeadm-init | grep 'kubeadm join' | awk '{ print $(NF) }')
 
     printf "\n"
     printf "\t\t${GREEN}Installation${NC}\n"
@@ -254,14 +247,14 @@ outroKubeadm() {
         printf "\n"
         printf "\n"
         # This cut -d works in 1.9.3, we will need to test again in later kubeadm versions. Once phases are out of alpha lets use those
-        printf "${GREEN}    cat ./kubernetes-node-join.sh  | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$(echo ${KUBEADM_JOIN_COMMAND} | cut -d ' ' -f 7) \n"
+        printf "${GREEN}    cat ./kubernetes-node-join.sh  | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH \n"
         printf "${NC}"
         printf "\n"
         printf "\n"
     else
         printf "\nTo add nodes to this installation, run the following script on your other nodes"
         printf "\n"
-        printf "${GREEN}    curl {{ replicated_install_url }}/{{ kubernetes_node_join_path }} | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$(echo ${KUBEADM_JOIN_COMMAND} | cut -d ' ' -f 7) \n"
+        printf "${GREEN}    curl {{ replicated_install_url }}/{{ kubernetes_node_join_path }} | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH \n"
         printf "${NC}"
         printf "\n"
         printf "\n"
