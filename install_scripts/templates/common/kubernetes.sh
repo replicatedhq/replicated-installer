@@ -44,7 +44,7 @@ installCNIPlugins() {
         docker load < k8s-cni.tar
     fi
 
-    docker run -v /tmp:/out replicated/k8s-cni:v1.9.3
+    docker run -v /tmp:/out quay.io/replicated/k8s-cni:v1.9.3
     tar zxfv /tmp/cni.tar.gz -C /opt/cni/bin
     mkdir -p /etc/cni/net.d
 }
@@ -109,7 +109,7 @@ installComponentsApt() {
 
     docker run \
       -v $PWD:/out \
-      "replicated/k8s-packages:ubuntu-1604-{{ kubernetes_version }}"
+      "quay.io/replicated/k8s-packages:ubuntu-1604-{{ kubernetes_version }}"
 
     pushd archives
         dpkg -i *.deb
@@ -134,7 +134,7 @@ airgapLoadKubernetesCommonImages() {
     docker load < k8s-images-common.tar
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "replicated/k8s-images-common:v1.9.3-20180222"
+        "quay.io/replicated/k8s-images-common:v1.9.3-20180501"
 
     # uh. its kind of insane that we have to do this. the linuxkit pkg
     # comes to us without tags, which seems super useless... we should build our own bundler maybe
@@ -145,6 +145,7 @@ airgapLoadKubernetesCommonImages() {
     docker tag 99e59f495ffa gcr.io/google_containers/pause-amd64:3.0
     docker tag 222ab9e78a83 weaveworks/weave-kube:2.2.0
     docker tag 765b48853ac0 weaveworks/weave-npc:2.2.0
+    docker tag 09747e7cdd74 weaveworks/weaveexec:2.2.0
 
     docker load < rook.tar
 
@@ -167,7 +168,7 @@ airgapLoadKubernetesControlImages() {
     docker load < k8s-images-control.tar
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "replicated/k8s-images-control:v1.9.3-20180222"
+        "quay.io/replicated/k8s-images-control:v1.9.3-20180222"
     # uh. its kind of insane that we have to do this. the linuxkit pkg
     # comes to us without tags, which seems super useless... we should build our own bundler maybe
     docker tag 83dbda6ee810 gcr.io/google_containers/kube-controller-manager-amd64:v1.9.3
@@ -219,7 +220,7 @@ EOF
 
     docker run \
       -v $PWD:/out \
-      "replicated/k8s-packages:rhel-7-{{ kubernetes_version }}"
+      "quay.io/replicated/k8s-packages:rhel-7-{{ kubernetes_version }}"
 
     pushd archives
         rpm --upgrade --force *.rpm
