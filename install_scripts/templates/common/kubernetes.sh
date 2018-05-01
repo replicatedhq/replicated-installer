@@ -222,7 +222,7 @@ EOF
       "replicated/k8s-packages:rhel-7-{{ kubernetes_version }}"
 
     pushd archives
-        yum install -y -q *.rpm
+        rpm --upgrade --force *.rpm
     popd
     rm -rf archives
     logSuccess "Kubernetes components downloaded"
