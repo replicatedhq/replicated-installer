@@ -94,24 +94,3 @@ workflows:
             branches:
               only:
                 - master
-      - build_k8s_bundles:
-          requires:
-            - test
-          filters:
-            branches:
-              only:
-                - master
-      - build_docker_packages:
-          requires:
-            - test
-          filters:
-            branches:
-              only:
-                - master
-      - build_k8s_packages:
-          requires:
-            - test
-          filters:
-            branches:
-              only:
-                - master
