@@ -224,6 +224,7 @@ EOF
 
     pushd archives
         rpm --upgrade --force *.rpm
+        service docker restart
     popd
     rm -rf archives
     logSuccess "Kubernetes components downloaded"
@@ -403,4 +404,33 @@ weave_reset()
     for LOCAL_IFNAME in $(ip link show | grep v${CONTAINER_IFNAME}pl | cut -d ' ' -f 2 | tr -d ':') ; do
         ip link del ${LOCAL_IFNAME%@*} >/dev/null 2>&1 || true
     done
+}
+
+k8s_reset() {
+    # delete all non-system pods before calling kubeadm reset to prevent it hanging
+    if commandExists "kubectl"; then
+        namespaces=$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get namespaces --output=go-template --template="{{ '{{' }}range .items{{ '}}{{' }}.metadata.name{{ '}}' }} {{ '{{' }}end{{ '}}' }}")
+        for namespace in $namespaces; do
+            case "$namespace" in
+            kube-system|kube-public|rook|rook-system)
+                ;;
+            *)
+                KUBECONFIG=/etc/kubernetes/admin.conf kubectl --namespace default delete deployments,statefulsets,daemonsets,cronjobs.v1beta1.batch,jobs,pods --all
+                ;;
+            esac
+        done
+    fi
+
+    if commandExists "kubeadm"; then
+        kubeadm reset
+    fi
+
+    weave_reset
+
+    rm -rf /opt/replicated
+    rm -rf /opt/cni
+    rm -rf /etc/kubernetes
+    rm -rf /var/lib/replicated
+    rm -rf /var/lib/etcd
+    rm -f /usr/bin/kubeadm /usr/bin/kubelet /usr/bin/kubectl
 }

@@ -352,17 +352,7 @@ while [ "$1" != "" ]; do
 done
 
 if [ "$RESET" == "1" ]; then
-    kubeadm reset
-
-    weave_reset
-
-    rm -rf /opt/replicated
-    rm -rf /opt/cni
-    rm -rf /etc/kubernetes
-    rm -rf /var/lib/replicated
-    rm -rf /var/lib/etcd
-    rm -f /usr/bin/kubeadm /usr/bin/kubelet /usr/bin/kubectl
-
+    k8s_reset
     outroReset
 	exit 0
 fi
