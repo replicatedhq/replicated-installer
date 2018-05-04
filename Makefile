@@ -1,3 +1,14 @@
+.PHONY: build dev shell shell_composer shell_composer_dex shell_composer_linux shell_composer_prod test run
+
+SHELL := /bin/bash
+#paths within WSL start with /mnt/c/...
+#docker does not recognize this fact
+#this strips the first 5 characters (leaving /c/...) if the kernel releaser is Microsoft
+ifeq ($(shell uname -r | tail -c 10), Microsoft)
+	BUILD_DIR := $(shell pwd | cut -c 5-)
+else
+	BUILD_DIR := $(shell pwd)
+endif
 
 build:
 	docker build -t install-scripts -f deploy/Dockerfile.prod .
@@ -15,7 +26,7 @@ shell:
 		-e MYSQL_HOST=192.168.100.100 \
 		-e MYSQL_PORT=3306 \
 		-e MYSQL_DB=replicated \
-		-v "`pwd`":/usr/src/app \
+		-v $(BUILD_DIR):/usr/src/app \
 		install-scripts-dev \
 		/bin/bash
 
@@ -30,7 +41,7 @@ shell_composer:
 		-e MYSQL_HOST=172.17.0.1 \
 		-e MYSQL_PORT=3306 \
 		-e MYSQL_DB=replicated \
-		-v "`pwd`":/usr/src/app \
+		-v $(BUILD_DIR):/usr/src/app \
 		install-scripts-dev \
 		/bin/bash
 
@@ -46,7 +57,7 @@ shell_composer_prod:
 		-e MYSQL_HOST=172.17.0.1 \
 		-e MYSQL_PORT=3306 \
 		-e MYSQL_DB=replicated \
-		-v "`pwd`":/usr/src/app \
+		-v $(BUILD_DIR):/usr/src/app \
 		install-scripts-dev \
 		/bin/bash
 
@@ -62,7 +73,7 @@ shell_composer_dex:
 		-e MYSQL_HOST=172.17.0.1 \
 		-e MYSQL_PORT=3306 \
 		-e MYSQL_DB=replicated \
-		-v "`pwd`":/usr/src/app \
+		-v $(BUILD_DIR):/usr/src/app \
 		install-scripts-dev \
 		/bin/bash
 
@@ -77,7 +88,7 @@ shell_composer_linux:
 		-e MYSQL_HOST=172.17.0.1 \
 		-e MYSQL_PORT=3306 \
 		-e MYSQL_DB=replicated \
-		-v "`pwd`":/usr/src/app \
+		-v $(BUILD_DIR):/usr/src/app \
 		install-scripts-dev \
 		/bin/bash
 test:
