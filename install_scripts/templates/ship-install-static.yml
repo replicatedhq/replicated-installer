@@ -5,6 +5,7 @@ services:
     image: replicated/ship:alpha
     volumes:
         - $PWD:/out
+        - /var/run/docker.sock:/var/run/docker.sock
     command:
       - --customer-id=$CUSTOMER_ID
       - --customer-endpoint=$CUSTOMER_ENDPOINT
