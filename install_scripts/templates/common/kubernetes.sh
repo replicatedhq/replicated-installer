@@ -134,7 +134,7 @@ airgapLoadKubernetesCommonImages() {
     docker load < k8s-images-common.tar
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.9.3-20180501"
+        "quay.io/replicated/k8s-images-common:v1.9.3-20180507"
 
     # uh. its kind of insane that we have to do this. the linuxkit pkg
     # comes to us without tags, which seems super useless... we should build our own bundler maybe
@@ -146,6 +146,7 @@ airgapLoadKubernetesCommonImages() {
     docker tag 222ab9e78a83 weaveworks/weave-kube:2.2.0
     docker tag 765b48853ac0 weaveworks/weave-npc:2.2.0
     docker tag 09747e7cdd74 weaveworks/weaveexec:2.2.0
+    docker tag d1fd7d86a825 registry:2
 
     docker load < rook.tar
 

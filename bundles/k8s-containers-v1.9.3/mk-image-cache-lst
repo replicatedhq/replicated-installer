@@ -16,6 +16,7 @@ kube_dns_version=1.14.7
 pause_version=3.0
 etcd_version=3.1.11
 weave_version=2.2.0
+registry_version=2
 
 common="
 	$repo/kube-proxy-amd64:$kubernetes_version
@@ -25,7 +26,8 @@ common="
 	$repo/pause-amd64:$pause_version
 	weaveworks/weave-kube:$weave_version
 	weaveworks/weave-npc:$weave_version
-	weaveworks/weaveexec:$weave_version"
+	weaveworks/weaveexec:$weave_version
+	registry:$registry_version"
 
 control="
 	$repo/kube-apiserver-amd64:$kubernetes_version

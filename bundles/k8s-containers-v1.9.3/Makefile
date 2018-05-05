@@ -17,13 +17,13 @@ build:
 	linuxkit pkg build ./kubernetes-tmp/pkg/kubernetes-docker-image-cache-control-plane
 
 retag:
-	docker tag linuxkit/kubernetes-docker-image-cache-common:a4eb1313407e72fda5789b9ca604997650126539-dirty-amd64 quay.io/replicated/k8s-images-common:v1.9.3-20180501
+	docker tag linuxkit/kubernetes-docker-image-cache-common:a4eb1313407e72fda5789b9ca604997650126539-dirty-amd64 quay.io/replicated/k8s-images-common:v1.9.3-20180507
 	docker tag linuxkit/kubernetes-docker-image-cache-control-plane:e41541ca040a0001e02dd5c8ac40e0ae38110a7a-dirty-amd64 quay.io/replicated/k8s-images-control:v1.9.3-20180222
 
 
 
 push:
-	docker push quay.io/replicated/k8s-images-common:v1.9.3-20180501
+	docker push quay.io/replicated/k8s-images-common:v1.9.3-20180507
 	docker push quay.io/replicated/k8s-images-control:v1.9.3-20180222
 
 clean:
