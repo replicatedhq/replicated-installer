@@ -409,7 +409,7 @@ weave_reset()
 
 k8s_reset() {
     # delete all non-system pods before calling kubeadm reset to prevent it hanging
-    if commandExists "kubectl"; then
+    if commandExists "kubectl" && [ -f "/opt/replicated/kubeadm.conf" ]; then
         namespaces=$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get namespaces --output=go-template --template="{{ '{{' }}range .items{{ '}}{{' }}.metadata.name{{ '}}' }} {{ '{{' }}end{{ '}}' }}")
         for namespace in $namespaces; do
             case "$namespace" in
