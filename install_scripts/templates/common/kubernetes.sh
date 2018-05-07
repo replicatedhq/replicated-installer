@@ -408,18 +408,14 @@ weave_reset()
 }
 
 k8s_reset() {
-    # delete all non-system pods before calling kubeadm reset to prevent it hanging
     if commandExists "kubectl" && [ -f "/opt/replicated/kubeadm.conf" ]; then
-        namespaces=$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get namespaces --output=go-template --template="{{ '{{' }}range .items{{ '}}{{' }}.metadata.name{{ '}}' }} {{ '{{' }}end{{ '}}' }}")
-        for namespace in $namespaces; do
-            case "$namespace" in
-            kube-system|kube-public|rook|rook-system)
-                ;;
-            *)
-                KUBECONFIG=/etc/kubernetes/admin.conf kubectl --namespace default delete deployments,statefulsets,daemonsets,cronjobs.v1beta1.batch,jobs,pods --all
-                ;;
-            esac
+        set +e
+        nodes=$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes --output=go-template --template="{{ '{{' }}range .items{{ '}}{{' }}.metadata.name{{ '}}' }} {{ '{{' }}end{{ '}}' }}")
+        for node in $nodes; do
+            KUBECONFIG=/etc/kubernetes/admin.conf kubectl drain "$node" --delete-local-data --force --ignore-daemonsets
+            KUBECONFIG=/etc/kubernetes/admin.conf kubectl delete node "$node"
         done
+        set -e
     fi
 
     if commandExists "kubeadm"; then
