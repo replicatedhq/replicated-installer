@@ -208,6 +208,9 @@ if [ "$AIRGAP" = "1" ]; then
     promptForCA
     echo "$(echo "$CA" | base64 --decode)" > "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS/ca.crt"
     airgapLoadKubernetesCommonImages
+else
+    docker pull registry:2.6.2
+    docker tag registry:2.6.2 registry:2
 fi
 
 joinKubernetes
