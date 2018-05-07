@@ -405,6 +405,8 @@ systemctl enable kubelet && systemctl start kubelet
 if [ "$AIRGAP" = "1" ]; then
     airgapLoadKubernetesCommonImages
     airgapLoadKubernetesControlImages
+else
+    docker pull registry:2.6.2
 fi
 
 ensureCNIPlugins
