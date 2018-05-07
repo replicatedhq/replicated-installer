@@ -210,6 +210,7 @@ if [ "$AIRGAP" = "1" ]; then
     airgapLoadKubernetesCommonImages
 else
     docker pull registry:2.6.2
+    docker tag registry:2.6.2 registry:2
 fi
 
 joinKubernetes
