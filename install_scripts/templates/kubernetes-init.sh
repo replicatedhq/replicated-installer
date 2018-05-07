@@ -403,12 +403,6 @@ installKubernetesComponents
 systemctl enable kubelet && systemctl start kubelet
 
 if [ "$AIRGAP" = "1" ]; then
-    logStep "Loading replicated and replicated-ui images from package\n"
-    airgapLoadReplicatedImages
-    logStep "Loading replicated debian, command, statsd-graphite, and premkit images from package\n"
-    airgapLoadSupportImages
-    airgapMaybeLoadSupportBundle
-    airgapMaybeLoadRetraced
     airgapLoadKubernetesCommonImages
     airgapLoadKubernetesControlImages
 fi
@@ -444,6 +438,15 @@ if [ "$KUBERNETES_ONLY" -eq "1" ]; then
     spinnerKubeSystemReady
     outroKubeadm
     exit 0
+fi
+
+if [ "$AIRGAP" = "1" ]; then
+    logStep "Loading replicated and replicated-ui images from package\n"
+    airgapLoadReplicatedImages
+    logStep "Loading replicated debian, command, statsd-graphite, and premkit images from package\n"
+    airgapLoadSupportImages
+    airgapMaybeLoadSupportBundle
+    airgapMaybeLoadRetraced
 fi
 
 kubernetesDeploy
