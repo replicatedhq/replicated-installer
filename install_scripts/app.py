@@ -606,3 +606,9 @@ def get_replicated_studio_k8s():
                                **helpers.template_args(
                                    studio_base_path=studio_path, ))
     return Response(response, mimetype='text/x-shellscript')
+
+@app.route('/compose/ship.yml')
+def get_ship_yaml():
+    response = render_template('ship-install-static.yml')
+    return Response(response, mimetype='text/x-docker-compose')
+
