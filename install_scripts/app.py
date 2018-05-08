@@ -614,7 +614,7 @@ def get_ship_yaml():
     if not customer_id:
         abort(400)
 
-    response = render_template('ship-install-static.yml', 
+    response = render_template('ship-install-dynamic.yml', 
                                 **helpers.template_args(
                                     customer_id=customer_id, ))
     return Response(response, mimetype='text/x-docker-compose')
