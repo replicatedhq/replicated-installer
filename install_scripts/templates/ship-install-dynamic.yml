@@ -7,7 +7,7 @@ services:
         - $PWD:/out
         - /var/run/docker.sock:/var/run/docker.sock
     command:
-      - --customer-id=$CUSTOMER_ID
+      - --customer-id={{ customer_id }}
       - --customer-endpoint=$CUSTOMER_ENDPOINT
       - --log-level=$LOG_LEVEL
     ports:
