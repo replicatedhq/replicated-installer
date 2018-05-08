@@ -609,6 +609,13 @@ def get_replicated_studio_k8s():
 
 @app.route('/compose/ship.yml')
 def get_ship_yaml():
-    response = render_template('ship-install-static.yml')
+    customer_id = helpers.get_arg('customer_id')
+
+    if not customer_id:
+        abort(400)
+
+    response = render_template('ship-install-static.yml', 
+                                **helpers.template_args(
+                                    customer_id=customer_id, ))
     return Response(response, mimetype='text/x-docker-compose')
 
