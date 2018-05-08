@@ -139,7 +139,12 @@ _installDocker() {
     elif [ "$LSB_DIST" = "sles" ]; then
         # Docker install script no longer supports SUSE
         printf "${GREEN}Installing docker from Zypper repository${NC}\n"
-        sudo zypper -n install "docker=${1}"
+        compareDockerVersions "17.0.0" "${1}"
+        if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
+            sudo zypper -n install "docker=${1}_ce"
+        else
+            sudo zypper -n install "docker=${1}"
+        fi
         service docker start || true
         DID_INSTALL_DOCKER=1
         return
