@@ -610,12 +610,15 @@ def get_replicated_studio_k8s():
 @app.route('/compose/ship.yml')
 def get_ship_yaml():
     customer_id = helpers.get_arg('customer_id')
+    log_level = helpers.get_arg('log_level', 'off')
 
     if not customer_id:
-        abort(400)
+        return helpers.compose_400("Missing or invalid parameters: customer_id")
 
     response = render_template('ship-install-dynamic.yml', 
                                 **helpers.template_args(
-                                    customer_id=customer_id, ))
+                                    customer_id=customer_id,
+                                    log_level=log_level))
+
     return Response(response, mimetype='text/x-docker-compose')
 
