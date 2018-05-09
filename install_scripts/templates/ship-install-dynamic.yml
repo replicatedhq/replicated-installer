@@ -7,9 +7,10 @@ services:
         - $PWD:/out
         - /var/run/docker.sock:/var/run/docker.sock
     command:
-      - --customer-id={{ customer_id }}
-      - --customer-endpoint=$CUSTOMER_ENDPOINT
-      - --log-level=$LOG_LEVEL
+      - --customer-id={{ customer_id }}{% if replicated_prem_graphql_endpoint != 'https://pg.replicated.com/graphql' %}
+      - --customer-endpoint={{ replicated_prem_graphql_endpoint }}
+{%- endif %}
+      - --log-level={{ log_level }}
     ports:
       - 8880:8880
 

@@ -6,12 +6,20 @@ import os
 import yaml
 
 import semver
-from flask import request
+from flask import request, render_template, Response
 
 from . import db
 
 _default_docker_version = '17.12.1'
 
+def compose_400(error_message="Bad Request"):
+    response = render_template('4xx/compose_400.yml',
+        **template_args(
+            error_message=error_message,
+            base_url=request.base_url,
+        )
+    )
+    return Response(response, status=400, mimetype='text/x-docker-compose')
 
 def template_args(**kwargs):
     args = {
@@ -25,6 +33,8 @@ def template_args(**kwargs):
         get_environment_tag_suffix(os.getenv('ENVIRONMENT', 'production')),
         'replicated_install_url':
         os.getenv('REPLICATED_INSTALL_URL', 'https://get.replicated.com'),
+        'replicated_prem_graphql_endpoint':
+        os.getenv('REPLICATED_PREM_GRAPHQL_ENDPOINT', 'https://pg.replicated.com/graphql'),
         'replicated_docker_host':
         os.getenv('REPLICATED_DOCKER_HOST', 'quay.io'),
     }

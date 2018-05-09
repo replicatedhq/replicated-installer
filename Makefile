@@ -35,7 +35,8 @@ shell_composer:
 	docker run -it --rm --name install-scripts \
 		-p 8090:5000/tcp \
 		-e ENVIRONMENT=dev \
-		-e REPLICATED_INSTALL_URL=http://192.168.50.1:8090 \
+		-e REPLICATED_INSTALL_URL=http://localhost:8090 \
+		-e REPLICATED_PREM_GRAPHQL_ENDPOINT=http://172.17.0.1:8033/graphql  \
 		-e MYSQL_USER=replicated \
 		-e MYSQL_PASS=password \
 		-e MYSQL_HOST=172.17.0.1 \
