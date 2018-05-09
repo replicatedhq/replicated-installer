@@ -132,12 +132,6 @@ getMaxDockerVersion() {
             MAX_DOCKER_VERSION_RESULT="1.7.1"
         fi
     fi
-    # Max Docker version on Fedora 21 is 1.9.1.
-    if [ "$LSB_DIST" = "fedora" ]; then
-        if [ "$DIST_VERSION_MAJOR" = "21" ]; then
-            MAX_DOCKER_VERSION_RESULT="1.9.1"
-        fi
-    fi
     # Max Docker version on Ubuntu 15.04 is 1.9.1.
     if [ "$LSB_DIST" = "ubuntu" ]; then
         if [ "$DIST_VERSION" = "15.04" ]; then
