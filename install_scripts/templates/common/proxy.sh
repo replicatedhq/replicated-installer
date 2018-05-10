@@ -83,7 +83,7 @@ discoverProxy() {
 #   None
 #######################################
 requireDockerProxy() {
-    if docker info 2>/dev/null | grep -q "Http Proxy:"; then
+    if docker info 2>/dev/null | grep -q -i "Http Proxy:"; then
         return
     fi
 
@@ -172,7 +172,7 @@ checkDockerProxyConfig() {
     if [ "$DID_CONFIGURE_DOCKER_PROXY" != "1" ]; then
         return
     fi
-    if docker info 2>/dev/null | grep -q "Http Proxy:"; then
+    if docker info 2>/dev/null | grep -q -i "Http Proxy:"; then
         return
     fi
 

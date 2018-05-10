@@ -78,6 +78,20 @@ shell_composer_dex:
 		install-scripts-dev \
 		/bin/bash
 
+shell_composer_smitha:
+	docker run -it --rm --name install-scripts \
+		-p 8090:5000/tcp \
+		-e ENVIRONMENT=dev \
+		-e REPLICATED_INSTALL_URL=https://smitha.ngrok.io \
+		-e MYSQL_USER=replicated \
+		-e MYSQL_PASS=password \
+		-e MYSQL_HOST=172.17.0.1 \
+		-e MYSQL_PORT=3306 \
+		-e MYSQL_DB=replicated \
+		-v $(BUILD_DIR):/usr/src/app \
+		install-scripts-dev \
+		/bin/bash
+
 # shell for running mysql from saas composer on linux
 shell_composer_linux:
 	docker run -it --rm --name install-scripts \
