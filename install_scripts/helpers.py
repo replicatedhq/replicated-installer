@@ -235,10 +235,10 @@ def get_channel_css(app_slug, app_channel):
 
 def does_customer_exist(customer_id):
     cursor = db.get().cursor()
-    query = ('SELECT 1 '
+    query = ('SELECT id '
              'FROM customer '
-             'WHERE customer_id = %s')
-    cursor.execute(query, (customer_id))
+             'WHERE id = %s')
+    cursor.execute(query, (customer_id,))
     row = cursor.fetchone()
     if row:
         return True
@@ -293,7 +293,7 @@ def get_environment_tag_suffix(env):
 
 
 def compose_400(error_message="Bad Request"):
-    response = render_template('4xx/compose_400.yml',
+    response = render_template('error/compose_400.yml',
         **template_args(
             error_message=error_message,
             base_url=request.base_url,
@@ -303,10 +303,17 @@ def compose_400(error_message="Bad Request"):
 
 
 def compose_404(error_message="Not Found"):
-    response = render_template('4xx/compose_404.yml',
+    response = render_template('error/compose_404.yml',
         **template_args(
             error_message=error_message,
             base_url=request.base_url,
         )
     )
     return Response(response, status=404, mimetype='text/x-docker-compose')
+
+def compose_500():
+    response = render_template('error/compose_500.yml',
+                               **template_args(
+                                   base_url=request.base_url,
+                               ))
+    return Response(response, status=500, mimetype='text/x-docker-compose')
