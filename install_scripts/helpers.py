@@ -12,15 +12,6 @@ from . import db
 
 _default_docker_version = '17.12.1'
 
-def compose_400(error_message="Bad Request"):
-    response = render_template('4xx/compose_400.yml',
-        **template_args(
-            error_message=error_message,
-            base_url=request.base_url,
-        )
-    )
-    return Response(response, status=400, mimetype='text/x-docker-compose')
-
 def template_args(**kwargs):
     args = {
         'pinned_docker_version':
@@ -242,6 +233,17 @@ def get_channel_css(app_slug, app_channel):
         return row[0]
     return ''
 
+def does_customer_exist(customer_id):
+    cursor = db.get().cursor()
+    query = ('SELECT 1 '
+             'FROM customer '
+             'WHERE customer_id = %s')
+    cursor.execute(query, (customer_id))
+    row = cursor.fetchone()
+    if row:
+        return True
+    return False
+
 
 # Produce base64 encoding with linebreaks.
 def base64_encode(data):
@@ -288,3 +290,23 @@ def get_environment_tag_suffix(env):
     if env == 'staging':
         return '.staging'
     return ''
+
+
+def compose_400(error_message="Bad Request"):
+    response = render_template('4xx/compose_400.yml',
+        **template_args(
+            error_message=error_message,
+            base_url=request.base_url,
+        )
+    )
+    return Response(response, status=400, mimetype='text/x-docker-compose')
+
+
+def compose_404(error_message="Not Found"):
+    response = render_template('4xx/compose_404.yml',
+        **template_args(
+            error_message=error_message,
+            base_url=request.base_url,
+        )
+    )
+    return Response(response, status=404, mimetype='text/x-docker-compose')

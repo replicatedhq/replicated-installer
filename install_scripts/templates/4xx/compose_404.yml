@@ -1,0 +1,18 @@
+---
+version: '3.3'
+services: 
+  print_error:
+    image: alpine:latest
+    command:
+      - /bin/sh
+      - -c
+      - |
+        echo '
+            404: Not Found
+            There was an error processing the request to generate the installation script
+
+                Request Path: {{ base_url }}
+                Error: {{ error_message }}
+              
+        '
+        exit 1

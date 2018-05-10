@@ -2,12 +2,13 @@
 version: '3.3'
 services:
   ship:
-    image: replicated/ship:alpha
+    image: replicated/ship:{{ ship_tag }}
     volumes:
         - $PWD:/out
         - /var/run/docker.sock:/var/run/docker.sock
     command:
-      - --customer-id={{ customer_id }}{% if replicated_prem_graphql_endpoint != 'https://pg.replicated.com/graphql' %}
+      - --customer-id={{ customer_id }}
+      - --installation-id={{ installation_id }}{% if replicated_prem_graphql_endpoint != 'https://pg.replicated.com/graphql' %}
       - --customer-endpoint={{ replicated_prem_graphql_endpoint }}
 {%- endif %}
       - --log-level={{ log_level }}
@@ -15,6 +16,6 @@ services:
       - 8880:8880
 
   console:
-    image: replicated/ship-console:alpha
+    image: replicated/ship-console:{{ ship_console_tag }}
     ports:
       - 8025:80
