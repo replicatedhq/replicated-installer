@@ -78,12 +78,18 @@ airgapMaybeLoadSupportBundle() {
 #######################################
 airgapMaybeLoadRetraced() {
     printf "Loading audit log images from package\n"
+    # these have been included together prior to 2.21.0
+    if [ -f retraced-processor.tar ]; then
+        docker load < retraced-processor.tar
+        docker load < retraced-postgres.tar
+        docker load < retraced-nsqd.tar
+        docker load < retraced-db.tar
+        docker load < retraced-api.tar
+        docker load < retraced-cron.tar
+    fi
     # single retraced bundle no longer included since 2.21.0
     if [ -f retraced-bundle.tar.gz ]; then
         tar xzvf retraced-bundle.tar.gz
-    fi
-    # these have been included together in all previous versions
-    if [ -f retraced-processor.tar ]; then
         docker load < retraced-processor.tar
         docker load < retraced-postgres.tar
         docker load < retraced-nsqd.tar
