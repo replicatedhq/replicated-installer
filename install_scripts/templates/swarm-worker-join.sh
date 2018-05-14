@@ -146,12 +146,10 @@ fi
 
 promptForSwarmToken
 
-if [ "$AIRGAP" = "1" ]; then
-    promptForDaemonRegistryAddress
-    mkdir -p "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS"
-    promptForCA
-    echo "$(echo "$CA" | base64 --decode)" > "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS/ca.crt"
-fi
+promptForDaemonRegistryAddress
+mkdir -p "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS"
+promptForCA
+echo "$(echo "$CA" | base64 --decode)" > "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS/ca.crt"
 
 echo "Joining the swarm"
 joinSwarm
