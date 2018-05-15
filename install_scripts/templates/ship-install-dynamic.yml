@@ -14,7 +14,8 @@ services:
       - --log-level={{ log_level }}
     ports:
       - 8880:8880
-    environment: {% if replicated_registry_endpoint != 'registry.replicated.com' %}
+{% if replicated_registry_endpoint != 'registry.replicated.com' %}
+    environment:
       - REPLICATED_REGISTRY={{ replicated_registry_endpoint }}
 {%- endif %}
 
