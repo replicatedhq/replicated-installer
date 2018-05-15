@@ -14,6 +14,9 @@ services:
       - --log-level={{ log_level }}
     ports:
       - 8880:8880
+    environment: {% if replicated_registry_endpoint != 'registry.replicated.com' %}
+      - REPLICATED_REGISTRY={{ replicated_registry_endpoint }}
+{%- endif %}
 
   console:
     image: replicated/ship-console:{{ ship_console_tag }}
