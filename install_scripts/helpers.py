@@ -25,7 +25,9 @@ def template_args(**kwargs):
         'replicated_install_url':
         os.getenv('REPLICATED_INSTALL_URL', 'https://get.replicated.com'),
         'replicated_prem_graphql_endpoint':
-        os.getenv('REPLICATED_PREM_GRAPHQL_ENDPOINT', 'https://pg.replicated.com/graphql'),
+        os.getenv('GRAPHQL_PREM_ENDPOINT', 'https://pg.replicated.com/graphql'),
+        'replicated_registry_endpoint':
+        os.getenv('REGISTRY_ENDPOINT', 'registry.replicated.com'),
         'replicated_docker_host':
         os.getenv('REPLICATED_DOCKER_HOST', 'quay.io'),
     }
