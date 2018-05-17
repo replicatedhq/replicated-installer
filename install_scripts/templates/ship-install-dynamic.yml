@@ -22,4 +22,4 @@ services:
   console:
     image: replicated/ship-console:{{ ship_console_tag }}
     ports:
-      - 8025:80
+      - 8800:80
