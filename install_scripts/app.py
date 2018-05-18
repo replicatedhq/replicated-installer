@@ -5,6 +5,7 @@ import semver
 import subprocess
 import urllib
 import traceback
+import boto3
 
 from . import db, helpers, param
 
