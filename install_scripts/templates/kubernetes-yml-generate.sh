@@ -14,6 +14,7 @@ ROOK_SYSTEM_YAML=0
 ROOK_CLUSTER_YAML=0
 WEAVE_YAML=0
 IP_ALLOC_RANGE=10.32.0.0/12  # default for weave
+SERVICE_CIDR="10.96.0.0/12" # kubeadm default
 
 {% include 'common/kubernetes.sh' %}
 
@@ -66,6 +67,12 @@ while [ "$1" != "" ]; do
         ip-alloc-range|ip_alloc_range)
             IP_ALLOC_RANGE="$_value"
             ;;
+        http-proxy|http_proxy)
+            PROXY_ADDRESS="$_value"
+            ;;
+        service-cidr|service_cidr)
+            SERVICE_CIDR="$_value"
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -107,6 +114,17 @@ EOF
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
+EOF
+        )
+    fi
+
+    PROXY_ENVS=
+    if [ -n "$PROXY_ADDRESS" ]; then
+        PROXY_ENVS=$(cat <<-EOF
+        - name: HTTP_PROXY
+          value: $PROXY_ADDRESS
+        - name: NO_PROXY
+          value: $SERVICE_CIDR
 EOF
         )
     fi
@@ -189,6 +207,7 @@ $K8S_MASTER_ADDRESS
           value: "$LOG_LEVEL"
         - name: AIRGAP
           value: "$AIRGAP"
+$PROXY_ENVS
         ports:
         - containerPort: 9874
         - containerPort: 9877

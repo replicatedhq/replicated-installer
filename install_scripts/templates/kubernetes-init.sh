@@ -6,7 +6,7 @@ DAEMON_TOKEN=
 GROUP_ID=
 LOG_LEVEL=
 MIN_DOCKER_VERSION="1.10.3" # k8s min
-NO_PROXY=1
+NO_PROXY=0
 PINNED_DOCKER_VERSION="{{ pinned_docker_version }}"
 YAML_GENERATE_OPTS=
 
@@ -28,6 +28,10 @@ KUBERNETES_NAMESPACE="default"
 KUBERNETES_VERSION="{{ kubernetes_version }}"
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
 IP_ALLOC_RANGE=
+DEFAULT_SERVICE_CIDR="10.96.0.0/12"
+SERVICE_CIDR=$DEFAULT_SERVICE_CIDR
+DEFAULT_CLUSTER_DNS="10.96.0.10"
+CLUSTER_DNS=$DEFAULT_CLUSTER_DNS
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -54,6 +58,8 @@ kind: MasterConfiguration
 kubernetesVersion: $KUBERNETES_VERSION
 token: $BOOTSTRAP_TOKEN
 tokenTTL: ${BOOTSTRAP_TOKEN_TTL}
+networking:
+  serviceSubnet: $SERVICE_CIDR
 apiServerExtraArgs:
   service-node-port-range: "3000-60000"
 EOF
@@ -145,6 +151,12 @@ getYAMLOpts() {
     fi
     if [ -n "IP_ALLOC_RANGE" ]; then
         opts=$opts" ip-alloc-range=$IP_ALLOC_RANGE"
+    fi
+    if [ -n "PROXY_ADDRESS" ]; then
+        opts=$opts" http-proxy=$PROXY_ADDRESS"
+    fi
+    if [ "$SERVICE_CIDR" != "$DEFAULT_SERVICE_CIDR" ]; then
+        opts=$opts" service-cidr=$SERVICE_CIDR"
     fi
     YAML_GENERATE_OPTS="$opts"
 }
@@ -343,6 +355,12 @@ while [ "$1" != "" ]; do
         reset)
             RESET=1
             ;;
+        service-cidr|service_cidr)
+            SERVICE_CIDR="$_value"
+            ;;
+        cluster-dns|cluster_dns)
+            CLUSTER_DNS="$_value"
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -355,16 +373,6 @@ if [ "$RESET" == "1" ]; then
     k8s_reset
     outroReset
 	exit 0
-fi
-
-if [ "$NO_PROXY" != "1" ]; then
-    echo $NO_PROXY
-    bailNoProxy
-fi
-
-if [ -n "$PROXY_ADDRESS" ]; then
-    echo $PROXY_ADDRESS
-    bailNoProxy
 fi
 
 if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" -ne "1" ]; then
@@ -384,6 +392,19 @@ if [ -z "$PRIVATE_ADDRESS" ]; then
     promptForPrivateIp
 fi
 
+if [ "$NO_PROXY" != "1" ]; then
+    if [ -z "$PROXY_ADDRESS" ]; then
+        discoverProxy
+    fi
+
+    if [ -z "$PROXY_ADDRESS" ]; then
+        promptForProxy
+    fi
+fi
+
+exportProxy
+# kubeadm requires this in the environment to reach the K8s API server
+export no_proxy="$PRIVATE_ADDRESS,$SERVICE_CIDR" # default service cidr
 
 if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
     if [ "$OFFLINE_DOCKER_INSTALL" != "1" ]; then
@@ -395,11 +416,23 @@ if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
     checkDockerStorageDriver
 fi
 
+if [ -n "$PROXY_ADDRESS" ]; then
+    NO_PROXY_IP="$PRIVATE_ADDRESS"
+    requireDockerProxy
+fi
+
 if [ "$RESTART_DOCKER" = "1" ]; then
     restartDocker
 fi
 
+if [ -n "$PROXY_ADDRESS" ]; then
+    checkDockerProxyConfig
+fi
+
 installKubernetesComponents
+if [ "$CLUSTER_DNS" != "$DEFAULT_CLUSTER_DNS" ]; then
+    sed -i "s/$DEFAULT_CLUSTER_DNS/$CLUSTER_DNS/g" /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+fi
 systemctl enable kubelet && systemctl start kubelet
 
 if [ "$AIRGAP" = "1" ]; then
