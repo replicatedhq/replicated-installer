@@ -18,6 +18,16 @@ def teardown_db(exception):
     db.teardown()
 
 
+@app.route('/healthz')
+def get_healthz():
+    return ''
+
+
+@app.route('/metricz')
+def get_metricz():
+    return ''
+
+
 @app.route('/docker-install.sh')
 def get_docker():
     docker_version = helpers.get_arg('docker_version',
