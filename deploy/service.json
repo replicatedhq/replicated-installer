@@ -1,0 +1,30 @@
+{
+    "cluster": "tf-api-staging",
+    "serviceName": "replicated-installer",
+    "taskDefinition": "${TASKDEF}",
+    "loadBalancers": [
+      {
+        "containerName": "replicated-installer",
+        "targetGroupArn": "${TARGET_GROUP}",
+        "containerPort": 80
+      }
+    ],
+    "desiredCount": 2,
+    "launchType": "EC2",
+    "role": "ecsServiceRole",
+    "deploymentConfiguration": {
+      "maximumPercent": 200,
+      "minimumHealthyPercent": 50
+    },
+    "placementConstraints": [],
+    "placementStrategy": [
+      {
+        "field": "attribute:ecs.availability-zone",
+        "type": "spread"
+      },
+      {
+        "field": "instanceId",
+        "type": "spread"
+      }
+    ]
+  }

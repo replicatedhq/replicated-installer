@@ -1,8 +1,8 @@
+from __future__ import print_function
+
 import boto3
 import os
 
-# TODO: initialize elsewhere?
-sess = boto3.session.Session()
 
 param_cache = {}
 
@@ -11,7 +11,7 @@ def init(sess):
   new_param_cache(sess, use_ssm)
 
 
-def lookup(env_name, ssm_name, decrypt):
+def lookup(env_name, ssm_name, **kwargs):
   if not param_cache:
     raise Exception('must initialize param package')
 
@@ -22,8 +22,11 @@ def lookup(env_name, ssm_name, decrypt):
   if cached_val:
     return cached_val
 
-  val, _ = ssm_get(ssm_name, decrypt)
-  return val
+  val, _ = ssm_get(ssm_name, kwargs.get('decrypt', False))
+  if val:
+    return val
+
+  return kwargs.get('default', '')
 
 
 def new_param_cache(sess, use_ssm):

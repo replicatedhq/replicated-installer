@@ -70,7 +70,19 @@ jobs:
             cd ../docker-rhel74
             make build push
 
-  deploy_old:
+  # deploy_old:
+  #   docker:
+  #     - image: replicated/python-boto
+  #   steps:
+  #     - checkout
+  #     - setup_remote_docker
+  #     - run: docker build -t quay.io/replicatedcom/install-scripts:${CIRCLE_SHA1:0:7} -f ./deploy/Dockerfile.prod .
+  #     - run: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS quay.io
+  #     - run: docker push quay.io/replicatedcom/install-scripts:${CIRCLE_SHA1:0:7}
+  #     - run: pip install boto
+  #     - run: python deploy/deploy.py
+
+  deploy_new:
     docker:
       - image: replicated/python-boto
     steps:
@@ -80,7 +92,7 @@ jobs:
       - run: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS quay.io
       - run: docker push quay.io/replicatedcom/install-scripts:${CIRCLE_SHA1:0:7}
       - run: pip install boto
-      - run: python deploy/deploy.py
+      - run: python deploy/deploy-ec2.py
 
 workflows:
   version: 2
