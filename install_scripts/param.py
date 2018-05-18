@@ -6,7 +6,7 @@ import os
 param_cache = {}
 
 def init(sess):
-  use_ssm = os.environ['USE_EC2_PARAMETERS'] != ''
+  use_ssm = os.getenv('USE_EC2_PARAMETERS') != ''
   new_param_cache(sess, use_ssm)
 
 
@@ -15,23 +15,20 @@ def lookup(env_name, ssm_name, **kwargs):
     raise Exception('must initialize param package')
 
   if not param_cache['ssm'] or not ssm_name:
-    return os.environ[env_name]
+    return os.getenv(env_name, kwargs.get('default', ''))
 
   cached_val = dict_get(ssm_name)
   if cached_val:
     return cached_val
 
-  val, _ = ssm_get(ssm_name, kwargs.get('decrypt', False))
-  if val:
-    return val
-
-  return kwargs.get('default', '')
+  val, ok = ssm_get(ssm_name, kwargs.get('decrypt', False))
+  return val if ok else kwargs.get('default', '')
 
 
 def new_param_cache(sess, use_ssm):
   if use_ssm:
     svc = sess.client('ssm')
-  param_cache = {'ssm':svc, 'm':{}}
+  param_cache = {'ssm': svc, 'm': {}}
 
 
 def ssm_get(ssm_name, decrypt):
@@ -41,11 +38,12 @@ def ssm_get(ssm_name, decrypt):
   )
   if not resp:
     print('Failed to get ssm param {}'.format(ssm_name))
+    return ('', False)
 
-  if not os.environ['DEBUG'] and resp['InvalidParameters']:
+  if os.getenv('DEBUG') and resp['InvalidParameters']:
     print('\n'.join(map(str, resp['InvalidParameters'])))
 
-  if not resp['Parameters']:
+  if not resp.get('Parameters') or len(resp.get('Parameters')) == 0:
     return ('', False)
 
   val = resp['Parameters'][0]['Value']
