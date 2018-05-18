@@ -7,7 +7,7 @@ Python and nginx hosted scripts used to install and update Replicated.
 
 ```
 make dev
-make shell
+make shell_composer
 make run
 ```
 
