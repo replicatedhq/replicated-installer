@@ -21,10 +21,9 @@ shell:
 		-p 8090:5000/tcp \
 		-e ENVIRONMENT=dev \
 		-e REPLICATED_INSTALL_URL=http://192.168.100.100:8090 \
-		--network="saas_default" \
 		-e MYSQL_USER=replicated \
 		-e MYSQL_PASS=password \
-		-e MYSQL_HOST=mysql \
+		-e MYSQL_HOST=192.168.100.100 \
 		-e MYSQL_PORT=3306 \
 		-e MYSQL_DB=replicated \
 		-v $(BUILD_DIR):/usr/src/app \
