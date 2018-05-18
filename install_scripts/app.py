@@ -11,7 +11,7 @@ from . import db, helpers, param
 
 app = Flask(__name__)
 
-param.init(boto3.session.Session())
+param.init(boto3.session.Session(region_name='us-east-1'))
 
 
 @app.teardown_appcontext
