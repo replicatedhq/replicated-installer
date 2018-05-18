@@ -25,9 +25,9 @@ def template_args(**kwargs):
         'replicated_install_url':
         param.lookup('REPLICATED_INSTALL_URL', '/replicated/installer_url', default='https://get.replicated.com'),
         'replicated_prem_graphql_endpoint':
-        param.lookup('GRAPHQL_PREM_ENDPOINT', '/replicated/prem_graphql_endpoint', default='https://pg.replicated.com/graphql'),
+        param.lookup('GRAPHQL_PREM_ENDPOINT', '/graphql/prem_endpoint', default='https://pg.replicated.com/graphql'),
         'replicated_registry_endpoint':
-        param.lookup('REGISTRY_ENDPOINT', '/replicated/registry_endpoint', default='registry.replicated.com'),
+        param.lookup('REGISTRY_ENDPOINT', '/registry_v2/advertise_address', default='registry.replicated.com'),
         'replicated_docker_host':
         param.lookup('REPLICATED_DOCKER_HOST', '/replicated/docker_host', default='quay.io'),
     }
