@@ -119,7 +119,7 @@ jobs:
           name: Maybe deploy old
           command: |
             set -vu
-            if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedcom" ]; then
+            if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedhq" ]; then
               /usr/local/bin/pip install boto --upgrade --user
               python deploy/deploy-ec2.py
             fi
@@ -132,7 +132,7 @@ jobs:
           name: Maybe deploy staging
           command: |
             set -vu
-            if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedcom" ]; then
+            if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedhq" ]; then
               /usr/local/bin/pip install awscli --upgrade --user
               export AWS_ACCESS_KEY_ID=$STAGING_AWS_ACCESS_KEY_ID
               export AWS_SECRET_ACCESS_KEY=$STAGING_AWS_SECRET_ACCESS_KEY
@@ -157,7 +157,7 @@ jobs:
           name: Maybe deploy production
           command: |
             set -vu
-            if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedcom" ]; then
+            if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedhq" ]; then
               /usr/local/bin/pip install awscli --upgrade --user
               export AWS_ACCESS_KEY_ID=$PRODUCTION_AWS_ACCESS_KEY_ID
               export AWS_SECRET_ACCESS_KEY=$PRODUCTION_AWS_SECRET_ACCESS_KEY
