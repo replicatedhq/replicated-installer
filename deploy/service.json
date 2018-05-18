@@ -1,10 +1,10 @@
 {
     "cluster": "tf-api-staging",
-    "serviceName": "replicated-installer",
+    "serviceName": "install-scripts",
     "taskDefinition": "${TASKDEF}",
     "loadBalancers": [
       {
-        "containerName": "replicated-installer",
+        "containerName": "install-scripts",
         "targetGroupArn": "${TARGET_GROUP}",
         "containerPort": 80
       }

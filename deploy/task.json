@@ -1,5 +1,5 @@
 {
-  "family": "replicated-installer",
+  "family": "install-scripts",
   "networkMode": "bridge",
   "volumes": [],
   "placementConstraints": [],
@@ -28,10 +28,10 @@
         },
         {
           "name": "PROJECT_NAME",
-          "value": "vendor-api"
+          "value": "install-scripts"
         }
       ],
-      "name": "replicated-installer",
+      "name": "install-scripts",
       "mountPoints": [],
       "image": "${DOCKER_IMAGE}",
       "logConfiguration": {
