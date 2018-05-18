@@ -146,10 +146,10 @@ fi
 
 promptForSwarmToken
 
-promptForDaemonRegistryAddress
-mkdir -p "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS"
-promptForCA
-echo "$(echo "$CA" | base64 --decode)" > "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS/ca.crt"
+if [ -n "$DAEMON_REGISTRY_ADDRESS" ] && [ -n "$CA" ]; then
+    mkdir -p "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS"
+    echo "$(echo "$CA" | base64 --decode)" > "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS/ca.crt"
+fi
 
 echo "Joining the swarm"
 joinSwarm
