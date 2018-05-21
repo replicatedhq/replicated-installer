@@ -6,14 +6,26 @@ import subprocess
 import urllib
 import traceback
 
-from . import db, helpers
+from . import db, helpers, param
 
 app = Flask(__name__)
+
+param.init(boto3.session.Session())
 
 
 @app.teardown_appcontext
 def teardown_db(exception):
     db.teardown()
+
+
+@app.route('/healthz')
+def get_healthz():
+    return ''
+
+
+@app.route('/metricz')
+def get_metricz():
+    return ''
 
 
 @app.route('/docker-install.sh')

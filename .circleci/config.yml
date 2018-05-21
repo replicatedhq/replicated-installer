@@ -1,8 +1,17 @@
+version: 2
+
+defaults: &defaults
+  environment:
+    PROJECT_NAME: install-scripts
+
+defaults_py: &defaults_py
+  <<: *defaults
+  docker:
+    - image: circleci/python:2
 
 jobs:
   test:
-    docker:
-      - image: circleci/python:2
+    <<: *defaults_py
     working_directory: ~/work
     steps:
       - checkout
@@ -29,7 +38,7 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
       - run: apk add make
-      - run: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS quay.io
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
       - run:
           name: build & push
           command: |
@@ -43,7 +52,7 @@ jobs:
       docker_layer_caching: true
     steps:
       - checkout
-      - run: docker login --username $DOCKER_USER --password $DOCKER_PASS quay.io
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
       - run:
           name: make
           command: |
@@ -61,7 +70,7 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
       - run: apk add make
-      - run: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS quay.io
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
       - run:
           name: build & push
           command: |
@@ -70,27 +79,134 @@ jobs:
             cd ../docker-rhel74
             make build push
 
-  deploy_old:
-    docker:
-      - image: replicated/python-boto
+  build_image:
+    <<: *defaults_py
     steps:
       - checkout
       - setup_remote_docker
-      - run: docker build -t quay.io/replicatedcom/install-scripts:${CIRCLE_SHA1:0:7} -f ./deploy/Dockerfile.prod .
-      - run: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS quay.io
-      - run: docker push quay.io/replicatedcom/install-scripts:${CIRCLE_SHA1:0:7}
-      - run: pip install boto
-      - run: python deploy/deploy.py
+      - deploy:
+          name: Build image
+          command: |
+            set -vu
+            /usr/local/bin/pip install awscli --upgrade --user
+            docker build -f ./deploy/Dockerfile.prod -t ${PROJECT_NAME}:${CIRCLE_SHA1:0:7} .
+            # Deployed to old environment
+            docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
+            docker tag ${PROJECT_NAME}:${CIRCLE_SHA1:0:7} quay.io/replicatedcom/${PROJECT_NAME}:${CIRCLE_SHA1:0:7}
+            docker push quay.io/replicatedcom/${PROJECT_NAME}:${CIRCLE_SHA1:0:7}
+            # Deployed to new staging environment
+            export AWS_ACCESS_KEY_ID=$STAGING_AWS_ACCESS_KEY_ID
+            export AWS_SECRET_ACCESS_KEY=$STAGING_AWS_SECRET_ACCESS_KEY
+            $(/home/circleci/.local/bin/aws ecr get-login --no-include-email --region us-east-1)
+            docker tag ${PROJECT_NAME}:${CIRCLE_SHA1:0:7} 923411875752.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:${CIRCLE_SHA1:0:7}
+            docker push 923411875752.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:${CIRCLE_SHA1:0:7}
+            docker tag ${PROJECT_NAME}:${CIRCLE_SHA1:0:7} 923411875752.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:latest
+            docker push 923411875752.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:latest
+            # Deployed to new production environment
+            export AWS_ACCESS_KEY_ID=$PRODUCTION_AWS_ACCESS_KEY_ID
+            export AWS_SECRET_ACCESS_KEY=$PRODUCTION_AWS_SECRET_ACCESS_KEY
+            $(/home/circleci/.local/bin/aws ecr get-login --no-include-email --region us-east-1)
+            docker tag ${PROJECT_NAME}:${CIRCLE_SHA1:0:7} 799720048698.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:${CIRCLE_SHA1:0:7}
+            docker push 799720048698.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:${CIRCLE_SHA1:0:7}
+            docker tag ${PROJECT_NAME}:${CIRCLE_SHA1:0:7} 799720048698.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:latest
+            docker push 799720048698.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:latest
+
+  deploy_old:
+    <<: *defaults_py
+    steps:
+      - checkout
+      - deploy:
+          name: Maybe deploy old
+          command: |
+            set -vu
+            if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedcom" ]; then
+              /usr/local/bin/pip install boto --upgrade --user
+              python deploy/deploy-ec2.py
+            fi
+
+  deploy_staging:
+    <<: *defaults_py
+    steps:
+      - setup_remote_docker
+      - deploy:
+          name: Maybe deploy staging
+          command: |
+            set -vu
+            if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedcom" ]; then
+              /usr/local/bin/pip install awscli --upgrade --user
+              export AWS_ACCESS_KEY_ID=$STAGING_AWS_ACCESS_KEY_ID
+              export AWS_SECRET_ACCESS_KEY=$STAGING_AWS_SECRET_ACCESS_KEY
+              $(/home/circleci/.local/bin/aws ecr get-login --no-include-email --region us-east-1)
+              docker run -it \
+                -e AWS_ACCESS_KEY_ID=$STAGING_AWS_ACCESS_KEY_ID \
+                -e AWS_SECRET_ACCESS_KEY=$STAGING_AWS_SECRET_ACCESS_KEY \
+                923411875752.dkr.ecr.us-east-1.amazonaws.com/deployer:latest \
+                ecs \
+                deploy \
+                --timeout 1200 \
+                -i ${PROJECT_NAME} 923411875752.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:${CIRCLE_SHA1:0:7} \
+                --region us-east-1 \
+                tf-api-staging ${PROJECT_NAME}
+            fi
+
+  deploy_production:
+    <<: *defaults_py
+    steps:
+      - setup_remote_docker
+      - deploy:
+          name: Maybe deploy production
+          command: |
+            set -vu
+            if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedcom" ]; then
+              /usr/local/bin/pip install awscli --upgrade --user
+              export AWS_ACCESS_KEY_ID=$PRODUCTION_AWS_ACCESS_KEY_ID
+              export AWS_SECRET_ACCESS_KEY=$PRODUCTION_AWS_SECRET_ACCESS_KEY
+              $(/home/circleci/.local/bin/aws ecr get-login --no-include-email --region us-east-1)
+              docker run -it \
+                -e AWS_ACCESS_KEY_ID=$PRODUCTION_AWS_ACCESS_KEY_ID \
+                -e AWS_SECRET_ACCESS_KEY=$PRODUCTION_AWS_SECRET_ACCESS_KEY \
+                799720048698.dkr.ecr.us-east-1.amazonaws.com/deployer:latest \
+                ecs \
+                deploy \
+                --timeout 1200 \
+                -i ${PROJECT_NAME} 799720048698.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:${CIRCLE_SHA1:0:7} \
+                --region us-east-1 \
+                tf-api-production ${PROJECT_NAME}
+            fi
 
 workflows:
   version: 2
   build_accept_deploy:
     jobs:
+      - build_image:
+          filters:
+            branches:
+              only: master
       - test
       - deploy_old:
           requires:
+            - build_image
             - test
           filters:
             branches:
-              only:
-                - master
+              only: master
+      - deploy_staging:
+          requires:
+            - build_image
+            - test
+          filters:
+            branches:
+              only: master
+      - hold:
+          type: approval
+          requires:
+            - deploy_staging
+          filters:
+            branches:
+              only: master
+      - deploy_production:
+          requires:
+            - hold
+          filters:
+            branches:
+              only: master
