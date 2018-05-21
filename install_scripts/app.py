@@ -600,6 +600,15 @@ def get_replicated_studio():
     return Response(response, mimetype='text/x-shellscript')
 
 
+@app.route('/studio-swarm')
+def get_replicated_studio_swarm():
+    studio_path = helpers.get_arg('studio_base_path', '$HOME')
+    response = render_template('studio-install-swarm.sh',
+                               **helpers.template_args(
+                                   studio_base_path=studio_path, ))
+    return Response(response, mimetype='text/x-shellscript')
+
+
 @app.route('/studio-k8s')
 def get_replicated_studio_k8s():
     studio_path = helpers.get_arg('studio_base_path', '$HOME')
