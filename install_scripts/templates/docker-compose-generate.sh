@@ -127,8 +127,12 @@ fi
 if [ -n "$HTTP_PROXY" ]; then
     echo "      - HTTP_PROXY=${HTTP_PROXY}"
 fi
-{% if replicated_env == "staging" %}
+{% if customer_base_url_override %}
+    echo "      - MARKET_BASE_URL={{ customer_base_url_override }}"
+{% elif replicated_env == "staging" %}
     echo "      - MARKET_BASE_URL=https://api.staging.replicated.com/market"
+{% endif %}
+{% if replicated_env == "staging" %}
     echo "      - DATA_BASE_URL=https://data.staging.replicated.com/market"
     echo "      - VENDOR_REGISTRY=registry.staging.replicated.com"
     echo "      - INSTALLER_URL=https://get.staging.replicated.com"

@@ -21,8 +21,9 @@ services:
       DATA_DIRECTORY: "{{ data_dir_path }}/replicated"
       DAEMON_TOKEN: f27e60fa0eb15b4253ab413fd8473434
       RELEASE_CHANNEL: "{{ channel_name|default('stable', true) }}"
-      LOG_LEVEL: "{{ log_level|default('info', true) }}"{% if replicated_env == "staging" %}
-      MARKET_BASE_URL: https://api.staging.replicated.com/market
+      LOG_LEVEL: "{{ log_level|default('info', true) }}"{% if customer_base_url_override %}
+      MARKET_BASE_URL: {{ customer_base_url_override }}{% elif replicated_env == "staging" %}
+      MARKET_BASE_URL: https://api.staging.replicated.com/market{% endif %}{% if replicated_env == "staging" %}
       DATA_BASE_URL: https://data.staging.replicated.com/market
       VENDOR_REGISTRY: registry.staging.replicated.com
       INSTALLER_URL: https://get.staging.replicated.com
