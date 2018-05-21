@@ -283,6 +283,8 @@ def get_replicated_compose_v3_template_args(replicated_channel=None,
     ui_bind_port = helpers.get_arg('ui_bind_port', '')
     user_id = helpers.get_arg('user_id', '')
 
+    customer_base_url = helpers.get_arg('customer_base_url')
+
     return helpers.template_args(
         channel_name=replicated_channel,
         pinned_docker_version=pinned_docker_version,
@@ -305,7 +307,8 @@ def get_replicated_compose_v3_template_args(replicated_channel=None,
         swarm_node_address=swarm_node_address,
         tls_cert_path=tls_cert_path,
         ui_bind_port=ui_bind_port,
-        user_id=user_id, )
+        user_id=user_id,
+        customer_base_url_override=customer_base_url, )
 
 
 @app.route('/compose.yml')
@@ -594,7 +597,16 @@ def get_best_docker_tag():
 @app.route('/studio')
 def get_replicated_studio():
     studio_path = helpers.get_arg('studio_base_path', '$HOME')
-    response = render_template('studio-install.sh',
+    response = render_template('studio/native.sh',
+                               **helpers.template_args(
+                                   studio_base_path=studio_path, ))
+    return Response(response, mimetype='text/x-shellscript')
+
+
+@app.route('/studio-swarm')
+def get_replicated_studio_swarm():
+    studio_path = helpers.get_arg('studio_base_path', '$HOME')
+    response = render_template('studio/swarm.sh',
                                **helpers.template_args(
                                    studio_base_path=studio_path, ))
     return Response(response, mimetype='text/x-shellscript')
@@ -603,10 +615,38 @@ def get_replicated_studio():
 @app.route('/studio-k8s')
 def get_replicated_studio_k8s():
     studio_path = helpers.get_arg('studio_base_path', '$HOME')
-    response = render_template('studio-install-k8s.sh',
+    response = render_template('studio/k8s.sh',
                                **helpers.template_args(
                                    studio_base_path=studio_path, ))
     return Response(response, mimetype='text/x-shellscript')
+
+
+@app.route('/studio/native')
+def get_replicated_studio_v2():
+    studio_path = helpers.get_arg('studio_base_path', '$HOME')
+    response = render_template('studio/native-v2.sh',
+                               **helpers.template_args(
+                                   studio_base_path=studio_path, ))
+    return Response(response, mimetype='text/x-shellscript')
+
+
+@app.route('/studio/swarm')
+def get_replicated_studio_swarm_v2():
+    studio_path = helpers.get_arg('studio_base_path', '$HOME')
+    response = render_template('studio/swarm-v2.sh',
+                               **helpers.template_args(
+                                   studio_base_path=studio_path, ))
+    return Response(response, mimetype='text/x-shellscript')
+
+
+@app.route('/studio/k8s')
+def get_replicated_studio_k8s_v2():
+    studio_path = helpers.get_arg('studio_base_path', '$HOME')
+    response = render_template('studio/k8s-v2.sh',
+                               **helpers.template_args(
+                                   studio_base_path=studio_path, ))
+    return Response(response, mimetype='text/x-shellscript')
+
 
 @app.route('/compose/ship.yml')
 def get_ship_yaml():
@@ -618,20 +658,21 @@ def get_ship_yaml():
         ship_console_tag = helpers.get_arg('ship_console_tag', ship_tag)
 
         if not customer_id:
-            return helpers.compose_400("Missing or invalid parameters: customer_id")
+            return helpers.compose_400(
+                "Missing or invalid parameters: customer_id")
 
         customer_exists = helpers.does_customer_exist(customer_id)
         if not customer_exists:
-            return helpers.compose_404("Missing or invalid parameters: customer_id")
+            return helpers.compose_404(
+                "Missing or invalid parameters: customer_id")
 
         response = render_template('ship-install-dynamic.yml',
-                                    **helpers.template_args(
-                                        customer_id=customer_id,
-                                        log_level=log_level,
-                                        ship_tag=ship_tag,
-                                        ship_console_tag=ship_console_tag,
-                                        installation_id=installation_id,
-                                        ))
+                                   **helpers.template_args(
+                                       customer_id=customer_id,
+                                       log_level=log_level,
+                                       ship_tag=ship_tag,
+                                       ship_console_tag=ship_console_tag,
+                                       installation_id=installation_id, ))
 
         return Response(response, mimetype='text/x-docker-compose')
     except:
