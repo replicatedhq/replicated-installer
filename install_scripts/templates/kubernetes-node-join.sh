@@ -9,6 +9,7 @@ PINNED_DOCKER_VERSION="{{ pinned_docker_version }}"
 SKIP_DOCKER_INSTALL=0
 OFFLINE_DOCKER_INSTALL=0
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
+KUBERNETES_ONLY=0
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -162,6 +163,9 @@ while [ "$1" != "" ]; do
         service-cidr|service_cidr)
             SERVICE_CIDR="$_value"
             ;;
+        kubernetes-only|kubernetes_only)
+            KUBERNETES_ONLY=1
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -217,10 +221,12 @@ installKubernetesComponents
 systemctl enable kubelet && systemctl start kubelet
 
 if [ "$AIRGAP" = "1" ]; then
-    promptForDaemonRegistryAddress
-    mkdir -p "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS"
-    promptForCA
-    echo "$(echo "$CA" | base64 --decode)" > "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS/ca.crt"
+    if [ "$KUBERNETES_ONLY" != "1" ]; then
+        promptForDaemonRegistryAddress
+        mkdir -p "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS"
+        promptForCA
+        echo "$(echo "$CA" | base64 --decode)" > "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS/ca.crt"
+    fi
     airgapLoadKubernetesCommonImages
 else
     docker pull registry:2.6.2
