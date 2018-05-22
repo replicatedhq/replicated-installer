@@ -26,6 +26,7 @@ def lookup(env_name, ssm_name, **kwargs):
 
 
 def new_param_cache(sess, use_ssm):
+  global param_cache
   if use_ssm:
     svc = sess.client('ssm')
   param_cache = {'ssm': svc, 'm': {}}
