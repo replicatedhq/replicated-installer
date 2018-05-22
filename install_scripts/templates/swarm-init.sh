@@ -139,23 +139,17 @@ stackDeploy() {
 includeBranding() {
     echo "$CHANNEL_CSS" | base64 --decode > /tmp/channel.css
 
-    # wait for replicated container to be created
-    REPLICATED_CONTAINER_ID="$(docker ps -a -q --filter='name=replicated_replicated\.')"
+    # wait until replicated container is running
+    REPLICATED_CONTAINER_ID="$(docker ps -a -q --filter='name=replicated_replicated\.' --filter='status=running')"
     LOOP_COUNTER=0
-    while [ "$REPLICATED_CONTAINER_ID" == "" ] && [ "$LOOP_COUNTER" -le 30 ]; do
+    while [ "$REPLICATED_CONTAINER_ID" = "" ] && [ "$LOOP_COUNTER" -le 30 ]; do
         sleep 1s
         let LOOP_COUNTER=LOOP_COUNTER+1
-        REPLICATED_CONTAINER_ID="$(docker ps -a -q --filter='name=replicated_replicated\.')"
+        REPLICATED_CONTAINER_ID="$(docker ps -a -q --filter='name=replicated_replicated\.' --filter='status=running')"
     done
 
     #then copy in the branding file
     if [ "$REPLICATED_CONTAINER_ID" != "" ]; then
-        # wait until replicated container is running
-        LOOP_COUNTER=0
-        while [ $(docker inspect "$REPLICATED_CONTAINER_ID" --format="{{ '{{' }} .State.Status {{ '}}' }}") != "running" ] && [ "$LOOP_COUNTER" -le 10 ]; do
-            sleep 1s
-            let LOOP_COUNTER=LOOP_COUNTER+1
-        done
         docker exec "${REPLICATED_CONTAINER_ID}" mkdir -p /var/lib/replicated/branding/
         docker cp /tmp/channel.css "${REPLICATED_CONTAINER_ID}:/var/lib/replicated/branding/channel.css"
     else
