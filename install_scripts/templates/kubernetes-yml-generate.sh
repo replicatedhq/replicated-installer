@@ -13,6 +13,7 @@ REPLICATED_YAML=1
 ROOK_SYSTEM_YAML=0
 ROOK_CLUSTER_YAML=0
 WEAVE_YAML=0
+CONTOUR_YAML=0
 IP_ALLOC_RANGE=10.32.0.0/12  # default for weave
 SERVICE_CIDR="10.96.0.0/12" # kubeadm default
 
@@ -62,6 +63,10 @@ while [ "$1" != "" ]; do
             ;;
         weave-yaml|weave_yaml)
             WEAVE_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
+        contour-yaml|contour_yaml)
+            CONTOUR_YAML="$_value"
             REPLICATED_YAML=0
             ;;
         ip-alloc-range|ip_alloc_range)
@@ -875,11 +880,188 @@ items:
 EOF
 }
 
+render_contour_yaml() {
+    cat <<EOF
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: heptio-contour
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: contour
+  namespace: heptio-contour
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: ingressroutes.contour.heptio.com
+  labels:
+    component: ingressroute
+spec:
+  group: contour.heptio.com
+  version: v1beta1
+  scope: Namespaced
+  names:
+    plural: ingressroutes
+    kind: IngressRoute
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: contour
+  name: contour
+  namespace: heptio-contour
+spec:
+  selector:
+    matchLabels:
+      app: contour
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: contour
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9001"
+        prometheus.io/path: "/stats"
+        prometheus.io/format: "prometheus"
+    spec:
+      containers:
+      - image: envoyproxy/envoy-alpine:v1.6.0
+        name: envoy
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8443
+          name: https
+        command: ["envoy"]
+        args: ["-c", "/config/contour.yaml", "--service-cluster", "cluster0", "--service-node", "node0", "-l", "info", "--v2-config-only"]
+        volumeMounts:
+        - name: contour-config
+          mountPath: /config
+      - image: gcr.io/heptio-images/contour:v0.5.0
+        name: contour
+        command: ["contour"]
+        args: ["serve", "--incluster"]
+      initContainers:
+      - image: gcr.io/heptio-images/contour:v0.5.0
+        name: envoy-initconfig
+        command: ["contour"]
+        args: ["bootstrap", "/config/contour.yaml"]
+        volumeMounts:
+        - name: contour-config
+          mountPath: /config
+      volumes:
+      - name: contour-config
+        emptyDir: {}
+      dnsPolicy: ClusterFirst
+      serviceAccountName: contour
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: contour
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: contour
+subjects:
+- kind: ServiceAccount
+  name: contour
+  namespace: heptio-contour
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: contour
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - nodes
+  - pods
+  - secrets
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: ["contour.heptio.com"]
+  resources: ["ingressroutes"]
+  verbs:
+  - get
+  - list
+  - watch
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+ name: contour
+ namespace: heptio-contour
+ annotations:
+  # This annotation puts the AWS ELB into "TCP" mode so that it does not
+  # do HTTP negotiation for HTTPS connections at the ELB edge.
+  # The downside of this is the remote IP address of all connections will
+  # appear to be the internal address of the ELB. See docs/proxy-proto.md
+  # for information about enabling the PROXY protocol on the ELB to recover
+  # the original remote IP address.
+  service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+spec:
+ ports:
+ - port: 80
+   name: http
+   protocol: TCP
+   targetPort: 8080
+   nodePort: 80
+ - port: 443
+   name: https
+   protocol: TCP
+   targetPort: 8443
+   nodePort: 443
+ selector:
+   app: contour
+ type: NodePort
+EOF
+}
+
 ################################################################################
 # Execution starts here
 ################################################################################
 if [ "$WEAVE_YAML" = "1" ]; then
     render_weave_yaml
+fi
+
+if [ "$CONTOUR_YAML" = "1" ]; then
+    render_contour_yaml
 fi
 
 if [ "$ROOK_CLUSTER_YAML" = "1" ]; then
