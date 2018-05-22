@@ -1,7 +1,9 @@
 from __future__ import print_function
 
 import os
+import boto3
 
+from botocore.exceptions import ClientError
 
 param_cache = {}
 
@@ -33,21 +35,20 @@ def new_param_cache(sess, use_ssm):
 
 
 def ssm_get(ssm_name, decrypt):
-  resp = ssm.get_parameters(
-    Names=ssm_name,
-    WithDecryption=decrypt
-  )
-  if not resp:
-    print('Failed to get ssm param {}'.format(ssm_name))
+  try:
+    resp = param_cache.get('ssm').get_parameter(
+      Name=ssm_name,
+      WithDecryption=decrypt
+    )
+  except ClientError as e:
+    if e.response['Error']['Code'] == 'ParameterNotFound':
+      return ('', False)
+    raise e
+
+  if not resp.get('Parameter'):
     return ('', False)
 
-  if os.getenv('DEBUG') and resp['InvalidParameters']:
-    print('\n'.join(map(str, resp['InvalidParameters'])))
-
-  if not resp.get('Parameters') or len(resp.get('Parameters')) == 0:
-    return ('', False)
-
-  val = resp['Parameters'][0]['Value']
+  val = resp['Parameter']['Value']
   dict_set(ssm_name, val)
   return (val, True)
 
