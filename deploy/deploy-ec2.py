@@ -20,5 +20,5 @@ def addMessageToQueue(project, sha):
     q.write(m)
 
 
-addMessageToQueue(os.environ["CIRCLE_PROJECT_REPONAME"],
+addMessageToQueue("install-scripts",
                   os.environ["CIRCLE_SHA1"][:7])
