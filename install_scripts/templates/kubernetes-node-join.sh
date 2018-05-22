@@ -4,7 +4,7 @@ set -e
 
 AIRGAP=0
 MIN_DOCKER_VERSION="1.10.3" # k8s min
-NO_PROXY=0
+NO_PROXY=1
 PINNED_DOCKER_VERSION="{{ pinned_docker_version }}"
 SKIP_DOCKER_INSTALL=0
 OFFLINE_DOCKER_INSTALL=0
@@ -30,7 +30,6 @@ KUBERNETES_MASTER_PORT="6443"
 KUBERNETES_MASTER_ADDR="{{ kubernetes_master_addr }}"
 KUBEADM_TOKEN="{{ kubeadm_token }}"
 KUBEADM_TOKEN_CA_HASH="{{ kubeadm_token_ca_hash }}"
-SERVICE_CIDR="10.96.0.0/12" # kubeadm default
 
 joinKubernetes() {
     logStep "Join Kubernetes Node"
@@ -159,9 +158,6 @@ while [ "$1" != "" ]; do
         no-ce-on-ee|no_ce_on_ee)
             NO_CE_ON_EE=1
             ;;
-        service-cidr|service_cidr)
-            SERVICE_CIDR="$_value"
-            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -170,21 +166,15 @@ while [ "$1" != "" ]; do
     shift
 done
 
-promptForAddress
-promptForToken
-promptForTokenCAHash
-
 if [ "$NO_PROXY" != "1" ]; then
-    if [ -z "$PROXY_ADDRESS" ]; then
-        discoverProxy
-    fi
-
-    if [ -z "$PROXY_ADDRESS" ]; then
-        promptForProxy
-    fi
+    echo $NO_PROXY
+    bailNoProxy
 fi
 
-exportProxy
+if [ -n "$PROXY_ADDRESS" ]; then
+    echo $PROXY_ADDRESS
+    bailNoProxy
+fi
 
 if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
     if [ "$OFFLINE_DOCKER_INSTALL" != "1" ]; then
@@ -196,25 +186,21 @@ if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
     checkDockerStorageDriver
 fi
 
-if [ -n "$PROXY_ADDRESS" ]; then
-    parseIpv4FromAddress "$KUBERNETES_MASTER_ADDR"
-    # enable kubeadm to reach the K8s API server
-    export no_proxy="$PARSED_IPV4,$SERVICE_CIDR"
-    NO_PROXY_IP="$PARSED_IPV4"
-    requireDockerProxy
-fi
-
 if [ "$RESTART_DOCKER" = "1" ]; then
     restartDocker
 fi
 
 if ps aux | grep -qE "[k]ubelet"; then
-    logSuccess "Node Kubelet Initialized"
+    logSuccess "Node Kubelet Initalized"
     exit 0
 fi
 
 installKubernetesComponents
 systemctl enable kubelet && systemctl start kubelet
+
+promptForAddress
+promptForToken
+promptForTokenCAHash
 
 if [ "$AIRGAP" = "1" ]; then
     promptForDaemonRegistryAddress
