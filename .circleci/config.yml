@@ -179,9 +179,9 @@ workflows:
   build_accept_deploy:
     jobs:
       - build_image
-          # filters:
-          #   branches:
-          #     only: master
+          filters:
+            branches:
+              only: master
       - test
       - deploy_old:
           requires:
@@ -194,9 +194,9 @@ workflows:
           requires:
             - build_image
             - test
-          # filters:
-          #   branches:
-          #     only: master
+          filters:
+            branches:
+              only: master
       - hold:
           type: approval
           requires:
