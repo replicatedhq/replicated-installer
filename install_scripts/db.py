@@ -5,6 +5,8 @@ import os
 import mysql.connector
 from flask import g
 
+from . import param
+
 
 # This creates and tears down mysql connection for all requests
 def get():
@@ -12,11 +14,11 @@ def get():
     if db is None:
         print("Connecting to db")
         db = g._database = mysql.connector.connect(
-            host=os.environ['MYSQL_HOST'],
-            port=os.environ['MYSQL_PORT'],
-            database=os.environ['MYSQL_DB'],
-            user=os.environ['MYSQL_USER'],
-            password=os.environ['MYSQL_PASS'])
+            host=param.lookup('MYSQL_HOST', '/mysql/host'),
+            port=param.lookup('MYSQL_PORT', '/mysql/port'),
+            database=param.lookup('MYSQL_DB', '/mysql/database'),
+            user=param.lookup('MYSQL_USER', '/mysql/user'),
+            password=param.lookup('MYSQL_PASS', '/mysql/password', decrypt=True))
     return db
 
 
