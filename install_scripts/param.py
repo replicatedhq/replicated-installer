@@ -8,7 +8,7 @@ from botocore.exceptions import ClientError
 param_cache = {}
 
 def init(sess):
-  use_ssm = os.getenv('USE_EC2_PARAMETERS') != ''
+  use_ssm = os.getenv('USE_EC2_PARAMETERS')
   new_param_cache(sess, use_ssm)
 
 
@@ -29,6 +29,7 @@ def lookup(env_name, ssm_name, **kwargs):
 
 def new_param_cache(sess, use_ssm):
   global param_cache
+  svc = None
   if use_ssm:
     svc = sess.client('ssm')
   param_cache = {'ssm': svc, 'm': {}}

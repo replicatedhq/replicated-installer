@@ -246,6 +246,17 @@ def does_customer_exist(customer_id):
         return True
     return False
 
+def does_installation_exist(customer_id, installation_id):
+    cursor = db.get().cursor()
+    query = ('SELECT id '
+             'FROM products_customer_installation '
+             'WHERE id = %s AND customer_id = %s')
+    cursor.execute(query, (installation_id, customer_id))
+    row = cursor.fetchone()
+    if row:
+        return True
+    return False
+
 
 # Produce base64 encoding with linebreaks.
 def base64_encode(data):
@@ -320,9 +331,9 @@ def compose_500():
                                ))
     return Response(response, status=500, mimetype='text/x-docker-compose')
 
-def split_studio_file(studio_file):
+def maybe_split_studio_file(studio_file):
     if not studio_file:
-        raise ValueError("Missing or invalid parameters: studio_file")
+        return "", "", False
 
     try:
         head, tail = os.path.split(studio_file)
@@ -331,6 +342,6 @@ def split_studio_file(studio_file):
     except:
         raise ValueError("Missing or invalid parameters: studio_file")
     else:
-        return head, tail
+        return head, tail, True
 
 

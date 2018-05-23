@@ -3,8 +3,14 @@ version: '3.3'
 services:
   ship:
     image: replicated/ship:{{ ship_tag }}
+{% if is_studio %}
+    restart: always
+{%- endif %}
     volumes:
         - $PWD:/out
+{% if is_studio %}
+        - {{ studio_file_dir }}:/in
+{%- endif %}
         - /var/run/docker.sock:/var/run/docker.sock
     command:
       - --customer-id={{ customer_id }}
@@ -12,6 +18,9 @@ services:
       - --customer-endpoint={{ replicated_prem_graphql_endpoint }}
 {%- endif %}
       - --log-level={{ log_level }}
+{% if is_studio %}
+      - --studio-file=/in/{{ studio_file_basename }}
+{%- endif %}
     ports:
       - 8880:8880
 {% if replicated_registry_endpoint != 'registry.replicated.com' %}
