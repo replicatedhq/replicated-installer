@@ -5,6 +5,7 @@ import semver
 import subprocess
 import urllib
 import traceback
+import os
 
 from . import db, helpers, param
 
@@ -681,6 +682,48 @@ def get_ship_yaml():
                                        customer_id=customer_id,
                                        log_level=log_level,
                                        ship_tag=ship_tag,
+                                       ship_console_tag=ship_console_tag,
+                                       installation_id=installation_id, ))
+
+        return Response(response, mimetype='text/x-docker-compose')
+    except:
+        traceback.print_exc()
+        return helpers.compose_500()
+
+@app.route('/compose/ship-studio.yml')
+def get_ship_studio_yaml():
+    try:
+        customer_id = helpers.get_arg('customer_id')
+        installation_id = helpers.get_arg('installation_id')
+        log_level = helpers.get_arg('log_level', 'off')
+        ship_tag = helpers.get_arg('ship_tag', 'alpha')
+        ship_console_tag = helpers.get_arg('ship_console_tag', ship_tag)
+        studio_file = helpers.get_arg('studio_file')
+
+        try:
+            studio_file_dir, studio_file_basename = helpers.split_studio_file(studio_file)
+        except:
+            return helpers.compose_400(
+                "Missing or invalid parameters: studio_file")
+
+
+
+        if not customer_id:
+            return helpers.compose_400(
+                "Missing or invalid parameters: customer_id")
+
+        customer_exists = helpers.does_customer_exist(customer_id)
+        if not customer_exists:
+            return helpers.compose_404(
+                "Missing or invalid parameters: customer_id")
+
+        response = render_template('ship-install-dynamic.yml',
+                                   **helpers.template_args(
+                                       customer_id=customer_id,
+                                       log_level=log_level,
+                                       ship_tag=ship_tag,
+                                       studio_file_dir=studio_file_dir,
+                                       studio_file_basename=studio_file_basename,
                                        ship_console_tag=ship_console_tag,
                                        installation_id=installation_id, ))
 
