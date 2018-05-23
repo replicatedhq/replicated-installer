@@ -319,3 +319,18 @@ def compose_500():
                                    base_url=request.base_url,
                                ))
     return Response(response, status=500, mimetype='text/x-docker-compose')
+
+def split_studio_file(studio_file):
+    if not studio_file:
+        raise ValueError("Missing or invalid parameters: studio_file")
+
+    try:
+        head, tail = os.path.split(studio_file)
+        if not head or not tail:
+            raise ValueError("Missing or invalid parameters: studio_file")
+    except:
+        raise ValueError("Missing or invalid parameters: studio_file")
+    else:
+        return head, tail
+
+
