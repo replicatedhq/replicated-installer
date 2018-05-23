@@ -61,7 +61,7 @@ tokenTTL: ${BOOTSTRAP_TOKEN_TTL}
 networking:
   serviceSubnet: $SERVICE_CIDR
 apiServerExtraArgs:
-  service-node-port-range: "3000-60000"
+  service-node-port-range: "80-60000"
 EOF
 
     # if we have a private address, add it to SANs
@@ -149,10 +149,10 @@ getYAMLOpts() {
     if [ -n "$UI_BIND_PORT" ]; then
         opts=$opts" ui-bind-port=$UI_BIND_PORT"
     fi
-    if [ -n "IP_ALLOC_RANGE" ]; then
+    if [ -n "$IP_ALLOC_RANGE" ]; then
         opts=$opts" ip-alloc-range=$IP_ALLOC_RANGE"
     fi
-    if [ -n "PROXY_ADDRESS" ]; then
+    if [ -n "$PROXY_ADDRESS" ]; then
         opts=$opts" http-proxy=$PROXY_ADDRESS"
     fi
     if [ "$SERVICE_CIDR" != "$DEFAULT_SERVICE_CIDR" ]; then
@@ -192,6 +192,13 @@ rookDeploy() {
     spinnerRookReady # creating the cluster before the operator is ready fails
     kubectl apply -f /tmp/rook.yml
     logSuccess "Rook deployed"
+}
+
+contourDeploy() {
+    logStep "deploy Contour ingress controller"
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS contour_yaml=1 > /tmp/contour.yml
+    kubectl apply -f /tmp/contour.yml
+    logSuccess "Contour deployed"
 }
 
 kubernetesDeploy() {
@@ -470,6 +477,9 @@ logSuccess "Kubernetes system"
 echo
 
 rookDeploy
+
+contourDeploy
+
 if [ "$KUBERNETES_ONLY" -eq "1" ]; then
     spinnerKubeSystemReady
     outroKubeadm
