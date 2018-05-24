@@ -6,7 +6,7 @@ import subprocess
 import urllib
 import traceback
 
-from . import db, helpers, param
+from . import db, helpers
 
 app = Flask(__name__)
 
@@ -14,16 +14,6 @@ app = Flask(__name__)
 @app.teardown_appcontext
 def teardown_db(exception):
     db.teardown()
-
-
-@app.route('/healthz')
-def get_healthz():
-    return ''
-
-
-@app.route('/metricz')
-def get_metricz():
-    return ''
 
 
 @app.route('/docker-install.sh')
