@@ -8,7 +8,7 @@ import yaml
 import semver
 from flask import request, render_template, Response
 
-from . import db, param
+from . import db
 
 _default_docker_version = '17.12.1'
 
@@ -17,19 +17,19 @@ def template_args(**kwargs):
         'pinned_docker_version':
         get_default_docker_version(),
         'min_docker_version':
-        param.lookup('MIN_DOCKER_VERSION', '/install_scripts/min_docker_version', default='1.7.1'),
+        os.getenv('MIN_DOCKER_VERSION', '1.7.1'),
         'replicated_env':
-        param.lookup('ENVIRONMENT', '/replicated/environment', default='production'),
+        os.getenv('ENVIRONMENT', 'production'),
         'environment_tag_suffix':
-        get_environment_tag_suffix(param.lookup('ENVIRONMENT', '/replicated/environment', default='production')),
+        get_environment_tag_suffix(os.getenv('ENVIRONMENT', 'production')),
         'replicated_install_url':
-        param.lookup('REPLICATED_INSTALL_URL', '/replicated/installer_url', default='https://get.replicated.com'),
+        os.getenv('REPLICATED_INSTALL_URL', 'https://get.replicated.com'),
         'replicated_prem_graphql_endpoint':
-        param.lookup('GRAPHQL_PREM_ENDPOINT', '/graphql/prem_endpoint', default='https://pg.replicated.com/graphql'),
+        os.getenv('GRAPHQL_PREM_ENDPOINT', 'https://pg.replicated.com/graphql'),
         'replicated_registry_endpoint':
-        param.lookup('REGISTRY_ENDPOINT', '/registry_v2/advertise_address', default='registry.replicated.com'),
+        os.getenv('REGISTRY_ENDPOINT', 'registry.replicated.com'),
         'replicated_docker_host':
-        param.lookup('REPLICATED_DOCKER_HOST', '/replicated/docker_host', default='quay.io'),
+        os.getenv('REPLICATED_DOCKER_HOST', 'quay.io'),
     }
     if get_arg('replicated_env') in ('staging', 'production'):
         args['replicated_env'] = get_arg('replicated_env')
@@ -68,7 +68,7 @@ def get_pinned_kubernetes_version(replicated_version):
 
 
 def get_default_docker_version():
-    return param.lookup('PINNED_DOCKER_VERSION', '/install_scripts/pinned_docker_version', default=_default_docker_version)
+    return os.getenv('PINNED_DOCKER_VERSION', _default_docker_version)
 
 
 def get_replicated_version(replicated_channel, app_slug, app_channel):
