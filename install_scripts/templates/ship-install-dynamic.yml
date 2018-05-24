@@ -10,6 +10,7 @@ services:
       - --customer-id={{ customer_id }}
       - --installation-id={{ installation_id }}{% if replicated_prem_graphql_endpoint != 'https://pg.replicated.com/graphql' %}
       - --customer-endpoint={{ replicated_prem_graphql_endpoint }}
+      - --headless={{ headless }}
 {%- endif %}
       - --log-level={{ log_level }}
     ports:
