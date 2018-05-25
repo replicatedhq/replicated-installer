@@ -8,18 +8,23 @@ services:
         - /var/run/docker.sock:/var/run/docker.sock
     command:
       - --customer-id={{ customer_id }}
-      - --installation-id={{ installation_id }}{% if replicated_prem_graphql_endpoint != 'https://pg.replicated.com/graphql' %}
+      - --installation-id={{ installation_id }}
+      - --log-level={{ log_level }}{% if replicated_prem_graphql_endpoint != 'https://pg.replicated.com/graphql' %}
       - --customer-endpoint={{ replicated_prem_graphql_endpoint }}
+{%- endif %}{% if headless %}
+      - --headless
 {%- endif %}
-      - --log-level={{ log_level }}
     ports:
       - 8880:8880
-{% if replicated_registry_endpoint != 'registry.replicated.com' %}
     environment:
+      - HTTP_PROXY
+      - HTTPS_PROXY{% if replicated_registry_endpoint != 'registry.replicated.com' %}
       - REPLICATED_REGISTRY={{ replicated_registry_endpoint }}
 {%- endif %}
 
+{% if not headless %}
   console:
     image: replicated/ship-console:{{ ship_console_tag }}
     ports:
       - 8800:80
+{%- endif %}

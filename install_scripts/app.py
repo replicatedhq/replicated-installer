@@ -666,6 +666,7 @@ def get_ship_yaml():
         log_level = helpers.get_arg('log_level', 'off')
         ship_tag = helpers.get_arg('ship_tag', 'alpha')
         ship_console_tag = helpers.get_arg('ship_console_tag', ship_tag)
+        headless = helpers.get_arg('headless')
 
         if not customer_id:
             return helpers.compose_400(
@@ -682,6 +683,7 @@ def get_ship_yaml():
                                        log_level=log_level,
                                        ship_tag=ship_tag,
                                        ship_console_tag=ship_console_tag,
+                                       headless=headless,
                                        installation_id=installation_id, ))
 
         return Response(response, mimetype='text/x-docker-compose')
