@@ -123,6 +123,10 @@ stackDeploy() {
     fi
 
     echo "Deploying Replicated stack"
+
+    # pre-create the replicated stack network so it's attachable
+    docker network create --driver=overlay --attachable --label=com.docker.stack.namespace=replicated replicated_default
+
     if [ "$AIRGAP" = "1" ]; then
         bash ./docker-compose-generate.sh $opts < /dev/null \
             > /tmp/replicated-docker-compose.yml
