@@ -1,0 +1,43 @@
+{
+  "family": "install-scripts",
+  "networkMode": "bridge",
+  "volumes": [],
+  "placementConstraints": [],
+  "requiresCompatibilities": [
+    "EC2"
+  ],
+  "containerDefinitions": [
+    {
+      "essential": true,
+      "memoryReservation": 64,
+      "portMappings": [
+        {
+          "protocol": "tcp",
+          "containerPort": 80,
+          "hostPort": 0
+        }
+      ],
+      "environment": [
+        {
+          "name": "USE_EC2_PARAMETERS",
+          "value": "1"
+        },
+        {
+          "name": "AWS_REGION",
+          "value": "us-east-1"
+        },
+        {
+          "name": "PROJECT_NAME",
+          "value": "install-scripts"
+        }
+      ],
+      "name": "install-scripts",
+      "mountPoints": [],
+      "image": "${DOCKER_IMAGE}",
+      "logConfiguration": {
+        "logDriver": "json-file"
+      },
+      "volumesFrom": []
+    }
+  ]
+}
