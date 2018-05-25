@@ -1,25 +1,8 @@
 boto3==1.7.25
-botocore==1.10.25
-click==6.7
-docutils==0.14
 Flask==0.12
-funcsigs==1.0.2
-futures==2.2.0
-itsdangerous==0.24
-Jinja2==2.10
-jmespath==0.9.3
-MarkupSafe==1.0
-mock==2.0.0
 mysql-connector==2.1.4
-pbr==4.0.2
-py==1.5.3
 pytest==3.0.6
 pytest-mock==1.5.0
-python-dateutil==2.7.3
 PyYAML==3.12
-s3transfer==0.1.13
 -e git://github.com/divolgin/python-semver.git@0b833b5050f6a48bb54cec5625d9f65af261454a#egg=semver
-six==1.11.0
 uWSGI==2.0.17
-virtualenv==15.2.0
-Werkzeug==0.14.1

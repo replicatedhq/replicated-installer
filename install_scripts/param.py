@@ -20,8 +20,6 @@ def lookup(env_name, ssm_name, **kwargs):
     if not param_cache['ssm'] or not ssm_name:
         return os.getenv(env_name, kwargs.get('default', ''))
 
-    print(param_cache)
-
     cached_val = dict_get(ssm_name)
     if cached_val:
         return cached_val
