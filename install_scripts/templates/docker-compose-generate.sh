@@ -114,7 +114,9 @@ if [ "$AIRGAP" = "1" ]; then
     echo "      - AIRGAP=true"
 fi
 echo "      - SCHEDULER_ENGINE=swarm"
-echo "      - SNAPSHOTS_ADVERTISE_ADDRESS=replicated_replicated:9878"
+{% if snapshots_use_overlay %}
+    echo "      - SNAPSHOTS_ADVERTISE_ADDRESS=replicated_replicated:9878"
+{% endif %}
 echo "      - LOCAL_ADDRESS=${SWARM_NODE_ADDRESS}"
 if [ -n "$SWARM_STACK_NAMESPACE" ]; then
     echo "      - STACK_NAMESPACE=${SWARM_STACK_NAMESPACE}"

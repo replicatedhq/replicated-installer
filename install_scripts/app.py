@@ -269,6 +269,9 @@ def get_replicated_compose_v3_template_args(replicated_channel=None,
         replicated_version)
     # Replicated versions at or later than 2.5.0 should run as non root users
     username = helpers.get_replicated_username(replicated_version)
+    # Replicated versions at or later than 2.22.0 use replicated_default overlay network for snapshots
+    snapshots_use_overlay = helpers.snapshots_use_overlay(replicated_version)
+
 
     airgap = helpers.get_arg('airgap', '')
     ca = helpers.get_arg('ca', '')
@@ -308,7 +311,8 @@ def get_replicated_compose_v3_template_args(replicated_channel=None,
         tls_cert_path=tls_cert_path,
         ui_bind_port=ui_bind_port,
         user_id=user_id,
-        customer_base_url_override=customer_base_url, )
+        customer_base_url_override=customer_base_url,
+        snapshots_use_overlay=snapshots_use_overlay, )
 
 
 @app.route('/compose.yml')

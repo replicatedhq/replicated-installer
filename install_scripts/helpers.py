@@ -319,3 +319,8 @@ def compose_500():
                                    base_url=request.base_url,
                                ))
     return Response(response, status=500, mimetype='text/x-docker-compose')
+
+def snapshots_use_overlay(replicated_version):
+    if semver.lt(replicated_version, '2.22.0', loose=False):
+        return False;
+    return True;
