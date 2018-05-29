@@ -83,6 +83,33 @@ excludeSubnets() {
     fi
 }
 
+# Since 2.22.0 the replicated_default network is used for snapshots so it must
+# be pre-created as attachable. When upgrading from an older version it must be
+# destroyed and re-created as attachable.
+ensureReplicatedNetworkAttachable() {
+    if docker network ls | grep --quiet "replicated_default"; then
+        attachable=$(docker network inspect replicated_default --format="{{ '{{ .Attachable }}' }}")
+        if [ "$attachable" == "true" ]; then
+            echo "Found attachable replicated_default network"
+            return 0;
+        fi
+
+        echo "Destroying replicated_default network"
+        set +e
+        docker service rm replicated_replicated
+        docker service rm replicated_replicated-operator
+        docker service rm replicated_replicated-ui
+        docker service rm premkit_replicated
+        docker service rm statsd_replicated
+        set -e
+
+        docker network rm replicated_default
+    fi
+
+    echo "Create attachable replicated_default network"
+    docker network create --driver=overlay --attachable --label=com.docker.stack.namespace=replicated replicated_default
+}
+
 stackDeploy() {
     opts=
     if [ "$AIRGAP" = "1" ]; then
@@ -123,6 +150,7 @@ stackDeploy() {
     fi
 
     echo "Deploying Replicated stack"
+
     if [ "$AIRGAP" = "1" ]; then
         bash ./docker-compose-generate.sh $opts < /dev/null \
             > /tmp/replicated-docker-compose.yml
@@ -325,7 +353,7 @@ if [ "$AIRGAP" = "1" ] && [ "$SKIP_DOCKER_PULL" != "1" ]; then
 fi
 
 excludeSubnets
-
+ensureReplicatedNetworkAttachable
 stackDeploy
 
 includeBranding
