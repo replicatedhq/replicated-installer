@@ -104,6 +104,9 @@ ensureReplicatedNetworkAttachable() {
         set -e
 
         docker network rm replicated_default
+        while $(docker network ls | grep --quiet "replicated_default"); do
+            sleep 1
+        done
     fi
 
     echo "Create attachable replicated_default network"
