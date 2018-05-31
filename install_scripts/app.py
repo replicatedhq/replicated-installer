@@ -409,6 +409,7 @@ def get_replicated_kubernetes(replicated_channel=None,
     kubernetes_namespace = helpers.get_arg('kubernetes_namespace', 'default')
     ui_bind_port = helpers.get_arg('ui_bind_port', 8800)
     customer_base_url = helpers.get_arg('customer_base_url')
+    proxy_address = helpers.get_arg('http_proxy', '')
 
     response = render_template(
         'kubernetes-yml-generate.sh',
@@ -424,6 +425,7 @@ def get_replicated_kubernetes(replicated_channel=None,
             service_type=service_type,
             kubernetes_namespace=kubernetes_namespace,
             ui_bind_port=ui_bind_port,
+            proxy_address=proxy_address,
             customer_base_url_override=customer_base_url, ))
 
     if helpers.get_arg('accept', None) == 'text':

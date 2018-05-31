@@ -6,6 +6,7 @@ KUBERNETES_NAMESPACE="{{ kubernetes_namespace }}"
 PV_BASE_PATH="{{ pv_base_path }}"
 STORAGE_CLASS="{{ storage_class }}"
 SERVICE_TYPE="{{ service_type }}"
+PROXY_ADDRESS="{{ proxy_address }}"
 # booleans
 AIRGAP="{{ airgap }}"
 STORAGE_PROVISIONER="{{ storage_provisioner }}"
