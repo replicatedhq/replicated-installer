@@ -24,6 +24,7 @@ logStep() {
     printf "${BLUE}⚙ $1${NC}\n" 1>&2
 }
 
+
 #######################################
 # Prints the first arg in Red
 # Globals:

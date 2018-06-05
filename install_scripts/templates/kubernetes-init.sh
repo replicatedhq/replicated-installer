@@ -100,6 +100,28 @@ initKube() {
             printf "${RED}Failed to initialize the kubernetes cluster.${NC}\n" 1>&2
             exit $_status
         fi
+    else
+        logStep "verify kubernetes config"
+        export KUBECONFIG=/etc/kubernetes/admin.conf
+        chmod 444 /etc/kubernetes/admin.conf
+        initKubeadmConfig
+        kubeadm config upload from-file --config /opt/replicated/kubeadm.conf
+        # poll until we can get the current server version
+        _current="$(kubectl version --output json | sudo docker run -i --rm realguess/jq jq -r .serverVersion.gitVersion)"
+        until [ "$_current" != "null" ]; do
+          _current="$(kubectl version --output json | sudo docker run -i --rm realguess/jq jq -r .serverVersion.gitVersion)"
+        done
+
+        # hack -- if the versions are the same, do an "upgrade" to the same version to force-apply the new kubeadm config
+        if [ "${KUBERNETES_VERSION}" == "$_current" ]; then
+            logStep "apply config via kubeadm upgrade"
+            kubeadm upgrade apply --yes "${KUBERNETES_VERSION}"
+        else
+            logStep "apply config via kubeadm upgrade"
+            bail "automated upgrades are not supported, and the target installer version $KUBERNETES_VERSION does not match current server version $_current"
+            # todo -- if the versions are not the same, we need to patch the apiserver manifest manually
+            #         fortunately this won't be an issue until we nail down automated k8s upgrades.
+	    fi
     fi
     cp /etc/kubernetes/admin.conf $HOME/admin.conf
     chown $SUDO_USER:$SUDO_USER $HOME/admin.conf
