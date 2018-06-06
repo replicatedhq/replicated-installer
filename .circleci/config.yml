@@ -111,19 +111,6 @@ jobs:
             docker tag ${PROJECT_NAME}:${CIRCLE_SHA1:0:7} 799720048698.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:latest
             docker push 799720048698.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:latest
 
-  deploy_old:
-    <<: *defaults_py
-    steps:
-      - checkout
-      - deploy:
-          name: Maybe deploy old
-          command: |
-            set -vu
-            if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedhq" ]; then
-              /usr/local/bin/pip install boto --upgrade --user
-              python deploy/deploy-ec2.py
-            fi
-
   deploy_staging:
     <<: *defaults_py
     steps:
@@ -183,13 +170,6 @@ workflows:
             branches:
               only: master
       - test
-      - deploy_old:
-          requires:
-            - build_image
-            - test
-          filters:
-            branches:
-              only: master
       - deploy_staging:
           requires:
             - build_image
