@@ -83,6 +83,17 @@ EOF
 
 }
 
+getKubeServerVersion() {
+    logStep "check k8s server version"
+    # poll until we can get the current server version
+    _current="$(kubectl version --output json | docker run -i --rm realguess/jq jq -r .serverVersion.gitVersion)"
+    until [ "$_current" != "null" ]; do
+      _current="$(kubectl version --output json | docker run -i --rm realguess/jq jq -r .serverVersion.gitVersion)"
+    done
+    logSuccess "got k8s server version: $_current"
+    printf "$_current"
+}
+
 initKube() {
     logStep "Verify Kubelet"
     if ! ps aux | grep -qE "[k]ubelet"; then
@@ -106,11 +117,7 @@ initKube() {
         chmod 444 /etc/kubernetes/admin.conf
         initKubeadmConfig
         kubeadm config upload from-file --config /opt/replicated/kubeadm.conf
-        # poll until we can get the current server version
-        _current="$(kubectl version --output json | sudo docker run -i --rm realguess/jq jq -r .serverVersion.gitVersion)"
-        until [ "$_current" != "null" ]; do
-          _current="$(kubectl version --output json | sudo docker run -i --rm realguess/jq jq -r .serverVersion.gitVersion)"
-        done
+        _current=$(getKubeServerVersion)
 
         # hack -- if the versions are the same, do an "upgrade" to the same version to force-apply the new kubeadm config
         if [ "${KUBERNETES_VERSION}" == "$_current" ]; then
