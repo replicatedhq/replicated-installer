@@ -301,6 +301,10 @@ do_install() {
 			if [ -z "$dist_version" ] && [ -r /etc/lsb-release ]; then
 				dist_version="$(. /etc/lsb-release && echo "$DISTRIB_CODENAME")"
 			fi
+			# Since bionic stable doesn't have docker-ce < 18.06
+			if [ "$dist_version" = "bionic" ]; then
+				dist_version="xenial"
+			fi
 		;;
 
 		debian|raspbian)
