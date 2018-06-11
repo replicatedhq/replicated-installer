@@ -45,15 +45,19 @@ x86_64-debian-stretch
 x86_64-debian-buster
 x86_64-ubuntu-trusty
 x86_64-ubuntu-xenial
+x86_64-ubuntu-bionic
 x86_64-ubuntu-zesty
 x86_64-ubuntu-artful
 s390x-ubuntu-xenial
+s390x-ubuntu-bionic
 s390x-ubuntu-zesty
 s390x-ubuntu-artful
 ppc64le-ubuntu-xenial
+ppc64le-ubuntu-bionic
 ppc64le-ubuntu-zesty
 ppc64le-ubuntu-artful
 aarch64-ubuntu-xenial
+aarch64-ubuntu-bionic
 aarch64-ubuntu-zesty
 aarch64-debian-jessie
 aarch64-debian-stretch
@@ -66,6 +70,7 @@ armv7l-debian-stretch
 armv7l-debian-buster
 armv7l-ubuntu-trusty
 armv7l-ubuntu-xenial
+armv7l-ubuntu-bionic
 armv7l-ubuntu-zesty
 armv7l-ubuntu-artful
 "
@@ -315,6 +320,10 @@ do_install() {
 			fi
 			if [ -z "$dist_version" ] && [ -r /etc/lsb-release ]; then
 				dist_version="$(. /etc/lsb-release && echo "$DISTRIB_CODENAME")"
+			fi
+			# Since bionic stable doesn't have docker-ce < 18.06
+			if [ "$dist_version" = "bionic" ]; then
+				dist_version="xenial"
 			fi
 		;;
 
