@@ -23,9 +23,14 @@ _installCliFile() {
   read -r -d '' _flags << EOF
 interactive=
 tty=
+push=
 
 while [ "\$1" != "" ]; do
   case "\$1" in
+    # replicated admin shell alias support
+    admin | --help | -h | --no-tty )
+      push=\$push" \$1"
+      ;;
     -i | --interactive | --interactive=1 )
       interactive=1
       ;;
@@ -76,7 +81,7 @@ ${_flags}
 
 ${2} \$flags \
   ${3} \
-  replicated "\$@"
+  replicated"\$push" "\$@"
 EOF
   chmod a+x "${1}/replicated"
   cat > "${1}/replicatedctl" <<-EOF
@@ -86,7 +91,7 @@ ${_flags}
 
 ${2} \$flags \
   ${3} \
-  replicatedctl "\$@"
+  replicatedctl"\$push" "\$@"
 EOF
   chmod a+x "${1}/replicatedctl"
 }

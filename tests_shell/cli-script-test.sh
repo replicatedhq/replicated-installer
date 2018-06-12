@@ -7,33 +7,46 @@ testInstallCliFile()
     tmpDir="$(mktemp -d)"
     _installCliFile "$tmpDir" "echo" "CONTAINER"
 
-    assertEquals "$("$tmpDir/replicated" -i COMMAND -ARG)" "-i CONTAINER replicated COMMAND -ARG"
-    assertEquals "$("$tmpDir/replicatedctl" -i COMMAND -ARG)" "-i CONTAINER replicatedctl COMMAND -ARG"
-    assertEquals "$("$tmpDir/replicated" -t COMMAND -ARG)" "-t CONTAINER replicated COMMAND -ARG"
-    assertEquals "$("$tmpDir/replicatedctl" -t COMMAND -ARG)" "-t CONTAINER replicatedctl COMMAND -ARG"
-    assertEquals "$("$tmpDir/replicated" -it COMMAND -ARG)" "-it CONTAINER replicated COMMAND -ARG"
-    assertEquals "$("$tmpDir/replicatedctl" -it COMMAND -ARG)" "-it CONTAINER replicatedctl COMMAND -ARG"
-    assertEquals "$("$tmpDir/replicated" -ti COMMAND -ARG)" "-it CONTAINER replicated COMMAND -ARG"
-    assertEquals "$("$tmpDir/replicatedctl" -ti COMMAND -ARG)" "-it CONTAINER replicatedctl COMMAND -ARG"
-    assertEquals "$("$tmpDir/replicated" --interactive --tty COMMAND -ARG)" "-it CONTAINER replicated COMMAND -ARG"
-    assertEquals "$("$tmpDir/replicatedctl" --interactive --tty COMMAND -ARG)" "-it CONTAINER replicatedctl COMMAND -ARG"
-    assertEquals "$("$tmpDir/replicated" --interactive=0 COMMAND -ARG)" "CONTAINER replicated COMMAND -ARG"
-    assertEquals "$("$tmpDir/replicatedctl" --interactive=0 COMMAND -ARG)" "CONTAINER replicatedctl COMMAND -ARG"
-    assertEquals "$("$tmpDir/replicated" --tty=0 COMMAND -ARG)" "CONTAINER replicated COMMAND -ARG"
-    assertEquals "$("$tmpDir/replicatedctl" --tty=0 COMMAND -ARG)" "CONTAINER replicatedctl COMMAND -ARG"
-    assertEquals "$("$tmpDir/replicated" --interactive=0 --tty=1 COMMAND -ARG)" "-t CONTAINER replicated COMMAND -ARG"
-    assertEquals "$("$tmpDir/replicatedctl" --interactive=0 --tty=1 COMMAND -ARG)" "-t CONTAINER replicatedctl COMMAND -ARG"
+    assertEquals "-i CONTAINER replicated COMMAND -ARG" "$("$tmpDir/replicated" -i COMMAND -ARG)"
+    assertEquals "-i CONTAINER replicatedctl COMMAND -ARG" "$("$tmpDir/replicatedctl" -i COMMAND -ARG)"
+    assertEquals "-t CONTAINER replicated COMMAND -ARG" "$("$tmpDir/replicated" -t COMMAND -ARG)"
+    assertEquals "-t CONTAINER replicatedctl COMMAND -ARG" "$("$tmpDir/replicatedctl" -t COMMAND -ARG)"
+    assertEquals "-it CONTAINER replicated COMMAND -ARG" "$("$tmpDir/replicated" -it COMMAND -ARG)"
+    assertEquals "-it CONTAINER replicatedctl COMMAND -ARG" "$("$tmpDir/replicatedctl" -it COMMAND -ARG)"
+    assertEquals "-it CONTAINER replicated COMMAND -ARG" "$("$tmpDir/replicated" -ti COMMAND -ARG)"
+    assertEquals "-it CONTAINER replicatedctl COMMAND -ARG" "$("$tmpDir/replicatedctl" -ti COMMAND -ARG)"
+    assertEquals "-it CONTAINER replicated COMMAND -ARG" "$("$tmpDir/replicated" --interactive --tty COMMAND -ARG)"
+    assertEquals "-it CONTAINER replicatedctl COMMAND -ARG" "$("$tmpDir/replicatedctl" --interactive --tty COMMAND -ARG)"
+    assertEquals "CONTAINER replicated COMMAND -ARG" "$("$tmpDir/replicated" --interactive=0 COMMAND -ARG)"
+    assertEquals "CONTAINER replicatedctl COMMAND -ARG" "$("$tmpDir/replicatedctl" --interactive=0 COMMAND -ARG)"
+    assertEquals "CONTAINER replicated COMMAND -ARG" "$("$tmpDir/replicated" --tty=0 COMMAND -ARG)"
+    assertEquals "CONTAINER replicatedctl COMMAND -ARG" "$("$tmpDir/replicatedctl" --tty=0 COMMAND -ARG)"
+    assertEquals "-t CONTAINER replicated COMMAND -ARG" "$("$tmpDir/replicated" --interactive=0 --tty=1 COMMAND -ARG)"
+    assertEquals "-t CONTAINER replicatedctl COMMAND -ARG" "$("$tmpDir/replicatedctl" --interactive=0 --tty=1 COMMAND -ARG)"
 }
 
 testInstallCliFileAutodetect()
 {
+    tmpDir="$(mktemp -d)"
+    _installCliFile "$tmpDir" "echo" "CONTAINER"
+
     if [ -t 0 ]; then
-        assertEquals "$("$tmpDir/replicatedctl" COMMAND -ARG)" "-it CONTAINER replicatedctl COMMAND -ARG"
+        assertEquals "-it CONTAINER replicatedctl COMMAND -ARG" "$("$tmpDir/replicatedctl" COMMAND -ARG)"
     elif [ -t 1 ]; then
-        assertEquals "$("$tmpDir/replicatedctl" COMMAND -ARG)" "-i CONTAINER replicatedctl COMMAND -ARG"
+        assertEquals "-i CONTAINER replicatedctl COMMAND -ARG" "$("$tmpDir/replicatedctl" COMMAND -ARG)"
     else
-        assertEquals "$("$tmpDir/replicatedctl" COMMAND -ARG)" "CONTAINER replicatedctl COMMAND -ARG"
+        assertEquals "CONTAINER replicatedctl COMMAND -ARG" "$("$tmpDir/replicatedctl" COMMAND -ARG)"
     fi
+}
+
+testInstallCliFileShellalias()
+{
+    tmpDir="$(mktemp -d)"
+    _installCliFile "$tmpDir" "echo" "CONTAINER"
+
+    # shell allias will alias "mycli" -> "replicated admin" so -it flags must come after "admin" command
+    # also we do not want to force order of flags to replicated admin command
+    assertEquals "-it CONTAINER replicated admin --no-tty --help -h COMMAND -ARG" "$("$tmpDir/replicated" admin --interactive --no-tty --help -h -t COMMAND -ARG)"
 }
 
 . shunit2
