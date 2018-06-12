@@ -15,76 +15,78 @@
 # Returns:
 #   None
 #######################################
-installCLIFile() {
-  cat > /usr/local/bin/replicated <<-EOF
-#!/bin/sh
-
-# test if stdin is a terminal
-if [ -t 0 ]; then
-  sudo docker exec -it ${1} replicated "\$@"
-elif [ -t 1 ]; then
-  sudo docker exec -i ${1} replicated "\$@"
-else
-  sudo docker exec ${1} replicated "\$@"
-fi
-EOF
-  chmod a+x /usr/local/bin/replicated
-  cat > /usr/local/bin/replicatedctl <<-EOF
-#!/bin/sh
-
-# test if stdin is a terminal
-if [ -t 0 ]; then
-  sudo docker exec -it ${1} replicatedctl "\$@"
-elif [ -t 1 ]; then
-  sudo docker exec -i ${1} replicatedctl "\$@"
-else
-  sudo docker exec ${1} replicatedctl "\$@"
-fi
-EOF
-  chmod a+x /usr/local/bin/replicatedctl
+installCliFile() {
+  _installCliFile "/usr/local/bin" "$1" "$2"
 }
 
+_installCliFile() {
+  read -r -d '' _flags << EOF
+interactive=
+tty=
 
-#######################################
-# Writes the replicated CLI to /usr/local/bin/replicated
-# Wrires the replicated CLI V2 to /usr/local/bin/replicatedctl
-#
-# between `-c replicated`, `--`, and `kubectl`, this is now specialized enough
-# that it doesn't make sense to try to kludge it into
-# the shared function (above) used by swarm/native
-#
-# Globals:
-#   None
-# Arguments:
-#   Container name/ID or script that identifies the container to run the commands in
-# Returns:
-#   None
-#######################################
-installKubernetesCLIFile() {
-  cat > /usr/local/bin/replicated <<-EOF
-#!/bin/sh
-
-# test if stdin is a terminal
-if [ -t 0 ]; then
-  kubectl exec -it -c replicated ${1} replicated -- "\$@"
-elif [ -t 1 ]; then
-  kubectl exec -i -c replicated ${1} replicated -- "\$@"
-else
-  kubectl exec -c replicated ${1} replicated -- "\$@"
-fi
-EOF
-  chmod a+x /usr/local/bin/replicated
-  cat > /usr/local/bin/replicatedctl <<-EOF
-#!/bin/sh
+while [ "\$1" != "" ]; do
+  case "\$1" in
+    -i | --interactive | --interactive=1 )
+      interactive=1
+      ;;
+    --interactive=0 )
+      interactive=0
+      ;;
+    -t | --tty | --tty=1 )
+      tty=1
+      ;;
+    --tty=0 )
+      tty=0
+      ;;
+    -it | -ti )
+      interactive=1
+      tty=1
+      ;;
+    * )
+      break
+      ;;
+  esac
+  shift
+done
 
 # test if stdin is a terminal
-if [ -t 0 ]; then
-  kubectl exec -it -c replicated ${1} replicatedctl -- "\$@"
-elif [ -t 1 ]; then
-  kubectl exec -i -c replicated ${1} replicatedctl -- "\$@"
-else
-  kubectl exec -c replicated ${1} replicatedctl -- "\$@"
+if [ -z "\$interactive" ] && [ -z "\$tty" ]; then
+  if [ -t 0 ]; then
+    interactive=1
+    tty=1
+  elif [ -t 1 ]; then
+    interactive=1
+  fi
+fi
+
+flags=
+if [ "\$interactive" = "1" ] && [ "\$tty" = "1" ]; then
+  flags=" -it"
+elif [ "\$interactive" = "1" ]; then
+  flags=" -i"
+elif [ "\$tty" = "1" ]; then
+  flags=" -t"
 fi
 EOF
-  chmod a+x /usr/local/bin/replicatedctl
+
+  cat > "${1}/replicated" <<-EOF
+#!/bin/sh
+
+${_flags}
+
+${2} \$flags \
+  ${3} \
+  replicated "\$@"
+EOF
+  chmod a+x "${1}/replicated"
+  cat > "${1}/replicatedctl" <<-EOF
+#!/bin/sh
+
+${_flags}
+
+${2} \$flags \
+  ${3} \
+  replicatedctl "\$@"
+EOF
+  chmod a+x "${1}/replicatedctl"
 }

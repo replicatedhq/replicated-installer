@@ -362,7 +362,9 @@ stackDeploy
 includeBranding
 
 printf "Installing replicated command alias\n"
-installCLIFile '"$(sudo docker inspect --format "{{ '{{.Status.ContainerStatus.ContainerID}}' }}" "$(sudo docker service ps "$(sudo docker service inspect --format "{{ '{{.ID}}' }}" '"${SWARM_STACK_NAMESPACE}"'_replicated)" -q | awk "NR==1")")"'
+installCliFile \
+    "sudo docker exec" \
+    '"$(sudo docker inspect --format "{{ '{{.Status.ContainerStatus.ContainerID}}' }}" "$(sudo docker service ps "$(sudo docker service inspect --format "{{ '{{.ID}}' }}" '"${SWARM_STACK_NAMESPACE}"'_replicated)" -q | awk "NR==1")")"'
 installAliasFile
 
 # printf "${GREEN}To add a worker to this swarm, run the following command:\n"
