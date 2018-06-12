@@ -24,11 +24,19 @@ _installCliFile() {
 interactive=
 tty=
 push=
+no_tty=
+is_admin=
 
 while [ "\$1" != "" ]; do
   case "\$1" in
     # replicated admin shell alias support
-    admin | --help | -h | --no-tty )
+    admin )
+      is_admin=1
+      ;;
+    --no-tty )
+      no_tty=1
+      ;;
+    --help | -h )
       push=\$push" \$1"
       ;;
     -i | --interactive | --interactive=1 )
@@ -62,6 +70,16 @@ if [ -z "\$interactive" ] && [ -z "\$tty" ]; then
   elif [ -t 1 ]; then
     interactive=1
   fi
+elif [ -z "\$tty" ] || [ "\$tty" = "0" ]; then
+  # if flags explicitly set then use new behavior for no-tty
+  no_tty=1
+fi
+
+if [ "\$is_admin" = 1 ]; then
+  if [ "\$no_tty" = 1 ]; then
+    push=" --no-tty"\$push
+  fi
+  push=" admin"\$push
 fi
 
 flags=

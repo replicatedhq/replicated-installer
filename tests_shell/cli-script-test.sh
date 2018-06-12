@@ -47,6 +47,9 @@ testInstallCliFileShellalias()
     # shell allias will alias "mycli" -> "replicated admin" so -it flags must come after "admin" command
     # also we do not want to force order of flags to replicated admin command
     assertEquals "-it CONTAINER replicated admin --no-tty --help -h COMMAND -ARG" "$("$tmpDir/replicated" admin --interactive --no-tty --help -h -t COMMAND -ARG)"
+    assertEquals "-t CONTAINER replicated admin COMMAND -ARG" "$("$tmpDir/replicated" admin -t COMMAND -ARG)"
+    assertEquals "CONTAINER replicated admin --no-tty COMMAND -ARG" "$("$tmpDir/replicated" admin --tty=0 COMMAND -ARG)"
+    assertEquals "-i CONTAINER replicated admin --no-tty COMMAND -ARG" "$("$tmpDir/replicated" admin -i COMMAND -ARG)"
 }
 
 . shunit2
