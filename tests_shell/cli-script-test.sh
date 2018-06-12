@@ -25,4 +25,15 @@ testInstallCliFile()
     assertEquals "$("$tmpDir/replicatedctl" --interactive=0 --tty=1 COMMAND -ARG)" "-t CONTAINER replicatedctl COMMAND -ARG"
 }
 
+testInstallCliFileAutodetect()
+{
+    if [ -t 0 ]; then
+        assertEquals "$("$tmpDir/replicatedctl" COMMAND -ARG)" "-it CONTAINER replicatedctl COMMAND -ARG"
+    elif [ -t 1 ]; then
+        assertEquals "$("$tmpDir/replicatedctl" COMMAND -ARG)" "-i CONTAINER replicatedctl COMMAND -ARG"
+    else
+        assertEquals "$("$tmpDir/replicatedctl" COMMAND -ARG)" "CONTAINER replicatedctl COMMAND -ARG"
+    fi
+}
+
 . shunit2
