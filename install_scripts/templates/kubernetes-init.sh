@@ -528,7 +528,9 @@ kubernetesDeploy
 spinnerReplicatedReady
 
 printf "Installing replicated command alias\n"
-installKubernetesCLIFile '$(kubectl get pods -o=jsonpath="{.items[0].metadata.name}" -l tier=master)'
+installCliFile \
+    "kubectl exec -c replicated" \
+    '$(kubectl get pods -o=jsonpath="{.items[0].metadata.name}" -l tier=master)'
 installAliasFile
 outro
 

@@ -693,7 +693,7 @@ case "$INIT_SYSTEM" in
 esac
 
 printf "Installing replicated command alias\n"
-installCLIFile "replicated"
+installCliFile "sudo docker exec" "replicated"
 installAliasFile
 
 if [ "$SKIP_OPERATOR_INSTALL" != "1" ] && [ "$IS_MIGRATION" != "1" ]; then
