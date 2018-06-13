@@ -99,8 +99,8 @@ EOF
 
 ${_flags}
 
-${2} \$flags \
-  ${3} \
+${2} \$flags \\
+  ${3} \\
   replicated"\$push" "\$@"
 EOF
   chmod a+x "${1}/replicated"
@@ -109,8 +109,8 @@ EOF
 
 ${_flags}
 
-${2} \$flags \
-  ${3} \
+${2} \$flags \\
+  ${3} \\
   replicatedctl"\$push" "\$@"
 EOF
   chmod a+x "${1}/replicatedctl"
