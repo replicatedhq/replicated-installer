@@ -20,7 +20,8 @@ installCliFile() {
 }
 
 _installCliFile() {
-  read -r -d '' _flags << EOF
+  set +e
+  read -r -d '' _flags <<EOF
 interactive=
 tty=
 push=
@@ -91,6 +92,7 @@ elif [ "\$tty" = "1" ]; then
   flags=" -t"
 fi
 EOF
+  set -e
 
   cat > "${1}/replicated" <<-EOF
 #!/bin/sh
