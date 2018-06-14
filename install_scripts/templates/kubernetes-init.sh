@@ -86,9 +86,9 @@ EOF
 getKubeServerVersion() {
     logStep "check k8s server version"
     # poll until we can get the current server version
-    _current="$(kubectl version --output json | docker run -i --rm realguess/jq jq -r .serverVersion.gitVersion)"
-    until [ "$_current" != "null" ]; do
-      _current="$(kubectl version --output json | docker run -i --rm realguess/jq jq -r .serverVersion.gitVersion)"
+    _current="$(kubectl version -o yaml | grep gitVersion | cut -d" " -f4)"
+    until [ -n "$_current" ]; do
+      _current="$(kubectl version -o yaml | grep gitVersion | cut -d" " -f4)"
     done
     logSuccess "got k8s server version: $_current"
     printf "$_current"
