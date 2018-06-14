@@ -53,7 +53,7 @@ requireRootUser() {
 #   None
 # Returns:
 #   LSB_DIST
-#   DIST_VERSION
+#   DIST_VERSION - should be MAJOR.MINOR e.g. 16.04 or 7.4
 #   DIST_VERSION_MAJOR
 #######################################
 LSB_DIST=
@@ -62,13 +62,14 @@ DIST_VERSION_MAJOR=
 detectLsbDist() {
     _dist=
     _error_msg="We have checked /etc/os-release and /etc/centos-release files."
-    if [ -f /etc/os-release ] && [ -r /etc/os-release ]; then
+    if [ -f /etc/centos-release ] && [ -r /etc/centos-release ]; then
+        # CentOS 6 example: CentOS release 6.9 (Final)
+        # CentOS 7 example: CentOS Linux release 7.5.1804 (Core)
+        _dist="$(cat /etc/centos-release | cut -d" " -f1)"
+        _version="$(cat /etc/centos-release | sed 's/Linux //' | cut -d" " -f3 | cut -d "." -f1-2)"
+    elif [ -f /etc/os-release ] && [ -r /etc/os-release ]; then
         _dist="$(. /etc/os-release && echo "$ID")"
         _version="$(. /etc/os-release && echo "$VERSION_ID")"
-    elif [ -f /etc/centos-release ] && [ -r /etc/centos-release ]; then
-        # this is a hack for CentOS 6
-        _dist="$(cat /etc/centos-release | cut -d" " -f1)"
-        _version="$(cat /etc/centos-release | cut -d" " -f3 | cut -d "." -f1)"
     elif [ -f /etc/redhat-release ] && [ -r /etc/redhat-release ]; then
         # this is for RHEL6
         _dist="rhel"

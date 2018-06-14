@@ -14,16 +14,23 @@ command_exists() {
 }
 
 #######################################
-# Print a "no proxy" message and exit 1
+# Print an unsupported OS message and exit 1
 # Globals:
-#   None
+#   LSB_DIST
+#   DIST_VERSION
 # Arguments:
-#   Message
+#   None
 # Returns:
 #   None
 #######################################
-bailNoProxy() {
-    bail "Kubernetes installs behind a proxy are not supported at this time"
+bailIfUnsupportedOS() {
+    case "$LSB_DIST$DIST_VERSION" in
+        ubuntu16.04|rhel7.4|centos7.4)
+            ;;
+        *)
+            bail "Kubernetes install is not supported on ${LSB_DIST} ${DIST_VERSION}"
+            ;;
+    esac
 }
 
 
@@ -67,7 +74,7 @@ installKubernetesComponents() {
             installComponentsApt
             return
             ;;
-        centos7|rhel7.*)
+        centos7.4|rhel7.*)
             # This needs to be run on Linux 3.x nodes for Rook
             modprobe rbd
             echo 'rbd' > /etc/modules-load.d/replicated.conf
