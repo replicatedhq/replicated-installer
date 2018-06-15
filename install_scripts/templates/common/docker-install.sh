@@ -79,7 +79,7 @@ installDocker_1_12_Offline() {
             DID_INSTALL_DOCKER=1
             return
             ;;
-        rhel7.4|centos7)
+        rhel7.4|centos7.4)
             mkdir -p image/
             tar xvf packages-docker-rhel74.tar -C image/
             tar xvf image/a2bf112873793f191c9e2b9cf0fef6fc7a58b93947c9996e8b842ca9b5eaaed4/layer.tar

@@ -111,6 +111,7 @@ outro() {
 require64Bit
 requireRootUser
 detectLsbDist
+bailIfUnsupportedOS
 detectInitSystem
 must_swapoff
 
