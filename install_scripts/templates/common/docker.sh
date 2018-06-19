@@ -118,9 +118,9 @@ checkDockerStorageDriver() {
         printf "${RED}The running Docker daemon is configured to use the 'devicemapper' storage driver \
 in loopback mode.\nThis is not recommended for production use. Please see to the following URL for more \
 information.\n\nhttps://help.replicated.com/docs/kb/developer-resources/devicemapper-warning/.${NC}\n\n\
-Do you want to proceed anyway? "
-        if ! confirmN; then
-            exit 0
+"
+        if [ -n "$HARD_FAIL" ]; then
+            exit 1
         fi
     fi
 }
