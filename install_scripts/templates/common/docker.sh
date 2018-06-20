@@ -124,6 +124,11 @@ information.\n\nhttps://help.replicated.com/docs/kb/developer-resources/devicema
         if [ "$HARD_FAIL" ]; then
             exit 1
         fi
+
+        printf "Do you want to proceed anyway?"
+        if ! confirmN; then
+            exit 0
+        fi
     fi
 }
 
