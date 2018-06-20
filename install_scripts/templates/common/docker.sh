@@ -122,10 +122,12 @@ in loopback mode.\nThis is not recommended for production use. Please see to the
 information.\n\nhttps://help.replicated.com/docs/kb/developer-resources/devicemapper-warning/.${NC}\n\n\
 "
         if [ "$HARD_FAIL" ]; then
+            # Printf for testing purposes. Delete before merging
+            printf"${RED}EXITING . . ."
             exit 1
         fi
 
-        printf "Do you want to proceed anyway?"
+        printf "${RED}Do you want to proceed anyway?"
         if ! confirmN; then
             exit 0
         fi
