@@ -35,7 +35,7 @@ def template_args(**kwargs):
         args['replicated_env'] = get_arg('replicated_env')
     if get_arg('no-ce-on-ee') is not None:
         args['no_ce_on_ee'] = True
-    if get_arg('hard-fail') is not None:
+    if get_arg('hard_fail') is not None:
         args['hard_fail'] = True
     if kwargs:
         args.update(kwargs)

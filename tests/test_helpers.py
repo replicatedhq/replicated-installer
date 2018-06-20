@@ -139,10 +139,3 @@ def test_get_premkit_data_dir():
     assert helpers.get_premkit_data_dir('2.13.0') == '/tmp/premkit-data'
     assert helpers.get_premkit_data_dir('2.13.1') == ''
     assert helpers.get_premkit_data_dir('2.14.0') == ''
-
-
-def test_hard_fail_flag():
-    # mocker.patch('install_scripts.helpers.template_args', return_value={'hard_fail': True})
-    with app.test_request_context('/?hard-fail=true'):
-        hard_fail = helpers.get_arg('hard_fail')
-    assert hard_fail
