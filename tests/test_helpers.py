@@ -142,6 +142,7 @@ def test_get_premkit_data_dir():
 
 
 def test_hard_fail_flag(mocker):
-    mocker.patch('install_scripts.helpers.template_args', return_value={'hard_fail': 'true'})
-    flag = helpers.get_arg('hard_fail')
-    assert flag == 'true'
+    mocker.patch('install_scripts.helpers.template_args', return_value={'hard_fail': True})
+    with app.test_request_context('/?hard-fail=true'):
+        hard_fail = helpers.get_arg('hard_fail')
+    assert hard_fail
