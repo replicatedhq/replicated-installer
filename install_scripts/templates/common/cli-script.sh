@@ -101,7 +101,7 @@ ${_flags}
 
 ${2} \$flags \\
   ${3} \\
-  replicated"\$push" "\$@"
+  replicated\$push \$@
 EOF
   chmod a+x "${1}/replicated"
   cat > "${1}/replicatedctl" <<-EOF
@@ -111,7 +111,7 @@ ${_flags}
 
 ${2} \$flags \\
   ${3} \\
-  replicatedctl"\$push" "\$@"
+  replicatedctl\$push \$@
 EOF
   chmod a+x "${1}/replicatedctl"
 }
