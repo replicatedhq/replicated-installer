@@ -1,4 +1,3 @@
-AIRGAP="{{ airgap }}"
 LOG_LEVEL="{{ log_level }}"
 RELEASE_SEQUENCE="{{ release_sequence }}"
 UI_BIND_PORT="{{ ui_bind_port }}"
@@ -7,6 +6,8 @@ PV_BASE_PATH="{{ pv_base_path }}"
 STORAGE_CLASS="{{ storage_class }}"
 SERVICE_TYPE="{{ service_type }}"
 PROXY_ADDRESS="{{ proxy_address }}"
+NO_PROXY_ADDRESS="{{ no_proxy_address }}"
+IP_ALLOC_RANGE=10.32.0.0/12  # default for weave
 # booleans
 AIRGAP="{{ airgap }}"
 STORAGE_PROVISIONER="{{ storage_provisioner }}"
@@ -15,8 +16,7 @@ ROOK_SYSTEM_YAML=0
 ROOK_CLUSTER_YAML=0
 WEAVE_YAML=0
 CONTOUR_YAML=0
-IP_ALLOC_RANGE=10.32.0.0/12  # default for weave
-SERVICE_CIDR="10.96.0.0/12" # kubeadm default
+DEPLOYMENT_YAML=0
 
 {% include 'common/kubernetes.sh' %}
 
@@ -70,14 +70,18 @@ while [ "$1" != "" ]; do
             CONTOUR_YAML="$_value"
             REPLICATED_YAML=0
             ;;
+        deployment-yaml|deployment_yaml)
+            DEPLOYMENT_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
         ip-alloc-range|ip_alloc_range)
             IP_ALLOC_RANGE="$_value"
             ;;
         http-proxy|http_proxy)
             PROXY_ADDRESS="$_value"
             ;;
-        service-cidr|service_cidr)
-            SERVICE_CIDR="$_value"
+        no-proxy-address|no_proxy_address)
+            NO_PROXY_ADDRESS="$_value"
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
@@ -87,7 +91,7 @@ while [ "$1" != "" ]; do
     shift
 done
 
-render_replicated_specs() {
+render_replicated_deployment() {
     # For airgap the replicated pod has to run on the node where the airgap
     # package was unpacked
     AFFINITY=
@@ -130,26 +134,12 @@ EOF
         - name: HTTP_PROXY
           value: $PROXY_ADDRESS
         - name: NO_PROXY
-          value: $SERVICE_CIDR
+          value: $NO_PROXY_ADDRESS
 EOF
         )
     fi
 
     cat <<EOF
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: replicated-admin
-  namespace: "$KUBERNETES_NAMESPACE"
-roleRef:
-  kind: ClusterRole
-  name: cluster-admin
-  apiGroup: rbac.authorization.k8s.io
-subjects:
-  - kind: ServiceAccount
-    name: default
-    namespace: "$KUBERNETES_NAMESPACE"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -257,6 +247,25 @@ $PROXY_ENVS
       - name: proc
         hostPath:
           path: /proc
+EOF
+}
+
+render_replicated_specs() {
+    cat <<EOF
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: replicated-admin
+  namespace: "$KUBERNETES_NAMESPACE"
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: "$KUBERNETES_NAMESPACE"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -617,7 +626,7 @@ spec:
       storeType: filestore
       journalSizeMB: 1024
     directories:
-    - path: "{{ pv_base_path }}"
+    - path: "$PV_BASE_PATH"
 ---
 apiVersion: rook.io/v1alpha1
 kind: Pool
@@ -1079,6 +1088,7 @@ if [ "$REPLICATED_YAML" = "1" ]; then
     fi
 
     render_replicated_specs
+    render_replicated_deployment
 
     if [ "$AIRGAP" = "1" ]; then
         render_replicated_node_port_service
@@ -1091,4 +1101,8 @@ if [ "$REPLICATED_YAML" = "1" ]; then
     else
         render_replicated_ui_service
     fi
+fi
+
+if [ "$DEPLOYMENT_YAML" = "1" ]; then
+    render_replicated_deployment
 fi
