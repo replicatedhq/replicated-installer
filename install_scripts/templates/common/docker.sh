@@ -125,7 +125,7 @@ information.\n\nhttps://help.replicated.com/docs/kb/developer-resources/devicema
             exit 1
         fi
 
-        printf "${RED}Do you want to proceed anyway?"
+        printf "Do you want to proceed anyway? "
         if ! confirmN; then
             exit 0
         fi
