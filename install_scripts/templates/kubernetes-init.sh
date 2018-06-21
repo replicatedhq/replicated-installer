@@ -27,6 +27,7 @@ BOOTSTRAP_TOKEN_TTL="24h"
 KUBERNETES_NAMESPACE="default"
 KUBERNETES_VERSION="{{ kubernetes_version }}"
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
+HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 IP_ALLOC_RANGE=
 DEFAULT_SERVICE_CIDR="10.96.0.0/12"
 SERVICE_CIDR=$DEFAULT_SERVICE_CIDR
@@ -451,7 +452,7 @@ if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
         installDocker_1_12_Offline
     fi
     checkDockerDriver
-    checkDockerStorageDriver
+    checkDockerStorageDriver "$HARD_FAIL_ON_LOOPBACK"
 fi
 
 if [ -n "$PROXY_ADDRESS" ]; then

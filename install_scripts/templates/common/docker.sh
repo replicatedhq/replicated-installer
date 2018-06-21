@@ -94,7 +94,7 @@ checkDockerDriver() {
 # Globals:
 #   BYPASS_STORAGEDRIVER_WARNINGS
 # Arguments:
-#   None
+#   HARD_FAIL_ON_LOOPBACK
 # Returns:
 #   None
 #######################################
@@ -118,7 +118,14 @@ checkDockerStorageDriver() {
         printf "${RED}The running Docker daemon is configured to use the 'devicemapper' storage driver \
 in loopback mode.\nThis is not recommended for production use. Please see to the following URL for more \
 information.\n\nhttps://help.replicated.com/docs/kb/developer-resources/devicemapper-warning/.${NC}\n\n\
-Do you want to proceed anyway? "
+"
+        # HARD_FAIL_ON_LOOPBACK
+        if [ -n "$1" ]; then
+            printf "${RED}Please configure a recommended storage driver and try again.${NC}\n\n"
+            exit 1
+        fi
+
+        printf "Do you want to proceed anyway? "
         if ! confirmN; then
             exit 0
         fi

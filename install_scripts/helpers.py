@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import base64
-import os
 
 import yaml
 
@@ -11,6 +10,7 @@ from flask import request, render_template, Response
 from . import db, param
 
 _default_docker_version = '17.12.1'
+
 
 def template_args(**kwargs):
     args = {
@@ -35,6 +35,8 @@ def template_args(**kwargs):
         args['replicated_env'] = get_arg('replicated_env')
     if get_arg('no-ce-on-ee') is not None:
         args['no_ce_on_ee'] = True
+    if get_arg('hard_fail_on_loopback') is not None:
+        args['hard_fail_on_loopback'] = True
     if kwargs:
         args.update(kwargs)
     return args
