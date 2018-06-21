@@ -79,6 +79,22 @@ shell_composer_dex:
 		install-scripts-dev \
 		/bin/bash
 
+# shell for running mysql from saas composer, but scripts will
+# delegate to kevin.ngrok.io for other things like docker-install.sh
+shell_composer_kevin:
+	docker run -it --rm --name install-scripts \
+		-p 8090:5000/tcp \
+		-e ENVIRONMENT=dev \
+		-e REPLICATED_INSTALL_URL=https://kevin109104.ngrok.io \
+		-e MYSQL_USER=replicated \
+		-e MYSQL_PASS=password \
+		-e MYSQL_HOST=172.17.0.1 \
+		-e MYSQL_PORT=3306 \
+		-e MYSQL_DB=replicated \
+		-v $(BUILD_DIR):/usr/src/app \
+		install-scripts-dev \
+		/bin/bash
+
 # shell for running mysql from saas composer on linux
 shell_composer_linux:
 	docker run -it --rm --name install-scripts \

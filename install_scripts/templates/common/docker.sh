@@ -121,6 +121,7 @@ information.\n\nhttps://help.replicated.com/docs/kb/developer-resources/devicema
 "
         # HARD_FAIL_ON_LOOPBACK
         if [ -n "$1" ]; then
+            printf "${RED}Please configure a recommended storage driver and try again.${NC}\n\n"
             exit 1
         fi
 
