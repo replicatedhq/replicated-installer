@@ -186,7 +186,7 @@ getYAMLOpts() {
         opts=$opts" http-proxy=$PROXY_ADDRESS"
     fi
     if [ "$SERVICE_CIDR" != "$DEFAULT_SERVICE_CIDR" ]; then
-        opts=$opts" service-cidr=$SERVICE_CIDR"
+        opts=$opts" no-proxy-address=$SERVICE_CIDR"
     fi
     YAML_GENERATE_OPTS="$opts"
 }

@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from flask import Flask, Response, abort, render_template, request
+from flask import Flask, Response, abort, render_template, request, jsonify
 import semver
 import subprocess
 import urllib
@@ -9,7 +9,6 @@ import traceback
 from . import db, helpers, param
 
 app = Flask(__name__)
-
 
 @app.teardown_appcontext
 def teardown_db(exception):
@@ -245,6 +244,55 @@ def get_replicated_compose_v3(replicated_channel=None,
         return Response(response, mimetype='text/plain')
     return Response(response, mimetype='application/x-yaml')
 
+@app.route('/kubernetes/compatibility')
+@app.route('/<replicated_channel>/kubernetes/compatibility')
+@app.route('/<app_slug>/<app_channel>/kubernetes/compatibility')
+def get_kubernetes_compatibility(replicated_channel=None,
+                                app_slug=None,
+                                app_channel=None):
+    current_replicated_version = helpers.get_arg('current_replicated_version', '')
+    parsed = semver.parse(current_replicated_version, loose=False)
+    if parsed is None:
+        abort(400)
+    current_kubernetes_version = helpers.get_pinned_kubernetes_version(
+        current_replicated_version)
+
+    next_replicated_version = helpers.get_replicated_version(
+        replicated_channel, app_slug, app_channel)
+    next_kubernetes_version = helpers.get_pinned_kubernetes_version(
+        next_replicated_version)
+
+    body = {
+        'compatible': current_kubernetes_version == next_kubernetes_version
+    }
+
+    return jsonify(body)
+
+
+@app.route('/kubernetes/deploy.yml')
+@app.route('/<replicated_channel>/kubernetes/deploy.yml')
+@app.route('/<app_slug>/<app_channel>/kubernetes/deploy.yml')
+def get_replicated_kubernetes_yml(replicated_channel=None,
+                              app_slug=None,
+                              app_channel=None):
+    kwargs = get_kubernetes_yaml_template_args(replicated_channel,
+                                                app_slug, app_channel)
+    script = render_template(
+        'kubernetes-yml-generate.sh', suppress_runtime=1, **kwargs)
+    p = subprocess.Popen(
+        ['bash -s deployment-yaml=1', '-'],
+        shell=True,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE)
+    p.stdin.write(script)
+    p.stdin.close()
+    p.wait()
+    response = p.stdout.read()
+    p.stdout.close()
+    if helpers.get_arg('accept', None) == 'text':
+        return Response(response, mimetype='text/plain')
+    return Response(response, mimetype='application/x-yaml')
+
 
 def get_replicated_compose_v3_template_args(replicated_channel=None,
                                             app_slug=None,
@@ -378,19 +426,11 @@ def get_replicated_compose_v2(replicated_channel=None,
         return Response(response, mimetype='text/plain')
     return Response(response, mimetype='application/x-yaml')
 
-
-@app.route('/kubernetes-yml-generate')
-@app.route('/kubernetes-yml-generate.sh')
-@app.route('/<replicated_channel>/kubernetes-yml-generate')
-@app.route('/<app_slug>/<app_channel>/kubernetes-yml-generate')
-@app.route(
-    '/<replicated_channel>/<app_slug>/<app_channel>/kubernetes-yml-generate')
-def get_replicated_kubernetes(replicated_channel=None,
+def get_kubernetes_yaml_template_args(replicated_channel=None,
                               app_slug=None,
                               app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
     print("Looking up tags for:", replicated_channel, app_slug, app_channel)
-
     replicated_version = helpers.get_replicated_version(
         replicated_channel, app_slug, app_channel)
     replicated_ui_version = helpers.get_replicated_ui_version(
@@ -410,10 +450,10 @@ def get_replicated_kubernetes(replicated_channel=None,
     ui_bind_port = helpers.get_arg('ui_bind_port', 8800)
     customer_base_url = helpers.get_arg('customer_base_url')
     proxy_address = helpers.get_arg('http_proxy', '')
+    # 10.96.0.0/12 is the default service cidr
+    no_proxy_address = helpers.get_arg('no_proxy_address', '10.96.0.0/12')
 
-    response = render_template(
-        'kubernetes-yml-generate.sh',
-        **helpers.template_args(
+    return helpers.template_args(
             channel_name=replicated_channel,
             replicated_tag=replicated_tag,
             replicated_ui_tag=replicated_ui_tag,
@@ -426,7 +466,23 @@ def get_replicated_kubernetes(replicated_channel=None,
             kubernetes_namespace=kubernetes_namespace,
             ui_bind_port=ui_bind_port,
             proxy_address=proxy_address,
-            customer_base_url_override=customer_base_url, ))
+            no_proxy_address=no_proxy_address,
+            customer_base_url_override=customer_base_url, )
+
+@app.route('/kubernetes-yml-generate')
+@app.route('/kubernetes-yml-generate.sh')
+@app.route('/<replicated_channel>/kubernetes-yml-generate')
+@app.route('/<app_slug>/<app_channel>/kubernetes-yml-generate')
+@app.route(
+    '/<replicated_channel>/<app_slug>/<app_channel>/kubernetes-yml-generate')
+def get_replicated_kubernetes(replicated_channel=None,
+                              app_slug=None,
+                              app_channel=None):
+    kwargs = get_kubernetes_yaml_template_args(replicated_channel,
+                                                app_slug, app_channel)
+
+
+    response = render_template('kubernetes-yml-generate.sh', **kwargs)
 
     if helpers.get_arg('accept', None) == 'text':
         return Response(response, mimetype='text/plain')
