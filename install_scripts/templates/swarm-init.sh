@@ -22,6 +22,7 @@ TLS_CERT_PATH=
 UI_BIND_PORT=8800
 USER_ID=
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
+HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 
 set +e
 read -r -d '' CHANNEL_CSS << CHANNEL_CSS_EOM
@@ -309,7 +310,7 @@ if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
     installDocker "$PINNED_DOCKER_VERSION" "$MIN_DOCKER_VERSION"
 
     checkDockerDriver
-    checkDockerStorageDriver
+    checkDockerStorageDriver "$HARD_FAIL_ON_LOOPBACK"
 fi
 
 # TODO: docker group

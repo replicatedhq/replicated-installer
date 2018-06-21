@@ -29,6 +29,7 @@ READ_TIMEOUT="-t 1"
 FAST_TIMEOUTS=1
 {%- endif %}
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
+HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 
 set +e
 read -r -d '' CHANNEL_CSS << CHANNEL_CSS_EOM
@@ -578,7 +579,7 @@ if [ "$ONLY_INSTALL_DOCKER" = "1" ]; then
     installDocker "$PINNED_DOCKER_VERSION" "0.0.0"
 
     checkDockerDriver
-    checkDockerStorageDriver
+    checkDockerStorageDriver "$HARD_FAIL_ON_LOOPBACK"
     exit 0
 fi
 
@@ -606,7 +607,7 @@ if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
     installDocker "$PINNED_DOCKER_VERSION" "$MIN_DOCKER_VERSION"
 
     checkDockerDriver
-    checkDockerStorageDriver
+    checkDockerStorageDriver "$HARD_FAIL_ON_LOOPBACK"
 fi
 
 if [ -n "$PROXY_ADDRESS" ]; then

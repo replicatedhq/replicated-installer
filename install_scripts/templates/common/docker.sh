@@ -94,7 +94,7 @@ checkDockerDriver() {
 # Globals:
 #   BYPASS_STORAGEDRIVER_WARNINGS
 # Arguments:
-#   None
+#   HARD_FAIL_ON_LOOPBACK
 # Returns:
 #   None
 #######################################
@@ -113,15 +113,14 @@ checkDockerStorageDriver() {
         startDocker
     fi
 
-    HARD_FAIL="{{ hard_fail }}"
-
     _driver=$(docker info 2>/dev/null | grep 'Storage Driver' | awk '{print $3}' | awk -F- '{print $1}')
     if [ "$_driver" = "devicemapper" ] && docker info 2>/dev/null | grep -Fqs 'Data loop file:' ; then
         printf "${RED}The running Docker daemon is configured to use the 'devicemapper' storage driver \
 in loopback mode.\nThis is not recommended for production use. Please see to the following URL for more \
 information.\n\nhttps://help.replicated.com/docs/kb/developer-resources/devicemapper-warning/.${NC}\n\n\
 "
-        if [ "$HARD_FAIL" ]; then
+        # HARD_FAIL_ON_LOOPBACK
+        if [ -n "$1" ]; then
             exit 1
         fi
 

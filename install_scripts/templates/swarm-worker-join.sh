@@ -8,6 +8,7 @@ NO_PROXY=0
 PINNED_DOCKER_VERSION="{{ pinned_docker_version }}"
 SKIP_DOCKER_INSTALL=0
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
+HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -122,7 +123,7 @@ if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
     installDocker "$PINNED_DOCKER_VERSION" "$MIN_DOCKER_VERSION"
 
     checkDockerDriver
-    checkDockerStorageDriver
+    checkDockerStorageDriver "$HARD_FAIL_ON_LOOPBACK"
 fi
 
 promptForSwarmMasterAddress

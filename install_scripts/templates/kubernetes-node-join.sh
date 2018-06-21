@@ -9,6 +9,7 @@ PINNED_DOCKER_VERSION="{{ pinned_docker_version }}"
 SKIP_DOCKER_INSTALL=0
 OFFLINE_DOCKER_INSTALL=0
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
+HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 KUBERNETES_ONLY=0
 
 {% include 'common/common.sh' %}
@@ -198,7 +199,7 @@ if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
         installDocker_1_12_Offline
     fi
     checkDockerDriver
-    checkDockerStorageDriver
+    checkDockerStorageDriver "$HARD_FAIL_ON_LOOPBACK"
 fi
 
 if [ -n "$PROXY_ADDRESS" ]; then
