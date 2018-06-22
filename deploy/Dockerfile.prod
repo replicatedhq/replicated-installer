@@ -5,7 +5,6 @@ RUN apt-get update \
         git \
         nginx \
         supervisor \
-        python-dev \
     && rm -rf /var/lib/apt/lists/*
 
 ADD ./requirements.txt /home/docker/code/
