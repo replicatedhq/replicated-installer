@@ -1,21 +1,28 @@
-FROM ubuntu:16.04
+FROM python:3
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential git python python-dev python-setuptools nginx supervisor \
-             software-properties-common python-software-properties && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        git \
+        nginx \
+        supervisor \
+        python-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN easy_install pip
-
-ADD . /home/docker/code/
-
+ADD ./requirements.txt /home/docker/code/
 RUN pip install -r /home/docker/code/requirements.txt
 
 RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 RUN rm /etc/nginx/sites-enabled/default
-RUN ln -s /home/docker/code/nginx-app.conf /etc/nginx/sites-enabled/
-RUN ln -s /home/docker/code/supervisor-app.conf /etc/supervisor/conf.d/
+ADD ./nginx-app.conf /etc/nginx/sites-enabled/
+ADD ./supervisor-app.conf /etc/supervisor/conf.d/
+
+ADD ./uwsgi_params /home/docker/code/
+ADD ./uwsgi.ini /home/docker/code/
+
+ADD ./install_scripts /home/docker/code/install_scripts/
+ADD ./main.py /home/docker/code/
+ADD LICENSE /home/docker/code/
 
 EXPOSE 80
 
-CMD ["supervisord", "-n"]
+CMD [supervisord, -c, /etc/supervisor/supervisord.conf, -n]
