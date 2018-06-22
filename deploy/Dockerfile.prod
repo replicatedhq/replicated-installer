@@ -24,4 +24,4 @@ ADD LICENSE /home/docker/code/
 
 EXPOSE 80
 
-CMD [supervisord, -c, /etc/supervisor/supervisord.conf, -n]
+CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf", "-n"]
