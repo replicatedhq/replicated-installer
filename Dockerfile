@@ -17,4 +17,4 @@ ENV ENVIRONMENT dev
 
 EXPOSE 5000
 
-CMD ["python", "app/app.py"]
+CMD ["python", "main.py"]
