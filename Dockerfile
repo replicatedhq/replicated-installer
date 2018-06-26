@@ -1,4 +1,4 @@
-FROM python:2.7
+FROM python:2
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -12,5 +12,9 @@ COPY requirements.txt /usr/src/app/
 RUN pip install --no-cache-dir --src /usr/local/src -r requirements.txt
 
 COPY . /usr/src/app
+
+ENV ENVIRONMENT dev
+
+EXPOSE 5000
 
 CMD ["python", "app/app.py"]
