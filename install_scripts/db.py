@@ -15,7 +15,7 @@ def get():
         return db
 
     print("Connecting to db")
-    database = database = param.lookup('MYSQL_DATABASE', '/mysql/database')
+    database = param.lookup('MYSQL_DATABASE', '/mysql/database')
     if database == '':
         database = param.lookup('MYSQL_DB', '/mysql/database')
     password = param.lookup('MYSQL_PASSWORD', '/mysql/password', decrypt=True)
