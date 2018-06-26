@@ -151,6 +151,9 @@ build_replicated_operator_opts() {
     if [ "$CUSTOM_SELINUX_REPLICATED_DOMAIN" = "1" ]; then
         REPLICATED_OPERATOR_OPTS=$REPLICATED_OPERATOR_OPTS" -e SELINUX_REPLICATED_DOMAIN=$SELINUX_REPLICATED_DOMAIN"
     fi
+    if [ -n "$PROXY_ADDRESS" ]; then
+        REPLICATED_OPERATOR_OPTS="$REPLICATED_OPERATOR_OPTS -e NO_PROXY=$NO_PROXY_ADDRESSES"
+    fi
 
     find_hostname
     REPLICATED_OPERATOR_OPTS=$REPLICATED_OPERATOR_OPTS" -e NODENAME=$SYS_HOSTNAME"
@@ -377,6 +380,10 @@ if [ "$NO_PROXY" != "1" ]; then
     if [ -z "$PROXY_ADDRESS" ]; then
         promptForProxy
     fi
+
+    if [ -n "$PROXY_ADDRESS" ]; then
+        getNoProxyAddresses "$DAEMON_ENDPOINT"
+    fi
 fi
 
 exportProxy
@@ -388,7 +395,7 @@ if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
     checkDockerStorageDriver "$HARD_FAIL_ON_LOOPBACK"
 fi
 
-if [ -n "$PROXY_ADDRESS" ]; then
+if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
     requireDockerProxy
 fi
 
@@ -396,7 +403,7 @@ if [ "$RESTART_DOCKER" = "1" ]; then
     restartDocker
 fi
 
-if [ -n "$PROXY_ADDRESS" ]; then
+if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
     checkDockerProxyConfig
 fi
 

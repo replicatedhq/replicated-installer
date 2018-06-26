@@ -129,8 +129,7 @@ fi
 promptForSwarmMasterAddress
 
 if [ -n "$PROXY_ADDRESS" ]; then
-    parseIpv4FromAddress "$SWARM_MASTER_ADDRESS"
-    NO_PROXY_IP="$PARSED_IPV4"
+    getNoProxyAddresses "$SWARM_MASTER_ADDRESS"
     requireDockerProxy
 fi
 
