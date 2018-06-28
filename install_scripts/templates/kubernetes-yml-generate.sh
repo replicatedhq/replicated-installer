@@ -11,6 +11,7 @@ IP_ALLOC_RANGE=10.32.0.0/12  # default for weave
 # booleans
 AIRGAP="{{ airgap }}"
 STORAGE_PROVISIONER="{{ storage_provisioner }}"
+ENCRYPT_NETWORK="{{ encrypt_network }}"
 REPLICATED_YAML=1
 ROOK_SYSTEM_YAML=0
 ROOK_CLUSTER_YAML=0
@@ -82,6 +83,9 @@ while [ "$1" != "" ]; do
             ;;
         no-proxy-address|no_proxy_address)
             NO_PROXY_ADDRESS="$_value"
+            ;;
+        encrypt-network|encrypt_network)
+            ENCRYPT_NETWORK="$_value"
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
@@ -640,6 +644,29 @@ EOF
 }
 
 render_weave_yaml() {
+    weave_passwd_env=
+    if [ "$ENCRYPT_NETWORK" != "0" ]; then
+        weave_password=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c9)
+        weave_passwd_env=$(cat <<-EOF
+                - name: WEAVE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: weave-passwd
+                      key: weave-passwd
+EOF
+        )
+        cat <<EOF
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: weave-passwd
+  namespace: kube-system
+stringData:
+  weave-passwd: $weave_password
+EOF
+    fi
+
     cat <<EOF
 ---
 apiVersion: v1
@@ -810,6 +837,7 @@ items:
                       fieldPath: spec.nodeName
                 - name: IPALLOC_RANGE
                   value: $IP_ALLOC_RANGE
+$weave_passwd_env
               image: 'weaveworks/weave-kube:2.2.0'
               livenessProbe:
                 httpGet:
