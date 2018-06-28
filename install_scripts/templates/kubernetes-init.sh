@@ -33,6 +33,7 @@ DEFAULT_SERVICE_CIDR="10.96.0.0/12"
 SERVICE_CIDR=$DEFAULT_SERVICE_CIDR
 DEFAULT_CLUSTER_DNS="10.96.0.10"
 CLUSTER_DNS=$DEFAULT_CLUSTER_DNS
+ADDITIONAL_NO_PROXY=
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -187,7 +188,7 @@ getYAMLOpts() {
         opts=$opts" http-proxy=$PROXY_ADDRESS"
     fi
     if [ -n "$NO_PROXY_ADDRESSES" ]; then
-        opts=$opts" no-proxy-address=$NO_PROXY_ADDRESSES"
+        opts=$opts" no-proxy-addresses=$NO_PROXY_ADDRESSES"
     fi
     YAML_GENERATE_OPTS="$opts"
 }
@@ -399,6 +400,13 @@ while [ "$1" != "" ]; do
             ;;
         cluster-dns|cluster_dns)
             CLUSTER_DNS="$_value"
+            ;;
+        additional-no-proxy|additional_no_proxy)
+            if [ -z "$ADDITIONAL_NO_PROXY" ]; then
+                ADDITIONAL_NO_PROXY="$_value"
+            else
+                ADDITIONAL_NO_PROXY="$ADDITIONAL_NO_PROXY,$_value"
+            fi
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""

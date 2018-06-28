@@ -451,7 +451,7 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
     customer_base_url = helpers.get_arg('customer_base_url')
     proxy_address = helpers.get_arg('http_proxy', '')
     # 10.96.0.0/12 is the default service cidr
-    no_proxy_address = helpers.get_arg('no_proxy_address', '10.96.0.0/12')
+    no_proxy_addresses = helpers.get_arg('no_proxy_addresses', '10.96.0.0/12')
 
     return helpers.template_args(
             channel_name=replicated_channel,
@@ -466,7 +466,7 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
             kubernetes_namespace=kubernetes_namespace,
             ui_bind_port=ui_bind_port,
             proxy_address=proxy_address,
-            no_proxy_address=no_proxy_address,
+            no_proxy_addresses=no_proxy_addresses,
             customer_base_url_override=customer_base_url, )
 
 @app.route('/kubernetes-yml-generate')

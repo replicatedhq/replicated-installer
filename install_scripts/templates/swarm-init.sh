@@ -23,6 +23,7 @@ UI_BIND_PORT=8800
 USER_ID=
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
+ADDITIONAL_NO_PROXY=
 
 set +e
 read -r -d '' CHANNEL_CSS << CHANNEL_CSS_EOM
@@ -275,6 +276,13 @@ while [ "$1" != "" ]; do
             ;;
         no-ce-on-ee|no_ce_on_ee)
             NO_CE_ON_EE=1
+            ;;
+        additional-no-proxy|additional_no_proxy)
+            if [ -z "$ADDITIONAL_NO_PROXY" ]; then
+                ADDITIONAL_NO_PROXY="$_value"
+            else
+                ADDITIONAL_NO_PROXY="$ADDITIONAL_NO_PROXY,$_value"
+            fi
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
