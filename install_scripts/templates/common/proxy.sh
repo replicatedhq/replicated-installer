@@ -214,7 +214,7 @@ exportProxy() {
 #######################################
 # Assembles a sane list of no_proxy addresses
 # Globals:
-#   None
+#   ADDITIONAL_NO_PROXY (optional)
 # Arguments:
 #   None
 # Returns:
@@ -228,6 +228,10 @@ getNoProxyAddresses() {
     fi
 
     NO_PROXY_ADDRESSES="localhost,127.0.0.1,$DOCKER0_IP"
+
+    if [ -n "$ADDITIONAL_NO_PROXY" ]; then
+        NO_PROXY_ADDRESSES="$NO_PROXY_ADDRESSES,$ADDITIONAL_NO_PROXY"
+    fi
 
     while [ "$#" -gt 0 ]
     do
