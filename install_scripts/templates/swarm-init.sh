@@ -23,6 +23,7 @@ UI_BIND_PORT=8800
 USER_ID=
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
+ADDITIONAL_NO_PROXY=
 
 set +e
 read -r -d '' CHANNEL_CSS << CHANNEL_CSS_EOM
@@ -152,6 +153,9 @@ stackDeploy() {
     if [ -n "$PROXY_ADDRESS" ]; then
         opts=$opts" http-proxy=$PROXY_ADDRESS"
     fi
+    if [ -n "$NO_PROXY_ADDRESSES" ]; then
+        opts=$opts" no-proxy-addresses=$NO_PROXY_ADDRESSES"
+    fi
 
     echo "Deploying Replicated stack"
 
@@ -273,6 +277,13 @@ while [ "$1" != "" ]; do
         no-ce-on-ee|no_ce_on_ee)
             NO_CE_ON_EE=1
             ;;
+        additional-no-proxy|additional_no_proxy)
+            if [ -z "$ADDITIONAL_NO_PROXY" ]; then
+                ADDITIONAL_NO_PROXY="$_value"
+            else
+                ADDITIONAL_NO_PROXY="$ADDITIONAL_NO_PROXY,$_value"
+            fi
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -323,8 +334,8 @@ SWARM_NODE_ID="$(docker info --format "{{ '{{.Swarm.NodeID}}' }}")"
 SWARM_NODE_ADDRESS="$(docker info --format "{{ '{{.Swarm.NodeAddr}}' }}")"
 SWARM_MASTER_ADDRESS="$(docker info --format "{{ '{{with index .Swarm.RemoteManagers 0}}{{.Addr}}{{end}}' }}")"
 
-if [ -n "$PROXY_ADDRESS" ]; then
-    NO_PROXY_IP="$SWARM_NODE_ADDRESS"
+if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
+    getNoProxyAddresses "$SWARM_NODE_ADDRESS"
     requireDockerProxy
 fi
 
@@ -332,7 +343,7 @@ if [ "$RESTART_DOCKER" = "1" ]; then
     restartDocker
 fi
 
-if [ -n "$PROXY_ADDRESS" ]; then
+if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
     checkDockerProxyConfig
 fi
 

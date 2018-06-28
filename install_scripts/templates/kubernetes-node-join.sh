@@ -11,6 +11,7 @@ OFFLINE_DOCKER_INSTALL=0
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 KUBERNETES_ONLY=0
+ADDITIONAL_NO_PROXY=
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -168,6 +169,13 @@ while [ "$1" != "" ]; do
         kubernetes-only|kubernetes_only)
             KUBERNETES_ONLY=1
             ;;
+        additional-no-proxy|additional_no_proxy)
+            if [ -z "$ADDITIONAL_NO_PROXY" ]; then
+                ADDITIONAL_NO_PROXY="$_value"
+            else
+                ADDITIONAL_NO_PROXY="$ADDITIONAL_NO_PROXY,$_value"
+            fi
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -203,10 +211,9 @@ if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
 fi
 
 if [ -n "$PROXY_ADDRESS" ]; then
-    parseIpv4FromAddress "$KUBERNETES_MASTER_ADDR"
+    getNoProxyAddresses "$KUBERNETES_MASTER_ADDR" "$SERVICE_CIDR"
     # enable kubeadm to reach the K8s API server
-    export no_proxy="$PARSED_IPV4,$SERVICE_CIDR"
-    NO_PROXY_IP="$PARSED_IPV4"
+    export no_proxy="$NO_PROXY_ADDRESSES"
     requireDockerProxy
 fi
 

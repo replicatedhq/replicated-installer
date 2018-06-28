@@ -30,6 +30,7 @@ FAST_TIMEOUTS=1
 {%- endif %}
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
+ADDITIONAL_NO_PROXY=
 
 set +e
 read -r -d '' CHANNEL_CSS << CHANNEL_CSS_EOM
@@ -272,7 +273,7 @@ REPLICATED_OPTS=""
 {%- endif %}
 
     if [ -n "$PROXY_ADDRESS" ]; then
-        REPLICATED_OPTS="$REPLICATED_OPTS -e HTTP_PROXY=$PROXY_ADDRESS"
+        REPLICATED_OPTS="$REPLICATED_OPTS -e HTTP_PROXY=$PROXY_ADDRESS -e NO_PROXY=$NO_PROXY_ADDRESSES"
     fi
     if [ -n "$REGISTRY_ADVERTISE_ADDRESS" ]; then
         REPLICATED_OPTS="$REPLICATED_OPTS -e REGISTRY_ADVERTISE_ADDRESS=$REGISTRY_ADVERTISE_ADDRESS"
@@ -410,7 +411,7 @@ install_operator() {
         opts=$opts" public-address=$PUBLIC_ADDRESS"
     fi
     if [ -n "$PROXY_ADDRESS" ]; then
-        opts=$opts" http-proxy=$PROXY_ADDRESS"
+        opts=$opts" http-proxy=$PROXY_ADDRESS additional-no-proxy=$NO_PROXY_ADDRESSES"
     else
         opts=$opts" no-proxy"
     fi
@@ -566,6 +567,13 @@ while [ "$1" != "" ]; do
         no-ce-on-ee|no_ce_on_ee)
             NO_CE_ON_EE=1
             ;;
+        additional-no-proxy|additional_no_proxy)
+            if [ -z "$ADDITIONAL_NO_PROXY" ]; then
+                ADDITIONAL_NO_PROXY="$_value"
+            else
+                ADDITIONAL_NO_PROXY="$ADDITIONAL_NO_PROXY,$_value"
+            fi
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -598,6 +606,10 @@ if [ "$NO_PROXY" != "1" ]; then
 
     if [ -z "$PROXY_ADDRESS" ]; then
         promptForProxy
+    fi
+
+    if [ -n "$PROXY_ADDRESS" ]; then
+        getNoProxyAddresses "$PRIVATE_ADDRESS"
     fi
 fi
 

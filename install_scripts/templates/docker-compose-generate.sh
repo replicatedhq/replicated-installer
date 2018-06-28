@@ -64,6 +64,9 @@ while [ "$1" != "" ]; do
         http-proxy)
             HTTP_PROXY="$_value"
             ;;
+        no-proxy-addresses)
+            NO_PROXY_ADDRESSES="$_value"
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -129,6 +132,9 @@ if [ -n "$RELEASE_SEQUENCE" ]; then
 fi
 if [ -n "$HTTP_PROXY" ]; then
     echo "      - HTTP_PROXY=${HTTP_PROXY}"
+fi
+if [ -n "$NO_PROXY_ADDRESSES" ]; then
+    echo "      - NO_PROXY=${NO_PROXY_ADDRESSES}"
 fi
 {% if customer_base_url_override %}
     echo "      - MARKET_BASE_URL={{ customer_base_url_override }}"
@@ -224,6 +230,9 @@ if [ "$AIRGAP" = "1" ]; then
 fi
 if [ -n "$HTTP_PROXY" ]; then
     echo "      - HTTP_PROXY=${HTTP_PROXY}"
+fi
+if [ -n "$NO_PROXY_ADDRESSES" ]; then
+    echo "      - NO_PROXY=${NO_PROXY_ADDRESSES}"
 fi
 echo "      - SCHEDULER_ENGINE=swarm"
 echo "      - DAEMON_ENDPOINT=replicated:9879"

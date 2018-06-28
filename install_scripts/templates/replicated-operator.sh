@@ -26,6 +26,7 @@ FAST_TIMEOUTS=1
 {%- endif %}
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
+ADDITIONAL_NO_PROXY=
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -150,6 +151,9 @@ build_replicated_operator_opts() {
     fi
     if [ "$CUSTOM_SELINUX_REPLICATED_DOMAIN" = "1" ]; then
         REPLICATED_OPERATOR_OPTS=$REPLICATED_OPERATOR_OPTS" -e SELINUX_REPLICATED_DOMAIN=$SELINUX_REPLICATED_DOMAIN"
+    fi
+    if [ -n "$PROXY_ADDRESS" ]; then
+        REPLICATED_OPERATOR_OPTS="$REPLICATED_OPERATOR_OPTS -e NO_PROXY=$NO_PROXY_ADDRESSES"
     fi
 
     find_hostname
@@ -326,6 +330,13 @@ while [ "$1" != "" ]; do
         no-ce-on-ee|no_ce_on_ee)
             NO_CE_ON_EE=1
             ;;
+        additional-no-proxy|additional_no_proxy)
+            if [ -z "$ADDITIONAL_NO_PROXY" ]; then
+                ADDITIONAL_NO_PROXY="$_value"
+            else
+                ADDITIONAL_NO_PROXY="$ADDITIONAL_NO_PROXY,$_value"
+            fi
+            ;;
         *)
             echo "Error: unknown parameter \"$_param\""
             exit 1
@@ -377,6 +388,10 @@ if [ "$NO_PROXY" != "1" ]; then
     if [ -z "$PROXY_ADDRESS" ]; then
         promptForProxy
     fi
+
+    if [ -n "$PROXY_ADDRESS" ]; then
+        getNoProxyAddresses "$DAEMON_ENDPOINT"
+    fi
 fi
 
 exportProxy
@@ -388,7 +403,7 @@ if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
     checkDockerStorageDriver "$HARD_FAIL_ON_LOOPBACK"
 fi
 
-if [ -n "$PROXY_ADDRESS" ]; then
+if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
     requireDockerProxy
 fi
 
@@ -396,7 +411,7 @@ if [ "$RESTART_DOCKER" = "1" ]; then
     restartDocker
 fi
 
-if [ -n "$PROXY_ADDRESS" ]; then
+if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
     checkDockerProxyConfig
 fi
 

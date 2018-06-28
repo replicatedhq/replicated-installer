@@ -6,7 +6,7 @@ PV_BASE_PATH="{{ pv_base_path }}"
 STORAGE_CLASS="{{ storage_class }}"
 SERVICE_TYPE="{{ service_type }}"
 PROXY_ADDRESS="{{ proxy_address }}"
-NO_PROXY_ADDRESS="{{ no_proxy_address }}"
+NO_PROXY_ADDRESSES="{{ no_proxy_addresses }}"
 IP_ALLOC_RANGE=10.32.0.0/12  # default for weave
 # booleans
 AIRGAP="{{ airgap }}"
@@ -80,8 +80,8 @@ while [ "$1" != "" ]; do
         http-proxy|http_proxy)
             PROXY_ADDRESS="$_value"
             ;;
-        no-proxy-address|no_proxy_address)
-            NO_PROXY_ADDRESS="$_value"
+        no-proxy-addresses|no_proxy_addresses)
+            NO_PROXY_ADDRESSES="$_value"
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
@@ -134,7 +134,7 @@ EOF
         - name: HTTP_PROXY
           value: $PROXY_ADDRESS
         - name: NO_PROXY
-          value: $NO_PROXY_ADDRESS
+          value: $NO_PROXY_ADDRESSES
 EOF
         )
     fi
