@@ -91,19 +91,6 @@ elif [ "\$interactive" = "1" ]; then
 elif [ "\$tty" = "1" ]; then
   flags=" -t"
 fi
-
-# do not lose the quotes in arguments
-opts=''
-for i in "\$@"; do
-  case "\$i" in
-    *\\'*)
-      i=\`printf "%s" "\$i" | sed "s/'/'\\"'\\"'/g"\`
-      ;;
-    *) : ;;
-  esac
-  opts="\$opts '\$i'"
-done
-
 EOF
   set -e
 
@@ -112,9 +99,9 @@ EOF
 
 ${_flags}
 
-sh -c "${2} \$flags \\
+${2} \$flags \\
   ${3} \\
-  replicated\$push \$(printf "%s" "\$opts")"
+  replicated\$push \$@
 EOF
   chmod a+x "${1}/replicated"
   cat > "${1}/replicatedctl" <<-EOF
@@ -122,9 +109,9 @@ EOF
 
 ${_flags}
 
-sh -c "${2} \$flags \\
+${2} \$flags \\
   ${3} \\
-  replicatedctl\$push \$(printf "%s" "\$opts")"
+  replicatedctl\$push \$@
 EOF
   chmod a+x "${1}/replicatedctl"
 }

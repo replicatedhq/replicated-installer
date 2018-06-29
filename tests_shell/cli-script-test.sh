@@ -52,12 +52,4 @@ testInstallCliFileShellalias()
     assertEquals "-i CONTAINER replicated admin --no-tty COMMAND -ARG" "$("$tmpDir/replicated" admin -i COMMAND -ARG)"
 }
 
-testInstallCliFileQuoteArgs()
-{
-    tmpDir="$(mktemp -d)"
-    _installCliFile "$tmpDir" "echo" "CONTAINER"
-
-    assertEquals "-i CONTAINER replicatedctl COMMAND -c echo hi" "$("$tmpDir/replicatedctl" -i COMMAND -c "echo hi")"
-}
-
 . shunit2
