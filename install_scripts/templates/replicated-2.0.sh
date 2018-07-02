@@ -272,7 +272,7 @@ REPLICATED_OPTS=""
 {%- endif %}
 
     if [ -n "$PROXY_ADDRESS" ]; then
-        REPLICATED_OPTS="$REPLICATED_OPTS -e HTTP_PROXY=$PROXY_ADDRESS"
+        REPLICATED_OPTS="$REPLICATED_OPTS -e HTTP_PROXY=$PROXY_ADDRESS -e NO_PROXY=$NO_PROXY_ADDRESSES"
     fi
     if [ -n "$REGISTRY_ADVERTISE_ADDRESS" ]; then
         REPLICATED_OPTS="$REPLICATED_OPTS -e REGISTRY_ADVERTISE_ADDRESS=$REGISTRY_ADVERTISE_ADDRESS"
@@ -598,6 +598,10 @@ if [ "$NO_PROXY" != "1" ]; then
 
     if [ -z "$PROXY_ADDRESS" ]; then
         promptForProxy
+    fi
+
+    if [ -n "$PROXY_ADDRESS" ]; then
+        getNoProxyAddresses "$PRIVATE_ADDRESS"
     fi
 fi
 

@@ -203,10 +203,9 @@ if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
 fi
 
 if [ -n "$PROXY_ADDRESS" ]; then
-    parseIpv4FromAddress "$KUBERNETES_MASTER_ADDR"
+    getNoProxyAddresses "$KUBERNETES_MASTER_ADDR" "$SERVICE_CIDR"
     # enable kubeadm to reach the K8s API server
-    export no_proxy="$PARSED_IPV4,$SERVICE_CIDR"
-    NO_PROXY_IP="$PARSED_IPV4"
+    export no_proxy="$NO_PROXY_ADDRESSES"
     requireDockerProxy
 fi
 

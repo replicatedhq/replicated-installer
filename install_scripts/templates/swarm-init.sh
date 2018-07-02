@@ -152,6 +152,9 @@ stackDeploy() {
     if [ -n "$PROXY_ADDRESS" ]; then
         opts=$opts" http-proxy=$PROXY_ADDRESS"
     fi
+    if [ -n "$NO_PROXY_ADDRESSES" ]; then
+        opts=$opts" no-proxy-addresses=$NO_PROXY_ADDRESSES"
+    fi
 
     echo "Deploying Replicated stack"
 
@@ -323,8 +326,8 @@ SWARM_NODE_ID="$(docker info --format "{{ '{{.Swarm.NodeID}}' }}")"
 SWARM_NODE_ADDRESS="$(docker info --format "{{ '{{.Swarm.NodeAddr}}' }}")"
 SWARM_MASTER_ADDRESS="$(docker info --format "{{ '{{with index .Swarm.RemoteManagers 0}}{{.Addr}}{{end}}' }}")"
 
-if [ -n "$PROXY_ADDRESS" ]; then
-    NO_PROXY_IP="$SWARM_NODE_ADDRESS"
+if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
+    getNoProxyAddresses "$SWARM_NODE_ADDRESS"
     requireDockerProxy
 fi
 
@@ -332,7 +335,7 @@ if [ "$RESTART_DOCKER" = "1" ]; then
     restartDocker
 fi
 
-if [ -n "$PROXY_ADDRESS" ]; then
+if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
     checkDockerProxyConfig
 fi
 

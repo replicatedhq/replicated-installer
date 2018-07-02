@@ -187,8 +187,8 @@ getYAMLOpts() {
     if [ -n "$PROXY_ADDRESS" ]; then
         opts=$opts" http-proxy=$PROXY_ADDRESS"
     fi
-    if [ "$SERVICE_CIDR" != "$DEFAULT_SERVICE_CIDR" ]; then
-        opts=$opts" no-proxy-address=$SERVICE_CIDR"
+    if [ -n "$NO_PROXY_ADDRESSES" ]; then
+        opts=$opts" no-proxy-address=$NO_PROXY_ADDRESSES"
     fi
     if [ "$ENCRYPT_NETWORK" = "0" ]; then
         opts=$opts" encrypt-network=0"
@@ -462,11 +462,15 @@ if [ "$NO_PROXY" != "1" ]; then
     if [ -z "$PROXY_ADDRESS" ]; then
         promptForProxy
     fi
+
+    if [ -n "$PROXY_ADDRESS" ]; then
+        getNoProxyAddresses "$PRIVATE_ADDRESS" "$SERVICE_CIDR"
+    fi
 fi
 
 exportProxy
 # kubeadm requires this in the environment to reach the K8s API server
-export no_proxy="$PRIVATE_ADDRESS,$SERVICE_CIDR" # default service cidr
+export no_proxy="$NO_PROXY_ADDRESSES"
 
 if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
     if [ "$OFFLINE_DOCKER_INSTALL" != "1" ]; then
@@ -478,8 +482,7 @@ if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
     checkDockerStorageDriver "$HARD_FAIL_ON_LOOPBACK"
 fi
 
-if [ -n "$PROXY_ADDRESS" ]; then
-    NO_PROXY_IP="$PRIVATE_ADDRESS"
+if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
     requireDockerProxy
 fi
 
@@ -487,7 +490,7 @@ if [ "$RESTART_DOCKER" = "1" ]; then
     restartDocker
 fi
 
-if [ -n "$PROXY_ADDRESS" ]; then
+if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
     checkDockerProxyConfig
 fi
 
