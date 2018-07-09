@@ -90,7 +90,6 @@ EOF
 getKubeServerVersion() {
     logStep "check k8s server version"
     # poll until we can get the current server version
-    _current="$(kubectl version -o yaml | grep gitVersion | cut -d" " -f4)"
     _current="$(kubectl version | grep 'Server Version' | tr " " "\n" | grep GitVersion | cut -d'"' -f2)"
     until [ -n "$_current" ]; do
       _current="$(kubectl version | grep 'Server Version' | tr " " "\n" | grep GitVersion | cut -d'"' -f2)"

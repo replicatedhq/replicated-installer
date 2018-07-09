@@ -1,4 +1,12 @@
 
+UBUNTU_1604_K8S_9=ubuntu-1604
+UBUNTU_1604_K8S_10=ubuntu-1604-v1.10.5-20180709
+UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.0-20180709
+
+RHEL_74_K8S_9=rhel7
+RHEL_74_K8S_10=rhel-74-v1.10.5-20180711
+RHEL_74_K8S_11=rhel-74-v1.11.0-20180711
+
 #######################################
 #
 # kubernetes.sh
@@ -56,6 +64,56 @@ installCNIPlugins() {
     mkdir -p /etc/cni/net.d
 }
 
+#######################################
+# Lookup package tag for kubernetes version and distribution
+# Globals:
+#   LSB_DIST
+#   DIST_VERSION
+# Arguments:
+#   k8sVersion - e.g. 1.9.3
+# Returns:
+#   pkgTag
+#######################################
+k8sPackageTag() {
+    case "$LSB_DIST$DIST_VERSION" in
+        ubuntu16.04)
+            case "$k8sVersion" in
+                v1.9.3)
+                    echo "$UBUNTU_1604_K8S_9"
+                    ;;
+                v1.10.5)
+                    echo "$UBUNTU_1604_K8S_10"
+                    ;;
+                v1.11.0)
+                    echo "$UBUNTU_1604_K8S_11"
+                    ;;
+                *)
+                    bail "Unsupported Kubernetes version $K8S_VERSION"
+                    ;;
+            esac
+            ;;
+        centos7.4|rhel7.*)
+            case "$k8sVersion" in
+                v1.9.3)
+                    echo "$RHEL_74_K8S_9"
+                    ;;
+                v1.10.5)
+                    echo "$RHEL_74_K8S_10"
+                    ;;
+                v1.11.0)
+                    echo "$RHEL_74_K8S_11"
+                    ;;
+                *)
+                    bail "Unsupported Kubernetes version $K8S_VERSION"
+                    ;;
+            esac
+            ;;
+        *)
+            bail "Unsupported distribution $LSB_DIST$DIST_VERSION"
+            ;;
+    esac
+    
+}
 
 #######################################
 # Install K8s components for OS
@@ -70,8 +128,16 @@ installCNIPlugins() {
 installKubernetesComponents() {
     case "$LSB_DIST$DIST_VERSION" in
         ubuntu16.04)
+            if commandExists "kubeadm"; then
+                return
+            fi
+
+            logStep "Install kubernetes components"
+
             export DEBIAN_FRONTEND=noninteractive
-            installComponentsApt
+            installComponentsApt 
+
+            logSuccess "Kubernetes components installed"
             return
             ;;
         centos7.4|rhel7.*)
@@ -100,30 +166,25 @@ EOF
 # Globals:
 #   None
 # Arguments:
-#   Message
+#   pkgTag - e.g. $UBUNTU_1604_K8S_10
 # Returns:
 #   None
 #######################################
 installComponentsApt() {
-    if commandExists "kubeadm"; then
-        return
-    fi
+    pkgTag=$1
 
-    logStep "Install kubernetes components"
     if [ "$AIRGAP" = "1" ]; then
-        docker load < packages-kubernetes-ubuntu1604.tar
+        docker load < packages-kubernetes-${pkgTag}.tar
     fi
 
     docker run \
       -v $PWD:/out \
-      "quay.io/replicated/k8s-packages:ubuntu-1604-{{ kubernetes_version }}"
+      "quay.io/replicated/k8s-packages:${pkgTag}"
 
     pushd archives
         dpkg -i *.deb
     popd
     rm -rf archives
-
-    logSuccess "Kubernetes components installed"
 }
 
 #######################################
@@ -203,11 +264,13 @@ airgapLoadKubernetesControlImages() {
 # Globals:
 #   None
 # Arguments:
-#   Message
+#   pkgTag - e.g. $RHEL_74_K8S_10
 # Returns:
 #   None
 #######################################
 installComponentsYum() {
+    pkgTag=$1
+
     if commandExists "kubeadm"; then
         return
     fi
@@ -215,7 +278,7 @@ installComponentsYum() {
     logStep "Install kubernetes components"
 
     if [ "$AIRGAP" = "1" ]; then
-        docker load < packages-kubernetes-rhel7.tar
+        docker load < packages-kubernetes-${pkgTag}.tar
     fi
 
     # iptables stuff
@@ -230,7 +293,7 @@ EOF
 
     docker run \
       -v $PWD:/out \
-      "quay.io/replicated/k8s-packages:rhel-7-{{ kubernetes_version }}"
+      "quay.io/replicated/k8s-packages:${pkgTag}"
 
     pushd archives
         rpm --upgrade --force *.rpm
@@ -242,7 +305,29 @@ EOF
 
 
 #######################################
-# Display a spinner until the node is ready, TODO timeout
+# Display a spinner until all nodes are ready, TODO timeout
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+spinnerNodesReady()
+{
+    local delay=0.75
+    local spinstr='|/-\'
+    while ! $(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null >/dev/null) || [ "$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes | grep NotReady)" ]; do
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
+}
+
+#######################################
+# Display a spinner until the master node is ready
 # Globals:
 #   AIRGAP
 # Arguments:
@@ -250,18 +335,11 @@ EOF
 # Returns:
 #   None
 #######################################
-spinnerNodeReady()
+spinnerMasterNodeReady()
 {
     logStep "Await node ready"
-    local delay=0.75
-    local spinstr='|/-\'
-    while [ "$(kubectl get nodes | grep NotReady)" ]; do
-        local temp=${spinstr#?}
-        printf " [%c]  " "$spinstr"
-        local spinstr=$temp${spinstr%"$temp"}
-        sleep $delay
-        printf "\b\b\b\b\b\b"
-    done
+
+    spinnerNodesReady
 
     if [ "$AIRGAP" = "1" ]; then
         node_name=$(kubectl get nodes -o=jsonpath='{.items[0].metadata.name}')
@@ -428,7 +506,7 @@ k8s_reset() {
     fi
 
     if commandExists "kubeadm"; then
-        kubeadm reset
+        kubeadm reset --force
     fi
 
     weave_reset

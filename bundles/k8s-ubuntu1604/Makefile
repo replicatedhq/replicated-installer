@@ -1,11 +1,16 @@
-build:
-	docker build -t quay.io/replicated/k8s-packages:ubuntu-1604-v1.9.3 .
-	docker build -t quay.io/replicated/k8s-packages:ubuntu-1604-v1.9.3.20180416 .
+DATE=$(shell date +%Y%m%d)
 
-push:
-	docker push quay.io/replicated/k8s-packages:ubuntu-1604-v1.9.3
-	docker push quay.io/replicated/k8s-packages:ubuntu-1604-v1.9.3.20180416
+v1.9.3:
+	docker build --build-arg VERSION=1.9.3 \
+		-t quay.io/replicated/k8s-packages:ubuntu-1604-v1.9.3-${DATE} .
+	docker push quay.io/replicated/k8s-packages:ubuntu-1604-v1.9.3-${DATE}
 
-# this gets run by airgap install script
-unpack_example:
-	docker run -v ${PWD}:/out replicated/k8s-packages:ubuntu-1604-v1.9.3
+v1.10.5:
+	docker build --build-arg VERSION=1.10.5 \
+		-t quay.io/replicated/k8s-packages:ubuntu-1604-v1.10.5-${DATE} .
+	docker push quay.io/replicated/k8s-packages:ubuntu-1604-v1.10.5-${DATE}
+
+v1.11.0:
+	docker build --build-arg VERSION=1.11.0 \
+		-t quay.io/replicated/k8s-packages:ubuntu-1604-v1.11.0-${DATE} .
+	docker push quay.io/replicated/k8s-packages:ubuntu-1604-v1.11.0-${DATE}
