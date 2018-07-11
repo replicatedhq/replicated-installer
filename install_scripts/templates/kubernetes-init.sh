@@ -28,6 +28,7 @@ KUBERNETES_NAMESPACE="default"
 KUBERNETES_VERSION="{{ kubernetes_version }}"
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
+DISABLE_CONTOUR="{{ disable_contour }}"
 IP_ALLOC_RANGE=
 DEFAULT_SERVICE_CIDR="10.96.0.0/12"
 SERVICE_CIDR=$DEFAULT_SERVICE_CIDR
@@ -247,6 +248,11 @@ rookDeploy() {
 }
 
 contourDeploy() {
+    # DISABLE_CONTOUR
+    if [ -n "$1" ]; then
+        return
+    fi
+
     logStep "deploy Contour ingress controller"
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS contour_yaml=1 > /tmp/contour.yml
     kubectl apply -f /tmp/contour.yml
@@ -409,6 +415,9 @@ while [ "$1" != "" ]; do
         no-ce-on-ee|no_ce_on_ee)
             NO_CE_ON_EE=1
             ;;
+        disable-contour|disable_contour)
+            DISABLE_CONTOUR=1
+            ;;
         kubernetes-only|kubernetes_only)
             KUBERNETES_ONLY=1
             ;;
@@ -544,7 +553,7 @@ echo
 
 rookDeploy
 
-contourDeploy
+contourDeploy "$DISABLE_CONTOUR"
 
 if [ "$KUBERNETES_ONLY" -eq "1" ]; then
     spinnerKubeSystemReady
