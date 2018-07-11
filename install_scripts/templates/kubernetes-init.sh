@@ -416,6 +416,9 @@ while [ "$1" != "" ]; do
         no-ce-on-ee|no_ce_on_ee)
             NO_CE_ON_EE=1
             ;;
+        disable-contour|disable_contour)
+            DISABLE_CONTOUR=1
+            ;;
         kubernetes-only|kubernetes_only)
             KUBERNETES_ONLY=1
             ;;
