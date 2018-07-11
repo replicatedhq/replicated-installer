@@ -415,6 +415,9 @@ while [ "$1" != "" ]; do
         no-ce-on-ee|no_ce_on_ee)
             NO_CE_ON_EE=1
             ;;
+        hard-fail-on-loopback|hard_fail_on_loopback)
+            HARD_FAIL_ON_LOOPBACK=1
+            ;;
         disable-contour|disable_contour)
             DISABLE_CONTOUR=1
             ;;

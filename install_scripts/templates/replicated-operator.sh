@@ -330,6 +330,9 @@ while [ "$1" != "" ]; do
         no-ce-on-ee|no_ce_on_ee)
             NO_CE_ON_EE=1
             ;;
+        hard-fail-on-loopback|hard_fail_on_loopback)
+            HARD_FAIL_ON_LOOPBACK=1
+            ;;
         additional-no-proxy|additional_no_proxy)
             if [ -z "$ADDITIONAL_NO_PROXY" ]; then
                 ADDITIONAL_NO_PROXY="$_value"
