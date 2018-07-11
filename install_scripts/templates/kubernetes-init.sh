@@ -250,7 +250,7 @@ rookDeploy() {
 contourDeploy() {
     # DISABLE_CONTOUR
     if [ -n "$1" ]; then
-        printf "disable_contour flag detected. Contour ingress controller not deployed\n\n"
+        printf "${YELLOW}contour ingress controller not deployed\n"
         return
     fi
 
