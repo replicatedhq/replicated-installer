@@ -29,6 +29,7 @@ KUBERNETES_VERSION="{{ kubernetes_version }}"
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 DISABLE_CONTOUR="{{ disable_contour }}"
+NO_CLEAR="{{ no_clear }}"
 IP_ALLOC_RANGE=
 DEFAULT_SERVICE_CIDR="10.96.0.0/12"
 SERVICE_CIDR=$DEFAULT_SERVICE_CIDR
@@ -387,6 +388,9 @@ while [ "$1" != "" ]; do
             ;;
         log-level|log_level)
             LOG_LEVEL="$_value"
+            ;;
+        no-clear|no_clear)
+            NO_CLEAR=1
             ;;
         no-docker|no_docker)
             SKIP_DOCKER_INSTALL=1

@@ -39,6 +39,8 @@ def template_args(**kwargs):
         args['hard_fail_on_loopback'] = True
     if get_arg('disable_contour') is not None:
         args['disable_contour'] = True
+    if get_arg('no_clear') is not None:
+        args['no_clear'] = True
     if kwargs:
         args.update(kwargs)
     return args
