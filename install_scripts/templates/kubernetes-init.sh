@@ -272,7 +272,11 @@ kubernetesDeploy() {
 }
 
 outro() {
-    clear
+    # NO_CLEAR
+    if [ -z "$1" ]; then
+        clear
+    fi
+
     echo
     if [ -z "$PUBLIC_ADDRESS" ]; then
       if [ -z "$PRIVATE_ADDRESS" ]; then
@@ -298,7 +302,11 @@ outro() {
 }
 
 outroKubeadm() {
-    clear
+    # NO_CLEAR
+    if [ -z "$1" ]; then
+        clear
+    fi
+
     echo
     if [ -z "$PUBLIC_ADDRESS" ]; then
       if [ -z "$PRIVATE_ADDRESS" ]; then
@@ -340,7 +348,11 @@ outroKubeadm() {
 }
 
 outroReset() {
-    clear
+    # NO_CLEAR
+    if [ -z "$1" ]; then
+        clear
+    fi
+
     printf "\n"
     printf "\t\t${GREEN}Uninstallation${NC}\n"
     printf "\t\t${GREEN}  Complete ✔${NC}\n"
@@ -457,7 +469,7 @@ done
 
 if [ "$RESET" == "1" ]; then
     k8s_reset
-    outroReset
+    outroReset "$NO_CLEAR"
 	exit 0
 fi
 
@@ -564,7 +576,7 @@ contourDeploy "$DISABLE_CONTOUR"
 
 if [ "$KUBERNETES_ONLY" -eq "1" ]; then
     spinnerKubeSystemReady
-    outroKubeadm
+    outroKubeadm "$NO_CLEAR"
     exit 0
 fi
 
@@ -585,7 +597,7 @@ installCliFile \
     "kubectl exec -c replicated" \
     '$(kubectl get pods -o=jsonpath="{.items[0].metadata.name}" -l tier=master) --'
 installAliasFile
-outro
+outro "$NO_CLEAR"
 
 
 
