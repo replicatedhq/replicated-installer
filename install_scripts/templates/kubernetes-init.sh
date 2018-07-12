@@ -322,7 +322,6 @@ outroKubeadm() {
         printf "\nTo add nodes to this installation, copy and unpack this bundle on your other nodes, and run the following:"
         printf "\n"
         printf "\n"
-        # This cut -d works in 1.9.3, we will need to test again in later kubeadm versions. Once phases are out of alpha lets use those
         printf "${GREEN}    cat ./kubernetes-node-join.sh  | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH \n"
         printf "${NC}"
         printf "\n"
@@ -513,7 +512,7 @@ if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
     checkDockerProxyConfig
 fi
 
-installKubernetesComponents
+installKubernetesComponents "$KUBERNETES_VERSION"
 if [ "$CLUSTER_DNS" != "$DEFAULT_CLUSTER_DNS" ]; then
     sed -i "s/$DEFAULT_CLUSTER_DNS/$CLUSTER_DNS/g" /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 fi
@@ -541,7 +540,7 @@ weavenetDeploy
 
 untaintMaster
 
-spinnerNodeReady
+spinnerMasterNodeReady
 
 echo
 kubectl get nodes

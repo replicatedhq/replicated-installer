@@ -28,9 +28,9 @@ upgradeK8sWorkers() {
         kubectl drain "$node" --ignore-daemonsets --delete-local-data --force
         printf "\n\n\tRun the upgrade script on remote node before proceeding: ${GREEN}$node${NC}\n\n"
         if [ "$AIRGAP" = "1" ]; then
-            printf "\t${GREEN}cat kubernetes-node-upgrade | sudo bash -s kubernetes-version=$version${NC}"
+            printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s kubernetes-version=$version${NC}"
         else
-            printf "\t${GREEN}curl https://get.replicated.com/kubernetes-node-upgrade | sudo bash -s kubernetes-version=$version${NC}"
+            printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s kubernetes-version=$version${NC}"
         fi
         printf "\n\n\tContinue when script has completed\n\n"
         prompt
@@ -52,27 +52,15 @@ upgradeK8sWorkers() {
 #######################################
 upgradeK8sMaster() {
     k8sVersion=$1
-    pkgTag=$(k8sPackageTag $k8sVersion)
 
-    if [ "$AIRGAP" = "1" ]; then
-        docker load < packages-kubernetes-${pkgTag}
-    fi
-    docker run \
-      -v $PWD:/out \
-      "quay.io/replicated/k8s-packages:${pkgTag}"
+    prepareK8sPackageArchives $k8sVersion
 
     # must use kubeadm binary to begin upgrade before upgrading kubeadm package
     # https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade-1-11/
     cp archives/kubeadm /usr/bin/kubeadm
     chmod a+rx /usr/bin/kubeadm
 
-    # The coredns deployment sets allowPrivilegeEscalation: false, which causes
-    # a crash loop backoff if SELinux is enabled, which is common for CentOS
-    # even if it has been set to permissive mode. Required policy would be:
-    # typebounds container_runtime_t svirt_lxc_net_t;
-    kubeadm upgrade apply $k8sVersion --yes \
-        --config=/opt/replicated/kubeadm.conf \
-        --feature-gates=CoreDNS=false
+    kubeadm upgrade apply $k8sVersion --yes --config=/opt/replicated/kubeadm.conf
 
     # upgrade master
     master=$(kubectl get nodes | grep master | awk '{ print $1 }')
@@ -84,7 +72,7 @@ upgradeK8sMaster() {
             export DEBIAN_FRONTEND=noninteractive
             dpkg -i archives/*.deb
             ;;
-        centos7.4|rhel7.*)
+        centos7.4|rhel7.4)
             rpm --upgrade --force archives/*.rpm
             ;;
         *)
@@ -101,6 +89,7 @@ upgradeK8sMaster() {
 
     sed -i "s/kubernetesVersion:.*/kubernetesVersion: $k8sVersion/" /opt/replicated/kubeadm.conf
     
+    spinnerNodeVersion $(kubectl get nodes | grep master | awk '{ print $1 }') $k8sVersion
     spinnerNodesReady
 }
 
