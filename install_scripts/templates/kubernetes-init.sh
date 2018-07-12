@@ -29,6 +29,7 @@ KUBERNETES_VERSION="{{ kubernetes_version }}"
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 DISABLE_CONTOUR="{{ disable_contour }}"
+NO_CLEAR="{{ no_clear }}"
 IP_ALLOC_RANGE=
 DEFAULT_SERVICE_CIDR="10.96.0.0/12"
 SERVICE_CIDR=$DEFAULT_SERVICE_CIDR
@@ -271,7 +272,11 @@ kubernetesDeploy() {
 }
 
 outro() {
-    clear
+    # NO_CLEAR
+    if [ -z "$1" ]; then
+        clear
+    fi
+
     echo
     if [ -z "$PUBLIC_ADDRESS" ]; then
       if [ -z "$PRIVATE_ADDRESS" ]; then
@@ -297,7 +302,11 @@ outro() {
 }
 
 outroKubeadm() {
-    clear
+    # NO_CLEAR
+    if [ -z "$1" ]; then
+        clear
+    fi
+
     echo
     if [ -z "$PUBLIC_ADDRESS" ]; then
       if [ -z "$PRIVATE_ADDRESS" ]; then
@@ -339,7 +348,11 @@ outroKubeadm() {
 }
 
 outroReset() {
-    clear
+    # NO_CLEAR
+    if [ -z "$1" ]; then
+        clear
+    fi
+
     printf "\n"
     printf "\t\t${GREEN}Uninstallation${NC}\n"
     printf "\t\t${GREEN}  Complete ✔${NC}\n"
@@ -387,6 +400,9 @@ while [ "$1" != "" ]; do
             ;;
         log-level|log_level)
             LOG_LEVEL="$_value"
+            ;;
+        no-clear|no_clear)
+            NO_CLEAR=1
             ;;
         no-docker|no_docker)
             SKIP_DOCKER_INSTALL=1
@@ -453,7 +469,7 @@ done
 
 if [ "$RESET" == "1" ]; then
     k8s_reset
-    outroReset
+    outroReset "$NO_CLEAR"
 	exit 0
 fi
 
@@ -560,7 +576,7 @@ contourDeploy "$DISABLE_CONTOUR"
 
 if [ "$KUBERNETES_ONLY" -eq "1" ]; then
     spinnerKubeSystemReady
-    outroKubeadm
+    outroKubeadm "$NO_CLEAR"
     exit 0
 fi
 
@@ -581,7 +597,7 @@ installCliFile \
     "kubectl exec -c replicated" \
     '$(kubectl get pods -o=jsonpath="{.items[0].metadata.name}" -l tier=master) --'
 installAliasFile
-outro
+outro "$NO_CLEAR"
 
 
 
