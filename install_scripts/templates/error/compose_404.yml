@@ -13,6 +13,8 @@ services:
 
                 Request Path: {{ base_url }}
                 Error: {{ error_message }}
+
+            Please visit https://help.replicated.com/ for installation guides and documentation
               
         '
         exit 1

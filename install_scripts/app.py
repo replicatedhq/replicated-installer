@@ -67,10 +67,10 @@ def get_replicated_version(replicated_channel=None,
     return replicated_version
 
 
-@app.route('/')
-def catch_all():
-    response = render_template('resolve-route.sh')
-    return Response(response, mimetype='text/x-shellscript')
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def catch_all(path):
+    return helpers.compose_404('Path not found: ' + path)
 
 
 @app.route('/unstable')
