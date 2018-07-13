@@ -1,4 +1,12 @@
 
+UBUNTU_1604_K8S_9=ubuntu-1604-v1.9.3-20180416
+UBUNTU_1604_K8S_10=ubuntu-1604-v1.10.5-20180709
+UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.0-20180709
+
+RHEL_74_K8S_9=rhel-74-v1.9.3-20180712
+RHEL_74_K8S_10=rhel-74-v1.10.5-20180711
+RHEL_74_K8S_11=rhel-74-v1.11.0-20180711
+
 #######################################
 #
 # kubernetes.sh
@@ -56,6 +64,58 @@ installCNIPlugins() {
     mkdir -p /etc/cni/net.d
 }
 
+#######################################
+# Lookup package tag for kubernetes version and distribution
+# Globals:
+#   LSB_DIST
+#   DIST_VERSION
+# Arguments:
+#   k8sVersion - e.g. 1.9.3
+# Returns:
+#   pkgTag
+#######################################
+k8sPackageTag() {
+    k8sVersion=$1
+
+    case "$LSB_DIST$DIST_VERSION" in
+        ubuntu16.04)
+            case "$k8sVersion" in
+                v1.9.3)
+                    echo "$UBUNTU_1604_K8S_9"
+                    ;;
+                v1.10.5)
+                    echo "$UBUNTU_1604_K8S_10"
+                    ;;
+                v1.11.0)
+                    echo "$UBUNTU_1604_K8S_11"
+                    ;;
+                *)
+                    bail "Unsupported Kubernetes version $k8sVersion"
+                    ;;
+            esac
+            ;;
+        centos7.4|rhel7.*)
+            case "$k8sVersion" in
+                v1.9.3)
+                    echo "$RHEL_74_K8S_9"
+                    ;;
+                v1.10.5)
+                    echo "$RHEL_74_K8S_10"
+                    ;;
+                v1.11.0)
+                    echo "$RHEL_74_K8S_11"
+                    ;;
+                *)
+                    bail "Unsupported Kubernetes version $k8sVersion"
+                    ;;
+            esac
+            ;;
+        *)
+            bail "Unsupported distribution $LSB_DIST$DIST_VERSION"
+            ;;
+    esac
+    
+}
 
 #######################################
 # Install K8s components for OS
@@ -63,64 +123,52 @@ installCNIPlugins() {
 #   LSB_DIST
 #   LSB_VERSION
 # Arguments:
-#   None
+#   k8sVersion - e.g. v1.9.3
 # Returns:
 #   None
 #######################################
 installKubernetesComponents() {
-    case "$LSB_DIST$DIST_VERSION" in
-        ubuntu16.04)
-            export DEBIAN_FRONTEND=noninteractive
-            installComponentsApt
-            return
-            ;;
-        centos7.4|rhel7.*)
-            # This needs to be run on Linux 3.x nodes for Rook
-            modprobe rbd
-            echo 'rbd' > /etc/modules-load.d/replicated.conf
-            installComponentsYum
-            return
-            ;;
-        *)
-    esac
+    k8sVersion=$1
 
-    # intentionally mixed spaces and tabs here -- tabs are stripped by "<<-'EOF'", spaces are kept in the output
-    cat >&2 <<-'EOF'
-      Either your platform is not easily detectable, is not supported by this
-      installer script (yet - PRs welcome! [hack/install.sh]), or does not yet have
-      a package for Docker.  Please visit the following URL for more detailed
-      installation instructions:
-        https://docs.docker.com/engine/installation/
-EOF
-    exit 1
-}
-
-#######################################
-# Download Components Using Apt. At least works on Ubuntu16
-# Globals:
-#   None
-# Arguments:
-#   Message
-# Returns:
-#   None
-#######################################
-installComponentsApt() {
     if commandExists "kubeadm"; then
         return
     fi
 
     logStep "Install kubernetes components"
-    if [ "$AIRGAP" = "1" ]; then
-        docker load < packages-kubernetes-ubuntu1604.tar
-    fi
 
-    docker run \
-      -v $PWD:/out \
-      "quay.io/replicated/k8s-packages:ubuntu-1604-{{ kubernetes_version }}"
+    must_disable_selinux
 
-    pushd archives
-        dpkg -i *.deb
-    popd
+    prepareK8sPackageArchives $k8sVersion
+
+    case "$LSB_DIST$DIST_VERSION" in
+        ubuntu16.04)
+            export DEBIAN_FRONTEND=noninteractive
+            dpkg -i archives/*.deb
+            ;;
+
+        centos7.4|rhel7.4)
+            # This needs to be run on Linux 3.x nodes for Rook
+            modprobe rbd
+            echo 'rbd' > /etc/modules-load.d/replicated.conf
+
+            # tabs in heredoc stripped
+            cat <<-EOF >  /etc/sysctl.d/k8s.conf
+			net.bridge.bridge-nf-call-ip6tables = 1
+			net.bridge.bridge-nf-call-iptables = 1
+			EOF
+
+            sysctl --system
+            service docker restart
+
+            rpm --upgrade --force archives/*.rpm
+            service docker restart
+            ;;
+
+        *)
+            bail "Kubernetes install is not supported on ${LSB_DIST} ${DIST_VERSION}"
+            ;;
+    esac
+
     rm -rf archives
 
     logSuccess "Kubernetes components installed"
@@ -197,52 +245,81 @@ airgapLoadKubernetesControlImages() {
 
 }
 
-
 #######################################
-# Download Components Using Yum. At least works on Centos7
+# Creates an archives directory with the correct K8s packages for a given
+# version of K8s on the current distribution.
 # Globals:
-#   None
+#   AIRGAP
+#   LSB_DIST
+#   DIST_VERSION
 # Arguments:
-#   Message
+#   k8sVersion - e.g. v1.9.3
 # Returns:
 #   None
 #######################################
-installComponentsYum() {
-    if commandExists "kubeadm"; then
-        return
-    fi
-
-    logStep "Install kubernetes components"
+prepareK8sPackageArchives() {
+    k8sVersion=$1
+    pkgTag=$(k8sPackageTag $k8sVersion)
 
     if [ "$AIRGAP" = "1" ]; then
-        docker load < packages-kubernetes-rhel7.tar
+        docker load < packages-kubernetes-${pkgTag}.tar
     fi
-
-    # iptables stuff
-    cat <<EOF >  /etc/sysctl.d/k8s.conf
-net.bridge.bridge-nf-call-ip6tables = 1
-net.bridge.bridge-nf-call-iptables = 1
-EOF
-    sysctl --system
-    service docker restart
-
-    must_disable_selinux
-
     docker run \
       -v $PWD:/out \
-      "quay.io/replicated/k8s-packages:rhel-7-{{ kubernetes_version }}"
+      "quay.io/replicated/k8s-packages:${pkgTag}"
+}
 
-    pushd archives
-        rpm --upgrade --force *.rpm
-        service docker restart
-    popd
-    rm -rf archives
-    logSuccess "Kubernetes components downloaded"
+#######################################
+# Display a spinner until all nodes are ready, TODO timeout
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+spinnerNodesReady()
+{
+    local delay=0.75
+    local spinstr='|/-\'
+    while ! $(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null >/dev/null) || [ "$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes | grep NotReady)" ]; do
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
+}
+
+#######################################
+# Display a spinner until a node reaches a version
+# Globals:
+#   None
+# Arguments:
+#   node
+#   version
+# Returns:
+#   None
+#######################################
+spinnerNodeVersion()
+{
+    node=$1
+    version=$2
+
+    local delay=0.75
+    local spinstr='|/-\'
+    while ! $(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null >/dev/null) || [ "$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get node $node | sed '1d' | awk '{ print $5 }')" != $version ]; do
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
 }
 
 
 #######################################
-# Display a spinner until the node is ready, TODO timeout
+# Display a spinner until the master node is ready and labels master if airgap
 # Globals:
 #   AIRGAP
 # Arguments:
@@ -250,18 +327,11 @@ EOF
 # Returns:
 #   None
 #######################################
-spinnerNodeReady()
+spinnerMasterNodeReady()
 {
     logStep "Await node ready"
-    local delay=0.75
-    local spinstr='|/-\'
-    while [ "$(kubectl get nodes | grep NotReady)" ]; do
-        local temp=${spinstr#?}
-        printf " [%c]  " "$spinstr"
-        local spinstr=$temp${spinstr%"$temp"}
-        sleep $delay
-        printf "\b\b\b\b\b\b"
-    done
+
+    spinnerNodesReady
 
     if [ "$AIRGAP" = "1" ]; then
         node_name=$(kubectl get nodes -o=jsonpath='{.items[0].metadata.name}')

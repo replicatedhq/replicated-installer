@@ -548,6 +548,22 @@ def get_swarm_init_worker(replicated_channel=None,
     return Response(response, mimetype='text/x-shellscript')
 
 
+@app.route('/kubernetes-upgrade')
+@app.route('/kubernetes-upgrade.sh')
+def get_kubernetes_upgrade_master():
+    response = render_template(
+        'kubernetes-upgrade.sh',
+        **helpers.template_args())
+    return Response(response, mimetype='text/x-shellscript')
+
+@app.route('/kubernetes-node-upgrade')
+@app.route('/kubernetes-node-upgrade.sh')
+def get_kubernetes_upgrade_worker():
+    response = render_template(
+        'kubernetes-node-upgrade.sh',
+        **helpers.template_args())
+    return Response(response, mimetype='text/x-shellscript')
+
 @app.route('/kubernetes-init')
 @app.route('/kubernetes-init.sh')
 @app.route('/<replicated_channel>/kubernetes-init')

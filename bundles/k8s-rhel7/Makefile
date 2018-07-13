@@ -1,15 +1,16 @@
-build:
-	docker build -t quay.io/replicated/k8s-packages:rhel-7-v1.9.3 .
-	docker build -t quay.io/replicated/k8s-packages:rhel-7-v1.9.3.20180227 .
+DATE=$(shell date +%Y%m%d)
 
-push:
-	docker push quay.io/replicated/k8s-packages:rhel-7-v1.9.3
-	docker push quay.io/replicated/k8s-packages:rhel-7-v1.9.3.20180227
+v1.9.3:
+	docker build --build-arg VERSION=1.9.3 \
+		-t quay.io/replicated/k8s-packages:rhel-74-v1.9.3-${DATE} .
+	docker push quay.io/replicated/k8s-packages:rhel-74-v1.9.3-${DATE}
 
-export: build
-	docker tag quay.io/replicated/k8s-packages:rhel-7-v1.9.3 replicated/k8s-packages:rhel-7-v1.9.3
-	docker save replicated/k8s-packages:rhel-7-v1.9.3 > packages-kubernetes-rhel7.tar
+v1.10.5:
+	docker build --build-arg VERSION=1.10.5 \
+		-t quay.io/replicated/k8s-packages:rhel-74-v1.10.5-${DATE} .
+	docker push quay.io/replicated/k8s-packages:rhel-74-v1.10.5-${DATE}
 
-# this gets run by airgap install script
-unpack_example: build
-	docker run -v ${PWD}:/out quay.io/replicated/k8s-packages:rhel-7-v1.9.3
+v1.11.0:
+	docker build --build-arg VERSION=1.11.0 \
+		-t quay.io/replicated/k8s-packages:rhel-74-v1.11.0-${DATE} .
+	docker push quay.io/replicated/k8s-packages:rhel-74-v1.11.0-${DATE}

@@ -12,6 +12,7 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 KUBERNETES_ONLY=0
 ADDITIONAL_NO_PROXY=
+KUBERNETES_VERSION="{{ kubernetes_version }}"
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -229,7 +230,7 @@ if ps aux | grep -qE "[k]ubelet"; then
     exit 0
 fi
 
-installKubernetesComponents
+installKubernetesComponents "$KUBERNETES_VERSION"
 systemctl enable kubelet && systemctl start kubelet
 
 if [ "$AIRGAP" = "1" ]; then
