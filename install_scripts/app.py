@@ -67,14 +67,22 @@ def get_replicated_version(replicated_channel=None,
     return replicated_version
 
 
-@app.route('/')
-@app.route('/<replicated_channel>')
-def get_replicated_one_point_two(replicated_channel=None):
-    replicated_channel = replicated_channel if replicated_channel else 'stable'
-    kwargs = helpers.template_args(channel_name=replicated_channel)
-    kwargs['pinned_docker_version'] = '1.12.3'
-    response = render_template('replicated-1.2.sh', **kwargs)
-    return Response(response, mimetype='text/x-shellscript')
+@app.route('/<path:path>')
+def catch_all(path):
+        kwargs = helpers.template_args(path=path)
+        response = render_template('resolve-route.sh', **kwargs)
+        return Response(response, mimetype='text/x-shellscript')
+
+
+@app.route('/', defaults={'replicated_channel': 'stable'})
+@app.route('/stable', defaults={'replicated_channel': 'stable'})
+@app.route('/unstable', defaults={'replicated_channel': 'unstable'})
+@app.route('/beta', defaults={'replicated_channel': 'beta'})
+def get_replicated_one_point_two(replicated_channel):
+        kwargs = helpers.template_args(channel_name=replicated_channel)
+        kwargs['pinned_docker_version'] = '1.12.3'
+        response = render_template('replicated-1.2.sh', **kwargs)
+        return Response(response, mimetype='text/x-shellscript')
 
 
 @app.route('/agent')

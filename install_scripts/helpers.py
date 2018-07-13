@@ -331,12 +331,14 @@ def compose_404(error_message="Not Found"):
     )
     return Response(response, status=404, mimetype='text/x-docker-compose')
 
+
 def compose_500():
     response = render_template('error/compose_500.yml',
                                **template_args(
                                    base_url=request.base_url,
                                ))
     return Response(response, status=500, mimetype='text/x-docker-compose')
+
 
 def snapshots_use_overlay(replicated_version):
     if semver.lt(replicated_version, '2.22.0', loose=False):
