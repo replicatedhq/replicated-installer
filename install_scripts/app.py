@@ -70,7 +70,9 @@ def get_replicated_version(replicated_channel=None,
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def catch_all(path):
-    return helpers.compose_404('Path not found: ' + path)
+    kwargs = helpers.template_args(path=path)
+    response = render_template('resolve-route.sh', **kwargs)
+    return Response(response, mimetype='text/x-shellscript')
 
 
 @app.route('/unstable')
