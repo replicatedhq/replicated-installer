@@ -70,9 +70,15 @@ def get_replicated_version(replicated_channel=None,
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def catch_all(path):
-    kwargs = helpers.template_args(path=path)
-    response = render_template('resolve-route.sh', **kwargs)
-    return Response(response, mimetype='text/x-shellscript')
+    if path:
+        kwargs = helpers.template_args(path=path)
+        response = render_template('resolve-route.sh', **kwargs)
+        return Response(response, mimetype='text/x-shellscript')
+    else:
+        kwargs = helpers.template_args(channel_name='stable')
+        kwargs['pinned_docker_version'] = '1.12.3'
+        response = render_template('replicated-1.2.sh', **kwargs)
+        return Response(response, mimetype='text/x-shellscript')
 
 
 @app.route('/unstable')
