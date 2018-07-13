@@ -68,10 +68,8 @@ def get_replicated_version(replicated_channel=None,
 
 
 @app.route('/')
-@app.route('/<replicated_channel>')
-def get_replicated_one_point_two(replicated_channel=None):
-    replicated_channel = replicated_channel if replicated_channel else 'stable'
-    kwargs = helpers.template_args(channel_name=replicated_channel)
+def catch_all():
+    kwargs = helpers.template_args(channel_name='stable')
     kwargs['pinned_docker_version'] = '1.12.3'
     response = render_template('replicated-1.2.sh', **kwargs)
     return Response(response, mimetype='text/x-shellscript')
