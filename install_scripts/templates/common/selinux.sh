@@ -131,7 +131,6 @@ must_disable_selinux() {
         semodule -i dockersvirt.pp
 
         cd ..
-        # TODO
-        # rm -r policy
+        rm -r policy
     fi
 }
