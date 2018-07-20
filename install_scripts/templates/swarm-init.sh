@@ -34,7 +34,6 @@ set -e
 # TODO
 # - user_id
 # - group_id
-# - tls_cert_path
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -273,6 +272,9 @@ while [ "$1" != "" ]; do
             ;;
         ui-bind-port|ui_bind_port)
             UI_BIND_PORT="$_value"
+            ;;
+        tls-cert-path|tls_cert_path)
+            TLS_CERT_PATH="$_value"
             ;;
         no-ce-on-ee|no_ce_on_ee)
             NO_CE_ON_EE=1
