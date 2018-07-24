@@ -17,6 +17,7 @@ services:
     ports:
       - 8880:8880
     environment:
+      - SHIP_COMPOSE_UI=1
       - HTTP_PROXY
       - HTTPS_PROXY{% if replicated_registry_endpoint != 'registry.replicated.com' %}
       - REPLICATED_REGISTRY={{ replicated_registry_endpoint }}
