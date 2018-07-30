@@ -54,13 +54,14 @@ ADDITIONAL_NO_PROXY=
 {% include 'common/kubernetes.sh' %}
 {% include 'common/selinux.sh' %}
 {% include 'common/swap.sh' %}
+{% include 'common/kubernetes-upgrade.sh' %}
 
 initKubeadmConfig() {
     mkdir -p /opt/replicated
     cat <<EOF > /opt/replicated/kubeadm.conf
 apiVersion: kubeadm.k8s.io/v1alpha1
 kind: MasterConfiguration
-kubernetesVersion: $KUBERNETES_VERSION
+kubernetesVersion: v$KUBERNETES_VERSION
 token: $BOOTSTRAP_TOKEN
 tokenTTL: ${BOOTSTRAP_TOKEN_TTL}
 networking:
@@ -91,9 +92,9 @@ EOF
 getKubeServerVersion() {
     logStep "check k8s server version"
     # poll until we can get the current server version
-    _current="$(kubectl version | grep 'Server Version' | tr " " "\n" | grep GitVersion | cut -d'"' -f2)"
+    _current="$(kubectl version | grep 'Server Version' | tr " " "\n" | grep GitVersion | cut -d'"' -f2 | sed 's/v//')"
     until [ -n "$_current" ]; do
-      _current="$(kubectl version | grep 'Server Version' | tr " " "\n" | grep GitVersion | cut -d'"' -f2)"
+      _current="$(kubectl version | grep 'Server Version' | tr " " "\n" | grep GitVersion | cut -d'"' -f2 | sed 's/v//')"
     done
     logSuccess "got k8s server version: $_current"
     printf "$_current"
@@ -127,10 +128,10 @@ initKube() {
         # hack -- if the versions are the same, do an "upgrade" to the same version to force-apply the new kubeadm config
         if [ "${KUBERNETES_VERSION}" == "$_current" ]; then
             logStep "apply config via kubeadm upgrade"
-            kubeadm upgrade apply --yes "${KUBERNETES_VERSION}"
+            kubeadm upgrade apply --yes "v${KUBERNETES_VERSION}"
         else
             logStep "apply config via kubeadm upgrade"
-            bail "automated upgrades are not supported, and the target installer version $KUBERNETES_VERSION does not match current server version $_current"
+            bail "automated upgrades are not supported, and the target installer version v$KUBERNETES_VERSION does not match current server version v$_current"
             # todo -- if the versions are not the same, we need to patch the apiserver manifest manually
             #         fortunately this won't be an issue until we nail down automated k8s upgrades.
 	    fi
@@ -331,14 +332,14 @@ outroKubeadm() {
         printf "\nTo add nodes to this installation, copy and unpack this bundle on your other nodes, and run the following:"
         printf "\n"
         printf "\n"
-        printf "${GREEN}    cat ./kubernetes-node-join.sh  | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH \n"
+        printf "${GREEN}    cat ./kubernetes-node-join.sh  | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION \n"
         printf "${NC}"
         printf "\n"
         printf "\n"
     else
         printf "\nTo add nodes to this installation, run the following script on your other nodes"
         printf "\n"
-        printf "${GREEN}    curl {{ replicated_install_url }}/{{ kubernetes_node_join_path }} | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH \n"
+        printf "${GREEN}    curl {{ replicated_install_url }}/{{ kubernetes_node_join_path }} | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION \n"
         printf "${NC}"
         printf "\n"
         printf "\n"
@@ -366,7 +367,7 @@ requireRootUser
 detectLsbDist
 bailIfUnsupportedOS
 detectInitSystem
-must_swapoff
+mustSwapoff
 
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"
@@ -506,57 +507,66 @@ exportProxy
 # kubeadm requires this in the environment to reach the K8s API server
 export no_proxy="$NO_PROXY_ADDRESSES"
 
-if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
-    if [ "$OFFLINE_DOCKER_INSTALL" != "1" ]; then
-        installDockerK8s "$PINNED_DOCKER_VERSION" "$MIN_DOCKER_VERSION"
-    else
-        installDocker_1_12_Offline
+didUpgradeKubernetes=0
+if maybeUpgradeKubernetes "$KUBERNETES_VERSION"; then
+    didUpgradeKubernetes=1
+fi
+
+if [ "$didUpgradeKubernetes" != "1" ]; then
+    if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
+        if [ "$OFFLINE_DOCKER_INSTALL" != "1" ]; then
+            installDockerK8s "$PINNED_DOCKER_VERSION" "$MIN_DOCKER_VERSION"
+        else
+            installDocker_1_12_Offline
+        fi
+        checkDockerDriver
+        checkDockerStorageDriver "$HARD_FAIL_ON_LOOPBACK"
     fi
-    checkDockerDriver
-    checkDockerStorageDriver "$HARD_FAIL_ON_LOOPBACK"
+
+    if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
+        requireDockerProxy
+    fi
+
+    if [ "$RESTART_DOCKER" = "1" ]; then
+        restartDocker
+    fi
+
+    if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
+        checkDockerProxyConfig
+    fi
+
+    installKubernetesComponents "$KUBERNETES_VERSION"
+    if [ "$CLUSTER_DNS" != "$DEFAULT_CLUSTER_DNS" ]; then
+        sed -i "s/$DEFAULT_CLUSTER_DNS/$CLUSTER_DNS/g" /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+    fi
+    systemctl enable kubelet && systemctl start kubelet
+
+    if [ "$AIRGAP" = "1" ]; then
+        airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"
+        airgapLoadKubernetesControlImages "$KUBERNETES_VERSION"
+    else
+        docker pull registry:2.6.2
+        docker tag registry:2.6.2 registry:2
+    fi
+
+    ensureCNIPlugins
+
+    maybeGenerateBootstrapToken
+    initKube
+
+    kubectl cluster-info
+    logSuccess "Cluster Initialized"
 fi
-
-if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
-    requireDockerProxy
-fi
-
-if [ "$RESTART_DOCKER" = "1" ]; then
-    restartDocker
-fi
-
-if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
-    checkDockerProxyConfig
-fi
-
-installKubernetesComponents "$KUBERNETES_VERSION"
-if [ "$CLUSTER_DNS" != "$DEFAULT_CLUSTER_DNS" ]; then
-    sed -i "s/$DEFAULT_CLUSTER_DNS/$CLUSTER_DNS/g" /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-fi
-systemctl enable kubelet && systemctl start kubelet
-
-if [ "$AIRGAP" = "1" ]; then
-    airgapLoadKubernetesCommonImages
-    airgapLoadKubernetesControlImages
-else
-    docker pull registry:2.6.2
-    docker tag registry:2.6.2 registry:2
-fi
-
-ensureCNIPlugins
-
-maybeGenerateBootstrapToken
-initKube
-
-kubectl cluster-info
-logSuccess "Cluster Initialized"
 
 getK8sYmlGenerator
 
 weavenetDeploy
 
-untaintMaster
+if [ "$didUpgradeKubernetes" != "1" ]; then
+    untaintMaster
 
-spinnerMasterNodeReady
+    spinnerMasterNodeReady
+fi
 
 echo
 kubectl get nodes

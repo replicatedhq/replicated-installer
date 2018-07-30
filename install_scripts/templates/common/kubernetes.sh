@@ -59,6 +59,7 @@ installCNIPlugins() {
         docker load < k8s-cni.tar
     fi
 
+    # 0.6.0 is the latest as of k8s 1.11.0
     docker run -v /tmp:/out quay.io/replicated/k8s-cni:v1.9.3
     tar zxfv /tmp/cni.tar.gz -C /opt/cni/bin
     mkdir -p /etc/cni/net.d
@@ -80,13 +81,13 @@ k8sPackageTag() {
     case "$LSB_DIST$DIST_VERSION" in
         ubuntu16.04)
             case "$k8sVersion" in
-                v1.9.3)
+                1.9.3)
                     echo "$UBUNTU_1604_K8S_9"
                     ;;
-                v1.10.5)
+                1.10.5)
                     echo "$UBUNTU_1604_K8S_10"
                     ;;
-                v1.11.0)
+                1.11.0)
                     echo "$UBUNTU_1604_K8S_11"
                     ;;
                 *)
@@ -96,13 +97,13 @@ k8sPackageTag() {
             ;;
         centos7.4|rhel7.*)
             case "$k8sVersion" in
-                v1.9.3)
+                1.9.3)
                     echo "$RHEL_74_K8S_9"
                     ;;
-                v1.10.5)
+                1.10.5)
                     echo "$RHEL_74_K8S_10"
                     ;;
-                v1.11.0)
+                1.11.0)
                     echo "$RHEL_74_K8S_11"
                     ;;
                 *)
@@ -123,7 +124,7 @@ k8sPackageTag() {
 #   LSB_DIST
 #   LSB_VERSION
 # Arguments:
-#   k8sVersion - e.g. v1.9.3
+#   k8sVersion - e.g. 1.9.3
 # Returns:
 #   None
 #######################################
@@ -179,14 +180,33 @@ installKubernetesComponents() {
 # Globals:
 #   None
 # Arguments:
-#   Message
+#   k8sVersion - e.g. 1.9.3
 # Returns:
 #   None
 #######################################
 airgapLoadKubernetesCommonImages() {
     logStep "common images"
 
+    k8sVersion=$1
+
     docker load < k8s-images-common.tar
+    case "$k8sVersion" in
+        1.9.3)
+            airgapLoadKubernetesCommonImages193
+            ;;
+        1.10.5)
+            bail "Unsupported Kubernetes version v$k8sVersion" # TODO
+            ;;
+        1.11.0)
+            bail "Unsupported Kubernetes version v$k8sVersion" # TODO
+            ;;
+        *)
+            bail "Unsupported Kubernetes version $k8sVersion"
+            ;;
+    esac
+}
+
+airgapLoadKubernetesCommonImages193() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-common:v1.9.3-20180523"
@@ -216,14 +236,33 @@ airgapLoadKubernetesCommonImages() {
 # Globals:
 #   None
 # Arguments:
-#   Message
+#   k8sVersion - e.g. 1.9.3
 # Returns:
 #   None
 #######################################
 airgapLoadKubernetesControlImages() {
     logStep "control plane images"
 
+    k8sVersion=$1
+
     docker load < k8s-images-control.tar
+    case "$k8sVersion" in
+        v1.9.3)
+            airgapLoadKubernetesControlImages193
+            ;;
+        v1.10.5)
+            bail "Unsupported Kubernetes version v$k8sVersion" # TODO
+            ;;
+        v1.11.0)
+            bail "Unsupported Kubernetes version v$k8sVersion" # TODO
+            ;;
+        *)
+            bail "Unsupported Kubernetes version $k8sVersion"
+            ;;
+    esac
+}
+
+airgapLoadKubernetesControlImages193() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-control:v1.9.3-20180222"
@@ -253,7 +292,7 @@ airgapLoadKubernetesControlImages() {
 #   LSB_DIST
 #   DIST_VERSION
 # Arguments:
-#   k8sVersion - e.g. v1.9.3
+#   k8sVersion - e.g. 1.9.3
 # Returns:
 #   None
 #######################################
@@ -297,18 +336,18 @@ spinnerNodesReady()
 #   None
 # Arguments:
 #   node
-#   version
+#   k8sVersion - e.g. 1.10.5
 # Returns:
 #   None
 #######################################
 spinnerNodeVersion()
 {
     node=$1
-    version=$2
+    k8sVersion=$2
 
     local delay=0.75
     local spinstr='|/-\'
-    while ! $(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null >/dev/null) || [ "$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get node $node | sed '1d' | awk '{ print $5 }')" != $version ]; do
+    while ! $(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null >/dev/null) || [ "$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get node $node | sed '1d' | awk '{ print $5 }')" != "v$k8sVersion" ]; do
         local temp=${spinstr#?}
         printf " [%c]  " "$spinstr"
         local spinstr=$temp${spinstr%"$temp"}

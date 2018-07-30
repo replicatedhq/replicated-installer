@@ -29,6 +29,7 @@ KUBERNETES_VERSION="{{ kubernetes_version }}"
 {% include 'common/selinux.sh' %}
 {% include 'common/airgap.sh' %}
 {% include 'common/swap.sh' %}
+{% include 'common/kubernetes-upgrade.sh' %}
 
 KUBERNETES_MASTER_PORT="6443"
 KUBERNETES_MASTER_ADDR="{{ kubernetes_master_addr }}"
@@ -116,7 +117,7 @@ requireRootUser
 detectLsbDist
 bailIfUnsupportedOS
 detectInitSystem
-must_swapoff
+mustSwapoff
 
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"
@@ -170,6 +171,9 @@ while [ "$1" != "" ]; do
         service-cidr|service_cidr)
             SERVICE_CIDR="$_value"
             ;;
+        kubernetes-version|kubernetes_version)
+            KUBERNETES_VERSION="$_value"
+            ;;
         kubernetes-only|kubernetes_only)
             KUBERNETES_ONLY=1
             ;;
@@ -187,6 +191,15 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
+
+if [ -z "$KUBERNETES_VERSION" ]; then
+    bail "kubernetes-version is required"
+fi
+
+didUpgradeKubernetesNode=0
+if maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"; then
+    didUpgradeKubernetesNode=1
+fi
 
 promptForAddress
 promptForToken
@@ -240,7 +253,7 @@ if [ "$AIRGAP" = "1" ]; then
         promptForCA
         echo "$(echo "$CA" | base64 --decode)" > "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS/ca.crt"
     fi
-    airgapLoadKubernetesCommonImages
+    airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"
 else
     docker pull registry:2.6.2
     docker tag registry:2.6.2 registry:2

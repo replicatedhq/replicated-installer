@@ -676,15 +676,6 @@ items:
     kind: ServiceAccount
     metadata:
       name: weave-net
-      annotations:
-        cloud.weave.works/launcher-info: |-
-          {
-            "original-request": {
-              "url": "/k8s/v1.8/net.yaml?k8s-version=1.9.3",
-              "date": "Tue Feb 20 2018 02:10:32 GMT+0000 (UTC)"
-            },
-            "email-address": "support@weave.works"
-          }
       labels:
         name: weave-net
       namespace: kube-system
@@ -692,15 +683,6 @@ items:
     kind: ClusterRole
     metadata:
       name: weave-net
-      annotations:
-        cloud.weave.works/launcher-info: |-
-          {
-            "original-request": {
-              "url": "/k8s/v1.8/net.yaml?k8s-version=1.9.3",
-              "date": "Tue Feb 20 2018 02:10:32 GMT+0000 (UTC)"
-            },
-            "email-address": "support@weave.works"
-          }
       labels:
         name: weave-net
       namespace: kube-system
@@ -727,15 +709,6 @@ items:
     kind: ClusterRoleBinding
     metadata:
       name: weave-net
-      annotations:
-        cloud.weave.works/launcher-info: |-
-          {
-            "original-request": {
-              "url": "/k8s/v1.8/net.yaml?k8s-version=1.9.3",
-              "date": "Tue Feb 20 2018 02:10:32 GMT+0000 (UTC)"
-            },
-            "email-address": "support@weave.works"
-          }
       labels:
         name: weave-net
       namespace: kube-system
@@ -751,15 +724,6 @@ items:
     kind: Role
     metadata:
       name: weave-net
-      annotations:
-        cloud.weave.works/launcher-info: |-
-          {
-            "original-request": {
-              "url": "/k8s/v1.8/net.yaml?k8s-version=1.9.3",
-              "date": "Tue Feb 20 2018 02:10:32 GMT+0000 (UTC)"
-            },
-            "email-address": "support@weave.works"
-          }
       labels:
         name: weave-net
       namespace: kube-system
@@ -783,15 +747,6 @@ items:
     kind: RoleBinding
     metadata:
       name: weave-net
-      annotations:
-        cloud.weave.works/launcher-info: |-
-          {
-            "original-request": {
-              "url": "/k8s/v1.8/net.yaml?k8s-version=1.9.3",
-              "date": "Tue Feb 20 2018 02:10:32 GMT+0000 (UTC)"
-            },
-            "email-address": "support@weave.works"
-          }
       labels:
         name: weave-net
       namespace: kube-system
@@ -807,15 +762,6 @@ items:
     kind: DaemonSet
     metadata:
       name: weave-net
-      annotations:
-        cloud.weave.works/launcher-info: |-
-          {
-            "original-request": {
-              "url": "/k8s/v1.8/net.yaml?k8s-version=1.9.3",
-              "date": "Tue Feb 20 2018 02:10:32 GMT+0000 (UTC)"
-            },
-            "email-address": "support@weave.works"
-          }
       labels:
         name: weave-net
       namespace: kube-system
@@ -919,6 +865,7 @@ EOF
 }
 
 render_contour_yaml() {
+    # envoy-alpine:v1.6.0 and contour:v0.5.0 still latest as of k8s 1.11.0
     cat <<EOF
 ---
 apiVersion: v1

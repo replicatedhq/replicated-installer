@@ -10,6 +10,7 @@ from . import db, helpers, param
 
 app = Flask(__name__)
 
+
 @app.teardown_appcontext
 def teardown_db(exception):
     db.teardown()
@@ -69,9 +70,9 @@ def get_replicated_version(replicated_channel=None,
 
 @app.route('/<path:path>')
 def catch_all(path):
-        kwargs = helpers.template_args(path=path)
-        response = render_template('resolve-route.sh', **kwargs)
-        return Response(response, mimetype='text/x-shellscript')
+    kwargs = helpers.template_args(path=path)
+    response = render_template('resolve-route.sh', **kwargs)
+    return Response(response, mimetype='text/x-shellscript')
 
 
 @app.route('/', defaults={'replicated_channel': 'stable'})
@@ -79,10 +80,10 @@ def catch_all(path):
 @app.route('/unstable', defaults={'replicated_channel': 'unstable'})
 @app.route('/beta', defaults={'replicated_channel': 'beta'})
 def get_replicated_one_point_two(replicated_channel):
-        kwargs = helpers.template_args(channel_name=replicated_channel)
-        kwargs['pinned_docker_version'] = '1.12.3'
-        response = render_template('replicated-1.2.sh', **kwargs)
-        return Response(response, mimetype='text/x-shellscript')
+    kwargs = helpers.template_args(channel_name=replicated_channel)
+    kwargs['pinned_docker_version'] = '1.12.3'
+    response = render_template('replicated-1.2.sh', **kwargs)
+    return Response(response, mimetype='text/x-shellscript')
 
 
 @app.route('/agent')
@@ -222,7 +223,7 @@ def get_replicated_compose_generate(replicated_channel=None,
     kwargs = get_replicated_compose_v3_template_args(replicated_channel,
                                                      app_slug, app_channel)
 
-    response = render_template('docker-compose-generate.sh', **kwargs)
+    response = render_template('swarm/docker-compose-generate.sh', **kwargs)
     return Response(response, mimetype='text/x-shellscript')
 
 
@@ -237,7 +238,7 @@ def get_replicated_compose_v3(replicated_channel=None,
                                                      app_slug, app_channel)
 
     script = render_template(
-        'docker-compose-generate.sh', suppress_runtime=1, **kwargs)
+        'swarm/docker-compose-generate.sh', suppress_runtime=1, **kwargs)
     p = subprocess.Popen(
         ['bash', '-'],
         shell=True,
@@ -252,13 +253,15 @@ def get_replicated_compose_v3(replicated_channel=None,
         return Response(response, mimetype='text/plain')
     return Response(response, mimetype='application/x-yaml')
 
+
 @app.route('/kubernetes/compatibility')
 @app.route('/<replicated_channel>/kubernetes/compatibility')
 @app.route('/<app_slug>/<app_channel>/kubernetes/compatibility')
 def get_kubernetes_compatibility(replicated_channel=None,
-                                app_slug=None,
-                                app_channel=None):
-    current_replicated_version = helpers.get_arg('current_replicated_version', '')
+                                 app_slug=None,
+                                 app_channel=None):
+    current_replicated_version = helpers.get_arg('current_replicated_version',
+                                                 '')
     parsed = semver.parse(current_replicated_version, loose=False)
     if parsed is None:
         abort(400)
@@ -281,12 +284,12 @@ def get_kubernetes_compatibility(replicated_channel=None,
 @app.route('/<replicated_channel>/kubernetes/deploy.yml')
 @app.route('/<app_slug>/<app_channel>/kubernetes/deploy.yml')
 def get_replicated_kubernetes_yml(replicated_channel=None,
-                              app_slug=None,
-                              app_channel=None):
-    kwargs = get_kubernetes_yaml_template_args(replicated_channel,
-                                                app_slug, app_channel)
+                                  app_slug=None,
+                                  app_channel=None):
+    kwargs = get_kubernetes_yaml_template_args(replicated_channel, app_slug,
+                                               app_channel)
     script = render_template(
-        'kubernetes-yml-generate.sh', suppress_runtime=1, **kwargs)
+        'kubernetes/yml-generate.sh', suppress_runtime=1, **kwargs)
     p = subprocess.Popen(
         ['bash -s deployment-yaml=1', '-'],
         shell=True,
@@ -338,7 +341,6 @@ def get_replicated_compose_v3_template_args(replicated_channel=None,
     # Replicated versions at or later than 2.22.0 use replicated_default overlay network for snapshots
     snapshots_use_overlay = helpers.snapshots_use_overlay(replicated_version)
 
-
     airgap = helpers.get_arg('airgap', '')
     ca = helpers.get_arg('ca', '')
     daemon_registry_address = helpers.get_arg('daemon_registry_address', '')
@@ -378,7 +380,8 @@ def get_replicated_compose_v3_template_args(replicated_channel=None,
         ui_bind_port=ui_bind_port,
         user_id=user_id,
         customer_base_url_override=customer_base_url,
-        snapshots_use_overlay=snapshots_use_overlay, )
+        snapshots_use_overlay=snapshots_use_overlay,
+    )
 
 
 @app.route('/compose.yml')
@@ -413,9 +416,9 @@ def get_replicated_compose_v2(replicated_channel=None,
     ui_bind_port = helpers.get_arg('ui_bind_port', '')
 
     if semver.lt(replicated_version, '2.10.0', loose=False):
-        tmpl_file = 'docker-compose-v2-legacy.yml'
+        tmpl_file = 'swarm/docker-compose-v2-legacy.yml'
     else:
-        tmpl_file = 'docker-compose-v2.yml'
+        tmpl_file = 'swarm/docker-compose-v2.yml'
     response = render_template(
         tmpl_file,
         **helpers.template_args(
@@ -428,15 +431,17 @@ def get_replicated_compose_v2(replicated_channel=None,
             log_level=log_level,
             operator_tags=operator_tags,
             public_address=public_address,
-            ui_bind_port=ui_bind_port, ))
+            ui_bind_port=ui_bind_port,
+        ))
 
     if helpers.get_arg('accept', None) == 'text':
         return Response(response, mimetype='text/plain')
     return Response(response, mimetype='application/x-yaml')
 
+
 def get_kubernetes_yaml_template_args(replicated_channel=None,
-                              app_slug=None,
-                              app_channel=None):
+                                      app_slug=None,
+                                      app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
     print("Looking up tags for:", replicated_channel, app_slug, app_channel)
     replicated_version = helpers.get_replicated_version(
@@ -462,20 +467,22 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
     no_proxy_addresses = helpers.get_arg('no_proxy_addresses', '10.96.0.0/12')
 
     return helpers.template_args(
-            channel_name=replicated_channel,
-            replicated_tag=replicated_tag,
-            replicated_ui_tag=replicated_ui_tag,
-            pv_base_path=pv_base_path,
-            log_level=log_level,
-            release_sequence=release_sequence,
-            storage_class=storage_class,
-            storage_provisioner=storage_provisioner,
-            service_type=service_type,
-            kubernetes_namespace=kubernetes_namespace,
-            ui_bind_port=ui_bind_port,
-            proxy_address=proxy_address,
-            no_proxy_addresses=no_proxy_addresses,
-            customer_base_url_override=customer_base_url, )
+        channel_name=replicated_channel,
+        replicated_tag=replicated_tag,
+        replicated_ui_tag=replicated_ui_tag,
+        pv_base_path=pv_base_path,
+        log_level=log_level,
+        release_sequence=release_sequence,
+        storage_class=storage_class,
+        storage_provisioner=storage_provisioner,
+        service_type=service_type,
+        kubernetes_namespace=kubernetes_namespace,
+        ui_bind_port=ui_bind_port,
+        proxy_address=proxy_address,
+        no_proxy_addresses=no_proxy_addresses,
+        customer_base_url_override=customer_base_url,
+    )
+
 
 @app.route('/kubernetes-yml-generate')
 @app.route('/kubernetes-yml-generate.sh')
@@ -486,11 +493,10 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
 def get_replicated_kubernetes(replicated_channel=None,
                               app_slug=None,
                               app_channel=None):
-    kwargs = get_kubernetes_yaml_template_args(replicated_channel,
-                                                app_slug, app_channel)
+    kwargs = get_kubernetes_yaml_template_args(replicated_channel, app_slug,
+                                               app_channel)
 
-
-    response = render_template('kubernetes-yml-generate.sh', **kwargs)
+    response = render_template('kubernetes/yml-generate.sh', **kwargs)
 
     if helpers.get_arg('accept', None) == 'text':
         return Response(response, mimetype='text/plain')
@@ -524,13 +530,14 @@ def get_swarm_init_master(replicated_channel=None,
     query = urllib.urlencode(request.args)
 
     response = render_template(
-        'swarm-init.sh',
+        'swarm/init.sh',
         **helpers.template_args(
             pinned_docker_version=pinned_docker_version,
             docker_compose_path=compose_path,
             swarm_worker_join_path=worker_path,
             app_channel_css=helpers.base64_encode(channel_css),
-            docker_compose_query=query, ))
+            docker_compose_query=query,
+        ))
     return Response(response, mimetype='text/x-shellscript')
 
 
@@ -548,29 +555,49 @@ def get_swarm_init_worker(replicated_channel=None,
         replicated_version, 'swarm')
     swarm_master_address = helpers.get_arg('swarm_master_address')
     swarm_token = helpers.get_arg('swarm_token')
-    response = render_template('swarm-worker-join.sh',
-                               **helpers.template_args(
-                                   pinned_docker_version=pinned_docker_version,
-                                   swarm_master_address=swarm_master_address,
-                                   swarm_token=swarm_token, ))
+    response = render_template(
+        'swarm/worker-join.sh',
+        **helpers.template_args(
+            pinned_docker_version=pinned_docker_version,
+            swarm_master_address=swarm_master_address,
+            swarm_token=swarm_token,
+        ))
     return Response(response, mimetype='text/x-shellscript')
 
 
 @app.route('/kubernetes-upgrade')
 @app.route('/kubernetes-upgrade.sh')
-def get_kubernetes_upgrade_master():
+@app.route('/<replicated_channel>/kubernetes-upgrade')
+def get_kubernetes_upgrade_master(replicated_channel=None):
+    replicated_channel = replicated_channel if replicated_channel else 'stable'
+    replicated_version = helpers.get_replicated_version(
+        replicated_channel, None, None)
+    pinned_kubernetes_version = helpers.get_pinned_kubernetes_version(
+        replicated_version)
+
     response = render_template(
-        'kubernetes-upgrade.sh',
-        **helpers.template_args())
+        'kubernetes/upgrade.sh',
+        **helpers.template_args(
+            kubernetes_version=pinned_kubernetes_version, ))
     return Response(response, mimetype='text/x-shellscript')
+
 
 @app.route('/kubernetes-node-upgrade')
 @app.route('/kubernetes-node-upgrade.sh')
-def get_kubernetes_upgrade_worker():
+@app.route('/<replicated_channel>/kubernetes-node-upgrade')
+def get_kubernetes_upgrade_worker(replicated_channel=None):
+    replicated_channel = replicated_channel if replicated_channel else 'stable'
+    replicated_version = helpers.get_replicated_version(
+        replicated_channel, None, None)
+    pinned_kubernetes_version = helpers.get_pinned_kubernetes_version(
+        replicated_version)
+
     response = render_template(
-        'kubernetes-node-upgrade.sh',
-        **helpers.template_args())
+        'kubernetes/node-upgrade.sh',
+        **helpers.template_args(
+            kubernetes_version=pinned_kubernetes_version, ))
     return Response(response, mimetype='text/x-shellscript')
+
 
 @app.route('/kubernetes-init')
 @app.route('/kubernetes-init.sh')
@@ -609,13 +636,14 @@ def get_kubernetes_init_master(replicated_channel=None,
 
     query = urllib.urlencode(query_args)
     response = render_template(
-        'kubernetes-init.sh',
+        'kubernetes/init.sh',
         **helpers.template_args(
             pinned_docker_version=pinned_docker_version,
             kubernetes_version=pinned_kubernetes_version,
             kubernetes_generate_path=generate_path,
             kubernetes_node_join_path=node_path,
-            kubernetes_manifests_query=query, ))
+            kubernetes_manifests_query=query,
+        ))
     return Response(response, mimetype='text/x-shellscript')
 
 
@@ -641,13 +669,14 @@ def get_kubernetes_node_join(replicated_channel=None,
                                                 '')
 
     response = render_template(
-        'kubernetes-node-join.sh',
+        'kubernetes/node-join.sh',
         **helpers.template_args(
             pinned_docker_version=pinned_docker_version,
             kubernetes_version=pinned_kubernetes_version,
             kubernetes_master_address=kubernetes_master_address,
             kubeadm_token=kubeadm_token,
-            kubeadm_token_ca_hash=kubeadm_token_ca_hash, ))
+            kubeadm_token_ca_hash=kubeadm_token_ca_hash,
+        ))
     return Response(response, mimetype='text/x-shellscript')
 
 
@@ -660,18 +689,18 @@ def get_replicated_migrate_v2():
 @app.route('/utils/aws/ubuntu1404/replicated-init')
 def get_replicated_init_aws_ubuntu1404():
     replicated_channel = helpers.get_arg('channel', 'stable')
-    response = render_template('replicated-init-aws-ubuntu1404.sh',
-                               **helpers.template_args(
-                                   channel_name=replicated_channel, ))
+    response = render_template(
+        'replicated-init-aws-ubuntu1404.sh',
+        **helpers.template_args(channel_name=replicated_channel, ))
     return Response(response, mimetype='text/x-shellscript')
 
 
 @app.route('/utils/aws/ubuntu1404/replicated-init.conf')
 def get_replicated_upstart_aws_ubuntu1404():
     replicated_channel = helpers.get_arg('channel', 'stable')
-    response = render_template('replicated-init-aws-bootstrap.conf',
-                               **helpers.template_args(
-                                   channel_name=replicated_channel, ))
+    response = render_template(
+        'replicated-init-aws-bootstrap.conf',
+        **helpers.template_args(channel_name=replicated_channel, ))
     return Response(response, mimetype='text/x-shellscript')
 
 
@@ -693,54 +722,54 @@ def get_best_docker_tag():
 @app.route('/studio')
 def get_replicated_studio():
     studio_path = helpers.get_arg('studio_base_path', '$HOME')
-    response = render_template('studio/native.sh',
-                               **helpers.template_args(
-                                   studio_base_path=studio_path, ))
+    response = render_template(
+        'studio/native.sh',
+        **helpers.template_args(studio_base_path=studio_path, ))
     return Response(response, mimetype='text/x-shellscript')
 
 
 @app.route('/studio-swarm')
 def get_replicated_studio_swarm():
     studio_path = helpers.get_arg('studio_base_path', '$HOME')
-    response = render_template('studio/swarm.sh',
-                               **helpers.template_args(
-                                   studio_base_path=studio_path, ))
+    response = render_template(
+        'studio/swarm.sh',
+        **helpers.template_args(studio_base_path=studio_path, ))
     return Response(response, mimetype='text/x-shellscript')
 
 
 @app.route('/studio-k8s')
 def get_replicated_studio_k8s():
     studio_path = helpers.get_arg('studio_base_path', '$HOME')
-    response = render_template('studio/k8s.sh',
-                               **helpers.template_args(
-                                   studio_base_path=studio_path, ))
+    response = render_template(
+        'studio/k8s.sh', **helpers.template_args(
+            studio_base_path=studio_path, ))
     return Response(response, mimetype='text/x-shellscript')
 
 
 @app.route('/studio/native')
 def get_replicated_studio_v2():
     studio_path = helpers.get_arg('studio_base_path', '$HOME')
-    response = render_template('studio/native-v2.sh',
-                               **helpers.template_args(
-                                   studio_base_path=studio_path, ))
+    response = render_template(
+        'studio/native-v2.sh',
+        **helpers.template_args(studio_base_path=studio_path, ))
     return Response(response, mimetype='text/x-shellscript')
 
 
 @app.route('/studio/swarm')
 def get_replicated_studio_swarm_v2():
     studio_path = helpers.get_arg('studio_base_path', '$HOME')
-    response = render_template('studio/swarm-v2.sh',
-                               **helpers.template_args(
-                                   studio_base_path=studio_path, ))
+    response = render_template(
+        'studio/swarm-v2.sh',
+        **helpers.template_args(studio_base_path=studio_path, ))
     return Response(response, mimetype='text/x-shellscript')
 
 
 @app.route('/studio/k8s')
 def get_replicated_studio_k8s_v2():
     studio_path = helpers.get_arg('studio_base_path', '$HOME')
-    response = render_template('studio/k8s-v2.sh',
-                               **helpers.template_args(
-                                   studio_base_path=studio_path, ))
+    response = render_template(
+        'studio/k8s-v2.sh',
+        **helpers.template_args(studio_base_path=studio_path, ))
     return Response(response, mimetype='text/x-shellscript')
 
 
@@ -763,14 +792,16 @@ def get_ship_yaml():
             return helpers.compose_404(
                 "Missing or invalid parameters: customer_id")
 
-        response = render_template('ship-install-dynamic.yml',
-                                   **helpers.template_args(
-                                       customer_id=customer_id,
-                                       log_level=log_level,
-                                       ship_tag=ship_tag,
-                                       ship_console_tag=ship_console_tag,
-                                       headless=headless,
-                                       installation_id=installation_id, ))
+        response = render_template(
+            'ship-install-dynamic.yml',
+            **helpers.template_args(
+                customer_id=customer_id,
+                log_level=log_level,
+                ship_tag=ship_tag,
+                ship_console_tag=ship_console_tag,
+                headless=headless,
+                installation_id=installation_id,
+            ))
 
         return Response(response, mimetype='text/x-docker-compose')
     except:
