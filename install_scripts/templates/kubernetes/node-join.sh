@@ -196,10 +196,18 @@ if [ -z "$KUBERNETES_VERSION" ]; then
     bail "kubernetes-version is required"
 fi
 
-didUpgradeKubernetesNode=0
-if maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"; then
-    didUpgradeKubernetesNode=1
+k8sInstalled=
+if isKubeletInstalled; then
+    isK8sInstalled=1
 fi
+
+if [ -n "$isK8sInstalled" ]; then
+    maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
+
+    outro
+
+    exit 0
+else
 
 promptForAddress
 promptForToken

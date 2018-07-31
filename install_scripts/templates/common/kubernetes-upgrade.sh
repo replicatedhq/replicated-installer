@@ -23,59 +23,40 @@
 maybeUpgradeKubernetes() {
     export KUBECONFIG=/etc/kubernetes/admin.conf
 
-    if ! isKubernetesInstalled; then
-        return 1
-    fi
-
     upgradeVersion="$1"
     semverParse "$upgradeVersion"
     upgradeMajor="$major"
     upgradeMinor="$minor"
 
-    if [ "$upgradeMajor" -lt "1" ]; then
-        return 1
-    fi
-
-    if [ "$upgradeMinor" -lt "10" ]; then
-        return 1
+    if [ "$upgradeMajor" -lt "1" ] || [ "$upgradeMinor" -lt "10" ]; then
+        return
     fi
 
     masterVersion="$(getK8sMasterVersion)"
-
-    didUpgrade=
-
     semverParse "$masterVersion"
+
     if [ "$major" -eq "1" ] && [ "$minor" -eq "9" ]; then
         logStep "Kubernetes version v$masterVersion detected, upgrading to version v1.10.5"
         upgradeK8sMaster "1.10.5" "$UBUNTU_1604_K8S_10" "$CENTOS_74_K8S_10"
         logSuccess "Kubernetes upgraded to version v1.10.5"
-
-        upgradeK8sWorkers "1.10.5"
-
-        masterVersion="$(getK8sMasterVersion)"
-
-        didUpgrade=1
     fi
 
-    if [ "$upgradeMinor" -ge "11" ]; then
-        semverParse "$masterVersion"
-        if [ "$major" -eq "1" ] && [ "$minor" -eq "10" ]; then
-            logStep "Kubernetes version v$masterVersion detected, upgrading to version v1.11.0"
-            upgradeK8sMaster "1.11.0" "$UBUNTU_1604_K8S_11" "$CENTOS_74_K8S_11"
-            logSuccess "Kubernetes upgraded to version v1.11.0"
+    upgradeK8sWorkers "1.10.5"
 
-            upgradeK8sWorkers "1.11.0"
-
-            didUpgrade=1
-        fi
+    if [ "$upgradeMinor" -lt "11" ]; then
+        return
     fi
 
-    if [ -n "$didUpgrade" ]; then
-        logSuccess "Upgrade Complete"
-        return 0
+    masterVersion="$(getK8sMasterVersion)"
+    semverParse "$masterVersion"
+
+    if [ "$major" -eq "1" ] && [ "$minor" -eq "10" ]; then
+        logStep "Kubernetes version v$masterVersion detected, upgrading to version v1.11.0"
+        upgradeK8sMaster "1.11.0" "$UBUNTU_1604_K8S_11" "$CENTOS_74_K8S_11"
+        logSuccess "Kubernetes upgraded to version v1.11.0"
     fi
 
-    return 1
+    upgradeK8sWorkers "1.11.0"
 }
 
 #######################################
@@ -88,20 +69,16 @@ maybeUpgradeKubernetes() {
 #   None
 #######################################
 maybeUpgradeKubernetesNode() {
-    if ! isKubeletInstalled; then
-        return 1
-    fi
-
     upgradeVersion="$1"
     semverParse "$upgradeVersion"
     upgradeMajor="$major"
     upgradeMinor="$minor"
 
     nodeVersion="$(getK8sNodeVersion)"
-
     semverParse "$nodeVersion"
+
     if [ "$major" -eq "$upgradeMajor" ] && [ "$minor" -lt "$upgradeMinor" ]; then
-        logStep "Kubernetes version v$nodeVersion detected, upgrading node to version v1.10.5"
+        logStep "Kubernetes version v$nodeVersion detected, upgrading node to version v$upgradeVersion"
         upgradeK8sNode "$upgradeVersion"
 
         # not supported in kubeadm < 1.11
@@ -109,12 +86,8 @@ maybeUpgradeKubernetesNode() {
 
         systemctl restart kubelet
 
-        logSuccess "Kubernetes node upgraded to version v1.10.5"
-
-        return 0
+        logSuccess "Kubernetes node upgraded to version v$upgradeVersion"
     fi
-
-    return 1
 }
 
 #######################################

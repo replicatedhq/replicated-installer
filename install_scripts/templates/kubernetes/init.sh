@@ -507,12 +507,15 @@ exportProxy
 # kubeadm requires this in the environment to reach the K8s API server
 export no_proxy="$NO_PROXY_ADDRESSES"
 
-didUpgradeKubernetes=0
-if maybeUpgradeKubernetes "$KUBERNETES_VERSION"; then
-    didUpgradeKubernetes=1
+
+k8sInstalled=
+if isKubernetesInstalled; then
+    isK8sInstalled=1
 fi
 
-if [ "$didUpgradeKubernetes" != "1" ]; then
+if [ -n "$isK8sInstalled" ]; then
+    maybeUpgradeKubernetes "$KUBERNETES_VERSION"
+else
     if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
         if [ "$OFFLINE_DOCKER_INSTALL" != "1" ]; then
             installDockerK8s "$PINNED_DOCKER_VERSION" "$MIN_DOCKER_VERSION"
@@ -562,7 +565,7 @@ getK8sYmlGenerator
 
 weavenetDeploy
 
-if [ "$didUpgradeKubernetes" != "1" ]; then
+if [ -z "$isK8sInstalled" ]; then
     untaintMaster
 
     spinnerMasterNodeReady
@@ -606,9 +609,5 @@ installCliFile \
     '$(kubectl get pods -o=jsonpath="{.items[0].metadata.name}" -l tier=master) --'
 installAliasFile
 outro "$NO_CLEAR"
-
-
-
-
 
 exit 0
