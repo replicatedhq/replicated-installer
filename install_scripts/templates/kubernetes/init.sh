@@ -89,18 +89,6 @@ EOF
 
 }
 
-getKubeServerVersion() {
-    logStep "check k8s server version"
-    # poll until we can get the current server version
-    _current="$(kubectl version | grep 'Server Version' | tr " " "\n" | grep GitVersion | cut -d'"' -f2 | sed 's/v//')"
-    until [ -n "$_current" ]; do
-      _current="$(kubectl version | grep 'Server Version' | tr " " "\n" | grep GitVersion | cut -d'"' -f2 | sed 's/v//')"
-    done
-    logSuccess "got k8s server version: $_current"
-    printf "$_current"
-}
-
-didUpgradeKubernetes=
 initKube() {
     logStep "Verify Kubelet"
     if ! ps aux | grep -qE "[k]ubelet"; then
@@ -124,17 +112,20 @@ initKube() {
         chmod 444 /etc/kubernetes/admin.conf
         initKubeadmConfig
         kubeadm config upload from-file --config /opt/replicated/kubeadm.conf
-        _current=$(getKubeServerVersion)
+        _current=$(getK8sServerVersion)
 
         # hack -- if the versions are the same, do an "upgrade" to the same version to force-apply the new kubeadm config
-        if [ "${KUBERNETES_VERSION}" == "$_current" ]; then
+        # @dex "I put in that line because we had a breaking change in the install script and we had to reset the cluster config"
+        # @dex "we had to change the apiserver nodePortRange to allow for contour to run"
+        # @dex "I guess I'd err on the side of removing it entirely"
+        # TODO
+        if [ "${KUBERNETES_VERSION}" == "$_current" ] && [ "${KUBERNETES_VERSION}" == "1.9.3" ]; then
             logStep "apply config via kubeadm upgrade"
-            kubeadm upgrade apply --yes "v${KUBERNETES_VERSION}"
-        else
-            logStep "apply config via kubeadm upgrade"
-            maybeUpgradeKubernetes "$KUBERNETES_VERSION"
-            didUpgradeKubernetes=1
-	    fi
+            kubeadm upgrade apply --yes "v${KUBERNETES_VERSION}" --config /opt/replicated/kubeadm.conf
+        fi
+
+        logStep "apply config via kubeadm upgrade"
+        maybeUpgradeKubernetes "$KUBERNETES_VERSION"
     fi
     cp /etc/kubernetes/admin.conf $HOME/admin.conf
     chown $SUDO_USER:$SUDO_USER $HOME/admin.conf
@@ -555,11 +546,9 @@ getK8sYmlGenerator
 
 weavenetDeploy
 
-if [ -z "$didUpgradeKubernetes" ]; then
-    untaintMaster
+untaintMaster
 
-    spinnerMasterNodeReady
-fi
+spinnerMasterNodeReady
 
 echo
 kubectl get nodes

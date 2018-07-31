@@ -114,6 +114,7 @@ upgradeK8sWorkers() {
         fi
         _done="$(kubectl get nodes/$node 2>/dev/null | sed '1d' | grep -v $k8sVersion | awk '{ print $1 }')"
         while [ -n "$_done" ]; do
+            echo
             printf "Has script completed? "
             if confirmN; then
                 break
@@ -138,7 +139,7 @@ upgradeK8sWorkers() {
 upgradeK8sMaster() {
     k8sVersion=$1
 
-    prepareK8sPackageArchives $k8sVersion
+    prepareK8sPackageArchives "$k8sVersion"
 
     # must use kubeadm binary to begin upgrade before upgrading kubeadm package
     # https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade-1-11/
@@ -190,17 +191,8 @@ upgradeK8sMaster() {
 #######################################
 upgradeK8sNode() {
     k8sVersion=$1
-    pkgTag=$(k8sPackageTag $k8sVersion)
 
-    echo "Upgrading node to Kubernetes v$k8sVersion"
-
-    if [ "$AIRGAP" = "1" ]; then
-        docker load < packages-kubernetes-${pkgTag}
-    fi
-    docker run \
-      -v $PWD:/out \
-      "quay.io/replicated/k8s-packages:${pkgTag}"
-
+    prepareK8sPackageArchives "$k8sVersion"
 
     case "$LSB_DIST$DIST_VERSION" in
         ubuntu16.04)
@@ -219,6 +211,26 @@ upgradeK8sNode() {
 
     systemctl daemon-reload
     systemctl restart kubelet
+}
+
+#######################################
+# Get k8s server version
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   version - e.g. 1.9.3
+#######################################
+getK8sServerVersion() {
+    logStep "check k8s server version"
+    # poll until we can get the current server version
+    _current="$(kubectl version | grep 'Server Version' | tr " " "\n" | grep GitVersion | cut -d'"' -f2 | sed 's/v//')"
+    until [ -n "$_current" ]; do
+      _current="$(kubectl version | grep 'Server Version' | tr " " "\n" | grep GitVersion | cut -d'"' -f2 | sed 's/v//')"
+    done
+    logSuccess "got k8s server version: $_current"
+    printf "$_current"
 }
 
 #######################################
