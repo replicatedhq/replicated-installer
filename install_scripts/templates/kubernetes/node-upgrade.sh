@@ -41,3 +41,7 @@ if [ -z "$KUBERNETES_VERSION" ]; then
 fi
 
 maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
+
+if [ "$AIRGAP" = "1" ]; then
+    airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"
+fi

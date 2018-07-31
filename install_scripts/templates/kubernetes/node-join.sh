@@ -204,10 +204,14 @@ fi
 if [ -n "$isK8sInstalled" ]; then
     maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
 
+    if [ "$AIRGAP" = "1" ]; then
+        airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"
+    fi
+
     outro
 
     exit 0
-else
+fi
 
 promptForAddress
 promptForToken

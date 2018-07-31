@@ -319,6 +319,7 @@ prepareK8sPackageArchives() {
 #######################################
 spinnerNodesReady()
 {
+    set -x
     local delay=0.75
     local spinstr='|/-\'
     while ! $(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null >/dev/null) || [ "$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes | grep NotReady)" ]; do
@@ -328,6 +329,7 @@ spinnerNodesReady()
         sleep $delay
         printf "\b\b\b\b\b\b"
     done
+    set +x
 }
 
 #######################################

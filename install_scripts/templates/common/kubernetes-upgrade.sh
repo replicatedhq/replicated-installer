@@ -112,8 +112,13 @@ upgradeK8sWorkers() {
         else
             printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s kubernetes-version=$k8sVersion${NC}"
         fi
-        printf "\n\n\tPress enter when script has completed\n\n"
-        prompt
+        _done="$(kubectl get nodes/$node 2>/dev/null | sed '1d' | grep -v $k8sVersion | awk '{ print $1 }')"
+        while [ -n "$_done" ]; do
+            printf "Has script completed? "
+            if confirmN; then
+                break
+            fi
+        done
         kubectl uncordon $node
     done
 
@@ -214,24 +219,6 @@ upgradeK8sNode() {
 
     systemctl daemon-reload
     systemctl restart kubelet
-}
-
-#######################################
-# Check if kubernetes is installed
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   1 if kubernetes is not installed
-#######################################
-isKubernetesInstalled() {
-    _out=0
-    kubectl get nodes 2>/dev/null || _out="$?"
-    if [ "$_out" -ne "0" ]; then
-        return 1
-    fi
-    return 0
 }
 
 #######################################
