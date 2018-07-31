@@ -574,11 +574,12 @@ def get_kubernetes_upgrade_master(replicated_channel=None):
         replicated_channel, None, None)
     pinned_kubernetes_version = helpers.get_pinned_kubernetes_version(
         replicated_version)
+    kubernetes_version = helpers.get_arg('kubernetes_version',
+                                         pinned_kubernetes_version)
 
     response = render_template(
         'kubernetes/upgrade.sh',
-        **helpers.template_args(
-            kubernetes_version=pinned_kubernetes_version, ))
+        **helpers.template_args(kubernetes_version=kubernetes_version, ))
     return Response(response, mimetype='text/x-shellscript')
 
 
@@ -591,11 +592,12 @@ def get_kubernetes_upgrade_worker(replicated_channel=None):
         replicated_channel, None, None)
     pinned_kubernetes_version = helpers.get_pinned_kubernetes_version(
         replicated_version)
+    kubernetes_version = helpers.get_arg('kubernetes_version',
+                                         pinned_kubernetes_version)
 
     response = render_template(
         'kubernetes/node-upgrade.sh',
-        **helpers.template_args(
-            kubernetes_version=pinned_kubernetes_version, ))
+        **helpers.template_args(kubernetes_version=kubernetes_version, ))
     return Response(response, mimetype='text/x-shellscript')
 
 
@@ -616,6 +618,8 @@ def get_kubernetes_init_master(replicated_channel=None,
 
     pinned_kubernetes_version = helpers.get_pinned_kubernetes_version(
         replicated_version)
+    kubernetes_version = helpers.get_arg('kubernetes_version',
+                                         pinned_kubernetes_version)
 
     generate_path = 'kubernetes-yml-generate'
     node_path = 'kubernetes-node-join'
@@ -639,7 +643,7 @@ def get_kubernetes_init_master(replicated_channel=None,
         'kubernetes/init.sh',
         **helpers.template_args(
             pinned_docker_version=pinned_docker_version,
-            kubernetes_version=pinned_kubernetes_version,
+            kubernetes_version=kubernetes_version,
             kubernetes_generate_path=generate_path,
             kubernetes_node_join_path=node_path,
             kubernetes_manifests_query=query,
@@ -662,6 +666,8 @@ def get_kubernetes_node_join(replicated_channel=None,
         replicated_version, 'kubernetes')
     pinned_kubernetes_version = helpers.get_pinned_kubernetes_version(
         replicated_version)
+    kubernetes_version = helpers.get_arg('kubernetes_version',
+                                         pinned_kubernetes_version)
 
     kubeadm_token = helpers.get_arg('kubeadm_token', '')
     kubeadm_token_ca_hash = helpers.get_arg('kubeadm_token_ca_hash', '')
@@ -672,7 +678,7 @@ def get_kubernetes_node_join(replicated_channel=None,
         'kubernetes/node-join.sh',
         **helpers.template_args(
             pinned_docker_version=pinned_docker_version,
-            kubernetes_version=pinned_kubernetes_version,
+            kubernetes_version=kubernetes_version,
             kubernetes_master_address=kubernetes_master_address,
             kubeadm_token=kubeadm_token,
             kubeadm_token_ca_hash=kubeadm_token_ca_hash,
