@@ -492,7 +492,7 @@ k8s_reset() {
     printf "\n"
     printf "    The \"reset\" command will attempt to remove replicated and kubernetes from this system.\n"
     printf "\n"
-    printf "    This command is unstable and intended to be used only for \n"
+    printf "    This command is intended to be used only for \n"
     printf "    increasing iteration speed on development servers. It has the \n"
     printf "    potential to leave your machine in an unrecoverable state. It is \n"
     printf "    not recommended unless you will easily be able to discard this server\n"
