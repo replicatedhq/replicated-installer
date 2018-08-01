@@ -11,7 +11,7 @@ RHEL_74_K8S_11=rhel-74-v1.11.0-20180711
 #
 # kubernetes.sh
 #
-# require selinux.sh
+# require selinux.sh common.sh
 #
 #######################################
 
@@ -487,6 +487,26 @@ weave_reset()
 }
 
 k8s_reset() {
+    printf "${YELLOW}"
+    printf "WARNING: \n"
+    printf "\n"
+    printf "    The \"reset\" command will attempt to remove replicated and kubernetes from this system.\n"
+    printf "\n"
+    printf "    This command is unstable and intended to be used only for \n"
+    printf "    increasing iteration speed on development servers. It has the \n"
+    printf "    potential to leave your machine in an unrecoverable state. It is \n"
+    printf "    not recommended unless you will easily be able to discard this server\n"
+    printf "    and provision a new one if something goes wrong.\n${NC}"
+    printf "\n"
+    printf "Would you like to continue? "
+
+    if ! confirmN; then
+        printf "Not resetting\n"
+        exit 1
+    fi
+
+
+
     if commandExists "kubectl" && [ -f "/opt/replicated/kubeadm.conf" ]; then
         set +e
         nodes=$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes --output=go-template --template="{{ '{{' }}range .items{{ '}}{{' }}.metadata.name{{ '}}' }} {{ '{{' }}end{{ '}}' }}")
