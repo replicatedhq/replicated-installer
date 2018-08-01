@@ -115,6 +115,7 @@ upgradeK8sWorkers() {
         _done="$(kubectl get nodes/$node 2>/dev/null | sed '1d' | grep -v $k8sVersion | awk '{ print $1 }')"
         while [ -n "$_done" ]; do
             echo
+            # TODO (ethan): prompt no timeout
             printf "Has script completed? "
             if confirmN; then
                 break
@@ -175,6 +176,7 @@ upgradeK8sMaster() {
 
     sed -i "s/kubernetesVersion:.*/kubernetesVersion: v$k8sVersion/" /opt/replicated/kubeadm.conf
     
+    # TODO (ethan): handle failures here
     spinnerNodeVersion $(kubectl get nodes | grep master | awk '{ print $1 }') "$k8sVersion"
     spinnerNodesReady
 }
