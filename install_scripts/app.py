@@ -565,24 +565,6 @@ def get_swarm_init_worker(replicated_channel=None,
     return Response(response, mimetype='text/x-shellscript')
 
 
-@app.route('/kubernetes-upgrade')
-@app.route('/kubernetes-upgrade.sh')
-@app.route('/<replicated_channel>/kubernetes-upgrade')
-def get_kubernetes_upgrade_master(replicated_channel=None):
-    replicated_channel = replicated_channel if replicated_channel else 'stable'
-    replicated_version = helpers.get_replicated_version(
-        replicated_channel, None, None)
-    pinned_kubernetes_version = helpers.get_pinned_kubernetes_version(
-        replicated_version)
-    kubernetes_version = helpers.get_arg('kubernetes_version',
-                                         pinned_kubernetes_version)
-
-    response = render_template(
-        'kubernetes/upgrade.sh',
-        **helpers.template_args(kubernetes_version=kubernetes_version, ))
-    return Response(response, mimetype='text/x-shellscript')
-
-
 @app.route('/kubernetes-node-upgrade')
 @app.route('/kubernetes-node-upgrade.sh')
 @app.route('/<replicated_channel>/kubernetes-node-upgrade')
