@@ -114,17 +114,6 @@ initKube() {
         kubeadm config upload from-file --config /opt/replicated/kubeadm.conf
         _current=$(getK8sServerVersion)
 
-        # hack -- if the versions are the same, do an "upgrade" to the same version to force-apply the new kubeadm config
-        # @dex "I put in that line because we had a breaking change in the install script and we had to reset the cluster config"
-        # @dex "we had to change the apiserver nodePortRange to allow for contour to run"
-        # @dex "I guess I'd err on the side of removing it entirely"
-        # TODO
-        if [ "${KUBERNETES_VERSION}" == "$_current" ] && [ "${KUBERNETES_VERSION}" == "1.9.3" ]; then
-            logStep "apply config via kubeadm upgrade"
-            kubeadm upgrade apply --yes "v${KUBERNETES_VERSION}" --config /opt/replicated/kubeadm.conf
-        fi
-
-        logStep "apply config via kubeadm upgrade"
         maybeUpgradeKubernetes "$KUBERNETES_VERSION"
     fi
     cp /etc/kubernetes/admin.conf $HOME/admin.conf

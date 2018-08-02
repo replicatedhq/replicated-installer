@@ -101,27 +101,41 @@ maybeUpgradeKubernetesNode() {
 #######################################
 upgradeK8sWorkers() {
     k8sVersion="$1"
+    semverParse "$k8sVersion"
+    upgradeMajor="$major"
+    upgradeMinor="$minor"
 
-    workers=$(kubectl get nodes | sed '1d' | grep -v master | grep -v $k8sVersion | awk '{ print $1 }')
+    workers=$(kubectl get nodes | sed '1d' | grep -v master)
 
     for node in $workers; do
-        kubectl drain "$node" --ignore-daemonsets --delete-local-data --force
-        printf "\n\n\tRun the upgrade script on remote node before proceeding: ${GREEN}$node${NC}\n\n"
+        semverParse=$(echo "$node" | awk '{ print $1 }')
+        nodeMajor="$major"
+        nodeMinor="$minor"
+        if [ "$nodeMajor" -gt "$upgradeMajor" ]; then
+            continue
+        fi
+        if [ "$nodeMajor" -eq "$upgradeMajor" ] && [ "$nodeMinor" -ge "$upgradeMinor" ]; then
+            continue
+        fi
+        nodeName=$(echo "$node" | awk '{ print $1 }')
+
+        kubectl drain "$nodeName" --ignore-daemonsets --delete-local-data --force
+        printf "\n\n\tRun the upgrade script on remote node before proceeding: ${GREEN}$nodeName${NC}\n\n"
         if [ "$AIRGAP" = "1" ]; then
             printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s kubernetes-version=$k8sVersion${NC}"
         else
             printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s kubernetes-version=$k8sVersion${NC}"
         fi
-        _done="$(kubectl get nodes/$node 2>/dev/null | sed '1d' | grep -v $k8sVersion | awk '{ print $1 }')"
+        _done="$(kubectl get nodes/$nodeName 2>/dev/null | sed '1d' | grep -v $k8sVersion | awk '{ print $1 }')"
         while [ -n "$_done" ]; do
             echo
-            # TODO (ethan): prompt no timeout
+            READ_TIMEOUT=""
             printf "Has script completed? "
             if confirmN; then
                 break
             fi
         done
-        kubectl uncordon $node
+        kubectl uncordon $nodeName
     done
 
     spinnerNodesReady
@@ -176,8 +190,7 @@ upgradeK8sMaster() {
 
     sed -i "s/kubernetesVersion:.*/kubernetesVersion: v$k8sVersion/" /opt/replicated/kubeadm.conf
     
-    # TODO (ethan): handle failures here
-    spinnerNodeVersion $(kubectl get nodes | grep master | awk '{ print $1 }') "$k8sVersion"
+    spinnerNodeVersion "$(k8sMasterNodeName)" "$k8sVersion"
     spinnerNodesReady
 }
 

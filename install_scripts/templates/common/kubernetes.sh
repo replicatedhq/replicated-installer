@@ -309,6 +309,25 @@ prepareK8sPackageArchives() {
 }
 
 #######################################
+# Gets node name from kubectl ignoring errors
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   master
+#######################################
+k8sMasterNodeName() {
+    set +e
+    _master="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null | grep master | awk '{ print $1 }')"
+    until [ -n "$_master" ]; do
+        _master="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null | grep master | awk '{ print $1 }')"
+    done
+    set -e
+    printf "$_master"
+}
+
+#######################################
 # Display a spinner until all nodes are ready, TODO timeout
 # Globals:
 #   None
