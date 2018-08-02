@@ -435,16 +435,7 @@ spinnerReplicatedReady()
 spinnerRookReady()
 {
     logStep "Await rook ready"
-    local delay=0.75
-    local spinstr='|/-\'
-    while [ "$(kubectl -n rook-system get pods | grep rook-operator | grep -E "ContainerCreating|Pending")" ]; do
-        local temp=${spinstr#?}
-        printf " [%c]  " "$spinstr"
-        local spinstr=$temp${spinstr%"$temp"}
-        sleep $delay
-        printf "\b\b\b\b\b\b"
-    done
-    printf "    \b\b\b\b"
+    spinnerPodRunning rook-system rook-operator
     logSuccess "Rook Ready!"
 }
 
