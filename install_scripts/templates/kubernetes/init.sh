@@ -54,13 +54,14 @@ ADDITIONAL_NO_PROXY=
 {% include 'common/kubernetes.sh' %}
 {% include 'common/selinux.sh' %}
 {% include 'common/swap.sh' %}
+{% include 'common/kubernetes-upgrade.sh' %}
 
 initKubeadmConfig() {
     mkdir -p /opt/replicated
     cat <<EOF > /opt/replicated/kubeadm.conf
 apiVersion: kubeadm.k8s.io/v1alpha1
 kind: MasterConfiguration
-kubernetesVersion: $KUBERNETES_VERSION
+kubernetesVersion: v$KUBERNETES_VERSION
 token: $BOOTSTRAP_TOKEN
 tokenTTL: ${BOOTSTRAP_TOKEN_TTL}
 networking:
@@ -88,17 +89,6 @@ EOF
 
 }
 
-getKubeServerVersion() {
-    logStep "check k8s server version"
-    # poll until we can get the current server version
-    _current="$(kubectl version | grep 'Server Version' | tr " " "\n" | grep GitVersion | cut -d'"' -f2)"
-    until [ -n "$_current" ]; do
-      _current="$(kubectl version | grep 'Server Version' | tr " " "\n" | grep GitVersion | cut -d'"' -f2)"
-    done
-    logSuccess "got k8s server version: $_current"
-    printf "$_current"
-}
-
 initKube() {
     logStep "Verify Kubelet"
     if ! ps aux | grep -qE "[k]ubelet"; then
@@ -122,18 +112,9 @@ initKube() {
         chmod 444 /etc/kubernetes/admin.conf
         initKubeadmConfig
         kubeadm config upload from-file --config /opt/replicated/kubeadm.conf
-        _current=$(getKubeServerVersion)
+        _current=$(getK8sServerVersion)
 
-        # hack -- if the versions are the same, do an "upgrade" to the same version to force-apply the new kubeadm config
-        if [ "${KUBERNETES_VERSION}" == "$_current" ]; then
-            logStep "apply config via kubeadm upgrade"
-            kubeadm upgrade apply --yes "${KUBERNETES_VERSION}"
-        else
-            logStep "apply config via kubeadm upgrade"
-            bail "automated upgrades are not supported, and the target installer version $KUBERNETES_VERSION does not match current server version $_current"
-            # todo -- if the versions are not the same, we need to patch the apiserver manifest manually
-            #         fortunately this won't be an issue until we nail down automated k8s upgrades.
-	    fi
+        maybeUpgradeKubernetes "$KUBERNETES_VERSION"
     fi
     cp /etc/kubernetes/admin.conf $HOME/admin.conf
     chown $SUDO_USER:$SUDO_USER $HOME/admin.conf
@@ -331,14 +312,14 @@ outroKubeadm() {
         printf "\nTo add nodes to this installation, copy and unpack this bundle on your other nodes, and run the following:"
         printf "\n"
         printf "\n"
-        printf "${GREEN}    cat ./kubernetes-node-join.sh  | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH \n"
+        printf "${GREEN}    cat ./kubernetes-node-join.sh  | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION \n"
         printf "${NC}"
         printf "\n"
         printf "\n"
     else
         printf "\nTo add nodes to this installation, run the following script on your other nodes"
         printf "\n"
-        printf "${GREEN}    curl {{ replicated_install_url }}/{{ kubernetes_node_join_path }} | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH \n"
+        printf "${GREEN}    curl {{ replicated_install_url }}/{{ kubernetes_node_join_path }} | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION \n"
         printf "${NC}"
         printf "\n"
         printf "\n"
@@ -366,7 +347,7 @@ requireRootUser
 detectLsbDist
 bailIfUnsupportedOS
 detectInitSystem
-must_swapoff
+mustSwapoff
 
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"
@@ -535,8 +516,8 @@ fi
 systemctl enable kubelet && systemctl start kubelet
 
 if [ "$AIRGAP" = "1" ]; then
-    airgapLoadKubernetesCommonImages
-    airgapLoadKubernetesControlImages
+    airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"
+    airgapLoadKubernetesControlImages "$KUBERNETES_VERSION"
 else
     docker pull registry:2.6.2
     docker tag registry:2.6.2 registry:2
@@ -596,9 +577,5 @@ installCliFile \
     '$(kubectl get pods -o=jsonpath="{.items[0].metadata.name}" -l tier=master) --'
 installAliasFile
 outro "$NO_CLEAR"
-
-
-
-
 
 exit 0

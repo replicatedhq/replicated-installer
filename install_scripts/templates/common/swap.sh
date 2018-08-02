@@ -16,7 +16,7 @@
 # Returns:
 #   Non-zero exit status unless swap is enabled
 #######################################
-swap_enabled() {
+swapEnabled() {
   swapon --summary | grep --quiet " " # todo this could be more specific, swapon -s returns nothing if its off
 }
 
@@ -29,7 +29,7 @@ swap_enabled() {
 # Returns:
 #   Non-zero exit status unless swap partitions are configured
 #######################################
-swap_configured() {
+swapConfigured() {
     cat /etc/fstab | grep --quiet --ignore-case --extended-regexp '^[^#]+swap'
 }
 
@@ -43,13 +43,13 @@ swap_configured() {
 # Returns:
 #   None
 #######################################
-must_swapoff() {
-    if swap_enabled || swap_configured ; then
+mustSwapoff() {
+    if swapEnabled || swapConfigured ; then
         printf "\n${YELLOW}This application is incompatible with memory swapping enabled. Disable swap to continue?${NC} "
         if confirmY ; then
             printf "=> Running swapoff --all\n"
             swapoff --all
-            if swap_configured ; then
+            if swapConfigured ; then
               printf "=> Commenting swap entries in /etc/fstab \n"
               sed --in-place=.bak '/\bswap\b/ s/^/#/' /etc/fstab
               printf "=> A backup of /etc/fstab has been made at /etc/fstab.bak\n\n"

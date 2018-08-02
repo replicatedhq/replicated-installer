@@ -17,23 +17,42 @@ def template_args(**kwargs):
         'pinned_docker_version':
         get_default_docker_version(),
         'min_docker_version':
-        param.lookup('MIN_DOCKER_VERSION', '/install_scripts/min_docker_version', default='1.7.1'),
+        param.lookup(
+            'MIN_DOCKER_VERSION',
+            '/install_scripts/min_docker_version',
+            default='1.7.1'),
         'replicated_env':
-        param.lookup('ENVIRONMENT', '/replicated/environment', default='production'),
+        param.lookup(
+            'ENVIRONMENT', '/replicated/environment', default='production'),
         'environment_tag_suffix':
-        get_environment_tag_suffix(param.lookup('ENVIRONMENT', '/replicated/environment', default='production')),
+        get_environment_tag_suffix(
+            param.lookup(
+                'ENVIRONMENT', '/replicated/environment',
+                default='production')),
         'replicated_install_url':
-        param.lookup('REPLICATED_INSTALL_URL', '/replicated/installer_url', default='https://get.replicated.com'),
+        param.lookup(
+            'REPLICATED_INSTALL_URL',
+            '/replicated/installer_url',
+            default='https://get.replicated.com'),
         'replicated_prem_graphql_endpoint':
-        param.lookup('GRAPHQL_PREM_ENDPOINT', '/graphql/prem_endpoint', default='https://pg.replicated.com/graphql'),
+        param.lookup(
+            'GRAPHQL_PREM_ENDPOINT',
+            '/graphql/prem_endpoint',
+            default='https://pg.replicated.com/graphql'),
         'replicated_registry_endpoint':
-        param.lookup('REGISTRY_ENDPOINT', '/registry_v2/advertise_address', default='registry.replicated.com'),
+        param.lookup(
+            'REGISTRY_ENDPOINT',
+            '/registry_v2/advertise_address',
+            default='registry.replicated.com'),
         'replicated_docker_host':
-        param.lookup('REPLICATED_DOCKER_HOST', '/replicated/docker_host', default='quay.io'),
+        param.lookup(
+            'REPLICATED_DOCKER_HOST',
+            '/replicated/docker_host',
+            default='quay.io'),
     }
     if get_arg('replicated_env') in ('staging', 'production'):
         args['replicated_env'] = get_arg('replicated_env')
-    if get_arg('no-ce-on-ee') is not None:
+    if get_arg('no-ce-on-ee', get_arg('no_ce_on_ee')) is not None:
         args['no_ce_on_ee'] = True
     if get_arg('hard_fail_on_loopback') is not None:
         args['hard_fail_on_loopback'] = True
@@ -72,21 +91,23 @@ def get_pinned_docker_version(replicated_version, scheduler):
 def get_pinned_kubernetes_version(replicated_version):
     version_info = semver.parse(replicated_version, loose=False)
     cursor = db.get().cursor(buffered=True)
-    query = (
-        'SELECT kubernetes_version '
-        'FROM pinned_kubernetes_version '
-        'WHERE major <= %s AND minor <= %s AND patch <= %s '
-        'ORDER BY major DESC, minor DESC, patch DESC')
+    query = ('SELECT kubernetes_version '
+             'FROM pinned_kubernetes_version '
+             'WHERE major <= %s AND minor <= %s AND patch <= %s '
+             'ORDER BY major DESC, minor DESC, patch DESC')
     cursor.execute(query, (version_info.major, version_info.minor,
-                            version_info.patch))
+                           version_info.patch))
     (kubernetes_version, ) = cursor.fetchone()
     cursor.close()
 
-    return 'v'+kubernetes_version
+    return kubernetes_version
 
 
 def get_default_docker_version():
-    return param.lookup('PINNED_DOCKER_VERSION', '/install_scripts/pinned_docker_version', default=_default_docker_version)
+    return param.lookup(
+        'PINNED_DOCKER_VERSION',
+        '/install_scripts/pinned_docker_version',
+        default=_default_docker_version)
 
 
 def get_replicated_version(replicated_channel, app_slug, app_channel):
@@ -253,12 +274,11 @@ def get_channel_css(app_slug, app_channel):
         return row[0]
     return ''
 
+
 def does_customer_exist(customer_id):
     cursor = db.get().cursor()
-    query = ('SELECT id '
-             'FROM customer '
-             'WHERE id = %s')
-    cursor.execute(query, (customer_id,))
+    query = ('SELECT id ' 'FROM customer ' 'WHERE id = %s')
+    cursor.execute(query, (customer_id, ))
     row = cursor.fetchone()
     if row:
         return True
@@ -314,33 +334,27 @@ def get_environment_tag_suffix(env):
 
 def compose_400(error_message="Bad Request"):
     response = render_template('error/compose_400.yml',
-        **template_args(
-            error_message=error_message,
-            base_url=request.base_url,
-        )
-    )
+                               **template_args(
+                                   error_message=error_message,
+                                   base_url=request.base_url, ))
     return Response(response, status=400, mimetype='text/x-docker-compose')
 
 
 def compose_404(error_message="Not Found"):
     response = render_template('error/compose_404.yml',
-        **template_args(
-            error_message=error_message,
-            base_url=request.base_url,
-        )
-    )
+                               **template_args(
+                                   error_message=error_message,
+                                   base_url=request.base_url, ))
     return Response(response, status=404, mimetype='text/x-docker-compose')
 
 
 def compose_500():
     response = render_template('error/compose_500.yml',
-                               **template_args(
-                                   base_url=request.base_url,
-                               ))
+                               **template_args(base_url=request.base_url, ))
     return Response(response, status=500, mimetype='text/x-docker-compose')
 
 
 def snapshots_use_overlay(replicated_version):
     if semver.lt(replicated_version, '2.22.0', loose=False):
-        return False;
-    return True;
+        return False
+    return True
