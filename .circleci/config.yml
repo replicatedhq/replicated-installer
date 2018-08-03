@@ -29,24 +29,6 @@ jobs:
           name: tests
           command: make test
 
-  build_k8s_packages:
-    docker:
-      - image: replicated/python-boto
-    working_directory: ~/work
-    steps:
-      - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
-      - run: apk add make
-      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
-      - run:
-          name: build & push
-          command: |
-            cd bundles/k8s-ubuntu1604
-            make build push
-            cd ../k8s-rhel7
-            make build push
-
   build_k8s_bundles:
     machine:
       docker_layer_caching: true
@@ -56,12 +38,11 @@ jobs:
       - run:
           name: make
           command: |
-            cd bundles/k8s-containers-v1.9.3
-            make deps update_k8s_manifest build retag push
-            cd ../k8s-cni-v0.6.0
-            make build push
+            cd bundles/k8s-containers
+            make deps
+            make update_k8s_manifest_${K8S_VERSION} build_${K8S_VERSION} push_${K8S_VERSION}
 
-  build_docker_packages:
+  build_ubuntu_docker_package:
     docker:
       - image: replicated/python-boto
     working_directory: ~/work
@@ -76,8 +57,54 @@ jobs:
           command: |
             cd bundles/docker-ubuntu1604
             make build push
-            cd ../docker-rhel74
+
+  build_ubuntu_k8s_packages:
+    docker:
+      - image: replicated/python-boto
+    working_directory: ~/work
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run: apk add make
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
+      - run:
+          name: build & push
+          command: |
+            cd bundles/k8s-ubuntu1604
+            make $K8S_VERSION
+
+  build_rhel_docker_package:
+    docker:
+      - image: replicated/python-boto
+    working_directory: ~/work
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run: apk add make
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
+      - run:
+          name: build & push
+          command: |
+            cd bundles/docker-rhel74
             make build push
+
+  build_rhel_k8s_packages:
+    docker:
+      - image: replicated/python-boto
+    working_directory: ~/work
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run: apk add make
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
+      - run:
+          name: build & push
+          command: |
+            cd bundles/k8s-rhel7
+            make K8S_VERSION
 
   build_image:
     <<: *defaults_py
