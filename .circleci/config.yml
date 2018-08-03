@@ -30,10 +30,12 @@ jobs:
           command: make test
 
   build_k8s_bundles:
-    machine:
-      docker_layer_caching: true
+    docker:
+      - image: circleci/golang:1.10
     steps:
       - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
       - run:
           name: make
@@ -104,7 +106,7 @@ jobs:
           name: build & push
           command: |
             cd bundles/k8s-rhel7
-            make K8S_VERSION
+            make $K8S_VERSION
 
   build_image:
     <<: *defaults_py
