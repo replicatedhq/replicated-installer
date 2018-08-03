@@ -219,6 +219,17 @@ weavenetDeploy() {
 rookDeploy() {
     logStep "deploy rook"
 
+    # never upgrade an existing rook cluster
+    if k8sNamespaceExists rook && k8sNamespaceExists rook-system ; then
+        logSuccess "Rook 0.7.1 already deployed"
+        return
+    fi
+    # namespaces used in Rook 0.8+
+    if k8sNamespaceExists rook-ceph && k8sNamespaceExists rook-ceph-system ; then
+        logSuccess "Rook already deployed"
+        return
+    fi
+
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_system_yaml=1 > /tmp/rook-system.yml
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_cluster_yaml=1 > /tmp/rook.yml
 
