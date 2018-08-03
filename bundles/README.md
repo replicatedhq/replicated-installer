@@ -23,19 +23,19 @@ curl -u ${CIRCLE_CI_TOKEN}: \
 
 Then update chatops deployer with the new image tag. No code changes are required in this repo.
 
-## Build new K8s package for Ubuntu 16.04 for all supported versions of K8s
+## Build new K8s package for Ubuntu 16.04
 
 ```
 curl -u ${CIRCLE_CI_TOKEN}: \
      -d build_parameters[CIRCLE_JOB]=build_ubuntu_k8s_packages \
-     -d build_parameters[K8S_VERSION]=v1.11. \
+     -d build_parameters[K8S_VERSION]=v1.11.1 \
      https://circleci.com/api/v1.1/project/github/replicatedhq/replicated-installer/tree/master
 ```
 
 Update chatops deployer with the new image tags.
 Update the Ubuntu image tags [in this repo](https://github.com/replicatedhq/replicated-installer/blob/77654150c6a6d4e80b9b1f24f8fb2d63b412d7ea/install_scripts/templates/common/kubernetes.sh#L2)
 
-## Build new K8s package for RHEL 7.4 for all supported versions of K8s
+## Build new K8s package for RHEL 7.4
 
 ```
 curl -u ${CIRCLE_CI_TOKEN}: \
