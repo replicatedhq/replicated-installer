@@ -1,11 +1,11 @@
 
 UBUNTU_1604_K8S_9=ubuntu-1604-v1.9.3-20180416
-UBUNTU_1604_K8S_10=ubuntu-1604-v1.10.5-20180709
-UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.0-20180709
+UBUNTU_1604_K8S_10=ubuntu-1604-v1.10.6-20180709
+UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.1-20180709
 
 RHEL_74_K8S_9=rhel-74-v1.9.3-20180712
-RHEL_74_K8S_10=rhel-74-v1.10.5-20180711
-RHEL_74_K8S_11=rhel-74-v1.11.0-20180711
+RHEL_74_K8S_10=rhel-74-v1.10.6-20180711
+RHEL_74_K8S_11=rhel-74-v1.11.1-20180711
 
 #######################################
 #
@@ -59,7 +59,7 @@ installCNIPlugins() {
         docker load < k8s-cni.tar
     fi
 
-    # 0.6.0 is the latest as of k8s 1.11.0
+    # 0.6.0 is the latest as of k8s 1.11.1
     docker run -v /tmp:/out quay.io/replicated/k8s-cni:v1.9.3
     tar zxfv /tmp/cni.tar.gz -C /opt/cni/bin
     mkdir -p /etc/cni/net.d
@@ -84,10 +84,10 @@ k8sPackageTag() {
                 1.9.3)
                     echo "$UBUNTU_1604_K8S_9"
                     ;;
-                1.10.5)
+                1.10.6)
                     echo "$UBUNTU_1604_K8S_10"
                     ;;
-                1.11.0)
+                1.11.1)
                     echo "$UBUNTU_1604_K8S_11"
                     ;;
                 *)
@@ -100,10 +100,10 @@ k8sPackageTag() {
                 1.9.3)
                     echo "$RHEL_74_K8S_9"
                     ;;
-                1.10.5)
+                1.10.6)
                     echo "$RHEL_74_K8S_10"
                     ;;
-                1.11.0)
+                1.11.1)
                     echo "$RHEL_74_K8S_11"
                     ;;
                 *)
@@ -194,11 +194,11 @@ airgapLoadKubernetesCommonImages() {
         1.9.3)
             airgapLoadKubernetesCommonImages193
             ;;
-        1.10.5)
-            bail "Unsupported Kubernetes version v$k8sVersion" # TODO
+        1.10.6)
+            airgapLoadKubernetesCommonImages1106
             ;;
-        1.11.0)
-            bail "Unsupported Kubernetes version v$k8sVersion" # TODO
+        1.11.1)
+            airgapLoadKubernetesCommonImages1111
             ;;
         *)
             bail "Unsupported Kubernetes version $k8sVersion"
@@ -231,6 +231,32 @@ airgapLoadKubernetesCommonImages193() {
     logSuccess "common images"
 }
 
+# only the images needed for kubeadm to upgrade from 1.9 to 1.11
+airgapLoadKubernetesCommonImages1106() {
+    docker run \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        "quay.io/replicated/k8s-images-common:v1.10.6-20180803"
+
+    docker tag 8a9a40dda603 gcr.io/google_containers/kube-proxy-amd64:v1.10.6
+    docker tag da86e6ba6ca1 gcr.io/google_containers/pause-amd64:3.1
+}
+
+airgapLoadKubernetesCommonImages1111() {
+    docker run \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        "quay.io/replicated/k8s-images-common:v1.11.1-20180803"
+
+    docker tag d5c25579d0ff gcr.io/google_containers/kube-proxy-amd64:v1.11.1
+    docker tag da86e6ba6ca1 gcr.io/google_containers/pause-amd64:3.1
+    docker tag b3b94275d97c docker.io/coredns/coredns:1.1.3
+    docker tag 86ff1a48ce14 weaveworks/weave-kube:2.4.0
+    docker tag 647ad6d59818 weaveworks/weave-npc:2.4.0
+    docker tag bf0c403ea58d weaveworks/weaveexec:2.4.0
+    docker tag b2b03e9146e1 docker.io/registry:2
+    docker tag 6521ac58ca80 docker.io/envoyproxy/envoy-alpine:v1.6.0
+    docker tag 6a9ec4bcb60e gcr.io/heptio-images/contour:v0.5.0
+}
+
 #######################################
 # Unpack kubernetes images
 # Globals:
@@ -250,29 +276,16 @@ airgapLoadKubernetesControlImages() {
         v1.9.3)
             airgapLoadKubernetesControlImages193
             ;;
-        v1.10.5)
-            bail "Unsupported Kubernetes version v$k8sVersion" # TODO
+        v1.10.6)
+            airgapLoadKubernetesControlImages1106
             ;;
-        v1.11.0)
-            bail "Unsupported Kubernetes version v$k8sVersion" # TODO
+        v1.11.1)
+            airgapLoadKubernetesControlImages1111
             ;;
         *)
             bail "Unsupported Kubernetes version $k8sVersion"
             ;;
     esac
-}
-
-airgapLoadKubernetesControlImages193() {
-    docker run \
-        -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-control:v1.9.3-20180222"
-    # uh. its kind of insane that we have to do this. the linuxkit pkg
-    # comes to us without tags, which seems super useless... we should build our own bundler maybe
-    docker tag 83dbda6ee810 gcr.io/google_containers/kube-controller-manager-amd64:v1.9.3
-    docker tag 360d55f91cbf gcr.io/google_containers/kube-apiserver-amd64:v1.9.3
-    docker tag d3534b539b76 gcr.io/google_containers/kube-scheduler-amd64:v1.9.3
-    docker tag 59d36f27cceb gcr.io/google_containers/etcd-amd64:3.1.11
-
 
     docker images | grep google_containers
     logSuccess "control plane images"
@@ -281,7 +294,40 @@ airgapLoadKubernetesControlImages193() {
     docker load < replicated-sidecar-controller.tar
     docker load < replicated-operator.tar
     logSuccess "replicated addons"
+}
 
+airgapLoadKubernetesControlImages193() {
+    docker run \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        "quay.io/replicated/k8s-images-control:v1.9.3-20180222"
+
+    docker tag 83dbda6ee810 gcr.io/google_containers/kube-controller-manager-amd64:v1.9.3
+    docker tag 360d55f91cbf gcr.io/google_containers/kube-apiserver-amd64:v1.9.3
+    docker tag d3534b539b76 gcr.io/google_containers/kube-scheduler-amd64:v1.9.3
+    docker tag 59d36f27cceb gcr.io/google_containers/etcd-amd64:3.1.11
+}
+
+airgapLoadKubernetesControlImages1106() {
+    docker run \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        "quay.io/replicated/k8s-images-control:v1.10.6-20180803"
+
+    docker tag 6e29896cbeca gcr.io/google_containers/kube-apiserver-amd64:v1.10.6
+    docker tag dd246160bf59 gcr.io/google_containers/kube-scheduler-amd64:v1.10.6
+    docker tag 3224e7c2de11 gcr.io/google_containers/kube-controller-manager-amd64:v1.10.6
+    docker tag 52920ad46f5b gcr.io/google_containers/etcd-amd64:v3.1.12
+}
+
+airgapLoadKubernetsControlImages1111() {
+    docker run \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        "quay.io/replicated/k8s-images-control:v1.10.6-20180803"
+
+    docker tag 816332bd9d11 gcr.io/google_containers/kube-apiserver-amd64:v1.11.1
+    docker tag 52096ee87d0e gcr.io/google_containers/kube-controller-manager-amd64:v1.11.1
+    docker tag 272b3a60cd68 gcr.io/google_containers/kube-scheduler-amd64:v1.11.1
+    docker tag b8df3b177be2 gcr.io/google_containers/etcd-amd64:3.2.18
+    docker tag b3b94275d97c docker.io/coredns/coredns:1.1.3
 }
 
 #######################################
@@ -355,7 +401,7 @@ spinnerNodesReady()
 #   None
 # Arguments:
 #   node
-#   k8sVersion - e.g. 1.10.5
+#   k8sVersion - e.g. 1.10.6
 # Returns:
 #   None
 #######################################

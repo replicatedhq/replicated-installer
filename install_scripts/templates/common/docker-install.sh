@@ -71,8 +71,8 @@ installDocker_1_12_Offline() {
     case "$LSB_DIST$DIST_VERSION" in
         ubuntu16.04)
             mkdir -p image/
-            tar xvf packages-docker-ubuntu1604.tar -C image/
-            tar xvf image/9d11016cacbae72f929fb839a5ac9c6810f3f9c639a5f140f86792ec4dcb6ceb/layer.tar
+            layer_id=$(tar xvf packages-docker-ubuntu1604.tar -C image/ | grep layer.tar | cut -d'/' -f1)
+            tar xvf image/${layer_id}/layer.tar
             pushd archives/
                dpkg -i *.deb
             popd
@@ -81,8 +81,8 @@ installDocker_1_12_Offline() {
             ;;
         rhel7.4|centos7.4)
             mkdir -p image/
-            tar xvf packages-docker-rhel74.tar -C image/
-            tar xvf image/a2bf112873793f191c9e2b9cf0fef6fc7a58b93947c9996e8b842ca9b5eaaed4/layer.tar
+            layer_id=$(tar xvf packages-docker-rhel74.tar -C image/ | grep layer.tar | cut -d'/' -f1)
+            tar xvf image/${layer_id}/layer.tar
             pushd archives/
                 yum install -y -q *.rpm 
             popd

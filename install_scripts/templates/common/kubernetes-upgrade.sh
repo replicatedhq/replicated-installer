@@ -16,7 +16,7 @@
 # Globals:
 #   None
 # Arguments:
-#   upgradeVersion - e.g. 1.10.5
+#   upgradeVersion - e.g. 1.10.6
 # Returns:
 #   None
 #######################################
@@ -36,12 +36,12 @@ maybeUpgradeKubernetes() {
     semverParse "$masterVersion"
 
     if [ "$major" -eq "1" ] && [ "$minor" -eq "9" ]; then
-        logStep "Kubernetes version v$masterVersion detected, upgrading to version v1.10.5"
-        upgradeK8sMaster "1.10.5" "$UBUNTU_1604_K8S_10" "$CENTOS_74_K8S_10"
-        logSuccess "Kubernetes upgraded to version v1.10.5"
+        logStep "Kubernetes version v$masterVersion detected, upgrading to version v1.10.6"
+        upgradeK8sMaster "1.10.6" "$UBUNTU_1604_K8S_10" "$CENTOS_74_K8S_10"
+        logSuccess "Kubernetes upgraded to version v1.10.6"
     fi
 
-    upgradeK8sWorkers "1.10.5"
+    upgradeK8sWorkers "1.10.6"
 
     if [ "$upgradeMinor" -lt "11" ]; then
         return
@@ -51,12 +51,12 @@ maybeUpgradeKubernetes() {
     semverParse "$masterVersion"
 
     if [ "$major" -eq "1" ] && [ "$minor" -eq "10" ]; then
-        logStep "Kubernetes version v$masterVersion detected, upgrading to version v1.11.0"
-        upgradeK8sMaster "1.11.0" "$UBUNTU_1604_K8S_11" "$CENTOS_74_K8S_11"
-        logSuccess "Kubernetes upgraded to version v1.11.0"
+        logStep "Kubernetes version v$masterVersion detected, upgrading to version v1.11.1"
+        upgradeK8sMaster "1.11.1" "$UBUNTU_1604_K8S_11" "$CENTOS_74_K8S_11"
+        logSuccess "Kubernetes upgraded to version v1.11.1"
     fi
 
-    upgradeK8sWorkers "1.11.0"
+    upgradeK8sWorkers "1.11.1"
 }
 
 #######################################
@@ -64,7 +64,7 @@ maybeUpgradeKubernetes() {
 # Globals:
 #   None
 # Arguments:
-#   upgradeVersion - e.g. 1.10.5
+#   upgradeVersion - e.g. 1.10.6
 # Returns:
 #   None
 #######################################
@@ -95,7 +95,7 @@ maybeUpgradeKubernetesNode() {
 # Globals:
 #   AIRGAP
 # Arguments:
-#   k8sVersion - e.g. 1.10.5
+#   k8sVersion - e.g. 1.10.6
 # Returns:
 #   None
 #######################################
@@ -147,7 +147,7 @@ upgradeK8sWorkers() {
 #   LSB_DIST
 #   DIST_VERSION
 # Arguments:
-#   k8sVersion - e.g. 1.10.5
+#   k8sVersion - e.g. 1.10.6
 # Returns:
 #   None
 #######################################
@@ -200,7 +200,7 @@ upgradeK8sMaster() {
 #   LSB_DIST
 #   DIST_VERSION
 # Arguments:
-#   k8sVersion - e.g. 1.10.5
+#   k8sVersion - e.g. 1.10.6
 # Returns:
 #   None
 #######################################
