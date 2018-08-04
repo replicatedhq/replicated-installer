@@ -76,7 +76,7 @@ jobs:
             cd bundles/k8s-ubuntu1604
             make $K8S_VERSION
 
-  build_ubuntu_k8s_packages:
+  build_k8s_cni:
     docker:
       - image: replicated/python-boto
     working_directory: ~/work
