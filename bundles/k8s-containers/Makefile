@@ -20,7 +20,7 @@ build_%:
 	$(eval control_image = $(shell linuxkit pkg build ./kubernetes-tmp-$*/pkg/kubernetes-docker-image-cache-control-plane 2>/dev/null | grep 'Tagging linuxkit/kubernetes-docker-image-cache-control-plane' | awk '{print $$2}'))
 	docker tag ${control_image} quay.io/replicated/k8s-images-control:$*-${DATE}
 
-push-%:
+push_%:
 	docker push quay.io/replicated/k8s-images-common:$*-${DATE}
 	docker push quay.io/replicated/k8s-images-control:$*-${DATE}
 
