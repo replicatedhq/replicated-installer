@@ -76,6 +76,22 @@ jobs:
             cd bundles/k8s-ubuntu1604
             make $K8S_VERSION
 
+  build_ubuntu_k8s_packages:
+    docker:
+      - image: replicated/python-boto
+    working_directory: ~/work
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run: apk add make
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
+      - run:
+          name: build & push
+          command: |
+            cd bundles/k8s-cni-v0.6.0
+            make build push
+
   build_rhel_docker_package:
     docker:
       - image: replicated/python-boto

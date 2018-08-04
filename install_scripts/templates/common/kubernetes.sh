@@ -60,7 +60,7 @@ installCNIPlugins() {
     fi
 
     # 0.6.0 is the latest as of k8s 1.11.1
-    docker run -v /tmp:/out quay.io/replicated/k8s-cni:v1.9.3
+    docker run -v /tmp:/out quay.io/replicated/k8s-cni:0.6.0
     tar zxfv /tmp/cni.tar.gz -C /opt/cni/bin
     mkdir -p /etc/cni/net.d
 }
