@@ -1,4 +1,4 @@
-FROM centos:7.4.1708
+FROM centos:7
 ARG VERSION
 COPY ./kubernetes.repo /etc/yum.repos.d/kubernetes.repo
 RUN mkdir -p /packages/archives

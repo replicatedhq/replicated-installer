@@ -13,7 +13,7 @@ curl -u ${CIRCLE_CI_TOKEN}: \
 
 Then update chatops deployer with the new image tag. No code changes are required in this repo.
 
-## Build a new Docker bundle for RHEL 7.4
+## Build a new Docker bundle for RHEL 7.4 and 7.5
 
 ```
 curl -u ${CIRCLE_CI_TOKEN}: \
@@ -35,12 +35,12 @@ curl -u ${CIRCLE_CI_TOKEN}: \
 Update chatops deployer with the new image tags.
 Update the Ubuntu image tags [in this repo](https://github.com/replicatedhq/replicated-installer/blob/77654150c6a6d4e80b9b1f24f8fb2d63b412d7ea/install_scripts/templates/common/kubernetes.sh#L2)
 
-## Build new K8s package for RHEL 7.4
+## Build new K8s package for RHEL 7.4 and 7.5
 
 ```
 curl -u ${CIRCLE_CI_TOKEN}: \
      -d build_parameters[CIRCLE_JOB]=build_rhel_k8s_packages \
-     -d build_parameters[K8S_VERSION]=v1.11. \
+     -d build_parameters[K8S_VERSION]=v1.11.1 \
      https://circleci.com/api/v1.1/project/github/replicatedhq/replicated-installer/tree/master
 ```
 
