@@ -105,7 +105,7 @@ jobs:
       - run:
           name: build & push
           command: |
-            cd bundles/docker-rhel74
+            cd bundles/docker-rhel7
             make build push
 
   build_rhel_k8s_packages:

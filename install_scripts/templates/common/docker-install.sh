@@ -79,9 +79,9 @@ installDocker_1_12_Offline() {
             DID_INSTALL_DOCKER=1
             return
             ;;
-        rhel7.4|centos7.4)
+        rhel7.4|rhel7.5|centos7.4|centos7.5)
             mkdir -p image/
-            layer_id=$(tar xvf packages-docker-rhel74.tar -C image/ | grep layer.tar | cut -d'/' -f1)
+            layer_id=$(tar xvf packages-docker-rhel7.tar -C image/ | grep layer.tar | cut -d'/' -f1)
             tar xvf image/${layer_id}/layer.tar
             pushd archives/
                 yum install -y -q *.rpm 

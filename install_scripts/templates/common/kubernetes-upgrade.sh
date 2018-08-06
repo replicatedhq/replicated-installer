@@ -173,7 +173,7 @@ upgradeK8sMaster() {
             export DEBIAN_FRONTEND=noninteractive
             dpkg -i archives/*.deb
             ;;
-        centos7.4|rhel7.4)
+        centos7.4|centos7.5|rhel7.4|rhel7.5)
             rpm --upgrade --force archives/*.rpm
             ;;
         *)
@@ -214,7 +214,7 @@ upgradeK8sNode() {
             export DEBIAN_FRONTEND=noninteractive
             dpkg -i archives/*.deb
             ;;
-        centos7.4|rhel7.*)
+        centos7.4|centos7.5|rhel7.4|rhel7.5)
             rpm --upgrade --force archives/*.rpm
             ;;
         *)

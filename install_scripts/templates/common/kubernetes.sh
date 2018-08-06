@@ -3,9 +3,9 @@ UBUNTU_1604_K8S_9=ubuntu-1604-v1.9.3-20180416
 UBUNTU_1604_K8S_10=ubuntu-1604-v1.10.6-20180803
 UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.1-20180803
 
-RHEL_74_K8S_9=rhel-74-v1.9.3-20180712
-RHEL_74_K8S_10=rhel-74-v1.10.6-20180804
-RHEL_74_K8S_11=rhel-74-v1.11.1-20180804
+RHEL7_K8S_9=rhel7-v1.9.3-20180806
+RHEL7_K8S_10=rhel7-v1.10.6-20180806
+RHEL7_K8S_11=rhel7-v1.11.1-20180806
 
 #######################################
 #
@@ -33,7 +33,7 @@ command_exists() {
 #######################################
 bailIfUnsupportedOS() {
     case "$LSB_DIST$DIST_VERSION" in
-        ubuntu16.04|rhel7.4|centos7.4)
+        ubuntu16.04|rhel7.4|rhel7.5|centos7.4|centos7.5)
             ;;
         *)
             bail "Kubernetes install is not supported on ${LSB_DIST} ${DIST_VERSION}"
@@ -95,16 +95,16 @@ k8sPackageTag() {
                     ;;
             esac
             ;;
-        centos7.4|rhel7.*)
+        centos7.4|centos7.5|rhel7.4|rhel7.5)
             case "$k8sVersion" in
                 1.9.3)
-                    echo "$RHEL_74_K8S_9"
+                    echo "$RHEL7_K8S_9"
                     ;;
                 1.10.6)
-                    echo "$RHEL_74_K8S_10"
+                    echo "$RHEL7_K8S_10"
                     ;;
                 1.11.1)
-                    echo "$RHEL_74_K8S_11"
+                    echo "$RHEL7_K8S_11"
                     ;;
                 *)
                     bail "Unsupported Kubernetes version $k8sVersion"
@@ -147,7 +147,7 @@ installKubernetesComponents() {
             dpkg -i archives/*.deb
             ;;
 
-        centos7.4|rhel7.4)
+        centos7.4|centos7.5|rhel7.4|rhel7.5)
             # This needs to be run on Linux 3.x nodes for Rook
             modprobe rbd
             echo 'rbd' > /etc/modules-load.d/replicated.conf
