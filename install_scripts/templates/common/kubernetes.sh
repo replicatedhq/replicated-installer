@@ -1,11 +1,11 @@
 
 UBUNTU_1604_K8S_9=ubuntu-1604-v1.9.3-20180416
-UBUNTU_1604_K8S_10=ubuntu-1604-v1.10.6-20180709
-UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.1-20180709
+UBUNTU_1604_K8S_10=ubuntu-1604-v1.10.6-20180803
+UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.1-20180803
 
 RHEL_74_K8S_9=rhel-74-v1.9.3-20180712
-RHEL_74_K8S_10=rhel-74-v1.10.6-20180711
-RHEL_74_K8S_11=rhel-74-v1.11.1-20180711
+RHEL_74_K8S_10=rhel-74-v1.10.6-20180804
+RHEL_74_K8S_11=rhel-74-v1.11.1-20180804
 
 #######################################
 #
@@ -189,7 +189,7 @@ airgapLoadKubernetesCommonImages() {
 
     k8sVersion=$1
 
-    docker load < k8s-images-common.tar
+    docker load < k8s-images-common-${k8sVersion}.tar
     case "$k8sVersion" in
         1.9.3)
             airgapLoadKubernetesCommonImages193
@@ -271,7 +271,7 @@ airgapLoadKubernetesControlImages() {
 
     k8sVersion=$1
 
-    docker load < k8s-images-control.tar
+    docker load < k8s-images-control-${k8sVersion}.tar
     case "$k8sVersion" in
         v1.9.3)
             airgapLoadKubernetesControlImages193
@@ -509,15 +509,21 @@ spinnerRookReady()
 # Globals:
 #   None
 # Arguments:
-#   None
+#   k8sVersion - e.g. 1.9.3
 # Returns:
 #   None
 #######################################
 spinnerKubeSystemReady()
 {
+    k8sVersion=$1
+
     logStep "Await kube-system services ready"
     spinnerPodRunning kube-system weave-net
-    spinnerPodRunning kube-system kube-dns
+    if [ "$k8sVersion" = "1.9.3" ]; then
+        spinnerPodRunning kube-system kube-dns
+    else
+        spinnerPodRunning kube-system coredns
+    fi
     spinnerPodRunning kube-system kube-proxy
     logStep "Kube system services ready"
 }
