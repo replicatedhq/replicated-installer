@@ -554,7 +554,7 @@ rookDeploy
 contourDeploy "$DISABLE_CONTOUR"
 
 if [ "$KUBERNETES_ONLY" -eq "1" ]; then
-    spinnerKubeSystemReady
+    spinnerKubeSystemReady "$KUBERNETES_VERSION"
     outroKubeadm "$NO_CLEAR"
     exit 0
 fi
