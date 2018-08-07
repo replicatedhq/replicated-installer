@@ -4,6 +4,7 @@ bases:
 
 patches:
   - ./deployment.yaml
+  - ./loadbalancer.yaml
 
 imageTags:
   - name: 799720048698.dkr.ecr.us-east-1.amazonaws.com/install-scripts
