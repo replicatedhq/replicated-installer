@@ -201,11 +201,6 @@ remove_docker_containers() {
     fi
 }
 
-pull_docker_images() {
-    docker pull "{{ replicated_docker_host }}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
-    docker pull "{{ replicated_docker_host }}/replicated/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}"
-}
-
 tag_docker_images() {
     printf "Tagging replicated and replicated-ui images\n"
     # older docker versions require -f flag to move a tag from one image to another
@@ -648,10 +643,10 @@ maybeCreateReplicatedUser
 get_daemon_token
 
 if [ "$SKIP_DOCKER_PULL" = "1" ]; then
-    printf "Skip docker pull flag detected, will not pull replicated and replicated-ui containers\n"
+    printf "Skip docker pull flag detected, will not pull replicated and replicated-ui images\n"
 elif [ "$AIRGAP" != "1" ]; then
-    printf "Pulling replicated and replicated-ui containers\n"
-    pull_docker_images
+    printf "Pulling replicated and replicated-ui images\n"
+    pullReplicatedImages
 else
     printf "Loading replicated and replicated-ui images from package\n"
     airgapLoadReplicatedImages

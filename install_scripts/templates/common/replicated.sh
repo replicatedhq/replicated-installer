@@ -104,3 +104,46 @@ maybeCreateReplicatedUser() {
         usermod -a -G "${DOCKER_GROUP_ID:-0}" "$REPLICATED_USERNAME"
     fi
 }
+
+#######################################
+# Pull replicated and replicated-ui container images.
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+pullReplicatedImages() {
+    docker pull "{{ replicated_docker_host }}/replicated/replicated:{{ replicated_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+    docker pull "{{ replicated_docker_host }}/replicated/replicated-ui:{{ replicated_ui_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+}
+
+#######################################
+# Pull replicated-operator container image.
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+pullOperatorImage() {
+    docker pull "{{ replicated_docker_host }}/replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+}
+
+#######################################
+# Tag and push replicated-operator container image to the on-prem registry.
+# Globals:
+#   None
+# Arguments:
+#   On-prem registry address
+# Returns:
+#   None
+#######################################
+tagAndPushOperatorImage()  {
+    docker tag \
+        "{{ replicated_docker_host }}/replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}" \
+        "${1}/replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+    docker push "${1}/replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+}
