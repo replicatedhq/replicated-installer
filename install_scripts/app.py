@@ -511,8 +511,21 @@ def get_swarm_init_master(replicated_channel=None,
                           app_slug=None,
                           app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
+    print("Looking up tags for:", replicated_channel, app_slug, app_channel)
+
     replicated_version = helpers.get_replicated_version(
         replicated_channel, app_slug, app_channel)
+    replicated_ui_version = helpers.get_replicated_ui_version(
+        replicated_channel, app_slug, app_channel)
+    replicated_operator_version = helpers.get_replicated_operator_version(
+        replicated_channel, app_slug, app_channel)
+
+    replicated_tag = '{}-{}'.format(replicated_channel, replicated_version)
+    replicated_ui_tag = '{}-{}'.format(replicated_channel,
+                                       replicated_ui_version)
+    replicated_operator_tag = '{}-{}'.format(replicated_channel,
+                                             replicated_operator_version)
+
     pinned_docker_version = helpers.get_pinned_docker_version(
         replicated_version, 'swarm')
 
@@ -533,6 +546,9 @@ def get_swarm_init_master(replicated_channel=None,
         'swarm/init.sh',
         **helpers.template_args(
             pinned_docker_version=pinned_docker_version,
+            replicated_tag=replicated_tag,
+            replicated_ui_tag=replicated_ui_tag,
+            replicated_operator_tag=replicated_operator_tag,
             docker_compose_path=compose_path,
             swarm_worker_join_path=worker_path,
             app_channel_css=helpers.base64_encode(channel_css),
