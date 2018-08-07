@@ -77,10 +77,6 @@ remove_docker_containers() {
     fi
 }
 
-pull_docker_images() {
-    docker pull "{{ replicated_docker_host }}/replicated/replicated-operator:{{ replicated_operator_tag }}{{ environment_tag_suffix }}"
-}
-
 tag_docker_images() {
     printf "Tagging replicated-operator image\n"
     # older docker versions require -f flag to move a tag from one image to another
@@ -427,8 +423,8 @@ promptForDaemonToken
 if [ "$SKIP_DOCKER_PULL" = "1" ]; then
     printf "Skip docker pull flag detected, will not pull replicated-operator container\n"
 elif [ "$AIRGAP" != "1" ]; then
-    printf "Pulling latest replicated-operator container\n"
-    pull_docker_images
+    printf "Pulling latest replicated-operator image\n"
+    pullOperatorImage
 else
     printf "Loading replicated-operator image from package\n"
     airgapLoadOperatorImage

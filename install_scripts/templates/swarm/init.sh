@@ -50,7 +50,7 @@ set -e
 
 initSwarm() {
     # init swarm (need for service command); if not created
-    if ! docker node ls 2> /dev/null | grep "Leader"; then
+    if ! docker node ls 2>/dev/null | grep -q "Leader"; then
         echo "Initializing the swarm"
         set +e
         docker swarm init --advertise-addr="$SWARM_ADVERTISE_ADDR" --listen-addr="$SWARM_LISTEN_ADDR"
@@ -362,14 +362,28 @@ maybeCreateDaemonToken
 # this label is needed for replicated and replicated-ui node placement
 docker node update --label-add replicated-role=master "$SWARM_NODE_ID"
 
-if [ "$AIRGAP" = "1" ] && [ "$SKIP_DOCKER_PULL" != "1" ]; then
-    printf "Loading replicated, replicated-ui and replicated-operator images from package\n"
-    airgapLoadReplicatedImages
-    airgapLoadOperatorImage
-    printf "Loading replicated debian, command, statsd-graphite and premkit images from package\n"
-    airgapLoadSupportImages
-    airgapMaybeLoadSupportBundle
-    airgapMaybeLoadRetraced
+if [ "$SKIP_DOCKER_PULL" = "1" ]; then
+    printf "Skip docker pull flag detected, will not pull replicated, replicated-ui and replicated-operator images\n"
+else
+    if [ "$AIRGAP" != "1" ]; then
+        printf "Pulling replicated, replicated-ui and replicated-operator images\n"
+        pullReplicatedImages
+        pullOperatorImage
+    else
+        printf "Loading replicated, replicated-ui and replicated-operator images from package\n"
+        airgapLoadReplicatedImages
+        airgapLoadOperatorImage
+        printf "Loading replicated debian, command, statsd-graphite, and premkit images from package\n"
+        airgapLoadSupportImages
+        airgapMaybeLoadSupportBundle
+        airgapMaybeLoadRetraced
+    fi
+
+    # is this an update?
+    if replicatedctl app status inspect >/dev/null 2>&1; then
+        printf "Pushing replicated-operator container image to on-prem registry\n"
+        tagAndPushOperatorImage "${SWARM_NODE_ADDRESS}:${REGISTRY_BIND_PORT:-9874}" || :
+    fi
 fi
 
 excludeSubnets
