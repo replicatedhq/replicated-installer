@@ -1,0 +1,11 @@
+
+bases:
+  - ../../base
+
+patches:
+  - ./deployment.yaml
+
+imageTags:
+  - name: 923411875752.dkr.ecr.us-east-1.amazonaws.com/id
+    newTag: DYNAMIC_IMAGE_TAG
+   

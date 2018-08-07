@@ -1,0 +1,19 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: install-scripts
+spec:
+  template:
+    spec:
+      containers:
+        - name: install-scripts
+          env:
+          - name: AWS_REGION
+            value: us-east-1
+          - name: PROJECT_NAME
+            value: "install-scripts"
+          - name: USE_EC2_PARAMETERS
+            value: "1"
+          ports:
+            - name: install-scripts
+              containerPort: 5000

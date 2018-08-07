@@ -1,0 +1,35 @@
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: install-scripts
+spec:
+  template:
+    spec:
+      containers:
+        - name: install-scripts
+          env:
+            - name: ENVIRONMENT
+              value: dev
+            - name: REPLICATED_INSTALL_URL
+              value: http://localhost:8090
+            - name: GRAPHQL_PREM_ENDPOINT
+              value: http://docker.for.mac.host.internal:8033/graphql
+            - name: REGISTRY_ENDPOINT
+              value: 'registry.staging.replicated.com' # TODO
+            - name: MYSQL_HOST
+              value: mysql
+            - name: MYSQL_USER
+              value: replicated
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql
+                  key: mysql-root-password
+            - name: MYSQL_PORT
+              value: "3306"
+            - name: MYSQL_DATABASE
+              value: replicated
+          ports:
+            - name: install-scripts
+              containerPort: 5000

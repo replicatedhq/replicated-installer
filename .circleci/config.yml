@@ -28,6 +28,10 @@ jobs:
       - run:
           name: tests
           command: make test
+      - persist_to_workspace:
+          root: .
+          paths:
+            - kustomize
 
   build_k8s_bundles:
     docker:
@@ -156,12 +160,12 @@ jobs:
             docker tag ${PROJECT_NAME}:${CIRCLE_SHA1:0:7} 799720048698.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:latest
             docker push 799720048698.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:latest
 
-  deploy_staging:
+  deploy_staging_ecs:
     <<: *defaults_py
     steps:
       - setup_remote_docker
       - deploy:
-          name: Maybe deploy staging
+          name: Maybe deploy staging to ecs
           command: |
             set -vu
             if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedhq" ]; then
@@ -181,7 +185,48 @@ jobs:
                 tf-api-staging ${PROJECT_NAME}
             fi
 
-  deploy_production:
+  deploy_staging_eks:
+    <<: *defaults_py
+    steps:
+      - setup_remote_docker
+
+      - attach_workspace:
+          at: .
+
+      - add_ssh_keys:
+          fingerprints:
+            - "25:51:68:66:6d:12:c7:84:f4:18:97:6a:7c:2e:f8:3d"
+
+      - run:
+          name: install kustomize
+          command: |
+            curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest |\
+            grep browser_download |\
+            grep linux |\
+            cut -d '"' -f 4 |\
+            xargs curl -O -L && \
+            mv kustomize_*_linux_amd64 ~/kustomize && \
+            chmod u+x ~/kustomize
+
+      - deploy:
+          name: Maybe deploy staging to kubernetes
+          command: |
+            set -vu
+            if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedhq" ]; then
+              sed -i "s/DYNAMIC_IMAGE_TAG/${CIRCLE_SHA1:0:7}/g" kustomize/overlays/staging/kustomization.yaml
+              echo 'github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==' >> ~/.ssh/known_hosts
+              cd ~ && git clone git@github.com:replicatedcom/gitops-deploy
+              mkdir -p ~/gitops-deploy/replicated-installer
+
+              kustomize build /kustomize/overlays/staging/kustomization.yaml > ./gitops-deploy/replicated-installer/replicated-installer.yaml
+              cd ~/gitops-deploy && \
+              git config user.email "circleci@replicated.com" && \
+              git config user.name "CircleCI Build" && \
+              git add . && \
+              git commit -m ${CIRCLE_COMPARE_URL} && [ $? -eq 0 ] && git push origin master
+            fi
+
+  deploy_production_ecs:
     <<: *defaults_py
     steps:
       - setup_remote_docker
@@ -206,6 +251,48 @@ jobs:
                 tf-api-production ${PROJECT_NAME}
             fi
 
+  deploy_production_eks:
+    <<: *defaults_py
+    steps:
+      - setup_remote_docker
+
+      - attach_workspace:
+          at: .
+
+      - add_ssh_keys:
+          fingerprints:
+            - "25:51:68:66:6d:12:c7:84:f4:18:97:6a:7c:2e:f8:3d"
+
+      - run:
+          name: install kustomize
+          command: |
+            curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest |\
+            grep browser_download |\
+            grep linux |\
+            cut -d '"' -f 4 |\
+            xargs curl -O -L && \
+            mv kustomize_*_linux_amd64 ~/kustomize && \
+            chmod u+x ~/kustomize
+
+      - deploy:
+          name: Maybe deploy production to kubernetes
+          command: |
+            set -vu
+            if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedhq" ]; then
+              sed -i "s/DYNAMIC_IMAGE_TAG/${CIRCLE_SHA1:0:7}/g" kustomize/overlays/production/kustomization.yaml
+              echo 'github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==' >> ~/.ssh/known_hosts
+              cd ~ && git clone git@github.com:replicatedcom/gitops-deploy
+              mkdir -p ~/gitops-deploy/replicated-installer
+
+              kustomize build /kustomize/overlays/production/kustomization.yaml > ./gitops-deploy/replicated-installer/replicated-installer.yaml
+              cd ~/gitops-deploy && \
+              git config user.email "circleci@replicated.com" && \
+              git config user.name "CircleCI Build" && \
+              git add . && \
+              git commit -m ${CIRCLE_COMPARE_URL} && [ $? -eq 0 ] && git push origin master
+            fi
+
+
 workflows:
   version: 2
   build_accept_deploy:
@@ -215,7 +302,14 @@ workflows:
             branches:
               only: master
       - test
-      - deploy_staging:
+      - deploy_staging_ecs:
+          requires:
+            - build_image
+            - test
+          filters:
+            branches:
+              only: master
+      - deploy_staging_eks:
           requires:
             - build_image
             - test
@@ -225,13 +319,21 @@ workflows:
       - hold:
           type: approval
           requires:
-            - deploy_staging
+            - deploy_staging_ecs
+            - deploy_staging_eks
           filters:
             branches:
               only: master
-      - deploy_production:
+      - deploy_production_ecs:
           requires:
             - hold
           filters:
             branches:
               only: master
+      - deploy_production_eks:
+          requires:
+            - hold
+          filters:
+            branches:
+              only: master
+
