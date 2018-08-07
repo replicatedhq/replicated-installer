@@ -7,6 +7,7 @@ spec:
     spec:
       containers:
         - name: install-scripts
+          image: 799720048698.dkr.ecr.us-east-1.amazonaws.com/install-scripts:latest
           env:
           - name: AWS_REGION
             value: us-east-1
