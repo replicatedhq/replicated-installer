@@ -16,5 +16,7 @@ spec:
           - name: USE_EC2_PARAMETERS
             value: "1"
           ports:
+            - containerPort: 5000
+              $patch: delete
             - name: install-scripts
               containerPort: 80
