@@ -28,10 +28,6 @@ jobs:
       - run:
           name: tests
           command: make test
-      - persist_to_workspace:
-          root: .
-          paths:
-            - kustomize
 
   build_k8s_bundles:
     docker:
@@ -159,6 +155,11 @@ jobs:
             docker push 799720048698.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:${CIRCLE_SHA1:0:7}
             docker tag ${PROJECT_NAME}:${CIRCLE_SHA1:0:7} 799720048698.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:latest
             docker push 799720048698.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:latest
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - kustomize
 
   deploy_staging_ecs:
     <<: *defaults_py
