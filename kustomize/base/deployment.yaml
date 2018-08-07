@@ -1,0 +1,18 @@
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: install-scripts
+spec:
+  template:
+    metadata:
+      labels:
+        app: install-scripts
+    spec:
+      containers:
+        - name: install-scripts
+          image: replicated/install-scripts
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: install-scripts
+              containerPort: 5000
