@@ -6,5 +6,5 @@ patches:
   - ./deployment.yaml
 
 imageTags:
-  - name: 923411875752.dkr.ecr.us-east-1.amazonaws.com/install-scripts
+  - name: 799720048698.dkr.ecr.us-east-1.amazonaws.com/install-scripts
     newTag: DYNAMIC_IMAGE_TAG
