@@ -214,12 +214,12 @@ jobs:
           command: |
             set -vu
             if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedhq" ]; then
-              sed -i "s/DYNAMIC_IMAGE_TAG/${CIRCLE_SHA1:0:7}/g" kustomize/overlays/staging/kustomization.yaml
+              sed -i "s/DYNAMIC_IMAGE_TAG/${CIRCLE_SHA1:0:7}/g" ~/project/kustomize/overlays/staging/kustomization.yaml
               echo 'github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==' >> ~/.ssh/known_hosts
               cd ~ && git clone git@github.com:replicatedcom/gitops-deploy
               mkdir -p ~/gitops-deploy/replicated-installer
 
-              kustomize build /kustomize/overlays/staging/kustomization.yaml > ./gitops-deploy/replicated-installer/replicated-installer.yaml
+              ~/kustomize build ~/project/kustomize/overlays/staging > ./gitops-deploy/replicated-installer/replicated-installer.yaml
               cd ~/gitops-deploy && \
               git config user.email "circleci@replicated.com" && \
               git config user.name "CircleCI Build" && \
@@ -280,12 +280,12 @@ jobs:
           command: |
             set -vu
             if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedhq" ]; then
-              sed -i "s/DYNAMIC_IMAGE_TAG/${CIRCLE_SHA1:0:7}/g" kustomize/overlays/production/kustomization.yaml
+              sed -i "s/DYNAMIC_IMAGE_TAG/${CIRCLE_SHA1:0:7}/g" ~/project/kustomize/overlays/production/kustomization.yaml
               echo 'github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==' >> ~/.ssh/known_hosts
               cd ~ && git clone git@github.com:replicatedcom/gitops-deploy
               mkdir -p ~/gitops-deploy/replicated-installer
 
-              kustomize build /kustomize/overlays/production/kustomization.yaml > ./gitops-deploy/replicated-installer/replicated-installer.yaml
+              ~/kustomize build ~/project/kustomize/overlays/production > ./gitops-deploy/replicated-installer/replicated-installer.yaml
               cd ~/gitops-deploy && \
               git config user.email "circleci@replicated.com" && \
               git config user.name "CircleCI Build" && \
