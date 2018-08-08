@@ -219,12 +219,23 @@ weavenetDeploy() {
 rookDeploy() {
     logStep "deploy rook"
 
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_system_yaml=1 > /tmp/rook-system.yml
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_cluster_yaml=1 > /tmp/rook.yml
+    # never upgrade an existing rook cluster
+    if k8sNamespaceExists rook && k8sNamespaceExists rook-system ; then
+        logSuccess "Rook 0.7.1 already deployed"
+        return
+    fi
+    # namespaces used in Rook 0.8+
+    if k8sNamespaceExists rook-ceph && k8sNamespaceExists rook-ceph-system ; then
+        logSuccess "Rook already deployed"
+        return
+    fi
 
-    kubectl apply -f /tmp/rook-system.yml
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_system_yaml=1 > /tmp/rook-ceph-system.yml
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_cluster_yaml=1 > /tmp/rook-ceph.yml
+
+    kubectl apply -f /tmp/rook-ceph-system.yml
     spinnerRookReady # creating the cluster before the operator is ready fails
-    kubectl apply -f /tmp/rook.yml
+    kubectl apply -f /tmp/rook-ceph.yml
     logSuccess "Rook deployed"
 }
 
