@@ -235,7 +235,7 @@ airgapLoadKubernetesCommonImages193() {
 airgapLoadKubernetesCommonImages1106() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.10.6-20180803"
+        "quay.io/replicated/k8s-images-common:v1.10.6-20180804"
 
     docker tag 8a9a40dda603 gcr.io/google_containers/kube-proxy-amd64:v1.10.6
     docker tag da86e6ba6ca1 gcr.io/google_containers/pause-amd64:3.1
@@ -244,7 +244,7 @@ airgapLoadKubernetesCommonImages1106() {
 airgapLoadKubernetesCommonImages1111() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.11.1-20180803"
+        "quay.io/replicated/k8s-images-common:v1.11.1-20180804"
 
     docker tag d5c25579d0ff gcr.io/google_containers/kube-proxy-amd64:v1.11.1
     docker tag da86e6ba6ca1 gcr.io/google_containers/pause-amd64:3.1
@@ -273,13 +273,13 @@ airgapLoadKubernetesControlImages() {
 
     docker load < k8s-images-control-${k8sVersion}.tar
     case "$k8sVersion" in
-        v1.9.3)
+        1.9.3)
             airgapLoadKubernetesControlImages193
             ;;
-        v1.10.6)
+        1.10.6)
             airgapLoadKubernetesControlImages1106
             ;;
-        v1.11.1)
+        1.11.1)
             airgapLoadKubernetesControlImages1111
             ;;
         *)
@@ -310,7 +310,7 @@ airgapLoadKubernetesControlImages193() {
 airgapLoadKubernetesControlImages1106() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-control:v1.10.6-20180803"
+        "quay.io/replicated/k8s-images-control:v1.10.6-20180804"
 
     docker tag 6e29896cbeca gcr.io/google_containers/kube-apiserver-amd64:v1.10.6
     docker tag dd246160bf59 gcr.io/google_containers/kube-scheduler-amd64:v1.10.6
@@ -318,10 +318,10 @@ airgapLoadKubernetesControlImages1106() {
     docker tag 52920ad46f5b gcr.io/google_containers/etcd-amd64:v3.1.12
 }
 
-airgapLoadKubernetsControlImages1111() {
+airgapLoadKubernetesControlImages1111() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-control:v1.10.6-20180803"
+        "quay.io/replicated/k8s-images-control:v1.11.1-20180804"
 
     docker tag 816332bd9d11 gcr.io/google_containers/kube-apiserver-amd64:v1.11.1
     docker tag 52096ee87d0e gcr.io/google_containers/kube-controller-manager-amd64:v1.11.1
@@ -423,7 +423,7 @@ spinnerNodeVersion()
 
 
 #######################################
-# Display a spinner until the master node is ready and labels master if airgap
+# Display a spinner until the master node is ready
 # Globals:
 #   AIRGAP
 # Arguments:
@@ -434,16 +434,30 @@ spinnerNodeVersion()
 spinnerMasterNodeReady()
 {
     logStep "Await node ready"
-
     spinnerNodesReady
+    logSuccess "Master Node Ready!"
+}
 
-    if [ "$AIRGAP" = "1" ]; then
-        node_name=$(kubectl get nodes -o=jsonpath='{.items[0].metadata.name}')
-        kubectl label nodes "$node_name" "$DAEMON_NODE_KEY"=
+#######################################
+# Label master node if airgap
+# Globals:
+#   AIRGAP
+# Arguments:
+#   Namespace, Pod prefix
+# Returns:
+#   None
+#######################################
+airgapMaybeLabelMasterNode()
+{
+    if [ "$AIRGAP" != "1" ]; then
+        return
+    fi
+    if kubectl get nodes --show-labels | grep "$DAEMON_NODE_KEY" > /dev/null ; then
+        return
     fi
 
-    printf "    \b\b\b\b"
-    logSuccess "Master Node Ready!"
+    _master=$(k8sMasterNodeName)
+    kubectl label nodes "$node_name" "$DAEMON_NODE_KEY"=
 }
 
 #######################################
@@ -462,7 +476,7 @@ spinnerPodRunning()
 
     local delay=0.75
     local spinstr='|/-\'
-    while [ ! $(kubectl -n "$namespace" get pods 2> /dev/null | grep "^$podPrefix" | awk '{ print $3}' | grep '^Running$' ) ]; do
+    while ! kubectl -n "$namespace" get pods 2> /dev/null | grep "^$podPrefix" | awk '{ print $3}' | grep '^Running$' > /dev/null ; do
         local temp=${spinstr#?}
         printf " [%c]  " "$spinstr"
         local spinstr=$temp${spinstr%"$temp"}

@@ -23,16 +23,16 @@
 maybeUpgradeKubernetes() {
     export KUBECONFIG=/etc/kubernetes/admin.conf
 
-    upgradeVersion="$1"
+    local upgradeVersion="$1"
     semverParse "$upgradeVersion"
-    upgradeMajor="$major"
-    upgradeMinor="$minor"
+    local upgradeMajor="$major"
+    local upgradeMinor="$minor"
 
     if [ "$upgradeMajor" -lt "1" ] || [ "$upgradeMinor" -lt "10" ]; then
         return
     fi
 
-    masterVersion="$(getK8sMasterVersion)"
+    local masterVersion="$(getK8sMasterVersion)"
     semverParse "$masterVersion"
 
     if [ "$major" -eq "1" ] && [ "$minor" -eq "9" ]; then
@@ -71,10 +71,10 @@ maybeUpgradeKubernetes() {
 maybeUpgradeKubernetesNode() {
     upgradeVersion="$1"
     semverParse "$upgradeVersion"
-    upgradeMajor="$major"
-    upgradeMinor="$minor"
+    local upgradeMajor="$major"
+    local upgradeMinor="$minor"
 
-    nodeVersion="$(getK8sNodeVersion)"
+    local nodeVersion="$(getK8sNodeVersion)"
     semverParse "$nodeVersion"
 
     if [ "$major" -eq "$upgradeMajor" ] && [ "$minor" -lt "$upgradeMinor" ]; then
@@ -102,10 +102,11 @@ maybeUpgradeKubernetesNode() {
 upgradeK8sWorkers() {
     k8sVersion="$1"
     semverParse "$k8sVersion"
-    upgradeMajor="$major"
-    upgradeMinor="$minor"
+    local upgradeMajor="$major"
+    local upgradeMinor="$minor"
 
-    workers=$(kubectl get nodes | sed '1d' | grep -v master)
+    # not an error if there are no workers
+    local workers=$(kubectl get nodes | sed '1d' | grep -v master || :)
 
     for node in $workers; do
         semverParse=$(echo "$node" | awk '{ print $1 }')

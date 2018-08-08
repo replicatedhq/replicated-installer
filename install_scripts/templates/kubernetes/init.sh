@@ -538,6 +538,7 @@ weavenetDeploy
 untaintMaster
 
 spinnerMasterNodeReady
+airgapMaybeLabelMasterNode
 
 echo
 kubectl get nodes
