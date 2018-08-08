@@ -955,7 +955,6 @@ EOF
     fi
 
     cat <<EOF
----
 apiVersion: v1
 kind: List
 items:
@@ -972,7 +971,6 @@ items:
       name: weave-net
       labels:
         name: weave-net
-      namespace: kube-system
     rules:
       - apiGroups:
           - ''
@@ -992,13 +990,19 @@ items:
           - get
           - list
           - watch
+      - apiGroups:
+          - ''
+        resources:
+          - nodes/status
+        verbs:
+          - patch
+          - update
   - apiVersion: rbac.authorization.k8s.io/v1beta1
     kind: ClusterRoleBinding
     metadata:
       name: weave-net
       labels:
         name: weave-net
-      namespace: kube-system
     roleRef:
       kind: ClusterRole
       name: weave-net
@@ -1053,6 +1057,7 @@ items:
         name: weave-net
       namespace: kube-system
     spec:
+      minReadySeconds: 5
       template:
         metadata:
           labels:
@@ -1146,6 +1151,7 @@ $weave_passwd_env
             - name: xtables-lock
               hostPath:
                 path: /run/xtables.lock
+                type: FileOrCreate
       updateStrategy:
         type: RollingUpdate
 EOF
