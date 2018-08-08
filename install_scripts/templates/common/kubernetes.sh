@@ -204,6 +204,8 @@ airgapLoadKubernetesCommonImages() {
             bail "Unsupported Kubernetes version $k8sVersion"
             ;;
     esac
+
+    logSuccess "common images"
 }
 
 airgapLoadKubernetesCommonImages193() {
@@ -224,11 +226,7 @@ airgapLoadKubernetesCommonImages193() {
     docker tag d1fd7d86a825 registry:2
     docker tag 6521ac58ca80 envoyproxy/envoy-alpine:v1.6.0
     docker tag 6a9ec4bcb60e gcr.io/heptio-images/contour:v0.5.0
-
-    docker load < rook.tar
-
-    docker images | grep google_containers
-    logSuccess "common images"
+    docker tag b5c343f1a3a6 rook/ceph:v0.8.1
 }
 
 # only the images needed for kubeadm to upgrade from 1.9 to 1.11
@@ -255,8 +253,7 @@ airgapLoadKubernetesCommonImages1111() {
     docker tag b2b03e9146e1 docker.io/registry:2
     docker tag 6521ac58ca80 docker.io/envoyproxy/envoy-alpine:v1.6.0
     docker tag 6a9ec4bcb60e gcr.io/heptio-images/contour:v0.5.0
-
-    docker load < rook.tar
+    docker tag b5c343f1a3a6 rook/ceph:v0.8.1
 }
 
 #######################################

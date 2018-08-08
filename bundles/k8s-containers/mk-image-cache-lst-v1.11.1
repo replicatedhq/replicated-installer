@@ -19,6 +19,7 @@ weave_version=2.4.0
 registry_version=2.6.2
 envoy_version=v1.6.0
 contour_version=v0.5.0
+rook_version=v0.8.1
 
 common="
 	$repo/kube-proxy-amd64:$kubernetes_version
@@ -29,7 +30,8 @@ common="
 	docker.io/coredns/coredns:$coredns_version
 	docker.io/registry:$registry_version
 	docker.io/envoyproxy/envoy-alpine:$envoy_version
-	gcr.io/heptio-images/contour:$contour_version"
+	gcr.io/heptio-images/contour:$contour_version
+	rook/ceph:$rook_version"
 
 control="
 	$repo/kube-apiserver-amd64:$kubernetes_version

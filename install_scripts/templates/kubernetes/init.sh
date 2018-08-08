@@ -230,12 +230,12 @@ rookDeploy() {
         return
     fi
 
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_system_yaml=1 > /tmp/rook-system.yml
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_cluster_yaml=1 > /tmp/rook.yml
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_system_yaml=1 > /tmp/rook-ceph-system.yml
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_cluster_yaml=1 > /tmp/rook-ceph.yml
 
-    kubectl apply -f /tmp/rook-system.yml
+    kubectl apply -f /tmp/rook-ceph-system.yml
     spinnerRookReady # creating the cluster before the operator is ready fails
-    kubectl apply -f /tmp/rook.yml
+    kubectl apply -f /tmp/rook-ceph.yml
     logSuccess "Rook deployed"
 }
 
