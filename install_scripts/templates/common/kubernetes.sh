@@ -211,7 +211,7 @@ airgapLoadKubernetesCommonImages() {
 airgapLoadKubernetesCommonImages193() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.9.3-20180523"
+        "quay.io/replicated/k8s-images-common:v1.9.3-20180809"
 
     # uh. its kind of insane that we have to do this. the linuxkit pkg
     # comes to us without tags, which seems super useless... we should build our own bundler maybe
@@ -220,9 +220,9 @@ airgapLoadKubernetesCommonImages193() {
     docker tag 5d049a8c4eec gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.7
     docker tag 5feec37454f4 gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.7
     docker tag 99e59f495ffa gcr.io/google_containers/pause-amd64:3.0
-    docker tag 222ab9e78a83 weaveworks/weave-kube:2.2.0
-    docker tag 765b48853ac0 weaveworks/weave-npc:2.2.0
-    docker tag 09747e7cdd74 weaveworks/weaveexec:2.2.0
+    docker tag 222ab9e78a83 weaveworks/weave-kube:2.4.0
+    docker tag 765b48853ac0 weaveworks/weave-npc:2.4.0
+    docker tag 09747e7cdd74 weaveworks/weaveexec:2.4.0
     docker tag d1fd7d86a825 registry:2
     docker tag 6521ac58ca80 envoyproxy/envoy-alpine:v1.6.0
     docker tag 6a9ec4bcb60e gcr.io/heptio-images/contour:v0.5.0
@@ -233,20 +233,23 @@ airgapLoadKubernetesCommonImages193() {
 airgapLoadKubernetesCommonImages1106() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.10.6-20180804"
+        "quay.io/replicated/k8s-images-common:v1.10.6-20180809"
 
-    docker tag 8a9a40dda603 gcr.io/google_containers/kube-proxy-amd64:v1.10.6
-    docker tag da86e6ba6ca1 gcr.io/google_containers/pause-amd64:3.1
+    docker tag 8a9a40dda603 k8s.gcr.io/kube-proxy-amd64:v1.10.6
+    docker tag c2ce1ffb51ed k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64:1.14.8
+    docker tag 6f7f2dc7fab5 k8s.gcr.io/k8s-dns-sidecar-amd64:1.14.8
+    docker tag 80cc5ea4b547 k8s.gcr.io/k8s-dns-kube-dns-amd64:1.14.8
+    docker tag da86e6ba6ca1 k8s.gcr.io/pause-amd64:3.1
 }
 
 airgapLoadKubernetesCommonImages1111() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.11.1-20180804"
+        "quay.io/replicated/k8s-images-common:v1.11.1-20180809"
 
-    docker tag d5c25579d0ff gcr.io/google_containers/kube-proxy-amd64:v1.11.1
-    docker tag da86e6ba6ca1 gcr.io/google_containers/pause-amd64:3.1
-    docker tag b3b94275d97c docker.io/coredns/coredns:1.1.3
+    docker tag d5c25579d0ff k8s.gcr.io/kube-proxy-amd64:v1.11.1
+    docker tag da86e6ba6ca1 k8s.gcr.io/pause:3.1
+    docker tag b3b94275d97c k8s.gcr.io/coredns:1.1.3
     docker tag 86ff1a48ce14 weaveworks/weave-kube:2.4.0
     docker tag 647ad6d59818 weaveworks/weave-npc:2.4.0
     docker tag bf0c403ea58d weaveworks/weaveexec:2.4.0
@@ -298,7 +301,7 @@ airgapLoadKubernetesControlImages() {
 airgapLoadKubernetesControlImages193() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-control:v1.9.3-20180222"
+        "quay.io/replicated/k8s-images-control:v1.9.3-20180809"
 
     docker tag 83dbda6ee810 gcr.io/google_containers/kube-controller-manager-amd64:v1.9.3
     docker tag 360d55f91cbf gcr.io/google_containers/kube-apiserver-amd64:v1.9.3
@@ -309,24 +312,23 @@ airgapLoadKubernetesControlImages193() {
 airgapLoadKubernetesControlImages1106() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-control:v1.10.6-20180804"
+        "quay.io/replicated/k8s-images-control:v1.10.6-20180809"
 
-    docker tag 6e29896cbeca gcr.io/google_containers/kube-apiserver-amd64:v1.10.6
-    docker tag dd246160bf59 gcr.io/google_containers/kube-scheduler-amd64:v1.10.6
-    docker tag 3224e7c2de11 gcr.io/google_containers/kube-controller-manager-amd64:v1.10.6
-    docker tag 52920ad46f5b gcr.io/google_containers/etcd-amd64:v3.1.12
+    docker tag 6e29896cbeca k8s.gcr.io/kube-apiserver-amd64:v1.10.6
+    docker tag dd246160bf59 k8s.gcr.io/kube-scheduler-amd64:v1.10.6
+    docker tag 3224e7c2de11 k8s.gcr.io/kube-controller-manager-amd64:v1.10.6
+    docker tag 52920ad46f5b k8s.gcr.io/etcd-amd64:v3.1.12
 }
 
 airgapLoadKubernetesControlImages1111() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-control:v1.11.1-20180804"
+        "quay.io/replicated/k8s-images-control:v1.11.1-20180809"
 
-    docker tag 816332bd9d11 gcr.io/google_containers/kube-apiserver-amd64:v1.11.1
-    docker tag 52096ee87d0e gcr.io/google_containers/kube-controller-manager-amd64:v1.11.1
-    docker tag 272b3a60cd68 gcr.io/google_containers/kube-scheduler-amd64:v1.11.1
-    docker tag b8df3b177be2 gcr.io/google_containers/etcd-amd64:3.2.18
-    docker tag b3b94275d97c docker.io/coredns/coredns:1.1.3
+    docker tag 816332bd9d11 k8s.gcr.io/kube-apiserver-amd64:v1.11.1
+    docker tag 52096ee87d0e k8s.gcr.io/kube-controller-manager-amd64:v1.11.1
+    docker tag 272b3a60cd68 k8s.gcr.io/kube-scheduler-amd64:v1.11.1
+    docker tag b8df3b177be2 k8s.gcr.io/etcd-amd64:3.2.18
 }
 
 #######################################
@@ -562,7 +564,7 @@ weave_reset()
     DATAPATH=datapath
     CONTAINER_IFNAME=ethwe
 
-    WEAVE_TAG=2.2.0
+    WEAVE_TAG=2.4.0
     DOCKER_BRIDGE=docker0
     DOCKER_BRIDGE_IP=$(docker run --rm --pid host --net host --privileged -v /var/run/docker.sock:/var/run/docker.sock --entrypoint=/usr/bin/weaveutil weaveworks/weaveexec:$WEAVE_TAG bridge-ip $DOCKER_BRIDGE)
 
@@ -658,4 +660,5 @@ k8s_reset() {
     rm -rf /var/lib/replicated
     rm -rf /var/lib/etcd
     rm -f /usr/bin/kubeadm /usr/bin/kubelet /usr/bin/kubectl
+    kill $(ps aux | grep '[k]ubelet' | awk '{print $2}')
 }
