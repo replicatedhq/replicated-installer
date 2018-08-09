@@ -890,8 +890,8 @@ spec:
       databaseSizeMB: "1024" # this value can be removed for environments with normal sized disks (100 GB or larger)
       journalSizeMB: "1024"  # this value can be removed for environments with normal sized disks (20 GB or larger)
 # Cluster level list of directories to use for storage. These values will be set for all nodes that have no `directories` set.
-#    directories:
-#    - path: "$PV_BASE_PATH"
+     directories:
+     - path: "$PV_BASE_PATH"
 ---
 apiVersion: ceph.rook.io/v1beta1
 kind: Pool
@@ -906,27 +906,6 @@ spec:
   # For a pool based on raw copies, specify the number of copies. A size of 1 indicates no redundancy.
   replicated:
     size: 1
----
-# ceph dashboard service
-apiVersion: v1
-kind: Service
-metadata:
-  name: rook-ceph-mgr-dashboard-external
-  namespace: rook-ceph
-  labels:
-    app: rook-ceph-mgr
-    rook_cluster: rook-ceph
-spec:
-  ports:
-  - name: dashboard
-    port: 7000
-    protocol: TCP
-    targetPort: 7000
-  selector:
-    app: rook-ceph-mgr
-    rook_cluster: rook-ceph
-  sessionAffinity: None
-  type: NodePort
 EOF
 }
 
