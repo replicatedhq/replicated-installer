@@ -343,6 +343,7 @@ def get_replicated_compose_v3_template_args(replicated_channel=None,
 
     airgap = helpers.get_arg('airgap', '')
     ca = helpers.get_arg('ca', '')
+    cert = helpers.get_arg('cert', '')
     daemon_registry_address = helpers.get_arg('daemon_registry_address', '')
     group_id = helpers.get_arg('group_id', '')
     log_level = helpers.get_arg('log_level', '')
@@ -369,6 +370,7 @@ def get_replicated_compose_v3_template_args(replicated_channel=None,
         # query params
         airgap=airgap,
         ca=ca,
+        cert=cert,
         daemon_registry_address=daemon_registry_address,
         group_id=group_id,
         log_level=log_level,

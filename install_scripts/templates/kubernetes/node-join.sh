@@ -135,6 +135,9 @@ while [ "$1" != "" ]; do
         ca)
             CA="$_value"
             ;;
+        cert)
+            CERT="$_value"
+            ;;
         daemon-registry-address|daemon_registry_address)
             DAEMON_REGISTRY_ADDRESS="$_value"
             ;;
@@ -264,6 +267,10 @@ if [ "$AIRGAP" = "1" ]; then
         mkdir -p "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS"
         promptForCA
         echo "$(echo "$CA" | base64 --decode)" > "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS/ca.crt"
+
+        if [ -n "$CERT" ]; then
+            echo "$(echo "$CERT" | base64 --decode)" > "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS/cert.crt"
+        fi
     fi
     airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"
 else

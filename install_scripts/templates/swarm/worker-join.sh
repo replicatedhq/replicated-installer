@@ -24,6 +24,7 @@ ADDITIONAL_NO_PROXY=
 {% include 'common/airgap.sh' %}
 
 CA="{{ ca }}"
+CERT="{{ cert }}"
 DAEMON_REGISTRY_ADDRESS="{{ daemon_registry_address }}"
 SWARM_MASTER_ADDRESS="{{ swarm_master_address }}"
 SWARM_TOKEN="{{ swarm_token }}"
@@ -66,6 +67,9 @@ while [ "$1" != "" ]; do
             ;;
         ca)
             CA="$_value"
+            ;;
+        cert)
+            CERT="$_value"
             ;;
         daemon-registry-address|daemon_registry_address)
             DAEMON_REGISTRY_ADDRESS="$_value"
@@ -157,9 +161,16 @@ fi
 
 promptForSwarmToken
 
-if [ -n "$DAEMON_REGISTRY_ADDRESS" ] && [ -n "$CA" ]; then
-    mkdir -p "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS"
-    echo "$(echo "$CA" | base64 --decode)" > "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS/ca.crt"
+if [ -n "$DAEMON_REGISTRY_ADDRESS" ]; then
+    if [ -n "$CA" ]; then
+        mkdir -p "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS"
+        echo "$(echo "$CA" | base64 --decode)" > "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS/ca.crt"
+    fi
+
+    if [ -n "$CERT" ]; then
+        mkdir -p "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS"
+        echo "$(echo "$CERT" | base64 --decode)" > "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS/cert.crt"
+    fi
 fi
 
 echo "Joining the swarm"
