@@ -96,11 +96,19 @@ initKube() {
         initKubeadmConfig
         set +e
 
-        kubeadm init \
-            --skip-preflight-checks \
-            --config /opt/replicated/kubeadm.conf \
-            | tee /tmp/kubeadm-init
-        _status=$?
+        if [ "$(kubeadm version --output=short)" = "v1.9.3" ]; then
+            kubeadm init \
+                --skip-preflight-checks \
+                --config /opt/replicated/kubeadm.conf \
+                | tee /tmp/kubeadm-init
+            _status=$?
+        else
+            kubeadm init \
+                --ignore-preflight-errors=all \
+                --config /opt/replicated/kubeadm.conf \
+                | tee /tmp/kubeadm-init
+            _status=$?
+        fi
         set -e
         if [ "$_status" -ne "0" ]; then
             printf "${RED}Failed to initialize the kubernetes cluster.${NC}\n" 1>&2

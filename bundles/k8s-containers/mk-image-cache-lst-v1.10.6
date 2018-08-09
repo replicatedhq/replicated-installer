@@ -7,16 +7,20 @@
 #
 #   https://github.com/linuxkit/kubernetes/blob/master/scripts/mk-image-cache-lst
 #
-repo=gcr.io/google_containers
+repo=k8s.gcr.io
 # When changing kubernetes_version remember to also update:
 # - pkg/kubelet/Dockerfile
 # - pkg/e2e-test/Dockerfile
 kubernetes_version=v1.10.6
+kube_dns_version=1.14.8
 pause_version=3.1
 etcd_version=3.1.12
 
 common="
 	$repo/kube-proxy-amd64:$kubernetes_version
+	$repo/k8s-dns-dnsmasq-nanny-amd64:$kube_dns_version
+	$repo/k8s-dns-sidecar-amd64:$kube_dns_version
+	$repo/k8s-dns-kube-dns-amd64:$kube_dns_version
 	$repo/pause-amd64:$pause_version"
 
 control="

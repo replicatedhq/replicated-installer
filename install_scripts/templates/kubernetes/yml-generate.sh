@@ -955,6 +955,7 @@ EOF
     fi
 
     cat <<EOF
+---
 apiVersion: v1
 kind: List
 items:
