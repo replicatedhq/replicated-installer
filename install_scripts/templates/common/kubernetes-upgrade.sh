@@ -84,10 +84,18 @@ maybeUpgradeKubernetesNode() {
 
     if [ "$major" -eq "$upgradeMajor" ] && [ "$minor" -lt "$upgradeMinor" ]; then
         logStep "Kubernetes version v$nodeVersion detected, upgrading node to version v$upgradeVersion"
+
+        # this file was missing once after an upgrade on CentOS 7.4
+        local kubeadmFlags="$(cat /var/lib/kubelet/kubeadm-flags.env)"
+
         upgradeK8sNode "$upgradeVersion"
 
         # not supported in kubeadm < 1.11
         kubeadm upgrade node config --kubelet-version $(kubelet --version | cut -d ' ' -f 2) 2>/dev/null || :
+
+        if [ ! -e "/var/lib/kubelet/kubeadm-flags.env" ] && [ -n "$kubeadmFlags" ]; then
+            echo "$kubeadmFlags" >> /var/lib/kubelet/kubeadm-flags.env
+        fi
 
         systemctl restart kubelet
 
@@ -132,8 +140,7 @@ upgradeK8sWorkers() {
         else
             printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s kubernetes-version=$k8sVersion${NC}"
         fi
-        _done="$(kubectl get nodes/$nodeName 2>/dev/null | sed '1d' | grep -v $k8sVersion | awk '{ print $1 }')"
-        while [ -n "$_done" ]; do
+        while true; do
             echo
             READ_TIMEOUT=""
             printf "Has script completed? "
