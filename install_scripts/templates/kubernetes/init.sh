@@ -184,6 +184,9 @@ getYAMLOpts() {
     if [ "$ENCRYPT_NETWORK" = "0" ]; then
         opts=$opts" encrypt-network=0"
     fi
+    if KUBECONFIG=/etc/kubernetes/admin.conf kubectl get storageclass | grep rook.io > /dev/null ; then
+        opts=$opts" storage-provisioner=0"
+    fi
     YAML_GENERATE_OPTS="$opts"
 }
 

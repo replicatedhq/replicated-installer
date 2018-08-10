@@ -32,6 +32,11 @@ maybeUpgradeKubernetes() {
         return
     fi
 
+    if [ "$AIRGAP" = "1" ]; then
+        airgapLoadKubernetesCommonImages 1.10.6
+        airgapLoadKubernetesControlImages 1.10.6
+    fi
+
     local masterVersion="$(getK8sMasterVersion)"
     semverParse "$masterVersion"
 
@@ -108,8 +113,8 @@ upgradeK8sWorkers() {
     # not an error if there are no workers
     local workers=$(kubectl get nodes | sed '1d' | grep -v master || :)
 
-    for node in $workers; do
-        semverParse=$(echo "$node" | awk '{ print $1 }')
+    while read -r node; do
+        semverParse $(echo "$node" | awk '{ print $5 }' | sed 's/v//' )
         nodeMajor="$major"
         nodeMinor="$minor"
         if [ "$nodeMajor" -gt "$upgradeMajor" ]; then
@@ -123,7 +128,7 @@ upgradeK8sWorkers() {
         kubectl drain "$nodeName" --ignore-daemonsets --delete-local-data --force
         printf "\n\n\tRun the upgrade script on remote node before proceeding: ${GREEN}$nodeName${NC}\n\n"
         if [ "$AIRGAP" = "1" ]; then
-            printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s kubernetes-version=$k8sVersion${NC}"
+            printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s airgap kubernetes-version=$k8sVersion${NC}"
         else
             printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s kubernetes-version=$k8sVersion${NC}"
         fi
@@ -137,7 +142,7 @@ upgradeK8sWorkers() {
             fi
         done
         kubectl uncordon $nodeName
-    done
+    done <<< "$workers"
 
     spinnerNodesReady
 }
@@ -175,7 +180,7 @@ upgradeK8sMaster() {
             dpkg -i archives/*.deb
             ;;
         centos7.4|centos7.5|rhel7.4|rhel7.5)
-            rpm --upgrade --force archives/*.rpm
+            rpm --upgrade --force --nodeps archives/*.rpm
             ;;
         *)
             bail "Unsuported OS: $LSB_DIST$DIST_VERSION"
@@ -216,7 +221,7 @@ upgradeK8sNode() {
             dpkg -i archives/*.deb
             ;;
         centos7.4|centos7.5|rhel7.4|rhel7.5)
-            rpm --upgrade --force archives/*.rpm
+            rpm --upgrade --force --nodeps archives/*.rpm
             ;;
         *)
             bail "Unsuported OS: $LSB_DIST$DIST_VERSION"

@@ -161,7 +161,7 @@ installKubernetesComponents() {
             sysctl --system
             service docker restart
 
-            rpm --upgrade --force archives/*.rpm
+            rpm --upgrade --force --nodeps archives/*.rpm
             service docker restart
             ;;
 
@@ -289,7 +289,6 @@ airgapLoadKubernetesControlImages() {
             ;;
     esac
 
-    docker images | grep google_containers
     logSuccess "control plane images"
 
     logStep "replicated addons"
@@ -317,7 +316,7 @@ airgapLoadKubernetesControlImages1106() {
     docker tag 6e29896cbeca k8s.gcr.io/kube-apiserver-amd64:v1.10.6
     docker tag dd246160bf59 k8s.gcr.io/kube-scheduler-amd64:v1.10.6
     docker tag 3224e7c2de11 k8s.gcr.io/kube-controller-manager-amd64:v1.10.6
-    docker tag 52920ad46f5b k8s.gcr.io/etcd-amd64:v3.1.12
+    docker tag 52920ad46f5b k8s.gcr.io/etcd-amd64:3.1.12
 }
 
 airgapLoadKubernetesControlImages1111() {
