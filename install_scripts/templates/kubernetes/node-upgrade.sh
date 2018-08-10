@@ -40,6 +40,7 @@ if [ -z "$KUBERNETES_VERSION" ]; then
     bail "kubernetes-version is required"
 fi
 
+
 maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
 
 if [ "$AIRGAP" = "1" ]; then
