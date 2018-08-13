@@ -889,9 +889,8 @@ spec:
     config:
       databaseSizeMB: "1024" # this value can be removed for environments with normal sized disks (100 GB or larger)
       journalSizeMB: "1024"  # this value can be removed for environments with normal sized disks (20 GB or larger)
-# Cluster level list of directories to use for storage. These values will be set for all nodes that have no `directories` set.
-     directories:
-     - path: "$PV_BASE_PATH"
+    directories:
+    - path: "$PV_BASE_PATH"
 ---
 apiVersion: ceph.rook.io/v1beta1
 kind: Pool

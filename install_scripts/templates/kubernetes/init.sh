@@ -246,6 +246,9 @@ rookDeploy() {
 
     kubectl apply -f /tmp/rook-ceph-system.yml
     spinnerRookReady # creating the cluster before the operator is ready fails
+    # according to docs restarting kubelet here is only needed on K8s 1.7, but
+    # during tests it was required occasionally on 1.11.
+    sudo systemctl restart kubelet
     kubectl apply -f /tmp/rook-ceph.yml
     logSuccess "Rook deployed"
 }
