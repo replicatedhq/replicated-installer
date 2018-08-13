@@ -122,6 +122,9 @@ upgradeK8sWorkers() {
     local workers=$(kubectl get nodes | sed '1d' | grep -v master || :)
 
     while read -r node; do
+        if [ -z "$node" ]; then
+            continue
+        fi
         semverParse $(echo "$node" | awk '{ print $5 }' | sed 's/v//' )
         nodeMajor="$major"
         nodeMinor="$minor"
