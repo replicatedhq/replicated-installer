@@ -190,6 +190,7 @@ upgradeK8sMaster() {
     kubeadm upgrade apply "v$k8sVersion" --yes --config=/opt/replicated/kubeadm.conf
 
     # upgrade master
+    waitForNodes
     master=$(kubectl get nodes | grep master | awk '{ print $1 }')
     # ignore error about unmanaged pods
     kubectl drain $master --ignore-daemonsets --delete-local-data 2>/dev/null || :
@@ -285,7 +286,11 @@ getK8sServerVersion() {
 #   version - e.g. 1.9.3
 #######################################
 getK8sMasterVersion() {
-    echo "$(kubectl get nodes | grep master | awk '{ print $5 }' | sed 's/v//')"
+    _master="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null | grep master | awk '{ print $5 }' | sed 's/v//')"
+    until [ -n "$_master" ]; do
+        _master="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null | grep master | awk '{ print $5 }' | sed 's/v//')"
+    done
+    printf "$_master"
 }
 
 #######################################
