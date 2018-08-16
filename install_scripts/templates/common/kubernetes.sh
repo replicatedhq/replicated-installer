@@ -403,8 +403,11 @@ spinnerNodesReady()
     local delay=0.75
     local spinstr='|/-\'
     while true; do
+        set +e
         local nodes="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null)"
-        if [ "$?" -eq "0" ] && ! echo "$nodes" | grep -q "NotReady"; then
+        local _exit="$?"
+        set -e
+        if [ "$_exit" -eq "0" ] && ! echo "$nodes" | grep -q "NotReady"; then
             break
         fi
         local temp=${spinstr#?}
