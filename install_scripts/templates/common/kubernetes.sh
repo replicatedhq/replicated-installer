@@ -436,8 +436,11 @@ spinnerNodeVersion()
     local delay=0.75
     local spinstr='|/-\'
     while true; do
+        set +e
         local nout="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get node $node 2>/dev/null)"
-        if [ "$?" -eq "0" ] && [ "$(echo "$nout" | sed '1d' | awk '{ print $5 }')" == "v$k8sVersion" ]; then
+        local _exit="$?"
+        set -e
+        if [ "$_exit" -eq "0" ] && [ "$(echo "$nout" | sed '1d' | awk '{ print $5 }')" == "v$k8sVersion" ]; then
             break
         fi
         local temp=${spinstr#?}
