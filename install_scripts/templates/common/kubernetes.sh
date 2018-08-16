@@ -398,9 +398,18 @@ k8sNamespaceExists() {
 #######################################
 spinnerNodesReady()
 {
+    waitForNodes
+
     local delay=0.75
     local spinstr='|/-\'
-    while ! $(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null >/dev/null) || [ "$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes | grep NotReady)" ]; do
+    while true; do
+        set +e
+        local nodes="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null)"
+        local _exit="$?"
+        set -e
+        if [ "$_exit" -eq "0" ] && ! echo "$nodes" | grep -q "NotReady"; then
+            break
+        fi
         local temp=${spinstr#?}
         printf " [%c]  " "$spinstr"
         local spinstr=$temp${spinstr%"$temp"}
@@ -426,7 +435,14 @@ spinnerNodeVersion()
 
     local delay=0.75
     local spinstr='|/-\'
-    while ! $(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null >/dev/null) || [ "$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get node $node | sed '1d' | awk '{ print $5 }')" != "v$k8sVersion" ]; do
+    while true; do
+        set +e
+        local nout="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get node $node 2>/dev/null)"
+        local _exit="$?"
+        set -e
+        if [ "$_exit" -eq "0" ] && [ "$(echo "$nout" | sed '1d' | awk '{ print $5 }')" == "v$k8sVersion" ]; then
+            break
+        fi
         local temp=${spinstr#?}
         printf " [%c]  " "$spinstr"
         local spinstr=$temp${spinstr%"$temp"}
@@ -435,6 +451,27 @@ spinnerNodeVersion()
     done
 }
 
+#######################################
+# Will wait for the get nodes call to return success
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+waitForNodes()
+{
+    n=0
+    while ! KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes >/dev/null 2>&1; do
+        n="$(( $n + 1 ))"
+        if [ "$n" -ge "10" ]; then
+            # this should exit script on non-zero exit code and print error message
+            KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 1>/dev/null
+        fi
+        sleep 2
+    done
+}
 
 #######################################
 # Display a spinner until the master node is ready

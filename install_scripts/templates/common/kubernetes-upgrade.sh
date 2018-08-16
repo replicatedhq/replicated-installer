@@ -118,8 +118,18 @@ upgradeK8sWorkers() {
     local upgradeMajor="$major"
     local upgradeMinor="$minor"
 
+    local nodes=
+    n=0
+    while ! nodes="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null)"; do
+        n="$(( $n + 1 ))"
+        if [ "$n" -ge "10" ]; then
+            # this should exit script on non-zero exit code and print error message
+            nodes="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes)"
+        fi
+        sleep 2
+    done
     # not an error if there are no workers
-    local workers=$(kubectl get nodes | sed '1d' | grep -v master || :)
+    local workers="$(echo "$nodes" | sed '1d' | grep -v master || :)"
 
     while read -r node; do
         if [ -z "$node" ]; then
@@ -180,6 +190,7 @@ upgradeK8sMaster() {
     kubeadm upgrade apply "v$k8sVersion" --yes --config=/opt/replicated/kubeadm.conf
 
     # upgrade master
+    waitForNodes
     master=$(kubectl get nodes | grep master | awk '{ print $1 }')
     # ignore error about unmanaged pods
     kubectl drain $master --ignore-daemonsets --delete-local-data 2>/dev/null || :
@@ -206,6 +217,7 @@ upgradeK8sMaster() {
 
     sed -i "s/kubernetesVersion:.*/kubernetesVersion: v$k8sVersion/" /opt/replicated/kubeadm.conf
     
+    waitForNodes
     spinnerNodeVersion "$(k8sMasterNodeName)" "$k8sVersion"
     spinnerNodesReady
 }
@@ -274,7 +286,11 @@ getK8sServerVersion() {
 #   version - e.g. 1.9.3
 #######################################
 getK8sMasterVersion() {
-    echo "$(kubectl get nodes | grep master | awk '{ print $5 }' | sed 's/v//')"
+    _master="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null | grep master | awk '{ print $5 }' | sed 's/v//')"
+    until [ -n "$_master" ]; do
+        _master="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null | grep master | awk '{ print $5 }' | sed 's/v//')"
+    done
+    printf "$_master"
 }
 
 #######################################
