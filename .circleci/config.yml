@@ -16,18 +16,10 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-      - run:
-          name: install deps
-          command: sudo apt-get update; sudo apt-get install shunit2 make
-      - run:
-          name: deps
-          command: sudo pip install pytest # todo cache these
-      - run:
-          name: deps
-          command: sudo pip install -r requirements.txt # todo cache these
-      - run:
-          name: tests
-          command: make test
+      - run: sudo apt-get update; sudo apt-get install shunit2
+      - run: sudo pip install pytest # todo cache these
+      - run: sudo make deps # todo cache these
+      - run: make test
 
   build_k8s_bundles:
     docker:

@@ -1,4 +1,4 @@
-.PHONY: build dev shell shell_composer shell_composer_dex shell_composer_linux shell_composer_prod test run
+.PHONY: deps build dev shell shell_composer shell_composer_dex shell_composer_linux shell_composer_prod test run
 
 SHELL := /bin/bash
 #paths within WSL start with /mnt/c/...
@@ -9,6 +9,9 @@ ifeq ($(shell uname -r | tail -c 10), Microsoft)
 else
 	BUILD_DIR := $(shell pwd)
 endif
+
+deps:
+	pip install -r requirements.txt
 
 build:
 	docker build -t install-scripts -f deploy/Dockerfile.prod .
