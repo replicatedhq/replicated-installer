@@ -118,8 +118,18 @@ upgradeK8sWorkers() {
     local upgradeMajor="$major"
     local upgradeMinor="$minor"
 
+    local nodes=
+    n=0
+    while ! nodes="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null)"; do
+        n="$(( $n + 1 ))"
+        if [ "$n" -ge "10" ]; then
+            # this should exit script on non-zero exit code and print error message
+            nodes="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes)"
+        fi
+        sleep 2
+    done
     # not an error if there are no workers
-    local workers=$(kubectl get nodes | sed '1d' | grep -v master || :)
+    local workers="$(echo "$nodes" | sed '1d' | grep -v master || :)"
 
     while read -r node; do
         if [ -z "$node" ]; then
@@ -206,6 +216,7 @@ upgradeK8sMaster() {
 
     sed -i "s/kubernetesVersion:.*/kubernetesVersion: v$k8sVersion/" /opt/replicated/kubeadm.conf
     
+    waitForNodes
     spinnerNodeVersion "$(k8sMasterNodeName)" "$k8sVersion"
     spinnerNodesReady
 }

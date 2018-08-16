@@ -94,11 +94,11 @@ safesed() {
 #   major, minor, patch
 #######################################
 semverParse() {
-	major="${1%%.*}"
-	minor="${1#$major.}"
-	minor="${minor%%.*}"
-	patch="${1#$major.$minor.}"
-	patch="${patch%%[-.]*}"
+    major="${1%%.*}"
+    minor="${1#$major.}"
+    minor="${minor%%.*}"
+    patch="${1#$major.$minor.}"
+    patch="${patch%%[-.]*}"
 }
 
 #######################################
