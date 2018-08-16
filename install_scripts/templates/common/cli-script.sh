@@ -108,7 +108,9 @@ EOF
   set -e
 
   cat > "${1}/replicated" <<-EOF
-#!/bin/sh
+#!/bin/bash
+
+set -euo pipefail
 
 ${_flags}
 
@@ -118,7 +120,9 @@ sh -c "${2} \$flags \\
 EOF
   chmod a+x "${1}/replicated"
   cat > "${1}/replicatedctl" <<-EOF
-#!/bin/sh
+#!/bin/bash
+
+set -euo pipefail
 
 ${_flags}
 
