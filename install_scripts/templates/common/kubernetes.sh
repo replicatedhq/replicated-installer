@@ -678,7 +678,7 @@ k8s_reset() {
         set +e
         nodes=$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes --output=go-template --template="{{ '{{' }}range .items{{ '}}{{' }}.metadata.name{{ '}}' }} {{ '{{' }}end{{ '}}' }}")
         for node in $nodes; do
-            KUBECONFIG=/etc/kubernetes/admin.conf kubectl drain "$node" --delete-local-data --force --ignore-daemonsets
+            KUBECONFIG=/etc/kubernetes/admin.conf kubectl drain "$node" --delete-local-data --force --ignore-daemonsets --grace-period=30 --timeout=300
             KUBECONFIG=/etc/kubernetes/admin.conf kubectl delete node "$node"
         done
         set -e
