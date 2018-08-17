@@ -122,7 +122,7 @@ upgradeK8sWorkers() {
     n=0
     while ! nodes="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null)"; do
         n="$(( $n + 1 ))"
-        if [ "$n" -ge "10" ]; then
+        if [ "$n" -ge "30" ]; then
             # this should exit script on non-zero exit code and print error message
             nodes="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes)"
         fi
