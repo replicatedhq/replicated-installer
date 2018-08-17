@@ -465,7 +465,7 @@ waitForNodes()
     n=0
     while ! KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes >/dev/null 2>&1; do
         n="$(( $n + 1 ))"
-        if [ "$n" -ge "10" ]; then
+        if [ "$n" -ge "120" ]; then
             # this should exit script on non-zero exit code and print error message
             KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 1>/dev/null
         fi
