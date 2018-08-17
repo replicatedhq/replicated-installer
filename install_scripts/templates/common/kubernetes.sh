@@ -220,10 +220,10 @@ airgapLoadKubernetesCommonImages193() {
     docker tag 5d049a8c4eec gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.7
     docker tag 5feec37454f4 gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.7
     docker tag 99e59f495ffa gcr.io/google_containers/pause-amd64:3.0
-    docker tag 222ab9e78a83 weaveworks/weave-kube:2.4.0
-    docker tag 765b48853ac0 weaveworks/weave-npc:2.4.0
-    docker tag 09747e7cdd74 weaveworks/weaveexec:2.4.0
-    docker tag d1fd7d86a825 registry:2
+    docker tag 86ff1a48ce14 weaveworks/weave-kube:2.4.0
+    docker tag 647ad6d59818 weaveworks/weave-npc:2.4.0
+    docker tag bf0c403ea58d weaveworks/weaveexec:2.4.0
+    docker tag b2b03e9146e1 docker.io/registry:2
     docker tag 6521ac58ca80 envoyproxy/envoy-alpine:v1.6.0
     docker tag 6a9ec4bcb60e gcr.io/heptio-images/contour:v0.5.0
     docker tag b5c343f1a3a6 rook/ceph:v0.8.1
