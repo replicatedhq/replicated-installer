@@ -146,7 +146,8 @@ upgradeK8sWorkers() {
         fi
         nodeName=$(echo "$node" | awk '{ print $1 }')
 
-        kubectl drain "$nodeName" --ignore-daemonsets --delete-local-data --force --grace-period=30 --timeout=300
+        # continue after timeout errors
+        kubectl drain "$nodeName" --ignore-daemonsets --delete-local-data --force --grace-period=30 --timeout=300 || :
         printf "\n\n\tRun the upgrade script on remote node before proceeding: ${GREEN}$nodeName${NC}\n\n"
         if [ "$AIRGAP" = "1" ]; then
             printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s airgap kubernetes-version=$k8sVersion${NC}"
