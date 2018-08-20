@@ -147,7 +147,7 @@ upgradeK8sWorkers() {
         nodeName=$(echo "$node" | awk '{ print $1 }')
 
         # continue after timeout errors
-        kubectl drain "$nodeName" --ignore-daemonsets --delete-local-data --force --grace-period=30 --timeout=300 || :
+        kubectl drain "$nodeName" --ignore-daemonsets --delete-local-data --force --grace-period=30 --timeout=300s || :
         printf "\n\n\tRun the upgrade script on remote node before proceeding: ${GREEN}$nodeName${NC}\n\n"
         if [ "$AIRGAP" = "1" ]; then
             printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s airgap kubernetes-version=$k8sVersion${NC}"
@@ -194,7 +194,7 @@ upgradeK8sMaster() {
     waitForNodes
     master=$(kubectl get nodes | grep master | awk '{ print $1 }')
     # ignore error about unmanaged pods
-    kubectl drain $master --ignore-daemonsets --delete-local-data --grace-period=30 --timeout=300 2>/dev/null || :
+    kubectl drain $master --ignore-daemonsets --delete-local-data --grace-period=30 --timeout=300s 2>/dev/null || :
 
     case "$LSB_DIST$DIST_VERSION" in
         ubuntu16.04)
