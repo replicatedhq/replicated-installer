@@ -187,6 +187,9 @@ getYAMLOpts() {
     if KUBECONFIG=/etc/kubernetes/admin.conf kubectl get storageclass | grep rook.io > /dev/null ; then
         opts=$opts" storage-provisioner=0"
     fi
+    if KUBECONFIG=/etc/kubernetes/admin.conf kubectl get pvc | grep replicated-pv-claim > /dev/null ; then
+        opts=$opts" replicated-pvc=0"
+    fi
     YAML_GENERATE_OPTS="$opts"
 }
 
