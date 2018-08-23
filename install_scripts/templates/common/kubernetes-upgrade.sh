@@ -32,27 +32,22 @@ maybeUpgradeKubernetes() {
         return
     fi
 
-    if [ "$AIRGAP" = "1" ]; then
-        airgapLoadKubernetesCommonImages 1.10.6
-        airgapLoadKubernetesControlImages 1.10.6
-    fi
-
-    local masterVersion="$(getK8sMasterVersion)"
+    local masterVersion="$(getK8sNodeVersion)"
     semverParse "$masterVersion"
 
     if [ "$major" -eq "1" ] && [ "$minor" -eq "9" ]; then
         logStep "Kubernetes version v$masterVersion detected, upgrading to version v1.10.6"
-        upgradeK8sMaster "1.10.6" "$UBUNTU_1604_K8S_10" "$CENTOS_74_K8S_10"
+        if [ "$AIRGAP" = "1" ]; then
+            airgapLoadKubernetesCommonImages 1.10.6
+            airgapLoadKubernetesControlImages 1.10.6
+        fi
+        upgradeK8sMaster "1.10.6"
         logSuccess "Kubernetes upgraded to version v1.10.6"
     fi
 
     upgradeK8sWorkers "1.10.6"
 
-    if [ "$upgradeMinor" -lt "11" ]; then
-        return
-    fi
-
-    masterVersion="$(getK8sMasterVersion)"
+    masterVersion="$(getK8sNodeVersion)"
     semverParse "$masterVersion"
 
     if [ "$major" -eq "1" ] && [ "$minor" -eq "10" ]; then
@@ -85,16 +80,11 @@ maybeUpgradeKubernetesNode() {
     if [ "$major" -eq "$upgradeMajor" ] && [ "$minor" -lt "$upgradeMinor" ]; then
         logStep "Kubernetes version v$nodeVersion detected, upgrading node to version v$upgradeVersion"
 
-        # this file was missing once after an upgrade on CentOS 7.4
-        local kubeadmFlags="$(cat /var/lib/kubelet/kubeadm-flags.env)"
-
         upgradeK8sNode "$upgradeVersion"
 
-        # not supported in kubeadm < 1.11
-        kubeadm upgrade node config --kubelet-version $(kubelet --version | cut -d ' ' -f 2) 2>/dev/null || :
-
-        if [ ! -e "/var/lib/kubelet/kubeadm-flags.env" ] && [ -n "$kubeadmFlags" ]; then
-            echo "$kubeadmFlags" >> /var/lib/kubelet/kubeadm-flags.env
+        if [ "$upgradeMinor" -gt 10 ]; then
+            touch /tmp/config.yaml
+            kubeadm alpha phase kubelet write-env-file --config=/tmp/config.yaml
         fi
 
         systemctl restart kubelet
@@ -146,8 +136,6 @@ upgradeK8sWorkers() {
         fi
         nodeName=$(echo "$node" | awk '{ print $1 }')
 
-        # continue after timeout errors
-        kubectl drain "$nodeName" --ignore-daemonsets --delete-local-data --force --grace-period=30 --timeout=300s || :
         printf "\n\n\tRun the upgrade script on remote node before proceeding: ${GREEN}$nodeName${NC}\n\n"
         if [ "$AIRGAP" = "1" ]; then
             printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s airgap kubernetes-version=$k8sVersion${NC}"
@@ -162,7 +150,6 @@ upgradeK8sWorkers() {
                 break
             fi
         done
-        kubectl uncordon $nodeName
     done <<< "$workers"
 
     spinnerNodesReady
@@ -194,7 +181,6 @@ upgradeK8sMaster() {
     waitForNodes
     master=$(kubectl get nodes | grep master | awk '{ print $1 }')
     # ignore error about unmanaged pods
-    kubectl drain $master --ignore-daemonsets --delete-local-data --grace-period=30 --timeout=300s 2>/dev/null || :
 
     case "$LSB_DIST$DIST_VERSION" in
         ubuntu16.04)
@@ -213,8 +199,6 @@ upgradeK8sMaster() {
 
     systemctl daemon-reload
     systemctl restart kubelet
-
-    kubectl uncordon $master
 
     sed -i "s/kubernetesVersion:.*/kubernetesVersion: v$k8sVersion/" /opt/replicated/kubeadm.conf
     
@@ -275,23 +259,6 @@ getK8sServerVersion() {
     done
     logSuccess "got k8s server version: $_current"
     printf "$_current"
-}
-
-#######################################
-# Get k8s master version
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   version - e.g. 1.9.3
-#######################################
-getK8sMasterVersion() {
-    _master="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null | grep master | awk '{ print $5 }' | sed 's/v//')"
-    until [ -n "$_master" ]; do
-        _master="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null | grep master | awk '{ print $5 }' | sed 's/v//')"
-    done
-    printf "$_master"
 }
 
 #######################################
