@@ -85,6 +85,7 @@ maybeUpgradeKubernetesNode() {
         if [ "$upgradeMinor" -gt 10 ]; then
             touch /tmp/config.yaml
             kubeadm alpha phase kubelet write-env-file --config=/tmp/config.yaml
+            kubeadm upgrade node config --kubelet-version $(kubelet --version | cut -d ' ' -f 2)
         fi
 
         systemctl restart kubelet
@@ -238,7 +239,6 @@ upgradeK8sNode() {
     rm -rf archives
 
     systemctl daemon-reload
-    systemctl restart kubelet
 }
 
 #######################################
