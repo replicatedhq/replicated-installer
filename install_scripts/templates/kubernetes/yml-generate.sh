@@ -13,6 +13,7 @@ AIRGAP="{{ airgap }}"
 STORAGE_PROVISIONER="{{ storage_provisioner }}"
 ENCRYPT_NETWORK="{{ encrypt_network }}"
 REPLICATED_YAML=1
+REPLICATED_PVC=1
 ROOK_SYSTEM_YAML=0
 ROOK_CLUSTER_YAML=0
 WEAVE_YAML=0
@@ -86,6 +87,9 @@ while [ "$1" != "" ]; do
             ;;
         encrypt-network|encrypt_network)
             ENCRYPT_NETWORK="$_value"
+            ;;
+        replicated-pvc|replicated_pvc)
+            REPLICATED_PVC="$_value"
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
@@ -254,6 +258,30 @@ $PROXY_ENVS
 EOF
 }
 
+render_replicated_pvc() {
+    local size="10Gi"
+    if [ "$AIRGAP" = "1" ]; then
+        size="100Gi"
+    fi
+    cat <<EOF
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: replicated-pv-claim
+  labels:
+    app: replicated
+    tier: master
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: "$size"
+  storageClassName: "$STORAGE_CLASS"
+EOF
+}
+
 render_replicated_specs() {
     cat <<EOF
 ---
@@ -284,21 +312,6 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: "$STORAGE_CLASS"
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: replicated-pv-claim
-  labels:
-    app: replicated
-    tier: master
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
   storageClassName: "$STORAGE_CLASS"
 ---
 apiVersion: v1
@@ -1334,6 +1347,9 @@ if [ "$REPLICATED_YAML" = "1" ]; then
         render_rook_storage_class
     fi
 
+    if [ "$REPLICATED_PVC" != "0" ]; then
+        render_replicated_pvc
+    fi
     render_replicated_specs
     render_replicated_deployment
 

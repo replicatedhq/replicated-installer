@@ -697,5 +697,5 @@ k8s_reset() {
     rm -rf /var/lib/replicated
     rm -rf /var/lib/etcd
     rm -f /usr/bin/kubeadm /usr/bin/kubelet /usr/bin/kubectl
-    kill $(ps aux | grep '[k]ubelet' | awk '{print $2}')
+    kill $(ps aux | grep '[k]ubelet' | awk '{print $2}') 2> /dev/null
 }
