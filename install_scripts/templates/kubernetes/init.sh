@@ -101,14 +101,12 @@ initKube() {
         if [ "$kubeV" = "v1.9.3" ]; then
             kubeadm init \
                 --skip-preflight-checks \
-                --kubernetes-version="$kubeV" \
                 --config /opt/replicated/kubeadm.conf \
                 | tee /tmp/kubeadm-init
             _status=$?
         else
             kubeadm init \
                 --ignore-preflight-errors=all \
-                --kubernetes-version="$kubeV" \
                 --config /opt/replicated/kubeadm.conf \
                 | tee /tmp/kubeadm-init
             _status=$?

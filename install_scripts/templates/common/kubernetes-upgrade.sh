@@ -83,8 +83,11 @@ maybeUpgradeKubernetesNode() {
         upgradeK8sNode "$upgradeVersion"
 
         if [ "$upgradeMinor" -gt 10 ]; then
-            touch /tmp/config.yaml
-            kubeadm alpha phase kubelet write-env-file --config=/tmp/config.yaml
+            # kubeadm alpha phase kubelet write-env-file failed in airgap
+            local cgroupDriver=$(sudo docker info 2> /dev/null | grep "Cgroup Driver" | cut -d' ' -f 3)
+            local envFile="KUBELET_KUBEADM_ARGS=--cgroup-driver=%s --cni-bin-dir=/opt/cni/bin --cni-conf-dir=/etc/cni/net.d --network-plugin=cni\n"
+            printf "$envFile" "$cgroupDriver" > /var/lib/kubelet/kubeadm-flags.env
+
             local n=0
             local ver=$(kubelet --version | cut -d ' ' -f 2)
             while ! kubeadm upgrade node config --kubelet-version "$ver" ; do
