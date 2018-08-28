@@ -99,6 +99,21 @@ promptForAddress() {
     done
 }
 
+# Once the Rook agent has started and copied its plugins to the host, the
+# the kubelet may need to be restarted as a fix for a race condition in
+# K8s 1.11 and Rook < 0.9. https://github.com/rook/rook/issues/2064
+ensureRookPluginsRegistered() {
+    logStep "Await Node Ready"
+    # If Rook is enabled it should start around the same time Weave starts.
+    # Cannot wait for Rook directly because it may be disabled.
+    while ! docker ps | grep -q weave-net ; do
+        sleep 2
+    done
+    sleep 10
+    systemctl restart kubelet
+    logSuccess "Node Is Ready"
+}
+
 outro() {
     printf "\n"
     printf "\n"
@@ -279,6 +294,8 @@ else
 fi
 
 joinKubernetes
+
+ensureRookPluginsRegistered
 
 outro
 
