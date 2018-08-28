@@ -85,7 +85,15 @@ maybeUpgradeKubernetesNode() {
         if [ "$upgradeMinor" -gt 10 ]; then
             touch /tmp/config.yaml
             kubeadm alpha phase kubelet write-env-file --config=/tmp/config.yaml
-            kubeadm upgrade node config --kubelet-version $(kubelet --version | cut -d ' ' -f 2)
+            local n=0
+            local ver=$(kubelet --version | cut -d ' ' -f 2)
+            while ! kubeadm upgrade node config --kubelet-version "$ver" ; do
+                n="$(( $n + 1 ))"
+                if [ "$n" -ge "10" ]; then
+                    exit 1
+                fi
+                sleep 2
+            done
         fi
 
         systemctl restart kubelet
