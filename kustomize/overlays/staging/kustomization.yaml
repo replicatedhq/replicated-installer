@@ -10,4 +10,4 @@ patches:
 
 imageTags:
   - name: 923411875752.dkr.ecr.us-east-1.amazonaws.com/install-scripts
-    newTag: DYNAMIC_IMAGE_TAG
+    newTag: "DYNAMIC_IMAGE_TAG"
