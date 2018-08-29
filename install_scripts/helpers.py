@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import base64
-
+import json
 import yaml
 
 import semver
@@ -71,12 +71,13 @@ def get_arg(name, dflt=None):
 
 def get_pinned_docker_version(replicated_version, scheduler):
     version_info = semver.parse(replicated_version, loose=False)
-    cursor = db.get().cursor(buffered=True)
+    cursor = db.get().cursor()
     query = (
         'SELECT dockerversion '
         'FROM pinned_docker_version '
-        'WHERE major <= %s AND minor <= %s AND patch <= %s AND scheduler = %s'
-        'ORDER BY major DESC, minor DESC, patch DESC')
+        'WHERE major <= %s AND minor <= %s AND patch <= %s AND scheduler = %s '
+        'ORDER BY major DESC, minor DESC, patch DESC '
+        'LIMIT 1')
     cursor.execute(query, (version_info.major, version_info.minor,
                            version_info.patch, scheduler))
 
@@ -90,13 +91,14 @@ def get_pinned_docker_version(replicated_version, scheduler):
 
 def get_pinned_kubernetes_version(replicated_version):
     version_info = semver.parse(replicated_version, loose=False)
-    cursor = db.get().cursor(buffered=True)
+    cursor = db.get().cursor()
     query = ('SELECT kubernetes_version '
              'FROM pinned_kubernetes_version '
              'WHERE major <= %s AND minor <= %s AND patch <= %s '
-             'ORDER BY major DESC, minor DESC, patch DESC')
-    cursor.execute(query, (version_info.major, version_info.minor,
-                           version_info.patch))
+             'ORDER BY major DESC, minor DESC, patch DESC '
+             'LIMIT 1')
+    cursor.execute(
+        query, (version_info.major, version_info.minor, version_info.patch))
     (kubernetes_version, ) = cursor.fetchone()
     cursor.close()
 
@@ -179,8 +181,35 @@ def get_operator_additional_etc_mounts(version_tag):
 
 
 def get_version_for_app(app_slug, app_channel, replicated_channel):
+    version_range = None
+    for doc in get_app_version_config(app_slug, app_channel):
+        if 'host_requirements' not in doc:
+            continue
+        host_requirements = doc['host_requirements']
+        if not host_requirements or 'replicated_version' not in host_requirements:
+            continue
+        version_range = host_requirements['replicated_version']
+        break
 
-    # kubernetes yaml is not valid yaml
+    if version_range:
+        return get_best_replicated_version(version_range, replicated_channel)
+
+    return get_current_replicated_version(replicated_channel)
+
+
+def get_terms(app_slug, app_channel):
+    for doc in get_app_version_config(app_slug, app_channel):
+        terms = doc.get('terms')
+        if terms is not None:
+            if terms.get('markdown', '') != '':
+                return json.dumps(terms)
+            break
+    return None
+
+
+def get_app_version_config(app_slug, app_channel):
+
+    # kubernetes and swarm yaml is not valid yaml
     def handle_iter_exc(gen):
         while True:
             try:
@@ -190,35 +219,24 @@ def get_version_for_app(app_slug, app_channel, replicated_channel):
             except Exception as exc:
                 print('Invalid yaml: {}:'.format(exc))
 
-    version_range = None
     cursor = db.get().cursor()
     query = ('SELECT ar.config '
              'FROM app a '
              '   INNER JOIN app_channel ac ON a.appid = ac.appid '
              '   INNER JOIN app_release ar ON a.appid = ar.appid '
              '      AND ac.releasesequence = ar.sequence '
-             'WHERE a.slug = %s AND ac.name = %s')
+             'WHERE a.slug = %s AND ac.name = %s '
+             'LIMIT 1')
     cursor.execute(query, (app_slug, app_channel))
-    for (config, ) in cursor:
-        for doc in handle_iter_exc(yaml.load_all(base64.b64decode(config))):
-            if 'host_requirements' not in doc:
-                continue
-            host_requirements = doc['host_requirements']
-            if not host_requirements:
-                continue
-            if 'replicated_version' not in host_requirements:
-                continue
-            version_range = host_requirements['replicated_version']
-            if version_range:
-                break
-        if version_range:
-            break
+    (config_raw, ) = cursor.fetchone()
     cursor.close()
 
-    if not version_range:
-        return get_current_replicated_version(replicated_channel)
-
-    return get_best_replicated_version(version_range, replicated_channel)
+    if not config_raw:
+        return []
+    return [
+        doc for doc in handle_iter_exc(
+            yaml.load_all(base64.b64decode(config_raw)))
+    ]
 
 
 def get_current_replicated_version(replicated_channel):
@@ -270,6 +288,8 @@ def get_channel_css(app_slug, app_channel):
              'WHERE a.slug = %s AND ac.name = %s')
     cursor.execute(query, (app_slug, app_channel))
     row = cursor.fetchone()
+    cursor.close()
+
     if row:
         return row[0]
     return ''
@@ -280,6 +300,8 @@ def does_customer_exist(customer_id):
     query = ('SELECT id ' 'FROM customer ' 'WHERE id = %s')
     cursor.execute(query, (customer_id, ))
     row = cursor.fetchone()
+    cursor.close()
+
     if row:
         return True
     return False
@@ -288,8 +310,8 @@ def does_customer_exist(customer_id):
 # Produce base64 encoding with linebreaks.
 def base64_encode(data):
     encoded = base64.b64encode(data)
-    return '\n'.join(encoded[pos:pos + 76]
-                     for pos in xrange(0, len(encoded), 76))
+    return '\n'.join(
+        encoded[pos:pos + 76] for pos in xrange(0, len(encoded), 76))
 
 
 def get_docker_deb_pkg_version(docker_version, lsb_dist, dist_version):
@@ -333,18 +355,22 @@ def get_environment_tag_suffix(env):
 
 
 def compose_400(error_message="Bad Request"):
-    response = render_template('error/compose_400.yml',
-                               **template_args(
-                                   error_message=error_message,
-                                   base_url=request.base_url, ))
+    response = render_template(
+        'error/compose_400.yml',
+        **template_args(
+            error_message=error_message,
+            base_url=request.base_url,
+        ))
     return Response(response, status=400, mimetype='text/x-docker-compose')
 
 
 def compose_404(error_message="Not Found"):
-    response = render_template('error/compose_404.yml',
-                               **template_args(
-                                   error_message=error_message,
-                                   base_url=request.base_url, ))
+    response = render_template(
+        'error/compose_404.yml',
+        **template_args(
+            error_message=error_message,
+            base_url=request.base_url,
+        ))
     return Response(response, status=404, mimetype='text/x-docker-compose')
 
 

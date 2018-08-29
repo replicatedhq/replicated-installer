@@ -31,6 +31,15 @@ read -r -d '' CHANNEL_CSS << CHANNEL_CSS_EOM
 CHANNEL_CSS_EOM
 set -e
 
+TERMS=
+{% if terms %}
+set +e
+read -r -d '' TERMS << TERMS_EOM
+{{ terms }}
+TERMS_EOM
+set -e
+{% endif %}
+
 # TODO
 # - user_id
 # - group_id
@@ -172,7 +181,12 @@ stackDeploy() {
 }
 
 includeBranding() {
-    echo "$CHANNEL_CSS" | base64 --decode > /tmp/channel.css
+    if [ -n "$CHANNEL_CSS" ]; then
+        echo "$CHANNEL_CSS" | base64 --decode > /tmp/channel.css
+    fi
+    if [ -n "$TERMS" ]; then
+        echo "$TERMS" | base64 --decode > /tmp/terms.json
+    fi
 
     # wait until replicated container is running
     REPLICATED_CONTAINER_ID="$(docker ps -a -q --filter='name=replicated_replicated\.' --filter='status=running')"
@@ -183,10 +197,15 @@ includeBranding() {
         REPLICATED_CONTAINER_ID="$(docker ps -a -q --filter='name=replicated_replicated\.' --filter='status=running')"
     done
 
-    #then copy in the branding file
-    if [ "$REPLICATED_CONTAINER_ID" != "" ]; then
+    # then copy in the branding file
+    if [ -n "$REPLICATED_CONTAINER_ID" ]; then
         docker exec "${REPLICATED_CONTAINER_ID}" mkdir -p /var/lib/replicated/branding/
-        docker cp /tmp/channel.css "${REPLICATED_CONTAINER_ID}:/var/lib/replicated/branding/channel.css"
+        if [ -f /tmp/channel.css ]; then
+            docker cp /tmp/channel.css "${REPLICATED_CONTAINER_ID}:/var/lib/replicated/branding/channel.css"
+        fi
+        if [ -f /tmp/terms.md ]; then
+            docker cp /tmp/terms.md "${REPLICATED_CONTAINER_ID}:/var/lib/replicated/branding/terms.md"
+        fi
     else
         printf "${YELLOW}Unable to find replicated container to copy branding css to.${NC}\n"
     fi

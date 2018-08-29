@@ -126,6 +126,10 @@ def get_replicated_two_point_zero(replicated_channel=None,
     channel_css = ''
     if app_slug and app_channel:
         channel_css = helpers.get_channel_css(app_slug, app_channel)
+    if app_slug and app_channel:
+        terms = helpers.get_terms(app_slug, app_channel)
+    if not terms:
+        terms = ''
 
     # Port mappings narrow after the release of replicated 2.0.1654 with
     # premkit
@@ -150,7 +154,6 @@ def get_replicated_two_point_zero(replicated_channel=None,
     response = render_template(
         'replicated-2.0.sh',
         **helpers.template_args(
-            channel_css=helpers.base64_encode(channel_css),
             channel_name=replicated_channel,
             pinned_docker_version=pinned_docker_version,
             replicated_tag=replicated_tag,
@@ -163,7 +166,10 @@ def get_replicated_two_point_zero(replicated_channel=None,
             operator_tags=operator_tags,
             replicated_username=username,
             customer_base_url_override=customer_base_url,
-            use_fast_timeouts=fast_timeouts))
+            use_fast_timeouts=fast_timeouts,
+            channel_css=helpers.base64_encode(channel_css),
+            terms=helpers.base64_encode(terms),
+        ))
     return Response(response, mimetype='text/x-shellscript')
 
 
