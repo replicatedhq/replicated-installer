@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: replicated-ui
+  labels:
+    app: replicated
+    tier: master
+spec:
+  type: {{ .Values.uiService.type }}
+  selector:
+    app: replicated
+    tier: master
+  ports:
+  - name: replicated-ui
+    port: 8800
+    nodePort: {{ .Values.uiService.port }}
+    protocol: TCP

@@ -1,0 +1,34 @@
+# config for replicated deployment
+deployment:
+  # config for replicated container
+  replicated:
+    repository: quay.io/replicated/replicated
+    tag: stable-2.22.0
+    pullPolicy: IfNotPresent
+    env:
+      releaseSequence: ""
+      proxyAddress: ""
+      noProxyAddress: ""
+      customerBaseURLOverride: ""
+  # config for replicated-ui container
+  ui:
+    repository: quay.io/replicated/replicated-ui
+    tag: stable-2.22.0
+    pullPolicy: IfNotPresent
+  # shared env configs with replicated and ui
+  env:
+    releaseChannel: "default"
+    logLevel: "info"
+
+# config for replicated-ui service
+uiService:
+  type: NodePort
+  port: 8800
+
+# storage class name used for pvcs
+persistence:
+  storageClass: "default"
+
+# config for clusterrole
+clusterRole:
+  namespace: "default"

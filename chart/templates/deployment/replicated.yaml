@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "replicated.name" . }}
+  labels:
+    app: {{ template "replicated.name" . }}
+    tier: master
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "replicated.name" . }}
+      tier: master
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: replicated
+        tier: master
+    spec:
+      containers:
+      - name: replicated
+        image: "{{ .Values.deployment.replicated.repository }}:{{ .Values.deployment.replicated.tag }}"
+        imagePullPolicy: {{ .Values.deployment.replicated.pullPolicy }}
+        env:
+        - name: SCHEDULER_ENGINE
+          value: kubernetes
+        - name: RELEASE_CHANNEL
+          value: {{ .Values.deployment.env.releaseChannel }}
+        {{- if .Values.deployment.replicated.env.releaseSequence }}
+        - name: RELEASE_SEQUENCE
+          value: {{ .Values.deployment.replicated.env.releaseSequence }}
+        {{- end }}
+        {{- if .Values.deployment.replicated.env.customerBaseURLOverride }}
+        - name: MARKET_BASE_URL
+          value: .Values.deployment.replicated.env.customerBaseURLOverride
+        {{- end }}
+        - name: LOCAL_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: "status.podIP"
+        - name: K8S_MASTER_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: K8S_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: K8S_STORAGECLASS
+          value: "default"
+        - name: LOG_LEVEL
+          value: {{ .Values.deployment.env.logLevel }}
+        - name: AIRGAP
+          value: ""
+        {{- if .Values.deployment.replicated.env.proxyAddress }}
+        - name: HTTP_PROXY
+          value: {{ .Values.deployment.replicated.env.proxyAddress }}
+        - name: NO_PROXY
+          value: {{ .Values.deployment.replicated.env.noProxyAddress }}
+        {{- end }}
+        ports:
+        - containerPort: 9874
+        - containerPort: 9877
+        - containerPort: 9878
+        volumeMounts:
+        - name: replicated-persistent
+          mountPath: /var/lib/replicated
+        - name: replicated-socket
+          mountPath: /var/run/replicated
+        - name: docker-socket
+          mountPath: /host/var/run/docker.sock
+        - name: replicated-conf
+          mountPath: /host/etc/replicated.conf
+        - name: proc
+          mountPath: /host/proc
+          readOnly: true
+      - name: replicated-ui
+        image: "{{ .Values.deployment.ui.repository }}:{{ .Values.deployment.ui.tag }}"
+        imagePullPolicy: {{ .Values.deployment.ui.pullPolicy }}
+        env:
+        - name: RELEASE_CHANNEL
+          value: {{ .Values.deployment.env.releaseChannel }}
+        - name: LOG_LEVEL
+          value: {{ .Values.deployment.env.logLevel }}
+        ports:
+        - containerPort: 8800
+        volumeMounts:
+        - name: replicated-socket
+          mountPath: /var/run/replicated
+      volumes:
+      - name: replicated-persistent
+        persistentVolumeClaim:
+          claimName: replicated-pv-claim
+      - name: replicated-socket
+      - name: docker-socket
+        hostPath:
+          path: /var/run/docker.sock
+      - name: replicated-conf
+        hostPath:
+          path: /etc/replicated.conf
+      - name: proc
+        hostPath:
+          path: /proc

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: replicated-pv-claim
+  labels:
+    app: replicated
+    tier: master
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: "10Gi"
+  storageClassName: {{ .Values.persistence.storageClass }}

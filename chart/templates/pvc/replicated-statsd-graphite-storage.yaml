@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: replicated-statsd-graphite-storage
+  labels:
+    app: replicated
+    tier: statsd
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: {{ .Values.persistence.storageClass }}
