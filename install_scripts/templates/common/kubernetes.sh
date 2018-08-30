@@ -490,7 +490,7 @@ spinnerMasterNodeReady()
 }
 
 #######################################
-# Label master node if airgap
+# Label master node
 # Globals:
 #   AIRGAP
 # Arguments:
@@ -498,11 +498,8 @@ spinnerMasterNodeReady()
 # Returns:
 #   None
 #######################################
-airgapMaybeLabelMasterNode()
+labelMasterNode()
 {
-    if [ "$AIRGAP" != "1" ]; then
-        return
-    fi
     if kubectl get nodes --show-labels | grep "$DAEMON_NODE_KEY" > /dev/null ; then
         return
     fi
