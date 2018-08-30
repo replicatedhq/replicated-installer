@@ -48,7 +48,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: K8S_STORAGECLASS
-          value: "default"
+          value: {{ .Values.persistence.storageClass }}
         - name: LOG_LEVEL
           value: {{ .Values.deployment.env.logLevel }}
         - name: AIRGAP

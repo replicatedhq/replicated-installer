@@ -3,21 +3,21 @@ deployment:
   # config for replicated container
   replicated:
     repository: quay.io/replicated/replicated
-    tag: stable-2.22.0
+    tag: latest
     pullPolicy: IfNotPresent
     env:
       releaseSequence: ""
       proxyAddress: ""
-      noProxyAddress: ""
+      noProxyAddress: "10.96.0.0/12"
       customerBaseURLOverride: ""
   # config for replicated-ui container
   ui:
     repository: quay.io/replicated/replicated-ui
-    tag: stable-2.22.0
+    tag: latest
     pullPolicy: IfNotPresent
   # shared env configs with replicated and ui
   env:
-    releaseChannel: "default"
+    releaseChannel: "stable"
     logLevel: "info"
 
 # config for replicated-ui service
@@ -27,7 +27,7 @@ uiService:
 
 # storage class name used for pvcs
 persistence:
-  storageClass: "default"
+  storageClass: "standard"
 
 # config for clusterrole
 clusterRole:

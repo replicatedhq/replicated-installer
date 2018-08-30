@@ -7,11 +7,19 @@ metadata:
     tier: master
 spec:
   type: {{ .Values.uiService.type }}
+  {{- if and (eq .Values.uiService.type "LoadBalancer") .Values.uiService.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.uiService.loadBalancerIP }}
+  {{- end }}
   selector:
     app: replicated
     tier: master
   ports:
   - name: replicated-ui
     port: 8800
-    nodePort: {{ .Values.uiService.port }}
+    {{- if and (eq .Values.uiService.type "ClusterIP") .Values.uiService.targetPort }}
+    targetPort: {{ .Values.uiService.targetPort }}
+    {{- end }}
+    {{- if and (eq .Values.uiService.type "NodePort") .Values.uiService.nodePort }}
+    nodePort: {{ .Values.uiService.nodePort }}
+    {{- end }}
     protocol: TCP
