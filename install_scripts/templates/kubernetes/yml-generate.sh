@@ -746,6 +746,13 @@ spec:
       labels:
         app: rook-ceph-operator
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: "$DAEMON_NODE_KEY"
+                operator: Exists
       serviceAccountName: rook-ceph-system
       containers:
       - name: rook-ceph-operator
