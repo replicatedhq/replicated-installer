@@ -148,9 +148,11 @@ installKubernetesComponents() {
             ;;
 
         centos7.4|centos7.5|rhel7.4|rhel7.5)
+            maybeDisableFirewalld
+
             # This needs to be run on Linux 3.x nodes for Rook
             modprobe rbd
-            echo 'rbd' > /etc/modules-load.d/replicated.conf
+            echo 'rbd' > /etc/modules-load.d/replicated-rook.conf
 
             # tabs in heredoc stripped
             cat <<-EOF >  /etc/sysctl.d/k8s.conf
@@ -173,6 +175,55 @@ installKubernetesComponents() {
     rm -rf archives
 
     logSuccess "Kubernetes components installed"
+}
+
+
+#######################################
+# Asks user for permission to disable firewalld if active
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+maybeDisableFirewalld() {
+    if ! systemctl -q is-active firewalld ; then
+        return
+    fi
+
+    printf "\n${YELLOW}Disable firewalld (Recommended)? ${NC}"
+    if confirmY ; then
+        systemctl stop firewalld
+        systemctl disable firewalld
+    fi
+}
+
+#######################################
+# Load kernel modules for kube proxy's IPVS mode
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+loadIPVSKubeProxyModules() {
+    if lsmod | grep -q ip_vs ; then
+        return
+    fi
+
+    modprobe nf_conntrack_ipv4
+    modprobe ip_vs
+    modprobe ip_vs_rr
+    modprobe ip_vs_wrr
+    modprobe ip_vs_sh
+
+    echo 'nf_conntrack_ipv4' > /etc/modules-load.d/replicated-ipvs.conf
+    echo 'ip_vs' >> /etc/modules-load.d/replicated-ipvs.conf
+    echo 'ip_vs_rr' >> /etc/modules-load.d/replicated-ipvs.conf
+    echo 'ip_vs_wrr' >> /etc/modules-load.d/replicated-ipvs.conf
+    echo 'ip_vs_sh' >> /etc/modules-load.d/replicated-ipvs.conf
 }
 
 #######################################
