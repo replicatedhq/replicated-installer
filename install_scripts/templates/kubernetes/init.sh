@@ -66,6 +66,10 @@ token: $BOOTSTRAP_TOKEN
 tokenTTL: ${BOOTSTRAP_TOKEN_TTL}
 networking:
   serviceSubnet: $SERVICE_CIDR
+kubeProxy:
+  config:
+    featureGates: SupportIPVSProxyMode=true
+    mode: ipvs
 apiServerExtraArgs:
   service-node-port-range: "80-60000"
 EOF
@@ -94,6 +98,7 @@ initKube() {
     if ! ps aux | grep -qE "[k]ubelet"; then
         logStep "Initialize Kubernetes"
         initKubeadmConfig
+        loadIPVSKubeProxyModules
         set +e
 
         local kubeV=$(kubeadm version --output=short)
@@ -121,6 +126,7 @@ initKube() {
         export KUBECONFIG=/etc/kubernetes/admin.conf
         chmod 444 /etc/kubernetes/admin.conf
         initKubeadmConfig
+        loadIPVSKubeProxyModules
         kubeadm config upload from-file --config /opt/replicated/kubeadm.conf
         _current=$(getK8sServerVersion)
 

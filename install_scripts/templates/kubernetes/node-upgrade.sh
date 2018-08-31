@@ -41,6 +41,7 @@ if [ -z "$KUBERNETES_VERSION" ]; then
 fi
 
 
+loadIPVSKubeProxyModules
 maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
 
 if [ "$AIRGAP" = "1" ]; then
