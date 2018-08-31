@@ -25,11 +25,14 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 ADDITIONAL_NO_PROXY=
 
+CHANNEL_CSS=
+{% if channel_css %}
 set +e
 read -r -d '' CHANNEL_CSS << CHANNEL_CSS_EOM
-{{ app_channel_css }}
+{{ channel_css }}
 CHANNEL_CSS_EOM
 set -e
+{% endif %}
 
 TERMS=
 {% if terms %}
@@ -203,8 +206,8 @@ includeBranding() {
         if [ -f /tmp/channel.css ]; then
             docker cp /tmp/channel.css "${REPLICATED_CONTAINER_ID}:/var/lib/replicated/branding/channel.css"
         fi
-        if [ -f /tmp/terms.md ]; then
-            docker cp /tmp/terms.md "${REPLICATED_CONTAINER_ID}:/var/lib/replicated/branding/terms.md"
+        if [ -f /tmp/terms.json ]; then
+            docker cp /tmp/terms.json "${REPLICATED_CONTAINER_ID}:/var/lib/replicated/branding/terms.json"
         fi
     else
         printf "${YELLOW}Unable to find replicated container to copy branding css to.${NC}\n"

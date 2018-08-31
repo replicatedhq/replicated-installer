@@ -644,6 +644,14 @@ def get_kubernetes_init_master(replicated_channel=None,
         for k, v in query_args.items()
     }
 
+    channel_css = ''
+    if app_slug and app_channel:
+        channel_css = helpers.get_channel_css(app_slug, app_channel)
+    if app_slug and app_channel:
+        terms = helpers.get_terms(app_slug, app_channel)
+    if not terms:
+        terms = ''
+
     query = urllib.urlencode(query_args)
     response = render_template(
         'kubernetes/init.sh',
@@ -653,6 +661,8 @@ def get_kubernetes_init_master(replicated_channel=None,
             kubernetes_generate_path=generate_path,
             kubernetes_node_join_path=node_path,
             kubernetes_manifests_query=query,
+            channel_css=helpers.base64_encode(channel_css),
+            terms=helpers.base64_encode(terms),
         ))
     return Response(response, mimetype='text/x-shellscript')
 
