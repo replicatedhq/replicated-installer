@@ -305,7 +305,6 @@ includeBranding() {
         echo "$TERMS" | base64 --decode > /tmp/terms.json
     fi
 
-    # wait until replicated container is running
     REPLICATED_POD_ID="$(kubectl get pods 2> /dev/null | grep -E "^replicated-[^-]+-[^-]+$" | awk '{ print $1}')"
 
     # then copy in the branding file
