@@ -32,11 +32,23 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 ADDITIONAL_NO_PROXY=
 
+CHANNEL_CSS=
+{% if channel_css %}
 set +e
 read -r -d '' CHANNEL_CSS << CHANNEL_CSS_EOM
 {{ channel_css }}
 CHANNEL_CSS_EOM
 set -e
+{% endif %}
+
+TERMS=
+{% if terms %}
+set +e
+read -r -d '' TERMS << TERMS_EOM
+{{ terms }}
+TERMS_EOM
+set -e
+{% endif %}
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -470,7 +482,12 @@ detectInitSystem
 detectInitSystemConfDir
 
 mkdir -p /var/lib/replicated/branding
-echo "$CHANNEL_CSS" | base64 --decode > /var/lib/replicated/branding/channel.css
+if [ -n "$CHANNEL_CSS" ]; then
+    echo "$CHANNEL_CSS" | base64 --decode > /var/lib/replicated/branding/channel.css
+fi
+if [ -n "$TERMS" ]; then
+    echo "$TERMS" | base64 --decode > /var/lib/replicated/branding/terms.json
+fi
 
 # read existing replicated opts values
 if [ -f $CONFDIR/replicated ]; then

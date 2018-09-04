@@ -38,6 +38,24 @@ CLUSTER_DNS=$DEFAULT_CLUSTER_DNS
 ENCRYPT_NETWORK=
 ADDITIONAL_NO_PROXY=
 
+CHANNEL_CSS=
+{% if channel_css %}
+set +e
+read -r -d '' CHANNEL_CSS << CHANNEL_CSS_EOM
+{{ channel_css }}
+CHANNEL_CSS_EOM
+set -e
+{% endif %}
+
+TERMS=
+{% if terms %}
+set +e
+read -r -d '' TERMS << TERMS_EOM
+{{ terms }}
+TERMS_EOM
+set -e
+{% endif %}
+
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
 {% include 'common/system.sh' %}
@@ -285,6 +303,32 @@ kubernetesDeploy() {
     kubectl apply -f /tmp/kubernetes.yml -n $KUBERNETES_NAMESPACE
     kubectl -n $KUBERNETES_NAMESPACE get pods,svc
     logSuccess "Replicated Daemon"
+}
+
+includeBranding() {
+    if [ -n "$CHANNEL_CSS" ]; then
+        echo "$CHANNEL_CSS" | base64 --decode > /tmp/channel.css
+    fi
+    if [ -n "$TERMS" ]; then
+        echo "$TERMS" | base64 --decode > /tmp/terms.json
+    fi
+
+    REPLICATED_POD_ID="$(kubectl get pods 2> /dev/null | grep -E "^replicated-[^-]+-[^-]+$" | awk '{ print $1}')"
+
+    # then copy in the branding file
+    if [ -n "$REPLICATED_POD_ID" ]; then
+        kubectl exec "${REPLICATED_POD_ID}" -c replicated -- mkdir -p /var/lib/replicated/branding/
+        if [ -f /tmp/channel.css ]; then
+            logStep "Uploading branding to Replicated."
+            kubectl cp /tmp/channel.css "${REPLICATED_POD_ID}:/var/lib/replicated/branding/channel.css" -c replicated
+        fi
+        if [ -f /tmp/terms.json ]; then
+            logStep "Uploading terms to Replicated."
+            kubectl cp /tmp/terms.json "${REPLICATED_POD_ID}:/var/lib/replicated/branding/terms.json" -c replicated
+        fi
+    else
+        logFail "Unable to find replicated pod to copy branding css to."
+    fi
 }
 
 outro() {
@@ -607,6 +651,8 @@ fi
 
 kubernetesDeploy
 spinnerReplicatedReady
+
+includeBranding
 
 printf "Installing replicated command alias\n"
 installCliFile \
