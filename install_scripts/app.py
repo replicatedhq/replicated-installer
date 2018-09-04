@@ -124,12 +124,10 @@ def get_replicated_two_point_zero(replicated_channel=None,
     replicated_operator_tag = replicated_operator_version
 
     channel_css = ''
+    terms = ''
     if app_slug and app_channel:
         channel_css = helpers.get_channel_css(app_slug, app_channel)
-    if app_slug and app_channel:
         terms = helpers.get_terms(app_slug, app_channel)
-    if not terms:
-        terms = ''
 
     # Port mappings narrow after the release of replicated 2.0.1654 with
     # premkit
@@ -540,10 +538,12 @@ def get_swarm_init_master(replicated_channel=None,
     compose_path = 'docker-compose-generate'
     worker_path = 'swarm-worker-join'
     channel_css = ''
+    terms = ''
     if app_slug and app_channel:
         compose_path = app_slug + '/' + app_channel + '/' + compose_path
         worker_path = app_slug + '/' + app_channel + '/' + worker_path
         channel_css = helpers.get_channel_css(app_slug, app_channel)
+        terms = helpers.get_terms(app_slug, app_channel)
     if replicated_channel != 'stable':
         compose_path = replicated_channel + '/' + compose_path
         worker_path = replicated_channel + '/' + worker_path
@@ -645,12 +645,10 @@ def get_kubernetes_init_master(replicated_channel=None,
     }
 
     channel_css = ''
+    terms = ''
     if app_slug and app_channel:
         channel_css = helpers.get_channel_css(app_slug, app_channel)
-    if app_slug and app_channel:
         terms = helpers.get_terms(app_slug, app_channel)
-    if not terms:
-        terms = ''
 
     query = urllib.urlencode(query_args)
     response = render_template(
