@@ -204,7 +204,7 @@ def get_terms(app_slug, app_channel):
             if terms.get('markdown', '') != '':
                 return json.dumps(terms)
             break
-    return None
+    return ''
 
 
 def get_app_version_config(app_slug, app_channel):
@@ -228,11 +228,11 @@ def get_app_version_config(app_slug, app_channel):
              'WHERE a.slug = %s AND ac.name = %s '
              'LIMIT 1')
     cursor.execute(query, (app_slug, app_channel))
-    (config_raw, ) = cursor.fetchone()
+    row = cursor.fetchone()
     cursor.close()
-
-    if not config_raw:
+    if row is None:
         return []
+    (config_raw, ) = row
     return [
         doc for doc in handle_iter_exc(
             yaml.load_all(base64.b64decode(config_raw)))

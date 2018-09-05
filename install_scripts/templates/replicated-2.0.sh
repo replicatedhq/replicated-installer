@@ -32,23 +32,21 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 ADDITIONAL_NO_PROXY=
 
-CHANNEL_CSS=
-{% if channel_css %}
+CHANNEL_CSS={% if channel_css %}
 set +e
 read -r -d '' CHANNEL_CSS << CHANNEL_CSS_EOM
 {{ channel_css }}
 CHANNEL_CSS_EOM
 set -e
-{% endif %}
+{%- endif %}
 
-TERMS=
-{% if terms %}
+TERMS={% if terms %}
 set +e
 read -r -d '' TERMS << TERMS_EOM
 {{ terms }}
 TERMS_EOM
 set -e
-{% endif %}
+{%- endif %}
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
