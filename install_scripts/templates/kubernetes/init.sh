@@ -38,23 +38,21 @@ CLUSTER_DNS=$DEFAULT_CLUSTER_DNS
 ENCRYPT_NETWORK=
 ADDITIONAL_NO_PROXY=
 
-CHANNEL_CSS=
-{% if channel_css %}
+CHANNEL_CSS={% if channel_css %}
 set +e
 read -r -d '' CHANNEL_CSS << CHANNEL_CSS_EOM
 {{ channel_css }}
 CHANNEL_CSS_EOM
 set -e
-{% endif %}
+{%- endif %}
 
-TERMS=
-{% if terms %}
+TERMS={% if terms %}
 set +e
 read -r -d '' TERMS << TERMS_EOM
 {{ terms }}
 TERMS_EOM
 set -e
-{% endif %}
+{%- endif %}
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
