@@ -225,7 +225,7 @@ def get_app_version_config(app_slug, app_channel):
              '   INNER JOIN app_channel ac ON a.appid = ac.appid '
              '   INNER JOIN app_release ar ON a.appid = ar.appid '
              '      AND ac.releasesequence = ar.sequence '
-             'WHERE a.slug = %s AND ac.name = %s '
+             'WHERE a.slug = %s AND ac.name = %s AND ac.is_archived = 0 '
              'LIMIT 1')
     cursor.execute(query, (app_slug, app_channel))
     row = cursor.fetchone()
@@ -285,7 +285,8 @@ def get_channel_css(app_slug, app_channel):
              '   INNER JOIN app_channel ac ON a.appid = ac.appid '
              '   INNER JOIN app_channel_branding acb '
              '       ON acb.channelid = ac.channelid '
-             'WHERE a.slug = %s AND ac.name = %s')
+             'WHERE a.slug = %s AND ac.name = %s AND ac.is_archived = 0 '
+             'LIMIT 1')
     cursor.execute(query, (app_slug, app_channel))
     row = cursor.fetchone()
     cursor.close()
