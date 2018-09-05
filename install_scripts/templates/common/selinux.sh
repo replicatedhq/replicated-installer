@@ -111,7 +111,7 @@ must_disable_selinux() {
     # https://github.com/containers/container-selinux/issues/51
     # required for CoreDNS because it sets allowPrivilegeEscalation: false
     if selinux_enabled ; then
-        mkdir policy
+        mkdir -p policy
         cd policy
         # tabs required
         cat <<-EOF > dockersvirt.te

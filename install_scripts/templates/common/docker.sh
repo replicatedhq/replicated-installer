@@ -10,6 +10,27 @@
 RESTART_DOCKER=0
 
 #######################################
+# Prints a message and exits if docker is not installed.
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+requireDocker() {
+    if commandExists "docker"; then
+        return
+    fi
+
+    printf "${RED}Docker is not installed. Please install Docker before proceeding.\n" 1>&2
+    printf "Instructions for installing Docker can be found at the link below:\n" 1>&2
+    printf "\n" 1>&2
+    printf "    https://help.replicated.com/community/t/installing-docker-in-airgapped-environments/81${NC}\n" 1>&2
+    exit 127
+}
+
+#######################################
 # Starts docker.
 # Globals:
 #   LSB_DIST

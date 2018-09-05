@@ -635,6 +635,8 @@ if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
 
     checkDockerDriver
     checkDockerStorageDriver "$HARD_FAIL_ON_LOOPBACK"
+else
+    requireDocker
 fi
 
 if [ -n "$PROXY_ADDRESS" ]; then
