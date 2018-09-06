@@ -18,6 +18,7 @@ OFFLINE_DOCKER_INSTALL=0
 SKIP_DOCKER_PULL=0
 KUBERNETES_ONLY=0
 RESET=0
+FORCE_RESET=0
 TLS_CERT_PATH=
 UI_BIND_PORT=8800
 USER_ID=
@@ -500,6 +501,9 @@ while [ "$1" != "" ]; do
         reset)
             RESET=1
             ;;
+        force-reset|force_reset)
+            FORCE_RESET=1
+            ;;
         service-cidr|service_cidr)
             SERVICE_CIDR="$_value"
             ;;
@@ -525,7 +529,7 @@ while [ "$1" != "" ]; do
 done
 
 if [ "$RESET" == "1" ]; then
-    k8s_reset
+    k8s_reset "$FORCE_RESET"
     outroReset "$NO_CLEAR"
 	exit 0
 fi

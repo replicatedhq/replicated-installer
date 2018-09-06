@@ -702,23 +702,35 @@ weave_reset()
     done
 }
 
+#######################################
+# Attempt to remove replicated and kubernetes from the system
+# Globals:
+#   none
+# Arguments:
+#   FORCE_RESET
+# Returns:
+#   None
+#######################################
 k8s_reset() {
-    printf "${YELLOW}"
-    printf "WARNING: \n"
-    printf "\n"
-    printf "    The \"reset\" command will attempt to remove replicated and kubernetes from this system.\n"
-    printf "\n"
-    printf "    This command is intended to be used only for \n"
-    printf "    increasing iteration speed on development servers. It has the \n"
-    printf "    potential to leave your machine in an unrecoverable state. It is \n"
-    printf "    not recommended unless you will easily be able to discard this server\n"
-    printf "    and provision a new one if something goes wrong.\n${NC}"
-    printf "\n"
-    printf "Would you like to continue? "
+    # if FORCE_RESET is set, skip this
+    if [ -z "$1" ]; then
+        printf "${YELLOW}"
+        printf "WARNING: \n"
+        printf "\n"
+        printf "    The \"reset\" command will attempt to remove replicated and kubernetes from this system.\n"
+        printf "\n"
+        printf "    This command is intended to be used only for \n"
+        printf "    increasing iteration speed on development servers. It has the \n"
+        printf "    potential to leave your machine in an unrecoverable state. It is \n"
+        printf "    not recommended unless you will easily be able to discard this server\n"
+        printf "    and provision a new one if something goes wrong.\n${NC}"
+        printf "\n"
+        printf "Would you like to continue? "
 
-    if ! confirmN; then
-        printf "Not resetting\n"
-        exit 1
+        if ! confirmN; then
+            printf "Not resetting\n"
+            exit 1
+        fi
     fi
 
 
