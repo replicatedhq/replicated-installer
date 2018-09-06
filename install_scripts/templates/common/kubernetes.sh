@@ -713,7 +713,7 @@ weave_reset()
 #######################################
 k8s_reset() {
     # if FORCE_RESET is set, skip this
-    if [ -z "$1" ]; then
+    if [ "$1" != 1 ]; then
         printf "${YELLOW}"
         printf "WARNING: \n"
         printf "\n"
