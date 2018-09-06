@@ -27,6 +27,8 @@ BOOTSTRAP_TOKEN=
 BOOTSTRAP_TOKEN_TTL="24h"
 KUBERNETES_NAMESPACE="default"
 KUBERNETES_VERSION="{{ kubernetes_version }}"
+STORAGE_CLASS="{{ storage_class }}"
+STORAGE_PROVISIONER="{{ storage_provisioner }}"
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 DISABLE_CONTOUR="{{ disable_contour }}"
@@ -209,8 +211,14 @@ getYAMLOpts() {
     if [ "$ENCRYPT_NETWORK" = "0" ]; then
         opts=$opts" encrypt-network=0"
     fi
+    # Do not change rook storage class
     if KUBECONFIG=/etc/kubernetes/admin.conf kubectl get storageclass | grep rook.io > /dev/null ; then
         opts=$opts" storage-provisioner=0"
+    elif [ -n "$STORAGE_PROVISIONER" ]; then
+        opts=$opts" storage-provisioner=$STORAGE_PROVISIONER"
+    fi
+    if [ -n "$STORAGE_CLASS" ]; then
+        opts=$opts" storage-class=$STORAGE_CLASS"
     fi
     if KUBECONFIG=/etc/kubernetes/admin.conf kubectl get pvc | grep replicated-pv-claim > /dev/null ; then
         opts=$opts" replicated-pvc=0"
@@ -279,6 +287,16 @@ rookDeploy() {
     sudo systemctl restart kubelet
     kubectl apply -f /tmp/rook-ceph.yml
     logSuccess "Rook deployed"
+}
+
+hostpathProvisionerDeploy() {
+    logStep "deploy hostpath provisioner"
+
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS hostpath_provisioner_yaml=1 > /tmp/hostpath-provisioner.yml
+
+    kubectl apply -n kube-system -f /tmp/hostpath-provisioner.yml
+    spinnerHostpathProvisionerReady
+    logSuccess "Hostpath provisioner deployed"
 }
 
 contourDeploy() {
@@ -483,6 +501,12 @@ while [ "$1" != "" ]; do
         kubernetes-namespace|kubernetes_namespace)
             KUBERNETES_NAMESPACE="$_value"
             ;;
+        storage-provisioner|storage_provisioner)
+            STORAGE_PROVISIONER="$_value"
+            ;;
+        storage-class|storage_class)
+            STORAGE_CLASS="$_value"
+            ;;
         ui-bind-port|ui_bind_port)
             UI_BIND_PORT="$_value"
             ;;
@@ -634,7 +658,14 @@ kubectl get pods -n kube-system
 logSuccess "Kubernetes system"
 echo
 
-rookDeploy
+case "$STORAGE_PROVISIONER" in
+    rook|1)
+        rookDeploy
+        ;;
+    hostpath)
+        hostpathProvisionerDeploy
+        ;;
+esac
 
 contourDeploy "$DISABLE_CONTOUR"
 

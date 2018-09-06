@@ -309,6 +309,7 @@ airgapLoadKubernetesCommonImages1111() {
     docker tag 6521ac58ca80 docker.io/envoyproxy/envoy-alpine:v1.6.0
     docker tag 6a9ec4bcb60e gcr.io/heptio-images/contour:v0.5.0
     docker tag b5c343f1a3a6 rook/ceph:v0.8.1
+    docker tag d683e74035f9 quay.io/replicated/replicated-hostpath-provisioner:93a99cb
 }
 
 #######################################
@@ -617,6 +618,22 @@ spinnerRookReady()
     spinnerPodRunning rook-ceph-system rook-ceph-agent
     spinnerPodRunning rook-ceph-system rook-discover
     logSuccess "Rook Ready!"
+}
+
+#######################################
+# Spinner Hostpath Provisioner Ready,
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+spinnerHostpathProvisionerReady()
+{
+    logStep "Await hostpath provisioner ready"
+    spinnerPodRunning replicated-hostpath-provisioner
+    logSuccess "Hostpath Provisioner Ready!"
 }
 
 #######################################

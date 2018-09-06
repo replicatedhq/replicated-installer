@@ -6,7 +6,7 @@ deps:
 	go get github.com/linuxkit/linuxkit/src/cmd/linuxkit
 	go get github.com/linuxkit/kubernetes || :
 
-update_k8s_manifest_%: clean
+update_k8s_manifest_%: clean deps
 	mkdir -p ./kubernetes-tmp-$*
 	# CircleCI GOPATH is two paths separated by :
 	cp -r $(shell echo ${GOPATH} | cut -d ':' -f 1)/src/github.com/linuxkit/kubernetes/pkg ./kubernetes-tmp-$*/
