@@ -297,7 +297,7 @@ airgapLoadKubernetesCommonImages1106() {
 airgapLoadKubernetesCommonImages1111() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.11.1-20180906"
+        "quay.io/replicated/k8s-images-common:v1.11.1-20180907"
 
     docker tag d5c25579d0ff k8s.gcr.io/kube-proxy-amd64:v1.11.1
     docker tag da86e6ba6ca1 k8s.gcr.io/pause:3.1
@@ -309,7 +309,7 @@ airgapLoadKubernetesCommonImages1111() {
     docker tag 6521ac58ca80 docker.io/envoyproxy/envoy-alpine:v1.6.0
     docker tag 6a9ec4bcb60e gcr.io/heptio-images/contour:v0.5.0
     docker tag b5c343f1a3a6 rook/ceph:v0.8.1
-    docker tag d683e74035f9 quay.io/replicated/replicated-hostpath-provisioner:93a99cb
+    docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
 }
 
 #######################################

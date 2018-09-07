@@ -970,7 +970,7 @@ spec:
     spec:
       containers:
       - name: replicated-hostpath-provisioner
-        image: quay.io/replicated/replicated-hostpath-provisioner:93a99cb
+        image: quay.io/replicated/replicated-hostpath-provisioner:cd1d272
         imagePullPolicy: IfNotPresent
         env:
         - name: NODE_NAME
