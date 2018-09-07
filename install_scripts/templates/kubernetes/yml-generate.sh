@@ -3,6 +3,7 @@ RELEASE_SEQUENCE="{{ release_sequence }}"
 UI_BIND_PORT="{{ ui_bind_port }}"
 KUBERNETES_NAMESPACE="{{ kubernetes_namespace }}"
 PV_BASE_PATH="{{ pv_base_path }}"
+STORAGE_PROVISIONER="{{ storage_provisioner }}"
 STORAGE_CLASS="{{ storage_class }}"
 SERVICE_TYPE="{{ service_type }}"
 PROXY_ADDRESS="{{ proxy_address }}"
@@ -10,12 +11,12 @@ NO_PROXY_ADDRESSES="{{ no_proxy_addresses }}"
 IP_ALLOC_RANGE=10.32.0.0/12  # default for weave
 # booleans
 AIRGAP="{{ airgap }}"
-STORAGE_PROVISIONER="{{ storage_provisioner }}"
 ENCRYPT_NETWORK="{{ encrypt_network }}"
 REPLICATED_YAML=1
 REPLICATED_PVC=1
 ROOK_SYSTEM_YAML=0
 ROOK_CLUSTER_YAML=0
+HOSTPATH_PROVISIONER_YAML=0
 WEAVE_YAML=0
 CONTOUR_YAML=0
 DEPLOYMENT_YAML=0
@@ -44,14 +45,14 @@ while [ "$1" != "" ]; do
         pv-base-path|pv_base_path)
             PV_BASE_PATH="$_value"
             ;;
+        storage-provisioner|storage_provisioner)
+            STORAGE_PROVISIONER="$_value"
+            ;;
         storage-class|storage_class)
             STORAGE_CLASS="$_value"
             ;;
         service-type|service_type)
             SERVICE_TYPE="$_value"
-            ;;
-        storage-provisioner|storage_provisioner)
-            STORAGE_PROVISIONER="$_value"
             ;;
         replicated-yaml|replicated_yaml)
             REPLICATED_YAML="$_value"
@@ -62,6 +63,10 @@ while [ "$1" != "" ]; do
             ;;
         rook-cluster-yaml|rook_cluster_yaml)
             ROOK_CLUSTER_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
+        hostpath-provisioner-yaml|hostpath_provisioner_yaml)
+            HOSTPATH_PROVISIONER_YAML="$_value"
             REPLICATED_YAML=0
             ;;
         weave-yaml|weave_yaml)
@@ -829,6 +834,8 @@ EOF
 }
 
 render_rook_cluster_yaml() {
+    PV_BASE_PATH="${PV_BASE_PATH:-"/opt/replicated/rook"}"
+
     cat <<EOF
 apiVersion: v1
 kind: Namespace
@@ -925,6 +932,81 @@ spec:
   # For a pool based on raw copies, specify the number of copies. A size of 1 indicates no redundancy.
   replicated:
     size: 1
+EOF
+}
+
+render_hostpath_storage_class() {
+    cat <<EOF
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: "$STORAGE_CLASS"
+provisioner: replicated.com/hostpath
+EOF
+}
+
+render_hostpath_provisioner_yaml() {
+    PV_BASE_PATH="${PV_BASE_PATH:-"/opt/replicated/hostpath-provisioner"}"
+
+    cat <<EOF
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: replicated-hostpath-provisioner
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: controller
+      kind: storage-provisioner
+  template:
+    metadata:
+      labels:
+        tier: controller
+        kind: storage-provisioner
+    spec:
+      containers:
+      - name: replicated-hostpath-provisioner
+        image: quay.io/replicated/replicated-hostpath-provisioner:cd1d272
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: PV_BASE_PATH
+          value: "$PV_BASE_PATH"
+        volumeMounts:
+          - name: pv-volume
+            mountPath: /opt/replicated/hostpath-provisioner
+      volumes:
+        - name: pv-volume
+          hostPath:
+            path: "$PV_BASE_PATH"
+            type: DirectoryOrCreate
+      serviceAccountName: hostpath-provisioner
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hostpath-provisioner
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: hostpath-provisioner
+subjects:
+- kind: ServiceAccount
+  name: hostpath-provisioner
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:persistent-volume-provisioner
 EOF
 }
 
@@ -1333,6 +1415,7 @@ EOF
 ################################################################################
 # Execution starts here
 ################################################################################
+
 if [ "$WEAVE_YAML" = "1" ]; then
     render_weave_yaml
 fi
@@ -1349,10 +1432,24 @@ if [ "$ROOK_SYSTEM_YAML" = "1" ]; then
     render_rook_system_yaml
 fi
 
+if [ "$HOSTPATH_PROVISIONER_YAML" = "1" ]; then
+    render_hostpath_provisioner_yaml
+fi
+
 if [ "$REPLICATED_YAML" = "1" ]; then
-    if [ "$STORAGE_PROVISIONER" = "1" ]; then
-        render_rook_storage_class
-    fi
+    case "$STORAGE_PROVISIONER" in
+        rook|1)
+            render_rook_storage_class
+            ;;
+        hostpath)
+            render_hostpath_storage_class
+            ;;
+        0|"")
+            ;;
+        *)
+            bail "Error: unknown storage provisioner \"$STORAGE_PROVISIONER\""
+            ;;
+    esac
 
     if [ "$REPLICATED_PVC" != "0" ]; then
         render_replicated_pvc

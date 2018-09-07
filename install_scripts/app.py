@@ -459,11 +459,11 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
     replicated_ui_tag = '{}-{}'.format(replicated_channel,
                                        replicated_ui_version)
 
-    pv_base_path = helpers.get_arg('pv_base_path', '/opt/replicated/rook')
+    storage_provisioner = helpers.get_arg('storage_provisioner', 'rook')
+    pv_base_path = helpers.get_arg('pv_base_path', '')
     log_level = helpers.get_arg('log_level', 'info')
     release_sequence = helpers.get_arg('release_sequence', None)
     storage_class = helpers.get_arg('storage_class', 'default')
-    storage_provisioner = helpers.get_arg('storage_provisioner', 1)
     service_type = helpers.get_arg('service_type', 'NodePort')
     kubernetes_namespace = helpers.get_arg('kubernetes_namespace', 'default')
     ui_bind_port = helpers.get_arg('ui_bind_port', 8800)
@@ -479,8 +479,8 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
         pv_base_path=pv_base_path,
         log_level=log_level,
         release_sequence=release_sequence,
-        storage_class=storage_class,
         storage_provisioner=storage_provisioner,
+        storage_class=storage_class,
         service_type=service_type,
         kubernetes_namespace=kubernetes_namespace,
         ui_bind_port=ui_bind_port,
@@ -627,6 +627,9 @@ def get_kubernetes_init_master(replicated_channel=None,
     kubernetes_version = helpers.get_arg('kubernetes_version',
                                          pinned_kubernetes_version)
 
+    storage_provisioner = helpers.get_arg('storage_provisioner', 'rook')
+    storage_class = helpers.get_arg('storage_class', 'default')
+
     generate_path = 'kubernetes-yml-generate'
     node_path = 'kubernetes-node-join'
     if app_slug and app_channel:
@@ -656,6 +659,8 @@ def get_kubernetes_init_master(replicated_channel=None,
         **helpers.template_args(
             pinned_docker_version=pinned_docker_version,
             kubernetes_version=kubernetes_version,
+            storage_provisioner=storage_provisioner,
+            storage_class=storage_class,
             kubernetes_generate_path=generate_path,
             kubernetes_node_join_path=node_path,
             kubernetes_manifests_query=query,
