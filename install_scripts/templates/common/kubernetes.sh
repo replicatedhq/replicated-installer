@@ -632,7 +632,7 @@ spinnerRookReady()
 spinnerHostpathProvisionerReady()
 {
     logStep "Await hostpath provisioner ready"
-    spinnerPodRunning replicated-hostpath-provisioner
+    spinnerPodRunning kube-system replicated-hostpath-provisioner
     logSuccess "Hostpath Provisioner Ready!"
 }
 
