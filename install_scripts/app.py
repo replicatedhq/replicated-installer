@@ -460,10 +460,7 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
                                        replicated_ui_version)
 
     storage_provisioner = helpers.get_arg('storage_provisioner', 'rook')
-    pv_base_path = helpers.get_arg(
-        'pv_base_path', '/opt/replicated/hostpath-provisioner'
-    ) if storage_provisioner == 'hostpath' else helpers.get_arg(
-        'pv_base_path', '/opt/replicated/rook')
+    pv_base_path = helpers.get_arg('pv_base_path', '')
     log_level = helpers.get_arg('log_level', 'info')
     release_sequence = helpers.get_arg('release_sequence', None)
     storage_class = helpers.get_arg('storage_class', 'default')

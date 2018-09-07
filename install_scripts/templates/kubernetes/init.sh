@@ -294,7 +294,7 @@ hostpathProvisionerDeploy() {
 
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS hostpath_provisioner_yaml=1 > /tmp/hostpath-provisioner.yml
 
-    kubectl apply -n kube-system -f /tmp/hostpath-provisioner.yml
+    kubectl apply -f /tmp/hostpath-provisioner.yml
     spinnerHostpathProvisionerReady
     logSuccess "Hostpath provisioner deployed"
 }

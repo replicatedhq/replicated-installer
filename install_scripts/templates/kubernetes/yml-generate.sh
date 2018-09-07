@@ -834,6 +834,8 @@ EOF
 }
 
 render_rook_cluster_yaml() {
+    PV_BASE_PATH="${PV_BASE_PATH:-"/opt/replicated/rook"}"
+
     cat <<EOF
 apiVersion: v1
 kind: Namespace
@@ -945,12 +947,15 @@ EOF
 }
 
 render_hostpath_provisioner_yaml() {
+    PV_BASE_PATH="${PV_BASE_PATH:-"/opt/replicated/hostpath-provisioner"}"
+
     cat <<EOF
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: replicated-hostpath-provisioner
+  namespace: kube-system
 spec:
   replicas: 1
   selector:
@@ -982,6 +987,26 @@ spec:
           hostPath:
             path: "$PV_BASE_PATH"
             type: DirectoryOrCreate
+      serviceAccountName: hostpath-provisioner
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hostpath-provisioner
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: hostpath-provisioner
+subjects:
+- kind: ServiceAccount
+  name: hostpath-provisioner
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:persistent-volume-provisioner
 EOF
 }
 
@@ -1390,6 +1415,7 @@ EOF
 ################################################################################
 # Execution starts here
 ################################################################################
+
 if [ "$WEAVE_YAML" = "1" ]; then
     render_weave_yaml
 fi
@@ -1411,11 +1437,14 @@ if [ "$HOStPATH_PROVISIONER_YAML" = "1" ]; then
 fi
 
 if [ "$REPLICATED_YAML" = "1" ]; then
-    if [ "$STORAGE_PROVISIONER" = "1" ] || [ "$STORAGE_PROVISIONER" = "rook" ]; then
-        render_rook_storage_class
-    elif [ "$STORAGE_PROVISIONER" = "hostpath" ]; then
-        render_hostpath_storage_class
-    fi
+    case "$STORAGE_PROVISIONER" in
+        rook|1)
+            render_rook_storage_class
+            ;;
+        hostpath)
+            render_hostpath_storage_class
+            ;;
+    esac
 
     if [ "$REPLICATED_PVC" != "0" ]; then
         render_replicated_pvc
