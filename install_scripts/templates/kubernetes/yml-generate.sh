@@ -16,7 +16,7 @@ REPLICATED_YAML=1
 REPLICATED_PVC=1
 ROOK_SYSTEM_YAML=0
 ROOK_CLUSTER_YAML=0
-HOStPATH_PROVISIONER_YAML=0
+HOSTPATH_PROVISIONER_YAML=0
 WEAVE_YAML=0
 CONTOUR_YAML=0
 DEPLOYMENT_YAML=0
@@ -66,7 +66,7 @@ while [ "$1" != "" ]; do
             REPLICATED_YAML=0
             ;;
         hostpath-provisioner-yaml|hostpath_provisioner_yaml)
-            HOStPATH_PROVISIONER_YAML="$_value"
+            HOSTPATH_PROVISIONER_YAML="$_value"
             REPLICATED_YAML=0
             ;;
         weave-yaml|weave_yaml)
@@ -1432,7 +1432,7 @@ if [ "$ROOK_SYSTEM_YAML" = "1" ]; then
     render_rook_system_yaml
 fi
 
-if [ "$HOStPATH_PROVISIONER_YAML" = "1" ]; then
+if [ "$HOSTPATH_PROVISIONER_YAML" = "1" ]; then
     render_hostpath_provisioner_yaml
 fi
 
@@ -1443,6 +1443,11 @@ if [ "$REPLICATED_YAML" = "1" ]; then
             ;;
         hostpath)
             render_hostpath_storage_class
+            ;;
+        0|"")
+            ;;
+        *)
+            bail "Error: unknown storage provisioner \"$STORAGE_PROVISIONER\""
             ;;
     esac
 

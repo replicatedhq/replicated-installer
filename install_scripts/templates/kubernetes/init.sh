@@ -665,6 +665,11 @@ case "$STORAGE_PROVISIONER" in
     hostpath)
         hostpathProvisionerDeploy
         ;;
+    0|"")
+        ;;
+    *)
+        bail "Error: unknown storage provisioner \"$STORAGE_PROVISIONER\""
+        ;;
 esac
 
 contourDeploy "$DISABLE_CONTOUR"
