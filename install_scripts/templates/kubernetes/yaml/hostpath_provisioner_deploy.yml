@@ -56,10 +56,8 @@ roleRef:
   kind: ClusterRole
   name: system:persistent-volume-provisioner
 ---
-# The default system:persistent-volume-provisioner role in Kubernetes 1.8 is
-# insufficient:
-#
-# I1007 18:09:10.073558       1 controller.go:874] cannot start watcher for PVC default/testpvc: events is forbidden: User "system:serviceaccount:kube-system:hostpath-provisioner" cannot list events in the namespace "default": access denied
+# The default system:persistent-volume-provisioner role in Kubernetes 1.11 is insufficient:
+# - crud for events and endpoints
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
