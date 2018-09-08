@@ -950,63 +950,7 @@ render_hostpath_provisioner_yaml() {
     PV_BASE_PATH="${PV_BASE_PATH:-"/opt/replicated/hostpath-provisioner"}"
 
     cat <<EOF
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: replicated-hostpath-provisioner
-  namespace: kube-system
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      tier: controller
-      kind: storage-provisioner
-  template:
-    metadata:
-      labels:
-        tier: controller
-        kind: storage-provisioner
-    spec:
-      containers:
-      - name: replicated-hostpath-provisioner
-        image: quay.io/replicated/replicated-hostpath-provisioner:cd1d272
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: NODE_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        - name: PV_BASE_PATH
-          value: "$PV_BASE_PATH"
-        volumeMounts:
-          - name: pv-volume
-            mountPath: /opt/replicated/hostpath-provisioner
-      volumes:
-        - name: pv-volume
-          hostPath:
-            path: "$PV_BASE_PATH"
-            type: DirectoryOrCreate
-      serviceAccountName: hostpath-provisioner
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: hostpath-provisioner
-  namespace: kube-system
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
-metadata:
-  name: hostpath-provisioner
-subjects:
-- kind: ServiceAccount
-  name: hostpath-provisioner
-  namespace: kube-system
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: system:persistent-volume-provisioner
+{% include 'kubernetes/yaml/hostpath_provisioner_deploy.yml' %}
 EOF
 }
 
