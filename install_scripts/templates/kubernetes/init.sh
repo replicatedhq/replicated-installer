@@ -134,11 +134,8 @@ initKube() {
                 --config /opt/replicated/kubeadm.conf \
                 | tee /tmp/kubeadm-init
             _status=$?
+            patchCoreDNS
         fi
-        # workaround for https://github.com/kubernetes/kubeadm/issues/998
-        kubectl -n kube-system get deployment coredns -o yaml | \
-            sed 's/allowPrivilegeEscalation: false/allowPrivilegeEscalation: true/g' | \
-            kubectl apply -f -
         set -e
         if [ "$_status" -ne "0" ]; then
             printf "${RED}Failed to initialize the kubernetes cluster.${NC}\n" 1>&2
@@ -164,6 +161,22 @@ initKube() {
     echo 'export KUBECONFIG=/etc/kubernetes/admin.conf' >> /etc/profile
     echo "source <(kubectl completion bash)" >> /etc/profile
     logSuccess "Kubernetes Master Initialized"
+}
+
+# workaround for https://github.com/kubernetes/kubeadm/issues/998
+patchCoreDNS() {
+    n=0
+    while ! KUBECONFIG=/etc/kukbernetes/admin.conf kubectl -n kube-system get deployment coredns &>/dev/null; do
+        n="$(( $n + 1 ))"
+        if [ "$n" -ge "120" ]; then
+            # let next line fail
+            break
+        fi
+        sleep 2
+    done
+    KUBECONFIG=/etc/kubernetes/admin.conf kubectl -n kube-system get deployment coredns -o yaml | \
+        sed 's/allowPrivilegeEscalation: false/allowPrivilegeEscalation: true/g' | \
+        kubectl apply -f -
 }
 
 maybeGenerateBootstrapToken() {
