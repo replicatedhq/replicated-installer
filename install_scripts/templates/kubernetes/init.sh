@@ -166,7 +166,7 @@ initKube() {
 # workaround for https://github.com/kubernetes/kubeadm/issues/998
 patchCoreDNS() {
     n=0
-    while ! KUBECONFIG=/etc/kukbernetes/admin.conf kubectl -n kube-system get deployment coredns &>/dev/null; do
+    while ! KUBECONFIG=/etc/kubernetes/admin.conf kubectl -n kube-system get deployment coredns &>/dev/null; do
         n="$(( $n + 1 ))"
         if [ "$n" -ge "120" ]; then
             # let next line fail
