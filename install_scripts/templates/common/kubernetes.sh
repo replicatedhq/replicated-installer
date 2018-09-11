@@ -553,11 +553,11 @@ spinnerMasterNodeReady()
 #######################################
 labelMasterNode()
 {
-    if kubectl get nodes --show-labels | grep "$DAEMON_NODE_KEY" > /dev/null ; then
+    if kubectl get nodes --show-labels | grep -q "$DAEMON_NODE_KEY" ; then
         return
     fi
 
-    kubectl label nodes "$(k8sMasterNodeName)" "$DAEMON_NODE_KEY"=
+    kubectl label nodes --overwrite "$(k8sMasterNodeName)" "$DAEMON_NODE_KEY"=
 }
 
 #######################################

@@ -135,6 +135,10 @@ initKube() {
                 | tee /tmp/kubeadm-init
             _status=$?
         fi
+        # workaround for https://github.com/kubernetes/kubeadm/issues/998
+        kubectl -n kube-system get deployment coredns -o yaml | \
+            sed 's/allowPrivilegeEscalation: false/allowPrivilegeEscalation: true/g' | \
+            kubectl apply -f -
         set -e
         if [ "$_status" -ne "0" ]; then
             printf "${RED}Failed to initialize the kubernetes cluster.${NC}\n" 1>&2

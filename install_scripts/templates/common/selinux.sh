@@ -107,30 +107,4 @@ must_disable_selinux() {
             bail "\nDisable SELinux with 'setenforce 0' before re-running install script"
         fi
     fi
-
-    # https://github.com/containers/container-selinux/issues/51
-    # required for CoreDNS because it sets allowPrivilegeEscalation: false
-    if selinux_enabled ; then
-        mkdir -p policy
-        cd policy
-        # tabs required
-        cat <<-EOF > dockersvirt.te
-		module dockersvirt 1.0;
-
-		require {
-			type container_runtime_t;
-			type svirt_lxc_net_t;
-			role system_r;
-		};
-
-		typebounds container_runtime_t svirt_lxc_net_t;
-		EOF
-
-        checkmodule -M -m -o dockersvirt.mod dockersvirt.te
-        semodule_package -o dockersvirt.pp -m dockersvirt.mod
-        semodule -i dockersvirt.pp
-
-        cd ..
-        rm -r policy
-    fi
 }

@@ -67,7 +67,6 @@ installDocker_1_12_Offline() {
         return
     fi
 
-    # TODO support more things or something
     case "$LSB_DIST$DIST_VERSION" in
         ubuntu16.04)
             mkdir -p image/
@@ -84,7 +83,7 @@ installDocker_1_12_Offline() {
             layer_id=$(tar xvf packages-docker-rhel7.tar -C image/ | grep layer.tar | cut -d'/' -f1)
             tar xvf image/${layer_id}/layer.tar
             pushd archives/
-                yum install -y -q *.rpm 
+                rpm --upgrade --force --nodeps *.rpm
             popd
             DID_INSTALL_DOCKER=1
             return
