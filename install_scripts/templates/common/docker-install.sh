@@ -108,9 +108,11 @@ installDocker_1_12_Offline() {
 installDockerK8s() {
     case "$LSB_DIST" in
         rhel|centos)
-            yum install -y -q docker
-            DID_INSTALL_DOCKER=1
-            return
+            if yum info docker &>/dev/null; then
+                yum install -y -q docker
+                DID_INSTALL_DOCKER=1
+                return
+            fi
         ;;
     esac
 
