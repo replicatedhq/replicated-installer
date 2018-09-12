@@ -110,7 +110,7 @@ EOF
   cat > "${1}/replicated" <<-EOF
 #!/bin/bash
 
-set -euo pipefail
+set -eo pipefail
 
 ${_flags}
 
@@ -122,7 +122,7 @@ EOF
   cat > "${1}/replicatedctl" <<-EOF
 #!/bin/bash
 
-set -euo pipefail
+set -eo pipefail
 
 ${_flags}
 
