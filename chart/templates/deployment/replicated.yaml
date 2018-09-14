@@ -95,7 +95,7 @@ spec:
       - name: replicated-socket
       - name: docker-socket
         hostPath:
-          path: /var/run/docker.sock
+          path: {{ .Values.deployment.hostMounts.dockersock }}
       - name: replicated-conf
         hostPath:
           path: /etc/replicated.conf
