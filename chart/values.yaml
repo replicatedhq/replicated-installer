@@ -19,6 +19,8 @@ deployment:
   env:
     releaseChannel: "stable"
     logLevel: "info"
+  hostMounts:
+    dockersock: "/var/run/docker.sock"
 
 # config for replicated-ui service
 uiService:
