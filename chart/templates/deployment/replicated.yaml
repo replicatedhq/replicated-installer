@@ -35,6 +35,8 @@ spec:
         - name: MARKET_BASE_URL
           value: .Values.deployment.replicated.env.customerBaseURLOverride
         {{- end }}
+        - name: DOCKER_ENDPOINT
+          value: .Values.deployment.hostMounts.dockersock
         - name: LOCAL_ADDRESS
           valueFrom:
             fieldRef:
