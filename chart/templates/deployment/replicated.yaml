@@ -35,6 +35,10 @@ spec:
         - name: MARKET_BASE_URL
           value: .Values.deployment.replicated.env.customerBaseURLOverride
         {{- end }}
+        {{- if .Values.deployment.replicated.env.dockerEndpointOverride }}
+        - name: DOCKER_ENDPOINT
+          value: .Values.deployment.replicated.env.dockerEndpointOverride
+        {{- end }}
         - name: LOCAL_ADDRESS
           valueFrom:
             fieldRef:
