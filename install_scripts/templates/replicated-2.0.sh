@@ -333,12 +333,24 @@ EOF
 }
 
 write_upstart_services() {
+    REPLICATED_RESTART_POLICY=
+    # is docker a sysvinit service?
+    if [ -f /etc/init.d/docker ]; then
+        REPLICATED_RESTART_POLICY="--restart unless-stopped"
+    fi
+
     cat > /etc/init/replicated.conf <<-EOF
 {% include 'upstart/replicated.conf' %}
+EOF
+    cat > /etc/init/replicated-stop.conf <<-EOF
+{% include 'upstart/replicated-stop.conf' %}
 EOF
 
     cat > /etc/init/replicated-ui.conf <<-EOF
 {% include 'upstart/replicated-ui.conf' %}
+EOF
+    cat > /etc/init/replicated-ui-stop.conf <<-EOF
+{% include 'upstart/replicated-ui-stop.conf' %}
 EOF
 }
 
