@@ -5,6 +5,8 @@ metadata:
 spec:
   template:
     spec:
+      nodeSelector:
+        replicated/node-pool: privileged
       containers:
         - name: install-scripts
           image: 923411875752.dkr.ecr.us-east-1.amazonaws.com/install-scripts:latest
