@@ -176,7 +176,7 @@ patchCoreDNS() {
     done
     KUBECONFIG=/etc/kubernetes/admin.conf kubectl -n kube-system get deployment coredns -o yaml | \
         sed 's/allowPrivilegeEscalation: false/allowPrivilegeEscalation: true/g' | \
-        kubectl apply -f -
+        KUBECONFIG=/etc/kubernetes/admin.conf kubectl apply -f -
 }
 
 maybeGenerateBootstrapToken() {
