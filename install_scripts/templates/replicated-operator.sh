@@ -178,8 +178,8 @@ EOF
 
 write_upstart_services() {
     REPLICATED_RESTART_POLICY=
-    # is docker a sysvinit service?
-    if [ -f /etc/init.d/docker ]; then
+    # is docker an upstart service?
+    if ls /etc/init/docker* 1> /dev/null 2>&1; then
         REPLICATED_RESTART_POLICY="--restart unless-stopped"
     fi
 
