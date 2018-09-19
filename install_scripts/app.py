@@ -560,6 +560,7 @@ def get_swarm_init_master(replicated_channel=None,
             docker_compose_path=compose_path,
             swarm_worker_join_path=worker_path,
             app_channel_css=helpers.base64_encode(channel_css),
+            terms=helpers.base64_encode(terms),
             docker_compose_query=query,
         ))
     return Response(response, mimetype='text/x-shellscript')
