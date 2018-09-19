@@ -334,7 +334,10 @@ EOF
 
 write_upstart_services() {
     REPLICATED_RESTART_POLICY=
-    # is docker not an upstart service?
+    # NOTE: SysVinit does not support dependencies therefore we must add a
+    # restart policy to the replicated service. The tradeoff here is that
+    # SysVinit will lose track of the replicated process when docker restarts
+    # the replicated service.
     if ! ls /etc/init/docker* 1> /dev/null 2>&1; then
         REPLICATED_RESTART_POLICY="--restart on-failure:10"
     fi
