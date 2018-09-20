@@ -48,8 +48,11 @@ EOF
 
 start_replicated() {
 	mv /etc/replicated-bootstrap/replicated.conf /etc/init
+	mv /etc/replicated-bootstrap/replicated-stop.conf /etc/init
 	mv /etc/replicated-bootstrap/replicated-operator.conf /etc/init
+	mv /etc/replicated-bootstrap/replicated-operator-stop.conf /etc/init
 	mv /etc/replicated-bootstrap/replicated-ui.conf /etc/init
+	mv /etc/replicated-bootstrap/replicated-ui-stop.conf /etc/init
 	mv /etc/init/replicated-init.conf /etc/replicated-bootstrap
 	chmod a-x /etc/replicated-bootstrap/init-defaults.sh
 	service replicated start || true
