@@ -339,7 +339,7 @@ write_upstart_services() {
     # SysVinit will lose track of the replicated process when docker restarts
     # the replicated service.
     if ! ls /etc/init/docker* 1> /dev/null 2>&1; then
-        REPLICATED_RESTART_POLICY="--restart on-failure:10"
+        REPLICATED_RESTART_POLICY="--restart always"
     fi
 
     cat > /etc/init/replicated.conf <<-EOF
