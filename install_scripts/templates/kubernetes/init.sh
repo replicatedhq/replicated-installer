@@ -468,9 +468,8 @@ while [ "$1" != "" ]; do
     _value="$(echo "$1" | grep '=' | cut -d= -f2-)"
     case $_param in
         airgap)
-            # arigap implies "no proxy" and "offline docker"
+            # airgap implies "offline docker"
             AIRGAP=1
-            NO_PROXY=1
             OFFLINE_DOCKER_INSTALL=1
             ;;
         bypass-storagedriver-warnings|bypass_storagedriver_warnings)

@@ -311,7 +311,6 @@ while [ "$1" != "" ]; do
         airgap)
             AIRGAP=1
             SKIP_DOCKER_INSTALL=1
-            NO_PROXY=1
             ;;
         tags)
             OPERATOR_TAGS="$_value"
