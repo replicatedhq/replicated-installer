@@ -596,7 +596,7 @@ if [ "$NO_PROXY" != "1" ]; then
         discoverProxy
     fi
 
-    if [ -z "$PROXY_ADDRESS" ] && [ "$AIRGAP" -ne "1" ]; then
+    if [ -z "$PROXY_ADDRESS" ] && [ "$AIRGAP" != "1" ]; then
         promptForProxy
     fi
 
