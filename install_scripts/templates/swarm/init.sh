@@ -239,9 +239,8 @@ while [ "$1" != "" ]; do
     _value="$(echo "$1" | grep '=' | cut -d= -f2-)"
     case $_param in
         airgap)
-            # airgap implies "no proxy" and "skip docker"
+            # airgap implies "skip docker"
             AIRGAP=1
-            NO_PROXY=1
             SKIP_DOCKER_INSTALL=1
             ;;
         bypass-storagedriver-warnings|bypass_storagedriver_warnings)
@@ -335,7 +334,7 @@ if [ "$NO_PROXY" != "1" ]; then
         discoverProxy
     fi
 
-    if [ -z "$PROXY_ADDRESS" ]; then
+    if [ -z "$PROXY_ADDRESS" ] && [ "$AIRGAP" != "1" ]; then
         promptForProxy
     fi
 fi

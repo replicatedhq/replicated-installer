@@ -547,10 +547,9 @@ while [ "$1" != "" ]; do
             NO_PROXY=1
             ;;
         airgap)
-            # airgap implies "no proxy" and "skip docker"
+            # airgap implies "skip docker"
             AIRGAP=1
             SKIP_DOCKER_INSTALL=1
-            NO_PROXY=1
             ;;
         no-auto|no_auto)
             READ_TIMEOUT=
@@ -632,7 +631,7 @@ if [ "$NO_PROXY" != "1" ]; then
         discoverProxy
     fi
 
-    if [ -z "$PROXY_ADDRESS" ]; then
+    if [ -z "$PROXY_ADDRESS" ] && [ "$AIRGAP" != "1" ]; then
         promptForProxy
     fi
 
