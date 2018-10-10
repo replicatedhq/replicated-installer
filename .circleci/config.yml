@@ -282,7 +282,7 @@ jobs:
               git config user.email "circleci@replicated.com" && \
               git config user.name "CircleCI Build" && \
               git add . && \
-              git commit -m ${CIRCLE_COMPARE_URL} && [ $? -eq 0 ] && git push origin master
+              git commit -m ${CIRCLE_COMPARE_URL} && [ $? -eq 0 ] && git push origin release
             fi
 
 
