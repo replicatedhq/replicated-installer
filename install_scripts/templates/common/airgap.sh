@@ -47,7 +47,9 @@ airgapLoadSupportImages() {
     docker load < cmd.tar
     docker load < statsd-graphite.tar
     docker load < premkit.tar
-    docker load < debian.tar
+    if [ -f debian.tar ]; then
+        docker load < debian.tar
+    fi
 }
 
 #######################################

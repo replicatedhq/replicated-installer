@@ -40,6 +40,7 @@ DEFAULT_CLUSTER_DNS="10.96.0.10"
 CLUSTER_DNS=$DEFAULT_CLUSTER_DNS
 ENCRYPT_NETWORK=
 ADDITIONAL_NO_PROXY=
+IPVS=1
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -85,13 +86,18 @@ token: $BOOTSTRAP_TOKEN
 tokenTTL: ${BOOTSTRAP_TOKEN_TTL}
 networking:
   serviceSubnet: $SERVICE_CIDR
+apiServerExtraArgs:
+  service-node-port-range: "80-60000"
+EOF
+
+    if [ "$IPVS" = "1" ]; then
+        cat <<EOF >> /opt/replicated/kubeadm.conf
 kubeProxy:
   config:
     featureGates: SupportIPVSProxyMode=true
     mode: ipvs
-apiServerExtraArgs:
-  service-node-port-range: "80-60000"
 EOF
+    fi
 
     # if we have a private address, add it to SANs
     if [ -n "$PRIVATE_ADDRESS" ]; then
@@ -567,6 +573,10 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
+
+if [ "$KUBERNETES_VERSION" == "1.9.3" ]; then
+    IPVS=0
+fi
 
 if [ "$RESET" == "1" ]; then
     k8s_reset "$FORCE_RESET"
