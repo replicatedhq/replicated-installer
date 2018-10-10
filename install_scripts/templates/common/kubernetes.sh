@@ -203,13 +203,16 @@ maybeDisableFirewalld() {
 #######################################
 # Load kernel modules for kube proxy's IPVS mode
 # Globals:
-#   None
+#   IPVS
 # Arguments:
 #   None
 # Returns:
 #   None
 #######################################
 loadIPVSKubeProxyModules() {
+    if [ "$IPVS" != "1" ]; then
+        return
+    fi
     if lsmod | grep -q ip_vs ; then
         return
     fi
