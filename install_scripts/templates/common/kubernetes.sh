@@ -620,7 +620,30 @@ spinnerRookReady()
     spinnerPodRunning rook-ceph-system rook-ceph-operator
     spinnerPodRunning rook-ceph-system rook-ceph-agent
     spinnerPodRunning rook-ceph-system rook-discover
+    spinnerRookFlexVolumePluginReady
     logSuccess "Rook Ready!"
+}
+
+#######################################
+# Spinner Rook FlexVolume plugin ready
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+spinnerRookFlexVolumePluginReady()
+{
+    local delay=0.75
+    local spinstr='|/-\'
+    while [ ! -e /usr/libexec/kubernetes/kubelet-plugins/volume/exec/ceph.rook.io~rook-ceph-system/rook-ceph-system ]; do
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
 }
 
 #######################################
