@@ -9,6 +9,7 @@ SERVICE_TYPE="{{ service_type }}"
 PROXY_ADDRESS="{{ proxy_address }}"
 NO_PROXY_ADDRESSES="{{ no_proxy_addresses }}"
 IP_ALLOC_RANGE=10.32.0.0/12  # default for weave
+CEPH_DASHBOARD_URL=
 # booleans
 AIRGAP="{{ airgap }}"
 ENCRYPT_NETWORK="{{ encrypt_network }}"
@@ -96,6 +97,9 @@ while [ "$1" != "" ]; do
         replicated-pvc|replicated_pvc)
             REPLICATED_PVC="$_value"
             ;;
+        ceph-dashboard-url|ceph_dashboard_url)
+            CEPH_DASHBOARD_URL="$_value"
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -148,6 +152,15 @@ EOF
           value: $PROXY_ADDRESS
         - name: NO_PROXY
           value: $NO_PROXY_ADDRESSES
+EOF
+        )
+    fi
+
+    CEPH_DASHBOARD_ENV=
+    if [ -n "$CEPH_DASHBOARD_URL" ]; then
+        CEPH_DASHBOARD_ENV=$(cat <<-EOF
+        - name: CEPH_DASHBOARD_URL
+          value: $CEPH_DASHBOARD_URL
 EOF
         )
     fi
@@ -241,6 +254,7 @@ $PROXY_ENVS
           value: "{{ channel_name }}"
         - name: LOG_LEVEL
           value: "$LOG_LEVEL"
+$CEPH_DASHBOARD_ENV
         ports:
         - containerPort: 8800
         volumeMounts:
