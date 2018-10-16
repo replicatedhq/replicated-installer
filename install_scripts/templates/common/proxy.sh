@@ -222,7 +222,7 @@ exportProxy() {
 #######################################
 NO_PROXY_ADDRESSES=
 getNoProxyAddresses() {
-    DOCKER0_IP=$(ip -o -4 -h address | grep docker0 | awk '{ print $4 }' | cut -d'/' -f1)
+    DOCKER0_IP=$(ip -o -4 address | grep docker0 | awk '{ print $4 }' | cut -d'/' -f1)
     if [ -z "$DOCKER0_IP" ]; then
         DOCKER0_IP=172.17.0.1
     fi
