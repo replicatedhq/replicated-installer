@@ -211,7 +211,7 @@ jobs:
               cd ~ && git clone git@github.com:replicatedcom/gitops-deploy
               mkdir -p ~/gitops-deploy/replicated-installer
 
-              kustomize build ~/project/kustomize/overlays/staging > ./gitops-deploy/replicated-installer/replicated-installer.yaml
+              ~/kustomize build ~/project/kustomize/overlays/staging > ./gitops-deploy/replicated-installer/replicated-installer.yaml
               cd ~/gitops-deploy && \
               git config user.email "circleci@replicated.com" && \
               git config user.name "CircleCI Build" && \
@@ -277,7 +277,7 @@ jobs:
               cd ~ && git clone --single-branch -b release git@github.com:replicatedcom/gitops-deploy
               mkdir -p ~/gitops-deploy/replicated-installer
 
-              kustomize build ~/project/kustomize/overlays/production > ./gitops-deploy/replicated-installer/replicated-installer.yaml
+              ~/kustomize build ~/project/kustomize/overlays/production > ./gitops-deploy/replicated-installer/replicated-installer.yaml
               cd ~/gitops-deploy && \
               git config user.email "circleci@replicated.com" && \
               git config user.name "CircleCI Build" && \
