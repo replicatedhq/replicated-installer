@@ -108,17 +108,18 @@ jobs:
   build_staging_docker_image:
     <<: *defaults
     steps:
-    - setup_remote_docker:
-        version: 17.06.0-ce
-    - run: |
-        export WORKDIR=`pwd`
-        build-docker
-    - deploy:
-        name: push image
-        command: |
-          export AWS_ACCESS_KEY_ID=$STAGING_AWS_ACCESS_KEY_ID
-          export AWS_SECRET_ACCESS_KEY=$STAGING_AWS_SECRET_ACCESS_KEY
-          push-docker
+      - checkout
+      - setup_remote_docker:
+          version: 17.06.0-ce
+      - run: |
+          export WORKDIR=`pwd`
+          build-docker
+      - deploy:
+          name: push image
+          command: |
+            export AWS_ACCESS_KEY_ID=$STAGING_AWS_ACCESS_KEY_ID
+            export AWS_SECRET_ACCESS_KEY=$STAGING_AWS_SECRET_ACCESS_KEY
+            push-docker
 
   build_production_docker_image:
     <<: *defaults
@@ -126,17 +127,18 @@ jobs:
       <<: *environment
       ECR_REPO: 799720048698.dkr.ecr.us-east-1.amazonaws.com
     steps:
-    - setup_remote_docker:
-        version: 17.06.0-ce
-    - run: |
-        export WORKDIR=`pwd`
-        build-docker
-    - deploy:
-        name: push image
-        command: |
-          export AWS_ACCESS_KEY_ID=$PRODUCTION_AWS_ACCESS_KEY_ID
-          export AWS_SECRET_ACCESS_KEY=$PRODUCTION_AWS_SECRET_ACCESS_KEY
-          push-docker
+      - checkout
+      - setup_remote_docker:
+          version: 17.06.0-ce
+      - run: |
+          export WORKDIR=`pwd`
+          build-docker
+      - deploy:
+          name: push image
+          command: |
+            export AWS_ACCESS_KEY_ID=$PRODUCTION_AWS_ACCESS_KEY_ID
+            export AWS_SECRET_ACCESS_KEY=$PRODUCTION_AWS_SECRET_ACCESS_KEY
+            push-docker
 
   deploy_staging_ecs:
     <<: *defaults
