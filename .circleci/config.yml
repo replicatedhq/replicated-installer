@@ -235,8 +235,14 @@ workflows:
   build_accept_deploy:
     jobs:
       - test
-      - build_staging_docker_image
-      - build_production_docker_image
+      - build_staging_docker_image:
+          filters:
+            branches:
+              only: master
+      - build_production_docker_image:
+          filters:
+            branches:
+              only: master
       - deploy_staging_ecs:
           requires:
             - test
