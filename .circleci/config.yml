@@ -1,29 +1,28 @@
 version: 2
 
 defaults: &defaults
-  environment:
-    PROJECT_NAME: install-scripts
-
-defaults_py: &defaults_py
-  <<: *defaults
   docker:
-    - image: circleci/python:2
+  - image: replicated/gitops-builder:node8-go11
+  working_directory: ~/repo
+  environment: &environment
+    PROJECT_NAME: install-scripts
+    ECR_REPO: 923411875752.dkr.ecr.us-east-1.amazonaws.com
+    OVERLAY_PATH: kustomize/overlays/staging
+    GITOPS_BRANCH: master
+    DOCKERFILE: deploy/Dockerfile.prod
 
 jobs:
   test:
-    <<: *defaults_py
-    working_directory: ~/work
+    <<: *defaults
     steps:
       - checkout
-      - setup_remote_docker
       - run: sudo apt-get update; sudo apt-get install shunit2
       - run: sudo pip install pytest # todo cache these
       - run: sudo make deps # todo cache these
       - run: make test
 
   build_k8s_bundles:
-    docker:
-      - image: circleci/golang:1.10
+    <<: *defaults
     steps:
       - checkout
       - setup_remote_docker:
@@ -37,9 +36,7 @@ jobs:
             make update_k8s_manifest_${K8S_VERSION} build_${K8S_VERSION} push_${K8S_VERSION}
 
   build_ubuntu_docker_package:
-    docker:
-      - image: replicated/python-boto
-    working_directory: ~/work
+    <<: *defaults
     steps:
       - checkout
       - setup_remote_docker:
@@ -53,9 +50,7 @@ jobs:
             make build push
 
   build_ubuntu_k8s_packages:
-    docker:
-      - image: replicated/python-boto
-    working_directory: ~/work
+    <<: *defaults
     steps:
       - checkout
       - setup_remote_docker:
@@ -69,9 +64,7 @@ jobs:
             make $K8S_VERSION
 
   build_k8s_cni:
-    docker:
-      - image: replicated/python-boto
-    working_directory: ~/work
+    <<: *defaults
     steps:
       - checkout
       - setup_remote_docker:
@@ -85,9 +78,7 @@ jobs:
             make build push
 
   build_rhel_docker_package:
-    docker:
-      - image: replicated/python-boto
-    working_directory: ~/work
+    <<: *defaults
     steps:
       - checkout
       - setup_remote_docker:
@@ -101,9 +92,7 @@ jobs:
             make build push
 
   build_rhel_k8s_packages:
-    docker:
-      - image: replicated/python-boto
-    working_directory: ~/work
+    <<: *defaults
     steps:
       - checkout
       - setup_remote_docker:
@@ -116,45 +105,41 @@ jobs:
             cd bundles/k8s-rhel7
             make $K8S_VERSION
 
-  build_image:
-    <<: *defaults_py
+  build_staging_docker_image:
+    <<: *defaults
     steps:
-      - checkout
-      - setup_remote_docker
-      - deploy:
-          name: Build image
-          command: |
-            set -vu
-            /usr/local/bin/pip install awscli --upgrade --user
-            docker build -f ./deploy/Dockerfile.prod -t ${PROJECT_NAME}:${CIRCLE_SHA1:0:7} .
-            # Deployed to old environment
-            docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
-            docker tag ${PROJECT_NAME}:${CIRCLE_SHA1:0:7} quay.io/replicatedcom/${PROJECT_NAME}:${CIRCLE_SHA1:0:7}
-            docker push quay.io/replicatedcom/${PROJECT_NAME}:${CIRCLE_SHA1:0:7}
-            # Deployed to new staging environment
-            export AWS_ACCESS_KEY_ID=$STAGING_AWS_ACCESS_KEY_ID
-            export AWS_SECRET_ACCESS_KEY=$STAGING_AWS_SECRET_ACCESS_KEY
-            $(/home/circleci/.local/bin/aws ecr get-login --no-include-email --region us-east-1)
-            docker tag ${PROJECT_NAME}:${CIRCLE_SHA1:0:7} 923411875752.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:${CIRCLE_SHA1:0:7}
-            docker push 923411875752.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:${CIRCLE_SHA1:0:7}
-            docker tag ${PROJECT_NAME}:${CIRCLE_SHA1:0:7} 923411875752.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:latest
-            docker push 923411875752.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:latest
-            # Deployed to new production environment
-            export AWS_ACCESS_KEY_ID=$PRODUCTION_AWS_ACCESS_KEY_ID
-            export AWS_SECRET_ACCESS_KEY=$PRODUCTION_AWS_SECRET_ACCESS_KEY
-            $(/home/circleci/.local/bin/aws ecr get-login --no-include-email --region us-east-1)
-            docker tag ${PROJECT_NAME}:${CIRCLE_SHA1:0:7} 799720048698.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:${CIRCLE_SHA1:0:7}
-            docker push 799720048698.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:${CIRCLE_SHA1:0:7}
-            docker tag ${PROJECT_NAME}:${CIRCLE_SHA1:0:7} 799720048698.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:latest
-            docker push 799720048698.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:latest
+    - setup_remote_docker:
+        version: 17.06.0-ce
+    - run: |
+        export WORKDIR=`pwd`
+        build-docker
+    - deploy:
+        name: push image
+        command: |
+          export AWS_ACCESS_KEY_ID=$STAGING_AWS_ACCESS_KEY_ID
+          export AWS_SECRET_ACCESS_KEY=$STAGING_AWS_SECRET_ACCESS_KEY
+          push-docker
 
-      - persist_to_workspace:
-          root: .
-          paths:
-            - kustomize
+  build_production_docker_image:
+    <<: *defaults
+    environment:
+      <<: *environment
+      ECR_REPO: 799720048698.dkr.ecr.us-east-1.amazonaws.com
+    steps:
+    - setup_remote_docker:
+        version: 17.06.0-ce
+    - run: |
+        export WORKDIR=`pwd`
+        build-docker
+    - deploy:
+        name: push image
+        command: |
+          export AWS_ACCESS_KEY_ID=$PRODUCTION_AWS_ACCESS_KEY_ID
+          export AWS_SECRET_ACCESS_KEY=$PRODUCTION_AWS_SECRET_ACCESS_KEY
+          push-docker
 
   deploy_staging_ecs:
-    <<: *defaults_py
+    <<: *defaults
     steps:
       - setup_remote_docker
       - deploy:
@@ -162,7 +147,6 @@ jobs:
           command: |
             set -vu
             if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedhq" ]; then
-              /usr/local/bin/pip install awscli --upgrade --user
               export AWS_ACCESS_KEY_ID=$STAGING_AWS_ACCESS_KEY_ID
               export AWS_SECRET_ACCESS_KEY=$STAGING_AWS_SECRET_ACCESS_KEY
               $(/home/circleci/.local/bin/aws ecr get-login --no-include-email --region us-east-1)
@@ -179,56 +163,30 @@ jobs:
             fi
 
   deploy_staging_eks:
-    <<: *defaults_py
+    <<: *defaults
     steps:
-      - setup_remote_docker
-
-      - attach_workspace:
-          at: .
-
+      - checkout
       - add_ssh_keys:
           fingerprints:
-            - "25:51:68:66:6d:12:c7:84:f4:18:97:6a:7c:2e:f8:3d"
-
-      - run:
-          name: install kustomize
-          command: |
-            curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest |\
-            grep browser_download |\
-            grep linux |\
-            cut -d '"' -f 4 |\
-            xargs curl -O -L && \
-            mv kustomize_*_linux_amd64 ~/kustomize && \
-            chmod u+x ~/kustomize
-
+          - "25:51:68:66:6d:12:c7:84:f4:18:97:6a:7c:2e:f8:3d"
       - deploy:
-          name: Maybe deploy staging to kubernetes
+          name: Maybe deploy staging to eks
           command: |
-            set -vu
-            if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedhq" ]; then
-              sed -i "s/DYNAMIC_IMAGE_TAG/${CIRCLE_SHA1:0:7}/g" ~/project/kustomize/overlays/staging/kustomization.yaml
-              echo 'github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==' >> ~/.ssh/known_hosts
-              cd ~ && git clone git@github.com:replicatedcom/gitops-deploy
-              mkdir -p ~/gitops-deploy/replicated-installer
-
-              ~/kustomize build ~/project/kustomize/overlays/staging > ./gitops-deploy/replicated-installer/replicated-installer.yaml
-              cd ~/gitops-deploy && \
-              git config user.email "circleci@replicated.com" && \
-              git config user.name "CircleCI Build" && \
-              git add . && \
-              git commit -m "${CIRCLE_COMPARE_URL:-$CIRCLE_BUILD_URL}" && [ $? -eq 0 ] && git push origin master
-            fi
+            pushd kustomize/overlays/staging
+              kustomize edit set nameprefix "${CIRCLE_SHA1:0:7}-" # its a Job, so give it a unique name
+            popd
+            export WORKDIR=`pwd`
+            deploy
 
   deploy_production_ecs:
-    <<: *defaults_py
+    <<: *defaults
     steps:
       - setup_remote_docker
       - deploy:
-          name: Maybe deploy production
+          name: Maybe deploy production to ecs
           command: |
             set -vu
             if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedhq" ]; then
-              /usr/local/bin/pip install awscli --upgrade --user
               export AWS_ACCESS_KEY_ID=$PRODUCTION_AWS_ACCESS_KEY_ID
               export AWS_SECRET_ACCESS_KEY=$PRODUCTION_AWS_SECRET_ACCESS_KEY
               $(/home/circleci/.local/bin/aws ecr get-login --no-include-email --region us-east-1)
@@ -245,67 +203,45 @@ jobs:
             fi
 
   deploy_production_eks:
-    <<: *defaults_py
+    <<: *defaults
+    environment:
+      <<: *environment
+      ECR_REPO: 799720048698.dkr.ecr.us-east-1.amazonaws.com
+      OVERLAY_PATH: kustomize/overlays/production
+      GITOPS_BRANCH: release
     steps:
-      - setup_remote_docker
-
-      - attach_workspace:
-          at: .
-
+      - checkout
       - add_ssh_keys:
           fingerprints:
-            - "25:51:68:66:6d:12:c7:84:f4:18:97:6a:7c:2e:f8:3d"
-
-      - run:
-          name: install kustomize
-          command: |
-            curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest |\
-            grep browser_download |\
-            grep linux |\
-            cut -d '"' -f 4 |\
-            xargs curl -O -L && \
-            mv kustomize_*_linux_amd64 ~/kustomize && \
-            chmod u+x ~/kustomize
-
+          - "25:51:68:66:6d:12:c7:84:f4:18:97:6a:7c:2e:f8:3d"
       - deploy:
-          name: Maybe deploy production to kubernetes
+          name: Maybe deploy production to eks
           command: |
-            set -vu
-            if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedhq" ]; then
-              sed -i "s/DYNAMIC_IMAGE_TAG/${CIRCLE_SHA1:0:7}/g" ~/project/kustomize/overlays/production/kustomization.yaml
-              echo 'github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==' >> ~/.ssh/known_hosts
-              cd ~ && git clone --single-branch -b release git@github.com:replicatedcom/gitops-deploy
-              mkdir -p ~/gitops-deploy/replicated-installer
-
-              ~/kustomize build ~/project/kustomize/overlays/production > ./gitops-deploy/replicated-installer/replicated-installer.yaml
-              cd ~/gitops-deploy && \
-              git config user.email "circleci@replicated.com" && \
-              git config user.name "CircleCI Build" && \
-              git add . && \
-              git commit -m "${CIRCLE_COMPARE_URL:-$CIRCLE_BUILD_URL}" && [ $? -eq 0 ] && git push origin release
-            fi
+            pushd kustomize/overlays/production
+              kustomize edit set nameprefix "${CIRCLE_SHA1:0:7}-" # its a Job, so give it a unique name
+            popd
+            export WORKDIR=`pwd`
+            deploy
 
 
 workflows:
   version: 2
   build_accept_deploy:
     jobs:
-      - build_image:
-          filters:
-            branches:
-              only: master
       - test
+      - build_staging_docker_image
+      - build_production_docker_image
       - deploy_staging_ecs:
           requires:
-            - build_image
             - test
+            - build_staging_docker_image
           filters:
             branches:
               only: master
       - deploy_staging_eks:
           requires:
-            - build_image
             - test
+            - build_staging_docker_image
           filters:
             branches:
               only: master
@@ -319,14 +255,15 @@ workflows:
               only: master
       - deploy_production_ecs:
           requires:
+            - build_production_docker_image
             - hold
           filters:
             branches:
               only: master
       - deploy_production_eks:
           requires:
+            - build_production_docker_image
             - hold
           filters:
             branches:
               only: master
-
