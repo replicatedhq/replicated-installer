@@ -113,6 +113,7 @@ jobs:
           version: 17.06.0-ce
       - run: |
           export WORKDIR=`pwd`
+          export CIRCLE_PROJECT_REPONAME=$PROJECT_NAME
           build-docker
       - deploy:
           name: push image
@@ -133,6 +134,7 @@ jobs:
           version: 17.06.0-ce
       - run: |
           export WORKDIR=`pwd`
+          export CIRCLE_PROJECT_REPONAME=$PROJECT_NAME
           build-docker
       - deploy:
           name: push image
