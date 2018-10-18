@@ -250,9 +250,9 @@ workflows:
           requires:
             - test
             - build_staging_docker_image
-          # filters:
-          #   branches:
-          #     only: master
+          filters:
+            branches:
+              only: master
       - hold:
           type: approval
           requires:
