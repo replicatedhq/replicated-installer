@@ -2,9 +2,8 @@
 bases:
   - ../../base
 
-patches:
-  - ./deployment.yaml
+resources:
+  - ./service.yaml
 
-imageTags:
-  - name: 799720048698.dkr.ecr.us-east-1.amazonaws.com/install-scripts
-    newTag: "DYNAMIC_IMAGE_TAG"
+patchesStrategicMerge:
+  - ./deployment.yaml

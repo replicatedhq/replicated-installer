@@ -5,10 +5,11 @@ metadata:
   labels:
     app: install-scripts
 spec:
-  type: LoadBalancer
+  type: NodePort
   ports:
     - name: install-scripts
-      port: 443
+      nodePort: 30090
+      port: 3000
       targetPort: install-scripts
   selector:
     app: install-scripts
