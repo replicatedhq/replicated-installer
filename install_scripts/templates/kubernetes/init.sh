@@ -41,6 +41,7 @@ CLUSTER_DNS=$DEFAULT_CLUSTER_DNS
 ENCRYPT_NETWORK=
 ADDITIONAL_NO_PROXY=
 IPVS=1
+CEPH_DASHBOARD_URL=
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -240,6 +241,9 @@ getYAMLOpts() {
     elif [ -n "$STORAGE_PROVISIONER" ]; then
         opts=$opts" storage-provisioner=$STORAGE_PROVISIONER"
     fi
+    if [ -n "$CEPH_DASHBOARD_URL" ]; then
+        opts=$opts" ceph-dashboard-url=$CEPH_DASHBOARD_URL"
+    fi
     if [ -n "$STORAGE_CLASS" ]; then
         opts=$opts" storage-class=$STORAGE_CLASS"
     fi
@@ -294,6 +298,9 @@ rookDeploy() {
         logSuccess "Rook 0.7.1 already deployed"
         return
     fi
+
+    CEPH_DASHBOARD_URL=http://rook-ceph-mgr-dashboard:7000
+
     # namespaces used in Rook 0.8+
     if k8sNamespaceExists rook-ceph && k8sNamespaceExists rook-ceph-system ; then
         logSuccess "Rook already deployed"
