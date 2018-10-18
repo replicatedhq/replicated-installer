@@ -3,7 +3,7 @@ bases:
   - ../../base
 
 resources:
-  - ./loadbalancer.yaml
+  - ./service.yaml
 
 patchesStrategicMerge:
   - ./deployment.yaml
