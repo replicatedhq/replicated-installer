@@ -179,6 +179,7 @@ jobs:
           name: Maybe deploy staging to eks
           command: |
             export WORKDIR=`pwd`
+            export CIRCLE_PROJECT_REPONAME=$PROJECT_NAME
             deploy
 
   deploy_production_ecs:
@@ -221,6 +222,7 @@ jobs:
           name: Maybe deploy production to eks
           command: |
             export WORKDIR=`pwd`
+            export CIRCLE_PROJECT_REPONAME=$PROJECT_NAME
             deploy
 
 
