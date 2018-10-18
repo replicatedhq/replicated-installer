@@ -178,9 +178,6 @@ jobs:
       - deploy:
           name: Maybe deploy staging to eks
           command: |
-            pushd kustomize/overlays/staging
-              kustomize edit set nameprefix "${CIRCLE_SHA1:0:7}-" # its a Job, so give it a unique name
-            popd
             export WORKDIR=`pwd`
             deploy
 
@@ -223,9 +220,6 @@ jobs:
       - deploy:
           name: Maybe deploy production to eks
           command: |
-            pushd kustomize/overlays/production
-              kustomize edit set nameprefix "${CIRCLE_SHA1:0:7}-" # its a Job, so give it a unique name
-            popd
             export WORKDIR=`pwd`
             deploy
 
