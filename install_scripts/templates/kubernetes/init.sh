@@ -299,7 +299,7 @@ rookDeploy() {
         return
     fi
 
-    CEPH_DASHBOARD_URL=http://rook-ceph-mgr-dashboard:7000
+    CEPH_DASHBOARD_URL=http://rook-ceph-mgr-dashboard.rook-ceph.svc.cluster.local:7000
 
     # namespaces used in Rook 0.8+
     if k8sNamespaceExists rook-ceph && k8sNamespaceExists rook-ceph-system ; then
