@@ -299,8 +299,6 @@ rookDeploy() {
         return
     fi
 
-    CEPH_DASHBOARD_URL=http://rook-ceph-mgr-dashboard.rook-ceph.svc.cluster.local:7000
-
     # namespaces used in Rook 0.8+
     if k8sNamespaceExists rook-ceph && k8sNamespaceExists rook-ceph-system ; then
         logSuccess "Rook already deployed"
@@ -583,6 +581,10 @@ done
 
 if [ "$KUBERNETES_VERSION" == "1.9.3" ]; then
     IPVS=0
+fi
+
+if [ "$STORAGE_PROVISIONER" == "rook" ] || [ "$STORAGE_PROVISIONER" == "1" ]; then
+    CEPH_DASHBOARD_URL=http://rook-ceph-mgr-dashboard.rook-ceph.svc.cluster.local:7000
 fi
 
 if [ "$RESET" == "1" ]; then
