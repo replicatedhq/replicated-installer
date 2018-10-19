@@ -178,7 +178,7 @@ stackDeploy() {
         bash /tmp/docker-compose-generate.sh $opts < /dev/null \
             > /tmp/replicated-docker-compose.yml
     fi
-    docker stack services -q "$SWARM_STACK_NAMESPACE" | xargs -L1 docker service update --restart-condition=any
+    docker stack services -q "$SWARM_STACK_NAMESPACE" | xargs -L1 docker service update --restart-condition=any || :
     docker stack deploy -c /tmp/replicated-docker-compose.yml "$SWARM_STACK_NAMESPACE"
 }
 
