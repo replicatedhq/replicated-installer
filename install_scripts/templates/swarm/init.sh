@@ -178,8 +178,15 @@ stackDeploy() {
         bash /tmp/docker-compose-generate.sh $opts < /dev/null \
             > /tmp/replicated-docker-compose.yml
     fi
-    docker stack services -q "$SWARM_STACK_NAMESPACE" | xargs -L1 docker service update --restart-condition=any || :
+
+    # Update replicated to the new version.
     docker stack deploy -c /tmp/replicated-docker-compose.yml "$SWARM_STACK_NAMESPACE"
+
+    # The restart policy used to be on-failure which caused replicated to stop running on upgrades due to an exit code 0.
+    # This will force the service to start after upgrading to ensure that the service did not complete.
+    if docker stack services -q "$SWARM_STACK_NAMESPACE" | xargs docker service inspect --format '{{.PreviousSpec.TaskTemplate.RestartPolicy.Condition}}' | grep -qs "on-failure"; then
+        docker stack services -q "$SWARM_STACK_NAMESPACE" | xargs -L1 docker service update --force || :
+    fi
 }
 
 includeBranding() {
