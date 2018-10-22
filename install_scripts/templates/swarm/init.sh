@@ -178,7 +178,24 @@ stackDeploy() {
         bash /tmp/docker-compose-generate.sh $opts < /dev/null \
             > /tmp/replicated-docker-compose.yml
     fi
-    docker stack services -q "$SWARM_STACK_NAMESPACE" | xargs -L1 docker service update --restart-condition=any || :
+
+    semverCompare "{{ replicated_version }}" "2.29.0"
+    if [ "$SEMVER_COMPARE_RESULT" -ge "0" ]; then
+        # The restart policy used to be on-failure which caused replicated to stop running on upgrades due to an exit code 0.
+        # This will force the service to start after upgrading to ensure that the service did not complete.
+        if docker stack services -q "$SWARM_STACK_NAMESPACE" | xargs docker service inspect --format "{{ '{{.Spec.TaskTemplate.RestartPolicy.Condition}}' }}" 2>/dev/null | grep -qs "on-failure"; then
+            docker stack services -q "$SWARM_STACK_NAMESPACE" | xargs -L1 docker service update -d --restart-condition=any >/dev/null || :
+
+            # Wait for the service to converge.
+            _counter=0
+            while docker stack services -q "$SWARM_STACK_NAMESPACE" | xargs docker service inspect --format "{{ '{{.UpdateStatus.State}}' }}" | grep -qs "updating" && [ "$_counter" -lt "10" ]; do
+                sleep 5
+                _counter="$(($_counter+1))"
+            done
+        fi
+    fi
+
+    # Update replicated to the new version.
     docker stack deploy -c /tmp/replicated-docker-compose.yml "$SWARM_STACK_NAMESPACE"
 }
 
