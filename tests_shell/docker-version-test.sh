@@ -7,7 +7,7 @@ testParseDockerVersion()
     parseDockerVersion "1.13.1"
     assertEquals "Docker version major not equal" "1" "$DOCKER_VERSION_MAJOR"
     assertEquals "Docker version minor not equal" "13" "$DOCKER_VERSION_MINOR"
-    assertEquals "Docker version parch not equal" "1" "$DOCKER_VERSION_PATCH"
+    assertEquals "Docker version patch not equal" "1" "$DOCKER_VERSION_PATCH"
     assertEquals "Docker version release not equal" "" "$DOCKER_VERSION_RELEASE"
 }
 
@@ -16,7 +16,7 @@ testDockerVersionCE()
     parseDockerVersion "17.03.0-ce"
     assertEquals "Docker version major not equal" "17" "$DOCKER_VERSION_MAJOR"
     assertEquals "Docker version minor not equal" "03" "$DOCKER_VERSION_MINOR"
-    assertEquals "Docker version parch not equal" "0" "$DOCKER_VERSION_PATCH"
+    assertEquals "Docker version patch not equal" "0" "$DOCKER_VERSION_PATCH"
     assertEquals "Docker version release not equal" "ce" "$DOCKER_VERSION_RELEASE"
 }
 

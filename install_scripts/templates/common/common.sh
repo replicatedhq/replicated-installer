@@ -102,6 +102,54 @@ semverParse() {
 }
 
 #######################################
+# Compare two semvers.
+# Returns -1 if A lt B, 0 if eq, 1 A gt B.
+# Globals:
+#   None
+# Arguments:
+#   Sem Version A
+#   Sem Version B
+# Returns:
+#   SEMVER_COMPARE_RESULT
+#######################################
+SEMVER_COMPARE_RESULT=
+semverCompare() {
+    semverParse "$1"
+    _a_major="$major"
+    _a_minor="$minor"
+    _a_patch="$patch"
+    semverParse "$2"
+    _b_major="$major"
+    _b_minor="$minor"
+    _b_patch="$patch"
+    if [ "$_a_major" -lt "$_b_major" ]; then
+        SEMVER_COMPARE_RESULT=-1
+        return
+    fi
+    if [ "$_a_major" -gt "$_b_major" ]; then
+        SEMVER_COMPARE_RESULT=1
+        return
+    fi
+    if [ "$_a_minor" -lt "$_b_minor" ]; then
+        SEMVER_COMPARE_RESULT=-1
+        return
+    fi
+    if [ "$_a_minor" -gt "$_b_minor" ]; then
+        SEMVER_COMPARE_RESULT=1
+        return
+    fi
+    if [ "$_a_patch" -lt "$_b_patch" ]; then
+        SEMVER_COMPARE_RESULT=-1
+        return
+    fi
+    if [ "$_a_patch" -gt "$_b_patch" ]; then
+        SEMVER_COMPARE_RESULT=1
+        return
+    fi
+    SEMVER_COMPARE_RESULT=0
+}
+
+#######################################
 # Inserts a parameter into a json file. If the file does not exist, creates it. If the parameter is already set, replaces it.
 # Globals:
 #   None

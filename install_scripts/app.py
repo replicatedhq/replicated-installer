@@ -553,6 +553,7 @@ def get_swarm_init_master(replicated_channel=None,
     response = render_template(
         'swarm/init.sh',
         **helpers.template_args(
+            replicated_version=replicated_version,
             pinned_docker_version=pinned_docker_version,
             replicated_tag=replicated_tag,
             replicated_ui_tag=replicated_ui_tag,
