@@ -185,18 +185,21 @@ stackDeploy() {
         # This will force the service to start after upgrading to ensure that the service did not complete.
         if docker stack services -q "$SWARM_STACK_NAMESPACE" | xargs docker service inspect --format "{{ '{{.Spec.TaskTemplate.RestartPolicy.Condition}}' }}" 2>/dev/null | grep -qs "on-failure"; then
             docker stack services -q "$SWARM_STACK_NAMESPACE" | xargs -L1 docker service update -d --restart-condition=any >/dev/null || :
-
-            # Wait for the service to converge.
-            _counter=0
-            while docker stack services -q "$SWARM_STACK_NAMESPACE" | xargs docker service inspect --format "{{ '{{.UpdateStatus.State}}' }}" | grep -qs "updating" && [ "$_counter" -lt "10" ]; do
-                sleep 5
-                _counter="$(($_counter+1))"
-            done
+            waitStackServices
         fi
     fi
 
     # Update replicated to the new version.
     docker stack deploy -c /tmp/replicated-docker-compose.yml "$SWARM_STACK_NAMESPACE"
+    waitStackServices
+}
+
+waitStackServices() {
+    _counter=0
+    while docker stack services -q "$SWARM_STACK_NAMESPACE" | xargs docker service inspect --format "{{ '{{.UpdateStatus.State}}' }}" 2>/dev/null | grep -qs "updating" && [ "$_counter" -lt "10" ]; do
+        sleep 5
+        _counter="$(($_counter+1))"
+    done
 }
 
 includeBranding() {
