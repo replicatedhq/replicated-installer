@@ -160,7 +160,7 @@ initKube() {
         maybeUpgradeKubernetes "$KUBERNETES_VERSION"
     fi
     cp /etc/kubernetes/admin.conf $HOME/admin.conf
-    chown $SUDO_USER:$SUDO_USER $HOME/admin.conf
+    chown $SUDO_USER:$SUDO_GID $HOME/admin.conf
 
 
     export KUBECONFIG=/etc/kubernetes/admin.conf
