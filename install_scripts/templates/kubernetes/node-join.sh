@@ -114,14 +114,6 @@ ensureRookPluginsRegistered() {
     logSuccess "Node Is Ready"
 }
 
-outro() {
-    printf "\n"
-    printf "\n"
-    printf "Visit the following URL for help configuring the replication level in your storage cluster"
-    printf "\nhttps://help.replicated.com/guides/ship-with-kubernetes/managing-storage/#replication"
-    printf "\n"
-    printf "\n"
-}
 
 ################################################################################
 # Execution starts here
@@ -225,8 +217,6 @@ if [ -n "$isK8sInstalled" ]; then
         airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"
     fi
 
-    outro
-
     exit 0
 fi
 
@@ -298,7 +288,5 @@ loadIPVSKubeProxyModules
 joinKubernetes
 
 ensureRookPluginsRegistered
-
-outro
 
 exit 0
