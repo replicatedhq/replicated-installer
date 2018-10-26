@@ -175,3 +175,17 @@ detectDockerGroupId() {
         DOCKER_GROUP_ID="$(getent group docker | cut -d: -f3)"
     fi
 }
+
+
+#######################################
+# Check if docker image exists.
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   0 if image exists
+#######################################
+dockerImageExists() {
+    [[ "$(docker images -q "$@" 2> /dev/null)" != "" ]];
+}

@@ -1,4 +1,3 @@
-
 UBUNTU_1604_K8S_9=ubuntu-1604-v1.9.3-20180416
 UBUNTU_1604_K8S_10=ubuntu-1604-v1.10.6-20180803
 UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.1-20180803
@@ -6,12 +5,11 @@ UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.1-20180803
 RHEL7_K8S_9=rhel7-v1.9.3-20180806
 RHEL7_K8S_10=rhel7-v1.10.6-20180806
 RHEL7_K8S_11=rhel7-v1.11.1-20180806
-
 #######################################
 #
 # kubernetes.sh
 #
-# require selinux.sh common.sh
+# require selinux.sh common.sh docker.sh
 #
 #######################################
 
@@ -694,7 +692,14 @@ weave_reset()
 
     WEAVE_TAG=2.4.0
     DOCKER_BRIDGE=docker0
+
+    # if we never unpacked/pulled the weave image, its unlikely we need to do any of this
+    if ! dockerImageExists "weaveworks/weaveexec:${WEAVE_TAG}"; then
+        return
+    fi
+
     DOCKER_BRIDGE_IP=$(docker run --rm --pid host --net host --privileged -v /var/run/docker.sock:/var/run/docker.sock --entrypoint=/usr/bin/weaveutil weaveworks/weaveexec:$WEAVE_TAG bridge-ip $DOCKER_BRIDGE)
+
 
     for NETDEV in $BRIDGE $DATAPATH ; do
         if [ -d /sys/class/net/$NETDEV ] ; then
