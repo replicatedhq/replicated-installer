@@ -41,7 +41,7 @@ installDocker() {
         if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
             _dockerUpgrade "$BEST_DOCKER_VERSION_RESULT"
             if [ "$DID_INSTALL_DOCKER" -ne "1" ]; then
-                _dockerProceedAnyway
+                _dockerProceedAnyway "$BEST_DOCKER_VERSION_RESULT"
             fi
         elif [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "1" ]; then
             _dockerProceedAnyway "$BEST_DOCKER_VERSION_RESULT"
@@ -120,18 +120,17 @@ installDockerK8s() {
 }
 
 _installDocker() {
-    if [ "$LSB_DIST" = "rhel" ] || [ "$LSB_DIST" = "ol" ] || [ "$LSB_DIST" = "sles" ]; then
-        if [ -n "$NO_CE_ON_EE" ]; then
-            printf "${RED}Enterprise Linux distributions require Docker Enterprise Edition. Please install Docker before running this installation script.${NC}\n" 1>&2
-            exit 1
-        fi
+    _should_skip_docker_ee_install
+    if [ "$SHOULD_SKIP_DOCKER_EE_INSTALL" -eq "1" ]; then
+        printf "${RED}Enterprise Linux distributions require Docker Enterprise Edition. Please install Docker before running this installation script.${NC}\n" 1>&2
+        exit 1
     fi
 
     if [ "$LSB_DIST" = "amzn" ]; then
         # Docker install script no longer supports Amazon Linux
         printf "${YELLOW}Pinning Docker version not supported on Amazon Linux${NC}\n"
         printf "${GREEN}Installing Docker from Yum repository${NC}\n"
-        
+
         # 6/12/18
         # Amazon Linux 14.03, 17.03, and 18.03 have Docker 17.12.1ce and Docker
         # 18.03.1ce available. Amazon Linux 2 has Docker 17.06.2ce available.
@@ -234,6 +233,11 @@ _installDocker() {
 }
 
 _dockerUpgrade() {
+    _should_skip_docker_ee_install
+    if [ "$SHOULD_SKIP_DOCKER_EE_INSTALL" -eq "1" ]; then
+        return
+    fi
+
     if [ "$AIRGAP" != "1" ]; then
         printf "This installer will upgrade your current version of Docker (%s) to the recommended version: %s\n" "$DOCKER_VERSION" "$1"
         printf "Do you want to allow this? "
@@ -289,4 +293,24 @@ _dockerRequireMinInstallableVersion() {
         echo >&2 "We have detected a maximum docker version of $MAX_DOCKER_VERSION_RESULT while the required minimum version for this script is $1."
         exit 1
     fi
+}
+
+#######################################
+# Checks if Docker EE should be installed or upgraded.
+# Globals:
+#   LSB_DIST
+#   NO_CE_ON_EE
+# Returns:
+#   SHOULD_SKIP_DOCKER_EE_INSTALL
+#######################################
+SHOULD_SKIP_DOCKER_EE_INSTALL=
+_should_skip_docker_ee_install() {
+  SHOULD_SKIP_DOCKER_EE_INSTALL=
+  if [ "$LSB_DIST" = "rhel" ] || [ "$LSB_DIST" = "ol" ] || [ "$LSB_DIST" = "sles" ]; then
+      if [ -n "$NO_CE_ON_EE" ]; then
+          SHOULD_SKIP_DOCKER_EE_INSTALL=1
+          return
+      fi
+  fi
+  SHOULD_SKIP_DOCKER_EE_INSTALL=0
 }
