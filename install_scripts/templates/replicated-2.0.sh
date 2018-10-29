@@ -259,6 +259,10 @@ build_replicated_opts() {
         if [ -n "$PROXY_ADDRESS" ]; then
             REPLICATED_OPTS="$REPLICATED_OPTS -e HTTP_PROXY=$PROXY_ADDRESS"
         fi
+        REPLICATED_OPTS=$(echo "$REPLICATED_OPTS" | sed -e 's/-e[[:blank:]]*NO_PROXY=[^[:blank:]]*//')
+        if [ -n "$NO_PROXY_ADDRESSES" ]; then
+           REPLICATED_OPTS="$REPLICATED_OPTS -e NO_PROXY=$NO_PROXY_ADDRESSES"
+        fi
         REPLICATED_OPTS=$(echo "$REPLICATED_OPTS" | sed -e 's/-e[[:blank:]]*REGISTRY_ADVERTISE_ADDRESS=[^[:blank:]]*//')
         if [ -n "$REGISTRY_ADVERTISE_ADDRESS" ]; then
             REPLICATED_OPTS="$REPLICATED_OPTS -e REGISTRY_ADVERTISE_ADDRESS=$REGISTRY_ADVERTISE_ADDRESS"
