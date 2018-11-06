@@ -180,7 +180,8 @@ isValidIpv4() {
 }
 
 #######################################
-# Determines if the ip is a valid ipv6 address.
+# Determines if the ip is a valid ipv6 address. This will match long and short IPv6 addresses as
+# well as the loopback address.
 # Globals:
 #   None
 # Arguments:
