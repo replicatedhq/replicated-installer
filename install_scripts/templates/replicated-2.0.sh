@@ -430,7 +430,11 @@ install_operator() {
         echo -e "${URLGET_CMD} {{ replicated_install_url }}${prefix}/operator?replicated_operator_tag={{ replicated_operator_tag }}${NC}"
         ${URLGET_CMD} "{{ replicated_install_url }}${prefix}/operator?replicated_operator_tag={{ replicated_operator_tag }}" > /tmp/operator_install.sh
     fi
-    opts="no-docker daemon-endpoint=[$PRIVATE_ADDRESS]:9879 daemon-token=$DAEMON_TOKEN private-address=$PRIVATE_ADDRESS tags=$OPERATOR_TAGS"
+    _private_address_with_brackets="$PRIVATE_ADDRESS"
+    if isValidIpv6 "$_private_address_with_brackets"; then
+        _private_address_with_brackets="[$_private_address_with_brackets]"
+    fi
+    opts="no-docker daemon-endpoint=$_private_address_with_brackets:9879 daemon-token=$DAEMON_TOKEN private-address=$PRIVATE_ADDRESS tags=$OPERATOR_TAGS"
     if [ -n "$PUBLIC_ADDRESS" ]; then
         opts=$opts" public-address=$PUBLIC_ADDRESS"
     fi
