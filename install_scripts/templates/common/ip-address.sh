@@ -163,7 +163,7 @@ promptForPublicIp() {
 }
 
 #######################################
-# Determines if the ip is valid.
+# Determines if the ip is a valid ipv4 address.
 # Globals:
 #   None
 # Arguments:
@@ -173,6 +173,23 @@ promptForPublicIp() {
 #######################################
 isValidIpv4() {
     if echo "$1" | grep -qs '^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$'; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+#######################################
+# Determines if the ip is a valid ipv6 address.
+# Globals:
+#   None
+# Arguments:
+#   IP
+# Returns:
+#   None
+#######################################
+isValidIpv6() {
+    if echo "$1" | grep -qs "^\([0-9a-fA-F]\{0,4\}:\)\{1,7\}[0-9a-fA-F]\{0,4\}$"; then
         return 0
     else
         return 1
