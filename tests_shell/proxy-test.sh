@@ -15,7 +15,7 @@ EOF
     _configureDockerProxyUpstart "$tempTestingFile" "33.33.33.33" "44.44.44.44"
     assertEquals "$expected" "$(cat $tempTestingFile)"
 
-    rm "$tempTestingFile"
+    rm -f "$tempTestingFile"
 }
 
 test_configureDockerProxyUpstartEmpty()
@@ -35,7 +35,7 @@ EOF
     _configureDockerProxyUpstart "$tempTestingFile" "33.33.33.33" "44.44.44.44"
     assertEquals "$expected" "$(cat $tempTestingFile)"
 
-    rm "$tempTestingFile"
+    rm -f "$tempTestingFile"
 }
 
 test_configureDockerProxyUpstartFound()
@@ -63,7 +63,7 @@ EOF
     _configureDockerProxyUpstart "$tempTestingFile" "33.33.33.33" "44.44.44.44"
     assertEquals "$expected" "$(cat $tempTestingFile)"
 
-    rm "$tempTestingFile"
+    rm -f "$tempTestingFile"
 }
 
 test_configureDockerProxyUpstartCase()
@@ -92,7 +92,7 @@ EOF
     _configureDockerProxyUpstart "$tempTestingFile" "33.33.33.33" "44.44.44.44"
     assertEquals "$expected" "$(cat $tempTestingFile)"
 
-    rm "$tempTestingFile"
+    rm -f "$tempTestingFile"
 }
 
 test_configureDockerProxySystemdNew()
@@ -107,7 +107,7 @@ EOF
     _configureDockerProxySystemd "$tempTestingFile" "33.33.33.33" "44.44.44.44"
     assertEquals "$expected" "$(cat $tempTestingFile)"
 
-    rm "$tempTestingFile"
+    rm -f "$tempTestingFile"
 }
 
 test_configureDockerProxySystemdEmpty()
@@ -123,7 +123,7 @@ EOF
     _configureDockerProxySystemd "$tempTestingFile" "33.33.33.33" "44.44.44.44"
     assertEquals "$expected" "$(cat $tempTestingFile)"
 
-    rm "$tempTestingFile"
+    rm -f "$tempTestingFile"
 }
 
 test_configureDockerProxySystemdFound()
@@ -143,7 +143,7 @@ EOF
     _configureDockerProxySystemd "$tempTestingFile" "33.33.33.33" "44.44.44.44"
     assertEquals "$expected" "$(cat $tempTestingFile)"
 
-    rm "$tempTestingFile"
+    rm -f "$tempTestingFile"
 }
 
 test_configureDockerProxySystemdCase()
@@ -163,7 +163,7 @@ EOF
     _configureDockerProxySystemd "$tempTestingFile" "33.33.33.33" "44.44.44.44"
     assertEquals "$expected" "$(cat $tempTestingFile)"
 
-    rm "$tempTestingFile"
+    rm -f "$tempTestingFile"
 }
 
 . shunit2

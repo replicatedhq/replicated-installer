@@ -16,7 +16,7 @@ testCreateInsertUpdateJson()
     assertTrue "File contains replaced value" "[ $(cat "$tempTestingJSONfile" | grep -c -e 'beta') -eq 0 ]"
     assertTrue "File lacks new value" "[ $(cat "$tempTestingJSONfile" | grep -c -e 'theta') -eq 1 ]"
 
-    rm "$tempTestingJSONfile"
+    rm -f "$tempTestingJSONfile"
 }
 
 . shunit2
