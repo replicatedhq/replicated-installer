@@ -403,7 +403,13 @@ do_install() {
 					$sh_c 'sed -i "/deb-src.*download\.docker/d" /etc/apt/sources.list.d/docker.list'
 				fi
 				$sh_c 'apt-get update -qq >/dev/null'
-				$sh_c "apt-get install -y -qq --no-install-recommends docker-ce={{ deb_version }} >/dev/null"
+				$sh_c "apt-get install -y -qq --no-install-recommends docker-ce={{ deb_version }} >/dev/null" || _status="$?"
+				# NOTE: On debian there is a race condition between docker.service and docker.socket
+				# that causes docker to fail to start the first time, so we will try again...
+				# https://github.com/docker/for-linux/issues/351
+				if [ "$_status" -ne "0" ]; then
+					$sh_c "apt-get install -y -qq --no-install-recommends docker-ce={{ deb_version }} >/dev/null"
+				fi
 			)
 			echo_docker_as_nonroot
 			exit 0
