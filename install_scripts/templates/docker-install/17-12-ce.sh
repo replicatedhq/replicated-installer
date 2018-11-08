@@ -408,6 +408,7 @@ do_install() {
 				# that causes docker to fail to start the first time, so we will try again...
 				# https://github.com/docker/for-linux/issues/351
 				if [ "$_status" -ne "0" ]; then
+					sleep 5
 					$sh_c "apt-get install -y -qq --no-install-recommends docker-ce={{ deb_version }} >/dev/null"
 				fi
 			)
