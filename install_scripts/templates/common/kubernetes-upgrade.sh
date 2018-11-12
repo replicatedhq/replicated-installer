@@ -197,7 +197,7 @@ upgradeK8sMaster() {
     case "$LSB_DIST$DIST_VERSION" in
         ubuntu16.04)
             export DEBIAN_FRONTEND=noninteractive
-            dpkg -i archives/*.deb
+            dpkg -i --force-depends-version archives/*.deb
             ;;
         centos7.4|centos7.5|rhel7.4|rhel7.5)
             rpm --upgrade --force --nodeps archives/*.rpm
@@ -237,7 +237,7 @@ upgradeK8sNode() {
     case "$LSB_DIST$DIST_VERSION" in
         ubuntu16.04)
             export DEBIAN_FRONTEND=noninteractive
-            dpkg -i archives/*.deb
+            dpkg -i --force-depends-version archives/*.deb
             ;;
         centos7.4|centos7.5|rhel7.4|rhel7.5)
             rpm --upgrade --force --nodeps archives/*.rpm

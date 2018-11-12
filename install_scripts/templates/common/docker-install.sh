@@ -73,7 +73,7 @@ installDocker_1_12_Offline() {
             layer_id=$(tar xvf packages-docker-ubuntu1604.tar -C image/ | grep layer.tar | cut -d'/' -f1)
             tar xvf image/${layer_id}/layer.tar
             pushd archives/
-               dpkg -i *.deb
+               dpkg -i --force-depends-version *.deb
             popd
             DID_INSTALL_DOCKER=1
             return

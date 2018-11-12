@@ -41,7 +41,6 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run: apk add make
       - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
       - run:
           name: build & push
@@ -55,7 +54,6 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run: apk add make
       - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
       - run:
           name: build & push
@@ -69,7 +67,6 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run: apk add make
       - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
       - run:
           name: build & push
@@ -83,7 +80,6 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run: apk add make
       - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
       - run:
           name: build & push
@@ -97,7 +93,6 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run: apk add make
       - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
       - run:
           name: build & push
