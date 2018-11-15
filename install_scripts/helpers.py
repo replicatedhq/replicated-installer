@@ -183,7 +183,7 @@ def get_operator_additional_etc_mounts(version_tag):
 def get_version_for_app(app_slug, app_channel, replicated_channel):
     version_range = None
     for doc in get_app_version_config(app_slug, app_channel):
-        if 'host_requirements' not in doc:
+        if not doc or 'host_requirements' not in doc:
             continue
         host_requirements = doc['host_requirements']
         if not host_requirements or 'replicated_version' not in host_requirements:
@@ -199,6 +199,8 @@ def get_version_for_app(app_slug, app_channel, replicated_channel):
 
 def get_terms(app_slug, app_channel):
     for doc in get_app_version_config(app_slug, app_channel):
+        if not doc:
+            continue
         terms = doc.get('terms')
         if terms is not None:
             if terms.get('markdown', '') != '':
