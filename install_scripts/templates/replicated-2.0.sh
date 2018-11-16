@@ -478,7 +478,7 @@ outro() {
     if [ -z "$PUBLIC_ADDRESS" ]; then
         PUBLIC_ADDRESS="<this_server_address>"
     fi
-    printf "To continue the installation, visit the following URL in your browser:\n\n  https://%s:$UI_BIND_PORT\n" "$PUBLIC_ADDRESS"
+    printf "To continue the installation, visit the following URL in your browser:\n\n  http://%s:$UI_BIND_PORT\n" "$PUBLIC_ADDRESS"
     if ! commandExists "replicated"; then
         printf "\nTo create an alias for the replicated cli command run the following in your current shell or log out and log back in:\n\n  source /etc/replicated.alias\n"
     fi
