@@ -401,7 +401,7 @@ outro() {
     printf "\n"
     printf "\nTo continue the installation, visit the following URL in your browser:\n\n"
     printf "\n"
-    printf "    ${GREEN}https://%s:%s\n${NC}" "$PUBLIC_ADDRESS" "$UI_BIND_PORT"
+    printf "    ${GREEN}http://%s:%s\n${NC}" "$PUBLIC_ADDRESS" "$UI_BIND_PORT"
     printf "\n"
     printf "\n"
 }
