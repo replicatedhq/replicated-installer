@@ -26,7 +26,7 @@ checkFirewalld() {
     fi
 
     if [ "$HARD_FAIL_ON_FIREWALLD" = "1" ]; then
-        printf "${RED}Firewalld is active${NC}\n"
+        printf "${RED}Firewalld is active${NC}\n" 1>&2
         exit 1
     fi
 
