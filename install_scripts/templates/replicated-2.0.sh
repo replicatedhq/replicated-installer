@@ -30,6 +30,7 @@ FAST_TIMEOUTS=1
 {%- endif %}
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
+HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 ADDITIONAL_NO_PROXY=
 
 CHANNEL_CSS={% if channel_css %}
@@ -61,6 +62,7 @@ set -e
 {% include 'common/proxy.sh' %}
 {% include 'common/airgap.sh' %}
 {% include 'common/selinux.sh' %}
+{% include 'common/firewall.sh' %}
 
 read_replicated_opts() {
     REPLICATED_OPTS_VALUE="$(echo "$REPLICATED_OPTS" | grep -o "$1=[^ ]*" | cut -d'=' -f2)"
@@ -602,6 +604,9 @@ while [ "$1" != "" ]; do
         hard-fail-on-loopback|hard_fail_on_loopback)
             HARD_FAIL_ON_LOOPBACK=1
             ;;
+        hard-fail-on-firewalld|hard_fail_on_firewalld)
+            HARD_FAIL_ON_FIREWALLD=1
+            ;;
         additional-no-proxy|additional_no_proxy)
             if [ -z "$ADDITIONAL_NO_PROXY" ]; then
                 ADDITIONAL_NO_PROXY="$_value"
@@ -616,6 +621,8 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
+
+checkFirewalld
 
 if [ "$ONLY_INSTALL_DOCKER" = "1" ]; then
     # no min if only installing docker

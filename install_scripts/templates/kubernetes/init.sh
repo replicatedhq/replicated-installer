@@ -31,6 +31,7 @@ STORAGE_CLASS="{{ storage_class }}"
 STORAGE_PROVISIONER="{{ storage_provisioner }}"
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
+HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 DISABLE_CONTOUR="{{ disable_contour }}"
 NO_CLEAR="{{ no_clear }}"
 IP_ALLOC_RANGE=
@@ -76,6 +77,7 @@ set -e
 {% include 'common/selinux.sh' %}
 {% include 'common/swap.sh' %}
 {% include 'common/kubernetes-upgrade.sh' %}
+{% include 'common/firewall.sh' %}
 
 initKubeadmConfig() {
     mkdir -p /opt/replicated
@@ -543,6 +545,9 @@ while [ "$1" != "" ]; do
         hard-fail-on-loopback|hard_fail_on_loopback)
             HARD_FAIL_ON_LOOPBACK=1
             ;;
+        hard-fail-on-firewalld|hard_fail_on_firewalld)
+            HARD_FAIL_ON_FIREWALLD=1
+            ;;
         disable-contour|disable_contour)
             DISABLE_CONTOUR=1
             ;;
@@ -578,6 +583,8 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
+
+checkFirewalld
 
 if [ "$KUBERNETES_VERSION" == "1.9.3" ]; then
     IPVS=0

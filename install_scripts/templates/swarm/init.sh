@@ -23,6 +23,7 @@ UI_BIND_PORT=8800
 USER_ID=
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
+HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 ADDITIONAL_NO_PROXY=
 
 CHANNEL_CSS={% if channel_css %}
@@ -57,6 +58,7 @@ set -e
 {% include 'common/ip-address.sh' %}
 {% include 'common/proxy.sh' %}
 {% include 'common/airgap.sh' %}
+{% include 'common/firewall.sh' %}
 
 initSwarm() {
     # init swarm (need for service command); if not created
@@ -322,6 +324,9 @@ while [ "$1" != "" ]; do
         hard-fail-on-loopback|hard_fail_on_loopback)
             HARD_FAIL_ON_LOOPBACK=1
             ;;
+        hard-fail-on-firewalld|hard_fail_on_firewalld)
+            HARD_FAIL_ON_FIREWALLD=1
+            ;;
         additional-no-proxy|additional_no_proxy)
             if [ -z "$ADDITIONAL_NO_PROXY" ]; then
                 ADDITIONAL_NO_PROXY="$_value"
@@ -336,6 +341,8 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
+
+checkFirewalld
 
 if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" -ne "1" ]; then
     printf "Determining service address\n"
