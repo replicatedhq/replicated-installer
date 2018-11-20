@@ -10,6 +10,7 @@ SKIP_DOCKER_INSTALL=0
 OFFLINE_DOCKER_INSTALL=0
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
+HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 KUBERNETES_ONLY=0
 ADDITIONAL_NO_PROXY=
 KUBERNETES_VERSION="{{ kubernetes_version }}"
@@ -30,6 +31,7 @@ KUBERNETES_VERSION="{{ kubernetes_version }}"
 {% include 'common/airgap.sh' %}
 {% include 'common/swap.sh' %}
 {% include 'common/kubernetes-upgrade.sh' %}
+{% include 'common/firewall.sh' %}
 
 KUBERNETES_MASTER_PORT="6443"
 KUBERNETES_MASTER_ADDR="{{ kubernetes_master_addr }}"
@@ -177,6 +179,9 @@ while [ "$1" != "" ]; do
         hard-fail-on-loopback|hard_fail_on_loopback)
             HARD_FAIL_ON_LOOPBACK=1
             ;;
+        hard-fail-on-firewalld|hard_fail_on_firewalld)
+            HARD_FAIL_ON_FIREWALLD=1
+            ;;
         service-cidr|service_cidr)
             SERVICE_CIDR="$_value"
             ;;
@@ -204,6 +209,8 @@ done
 if [ -z "$KUBERNETES_VERSION" ]; then
     bail "kubernetes-version is required"
 fi
+
+checkFirewalld
 
 k8sInstalled=
 if isKubeletInstalled; then

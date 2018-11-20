@@ -146,8 +146,6 @@ installKubernetesComponents() {
             ;;
 
         centos7.4|centos7.5|rhel7.4|rhel7.5)
-            maybeDisableFirewalld
-
             # This needs to be run on Linux 3.x nodes for Rook
             modprobe rbd
             echo 'rbd' > /etc/modules-load.d/replicated-rook.conf
@@ -176,27 +174,6 @@ installKubernetesComponents() {
     logSuccess "Kubernetes components installed"
 }
 
-
-#######################################
-# Asks user for permission to disable firewalld if active
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-maybeDisableFirewalld() {
-    if ! systemctl -q is-active firewalld ; then
-        return
-    fi
-
-    printf "\n${YELLOW}Disable firewalld (Recommended)? ${NC}"
-    if confirmY ; then
-        systemctl stop firewalld
-        systemctl disable firewalld
-    fi
-}
 
 #######################################
 # Load kernel modules for kube proxy's IPVS mode
