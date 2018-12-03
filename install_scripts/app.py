@@ -571,6 +571,10 @@ def get_swarm_init_master(replicated_channel=None,
 @app.route('/<replicated_channel>/swarm-worker-join')
 @app.route('/<app_slug>/<app_channel>/swarm-worker-join')
 @app.route('/<replicated_channel>/<app_slug>/<app_channel>/swarm-worker-join')
+@app.route('/swarm-join')
+@app.route('/<replicated_channel>/swarm-join')
+@app.route('/<app_slug>/<app_channel>/swarm-join')
+@app.route('/<replicated_channel>/<app_slug>/<app_channel>/swarm-join')
 def get_swarm_init_worker(replicated_channel=None,
                           app_slug=None,
                           app_channel=None):
