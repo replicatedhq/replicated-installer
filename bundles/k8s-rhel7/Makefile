@@ -10,7 +10,7 @@ v1.10.6:
 		-t quay.io/replicated/k8s-packages:rhel7-v1.10.6-${DATE} .
 	docker push quay.io/replicated/k8s-packages:rhel7-v1.10.6-${DATE}
 
-v1.11.1:
-	docker build --pull --build-arg VERSION=1.11.1 \
-		-t quay.io/replicated/k8s-packages:rhel7-v1.11.1-${DATE} .
-	docker push quay.io/replicated/k8s-packages:rhel7-v1.11.1-${DATE}
+v1.11.5:
+	docker build --pull --build-arg VERSION=1.11.5 \
+		-t quay.io/replicated/k8s-packages:rhel7-v1.11.5-${DATE} .
+	docker push quay.io/replicated/k8s-packages:rhel7-v1.11.5-${DATE}
