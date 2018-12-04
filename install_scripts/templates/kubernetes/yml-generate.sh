@@ -1197,7 +1197,6 @@ EOF
 }
 
 render_contour_yaml() {
-    # envoy-alpine:v1.6.0 and contour:v0.5.0 still latest as of k8s 1.11.1
     cat <<EOF
 ---
 apiVersion: v1

@@ -51,12 +51,12 @@ maybeUpgradeKubernetes() {
     semverParse "$masterVersion"
 
     if [ "$major" -eq "1" ] && [ "$minor" -eq "10" ]; then
-        logStep "Kubernetes version v$masterVersion detected, upgrading to version v1.11.1"
-        upgradeK8sMaster "1.11.1" "$UBUNTU_1604_K8S_11" "$CENTOS_74_K8S_11"
-        logSuccess "Kubernetes upgraded to version v1.11.1"
+        logStep "Kubernetes version v$masterVersion detected, upgrading to version v1.11.5"
+        upgradeK8sMaster "1.11.5" "$UBUNTU_1604_K8S_11" "$CENTOS_74_K8S_11"
+        logSuccess "Kubernetes upgraded to version v1.11.5"
     fi
 
-    upgradeK8sWorkers "1.11.1"
+    upgradeK8sWorkers "1.11.5"
 }
 
 #######################################

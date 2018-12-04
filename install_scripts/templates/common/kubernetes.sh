@@ -1,10 +1,10 @@
 UBUNTU_1604_K8S_9=ubuntu-1604-v1.9.3-20181112
 UBUNTU_1604_K8S_10=ubuntu-1604-v1.10.6-20181112
-UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.1-20181112
+UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.5-20181204
 
 RHEL7_K8S_9=rhel7-v1.9.3-20180806
 RHEL7_K8S_10=rhel7-v1.10.6-20180806
-RHEL7_K8S_11=rhel7-v1.11.1-20180806
+RHEL7_K8S_11=rhel7-v1.11.5-20181204
 #######################################
 #
 # kubernetes.sh
@@ -57,7 +57,6 @@ installCNIPlugins() {
         docker load < k8s-cni.tar
     fi
 
-    # 0.6.0 is the latest as of k8s 1.11.1
     docker run -v /tmp:/out quay.io/replicated/k8s-cni:0.6.0
     tar zxfv /tmp/cni.tar.gz -C /opt/cni/bin
     mkdir -p /etc/cni/net.d
@@ -85,7 +84,7 @@ k8sPackageTag() {
                 1.10.6)
                     echo "$UBUNTU_1604_K8S_10"
                     ;;
-                1.11.1)
+                1.11.5)
                     echo "$UBUNTU_1604_K8S_11"
                     ;;
                 *)
@@ -101,7 +100,7 @@ k8sPackageTag() {
                 1.10.6)
                     echo "$RHEL7_K8S_10"
                     ;;
-                1.11.1)
+                1.11.5)
                     echo "$RHEL7_K8S_11"
                     ;;
                 *)
@@ -227,8 +226,8 @@ airgapLoadKubernetesCommonImages() {
         1.10.6)
             airgapLoadKubernetesCommonImages1106
             ;;
-        1.11.1)
-            airgapLoadKubernetesCommonImages1111
+        1.11.5)
+            airgapLoadKubernetesCommonImages1115
             ;;
         *)
             bail "Unsupported Kubernetes version $k8sVersion"
@@ -272,12 +271,12 @@ airgapLoadKubernetesCommonImages1106() {
     docker tag da86e6ba6ca1 k8s.gcr.io/pause-amd64:3.1
 }
 
-airgapLoadKubernetesCommonImages1111() {
+airgapLoadKubernetesCommonImages1115() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.11.1-20180907"
+        "quay.io/replicated/k8s-images-common:v1.11.5-20181204"
 
-    docker tag d5c25579d0ff k8s.gcr.io/kube-proxy-amd64:v1.11.1
+    docker tag d5c25579d0ff k8s.gcr.io/kube-proxy-amd64:v1.11.5
     docker tag da86e6ba6ca1 k8s.gcr.io/pause:3.1
     docker tag b3b94275d97c k8s.gcr.io/coredns:1.1.3
     docker tag 86ff1a48ce14 weaveworks/weave-kube:2.4.0
@@ -312,8 +311,8 @@ airgapLoadKubernetesControlImages() {
         1.10.6)
             airgapLoadKubernetesControlImages1106
             ;;
-        1.11.1)
-            airgapLoadKubernetesControlImages1111
+        1.11.5)
+            airgapLoadKubernetesControlImages1115
             ;;
         *)
             bail "Unsupported Kubernetes version $k8sVersion"
@@ -350,14 +349,14 @@ airgapLoadKubernetesControlImages1106() {
     docker tag 52920ad46f5b k8s.gcr.io/etcd-amd64:3.1.12
 }
 
-airgapLoadKubernetesControlImages1111() {
+airgapLoadKubernetesControlImages1115() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-control:v1.11.1-20180809"
+        "quay.io/replicated/k8s-images-control:v1.11.5-20181204"
 
-    docker tag 816332bd9d11 k8s.gcr.io/kube-apiserver-amd64:v1.11.1
-    docker tag 52096ee87d0e k8s.gcr.io/kube-controller-manager-amd64:v1.11.1
-    docker tag 272b3a60cd68 k8s.gcr.io/kube-scheduler-amd64:v1.11.1
+    docker tag 816332bd9d11 k8s.gcr.io/kube-apiserver-amd64:v1.11.5
+    docker tag 52096ee87d0e k8s.gcr.io/kube-controller-manager-amd64:v1.11.5
+    docker tag 272b3a60cd68 k8s.gcr.io/kube-scheduler-amd64:v1.11.5
     docker tag b8df3b177be2 k8s.gcr.io/etcd-amd64:3.2.18
 }
 
