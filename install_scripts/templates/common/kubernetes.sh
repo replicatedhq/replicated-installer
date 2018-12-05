@@ -1,10 +1,3 @@
-UBUNTU_1604_K8S_9=ubuntu-1604-v1.9.3-20181112
-UBUNTU_1604_K8S_10=ubuntu-1604-v1.10.6-20181112
-UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.5-20181204
-
-RHEL7_K8S_9=rhel7-v1.9.3-20180806
-RHEL7_K8S_10=rhel7-v1.10.6-20180806
-RHEL7_K8S_11=rhel7-v1.11.5-20181204
 #######################################
 #
 # kubernetes.sh
@@ -13,10 +6,43 @@ RHEL7_K8S_11=rhel7-v1.11.5-20181204
 #
 #######################################
 
+UBUNTU_1604_K8S_9=ubuntu-1604-v1.9.3-20181112
+UBUNTU_1604_K8S_10=ubuntu-1604-v1.10.6-20181112
+UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.5-20181204
+
+RHEL7_K8S_9=rhel7-v1.9.3-20180806
+RHEL7_K8S_10=rhel7-v1.10.6-20180806
+RHEL7_K8S_11=rhel7-v1.11.5-20181204
+
 DAEMON_NODE_KEY=replicated.com/daemon
 
-command_exists() {
-	command -v "$@" > /dev/null 2>&1
+
+#######################################
+# Set the patch version in KUBERNETES_VERSION.
+# Globals:
+#   KUBERNETES_VERSION
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+setK8sPatchVersion() {
+    semverParse "$KUBERNETES_VERSION"
+    local k8sMajor="$major"
+    local k8sMinor="$minor"
+    local k8sPatch="$patch"
+
+    case "$k8sMinor" in
+        9)
+            # 1.9.3
+            k8sPatch="3"
+            ;;
+        11)
+            # 1.11.5
+            k8sPatch="5"
+            ;;
+    esac
+    KUBERNETES_VERSION="$k8sMajor.$k8sMinor.$k8sPatch"
 }
 
 #######################################
@@ -116,10 +142,11 @@ k8sPackageTag() {
 }
 
 #######################################
-# Install K8s components for OS
+# Install K8s host commands for OS
 # Globals:
 #   LSB_DIST
 #   LSB_VERSION
+#   K8S_UPGRADE_PATCH_VERSION
 # Arguments:
 #   k8sVersion - e.g. 1.9.3
 # Returns:
@@ -128,13 +155,12 @@ k8sPackageTag() {
 installKubernetesComponents() {
     k8sVersion=$1
 
-    if commandExists "kubeadm"; then
+    logStep "Install kubelet, kubeadm, kubectl and cni binaries"
+
+    if kubernetesHostCommandsOK; then
+        logSuccess "Kubernetes components already installed"
         return
     fi
-
-    logStep "Install kubernetes components"
-
-    must_disable_selinux
 
     prepareK8sPackageArchives $k8sVersion
 
@@ -173,6 +199,32 @@ installKubernetesComponents() {
     logSuccess "Kubernetes components installed"
 }
 
+#######################################
+# Returns 0 if all Kubernetes host commands exist
+# Globals:
+#   K8S_UPGRADE_PATCH_VERSION
+#   KUBERNETES_VERSION
+# Arguments:
+#   None
+# Returns:
+#   1 if any host command version is missing, 0 if all are available
+#######################################
+kubernetesHostCommandsOK() {
+    if ! commandExists kubelet; then
+        printf "kubelet command missing - host components installation is required\n"
+        return 1
+    fi
+    if ! commandExists kubeadm; then
+        printf "kubeadm command missing - host components installation is required\n"
+        return 1
+    fi
+    if ! commandExists kubectl; then
+        printf "kubectl command missing - host components installation is required\n"
+        return 1
+    fi
+
+    return 0
+}
 
 #######################################
 # Load kernel modules for kube proxy's IPVS mode
@@ -216,7 +268,7 @@ loadIPVSKubeProxyModules() {
 airgapLoadKubernetesCommonImages() {
     logStep "common images"
 
-    k8sVersion=$1
+    # TODO if the install is 1.11.1 and is not being upgraded to 1.11.5 this will unnecessarily load the 1.11.5 images
 
     docker load < k8s-images-common-${k8sVersion}.tar
     case "$k8sVersion" in
@@ -301,7 +353,7 @@ airgapLoadKubernetesCommonImages1115() {
 airgapLoadKubernetesControlImages() {
     logStep "control plane images"
 
-    k8sVersion=$1
+    # TODO if the install is 1.11.1 and is not being upgraded to 1.11.5 this will unnecessarily load the 1.11.5 images
 
     docker load < k8s-images-control-${k8sVersion}.tar
     case "$k8sVersion" in
@@ -395,9 +447,9 @@ prepareK8sPackageArchives() {
 #######################################
 k8sMasterNodeName() {
     set +e
-    _master="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null | grep master | awk '{ print $1 }')"
+    _master="$(kubectl get nodes 2>/dev/null | grep master | awk '{ print $1 }')"
     until [ -n "$_master" ]; do
-        _master="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null | grep master | awk '{ print $1 }')"
+        _master="$(kubectl get nodes 2>/dev/null | grep master | awk '{ print $1 }')"
     done
     set -e
     printf "$_master"
@@ -413,7 +465,7 @@ k8sMasterNodeName() {
 #   None
 #######################################
 k8sNamespaceExists() {
-    KUBECONFIG=/etc/kubernetes/admin.conf kubectl get namespaces | grep "$1" > /dev/null
+    kubectl get namespaces | grep "$1" > /dev/null
 }
 
 
@@ -434,7 +486,7 @@ spinnerNodesReady()
     local spinstr='|/-\'
     while true; do
         set +e
-        local nodes="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null)"
+        local nodes="$(kubectl get nodes 2>/dev/null)"
         local _exit="$?"
         set -e
         if [ "$_exit" -eq "0" ] && ! echo "$nodes" | grep -q "NotReady"; then
@@ -467,7 +519,7 @@ spinnerNodeVersion()
     local spinstr='|/-\'
     while true; do
         set +e
-        local nout="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get node $node 2>/dev/null)"
+        local nout="$(kubectl get node $node 2>/dev/null)"
         local _exit="$?"
         set -e
         if [ "$_exit" -eq "0" ] && [ "$(echo "$nout" | sed '1d' | awk '{ print $5 }')" == "v$k8sVersion" ]; then
@@ -493,11 +545,11 @@ spinnerNodeVersion()
 waitForNodes()
 {
     n=0
-    while ! KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes >/dev/null 2>&1; do
+    while ! kubectl get nodes >/dev/null 2>&1; do
         n="$(( $n + 1 ))"
         if [ "$n" -ge "120" ]; then
             # this should exit script on non-zero exit code and print error message
-            KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 1>/dev/null
+            kubectl get nodes 1>/dev/null
         fi
         sleep 2
     done
@@ -761,11 +813,11 @@ k8s_reset() {
 
     if commandExists "kubectl" && [ -f "/opt/replicated/kubeadm.conf" ]; then
         set +e
-        nodes=$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes --output=go-template --template="{{ '{{' }}range .items{{ '}}{{' }}.metadata.name{{ '}}' }} {{ '{{' }}end{{ '}}' }}")
+        nodes=$(kubectl get nodes --output=go-template --template="{{ '{{' }}range .items{{ '}}{{' }}.metadata.name{{ '}}' }} {{ '{{' }}end{{ '}}' }}")
         for node in $nodes; do
             # continue after timeout errors
-            KUBECONFIG=/etc/kubernetes/admin.conf kubectl drain "$node" --delete-local-data --force --ignore-daemonsets --grace-period=30 --timeout=300s || :
-            KUBECONFIG=/etc/kubernetes/admin.conf kubectl delete node "$node"
+            kubectl drain "$node" --delete-local-data --force --ignore-daemonsets --grace-period=30 --timeout=300s || :
+            kubectl delete node "$node"
         done
         set -e
     fi
@@ -783,4 +835,43 @@ k8s_reset() {
     rm -rf /var/lib/etcd
     rm -f /usr/bin/kubeadm /usr/bin/kubelet /usr/bin/kubectl
     kill $(ps aux | grep '[k]ubelet' | awk '{print $2}') 2> /dev/null
+}
+
+#######################################
+# Get kubelet version
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   version - e.g. 1.11.5
+#######################################
+getKubeletVersion() {
+    kubelet --version | cut -d ' ' -f 2 | sed 's/v//'
+}
+
+#######################################
+# Get kubectl client command version
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   version - e.g. 1.11.5
+#######################################
+getKubectlVersion() {
+    kubectl version | grep 'Client Version' | tr " " "\n" | grep GitVersion | cut -d'"' -f2 | sed 's/v//'
+}
+
+#######################################
+# Get kubeadm command version
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   version - e.g. 1.11.5
+#######################################
+getKubeadmVersion() {
+    kubeadm version | tr " " "\n" | grep GitVersion | cut -d'"' -f2 | sed 's/v//'
 }

@@ -2,6 +2,7 @@
 
 set -e
 AIRGAP=0
+K8S_UPGRADE_PATCH_VERSION=0
 
 {% include 'common/common.sh' %}
 {% include 'common/kubernetes.sh' %}
@@ -40,7 +41,9 @@ if [ -z "$KUBERNETES_VERSION" ]; then
     bail "kubernetes-version is required"
 fi
 
+export KUBECONFIG=/etc/kubernetes/admin.conf
 
+setK8sPatchVersion
 loadIPVSKubeProxyModules
 maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
 

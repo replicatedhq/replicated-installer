@@ -27,6 +27,7 @@ BOOTSTRAP_TOKEN=
 BOOTSTRAP_TOKEN_TTL="24h"
 KUBERNETES_NAMESPACE="default"
 KUBERNETES_VERSION="{{ kubernetes_version }}"
+K8S_UPGRADE_PATCH_VERSION=0
 STORAGE_CLASS="{{ storage_class }}"
 STORAGE_PROVISIONER="{{ storage_provisioner }}"
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
@@ -123,7 +124,7 @@ EOF
 
 initKube() {
     logStep "Verify Kubelet"
-    if ! ps aux | grep -qE "[k]ubelet"; then
+    if [ ! -e "/etc/kubernetes/manifests/kube-apiserver.yaml" ]; then
         logStep "Initialize Kubernetes"
         initKubeadmConfig
         loadIPVSKubeProxyModules
@@ -152,20 +153,16 @@ initKube() {
         fi
     else
         logStep "verify kubernetes config"
-        export KUBECONFIG=/etc/kubernetes/admin.conf
         chmod 444 /etc/kubernetes/admin.conf
         initKubeadmConfig
         loadIPVSKubeProxyModules
         kubeadm config upload from-file --config /opt/replicated/kubeadm.conf
         _current=$(getK8sServerVersion)
-
-        maybeUpgradeKubernetes "$KUBERNETES_VERSION"
     fi
     cp /etc/kubernetes/admin.conf $HOME/admin.conf
     chown $SUDO_USER:$SUDO_GID $HOME/admin.conf
 
 
-    export KUBECONFIG=/etc/kubernetes/admin.conf
     chmod 444 /etc/kubernetes/admin.conf
     echo 'export KUBECONFIG=/etc/kubernetes/admin.conf' >> /etc/profile
     echo "source <(kubectl completion bash)" >> /etc/profile
@@ -175,7 +172,7 @@ initKube() {
 # workaround for https://github.com/kubernetes/kubeadm/issues/998
 patchCoreDNS() {
     n=0
-    while ! KUBECONFIG=/etc/kubernetes/admin.conf kubectl -n kube-system get deployment coredns &>/dev/null; do
+    while ! kubectl -n kube-system get deployment coredns &>/dev/null; do
         n="$(( $n + 1 ))"
         if [ "$n" -ge "120" ]; then
             # let next line fail
@@ -183,9 +180,9 @@ patchCoreDNS() {
         fi
         sleep 2
     done
-    KUBECONFIG=/etc/kubernetes/admin.conf kubectl -n kube-system get deployment coredns -o yaml | \
+    kubectl -n kube-system get deployment coredns -o yaml | \
         sed 's/allowPrivilegeEscalation: false/allowPrivilegeEscalation: true/g' | \
-        KUBECONFIG=/etc/kubernetes/admin.conf kubectl apply -f -
+        kubectl apply -f -
 }
 
 maybeGenerateBootstrapToken() {
@@ -238,7 +235,7 @@ getYAMLOpts() {
         opts=$opts" encrypt-network=0"
     fi
     # Do not change rook storage class
-    if KUBECONFIG=/etc/kubernetes/admin.conf kubectl get storageclass | grep rook.io > /dev/null ; then
+    if kubectl get storageclass | grep rook.io > /dev/null ; then
         opts=$opts" storage-provisioner=0"
     elif [ -n "$STORAGE_PROVISIONER" ]; then
         opts=$opts" storage-provisioner=$STORAGE_PROVISIONER"
@@ -249,7 +246,7 @@ getYAMLOpts() {
     if [ -n "$STORAGE_CLASS" ]; then
         opts=$opts" storage-class=$STORAGE_CLASS"
     fi
-    if KUBECONFIG=/etc/kubernetes/admin.conf kubectl get pvc | grep replicated-pv-claim > /dev/null ; then
+    if kubectl get pvc | grep replicated-pv-claim > /dev/null ; then
         opts=$opts" replicated-pvc=0"
     fi
     YAML_GENERATE_OPTS="$opts"
@@ -584,6 +581,10 @@ while [ "$1" != "" ]; do
     shift
 done
 
+export KUBECONFIG=/etc/kubernetes/admin.conf
+
+setK8sPatchVersion
+
 checkFirewalld
 
 if [ "$KUBERNETES_VERSION" == "1.9.3" ]; then
@@ -659,6 +660,7 @@ if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
     checkDockerProxyConfig
 fi
 
+must_disable_selinux
 installKubernetesComponents "$KUBERNETES_VERSION"
 if [ "$CLUSTER_DNS" != "$DEFAULT_CLUSTER_DNS" ]; then
     sed -i "s/$DEFAULT_CLUSTER_DNS/$CLUSTER_DNS/g" /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
@@ -689,6 +691,8 @@ untaintMaster
 
 spinnerMasterNodeReady
 labelMasterNode
+
+maybeUpgradeKubernetes "$KUBERNETES_VERSION"
 
 echo
 kubectl get nodes
