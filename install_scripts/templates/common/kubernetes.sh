@@ -304,7 +304,7 @@ airgapLoadKubernetesCommonImages193() {
     docker tag 86ff1a48ce14 weaveworks/weave-kube:2.4.0
     docker tag 647ad6d59818 weaveworks/weave-npc:2.4.0
     docker tag bf0c403ea58d weaveworks/weaveexec:2.4.0
-    docker tag b2b03e9146e1 docker.io/registry:2
+    docker tag 2e2f252f3c88 docker.io/registry:2
     docker tag 6521ac58ca80 envoyproxy/envoy-alpine:v1.6.0
     docker tag 6a9ec4bcb60e gcr.io/heptio-images/contour:v0.5.0
     docker tag b5c343f1a3a6 rook/ceph:v0.8.1
@@ -328,13 +328,13 @@ airgapLoadKubernetesCommonImages1115() {
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-common:v1.11.5-20181204"
 
-    docker tag d5c25579d0ff k8s.gcr.io/kube-proxy-amd64:v1.11.5
+    docker tag aa7b610992c0 k8s.gcr.io/kube-proxy-amd64:v1.11.5
     docker tag da86e6ba6ca1 k8s.gcr.io/pause:3.1
     docker tag b3b94275d97c k8s.gcr.io/coredns:1.1.3
     docker tag 86ff1a48ce14 weaveworks/weave-kube:2.4.0
     docker tag 647ad6d59818 weaveworks/weave-npc:2.4.0
     docker tag bf0c403ea58d weaveworks/weaveexec:2.4.0
-    docker tag b2b03e9146e1 docker.io/registry:2
+    docker tag 2e2f252f3c88 docker.io/registry:2
     docker tag 6521ac58ca80 docker.io/envoyproxy/envoy-alpine:v1.6.0
     docker tag 6a9ec4bcb60e gcr.io/heptio-images/contour:v0.5.0
     docker tag b5c343f1a3a6 rook/ceph:v0.8.1
@@ -406,9 +406,9 @@ airgapLoadKubernetesControlImages1115() {
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-control:v1.11.5-20181204"
 
-    docker tag 816332bd9d11 k8s.gcr.io/kube-apiserver-amd64:v1.11.5
-    docker tag 52096ee87d0e k8s.gcr.io/kube-controller-manager-amd64:v1.11.5
-    docker tag 272b3a60cd68 k8s.gcr.io/kube-scheduler-amd64:v1.11.5
+    docker tag 3a239c93cfbe k8s.gcr.io/kube-apiserver-amd64:v1.11.5
+    docker tag 67fbf264abce k8s.gcr.io/kube-controller-manager-amd64:v1.11.5
+    docker tag 3280f0c09d18 k8s.gcr.io/kube-scheduler-amd64:v1.11.5
     docker tag b8df3b177be2 k8s.gcr.io/etcd-amd64:3.2.18
 }
 
