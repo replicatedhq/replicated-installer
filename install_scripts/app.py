@@ -633,6 +633,8 @@ def get_kubernetes_init_master(replicated_channel=None,
     kubernetes_version = helpers.get_arg('kubernetes_version',
                                          pinned_kubernetes_version)
 
+    kubernetes_upgrade_patch_version = '0' if replicated_version == '2.30.3' else '1'
+
     storage_provisioner = helpers.get_arg('storage_provisioner', 'rook')
     storage_class = helpers.get_arg('storage_class', 'default')
 
@@ -672,6 +674,7 @@ def get_kubernetes_init_master(replicated_channel=None,
             kubernetes_manifests_query=query,
             channel_css=helpers.base64_encode(channel_css),
             terms=helpers.base64_encode(terms),
+            kubernetes_upgrade_patch_version=kubernetes_upgrade_patch_version,
         ))
     return Response(response, mimetype='text/x-shellscript')
 
