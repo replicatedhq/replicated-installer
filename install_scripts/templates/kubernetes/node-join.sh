@@ -14,6 +14,7 @@ HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 KUBERNETES_ONLY=0
 ADDITIONAL_NO_PROXY=
 KUBERNETES_VERSION="{{ kubernetes_version }}"
+K8S_UPGRADE_PATCH_VERSION=0
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -210,6 +211,10 @@ if [ -z "$KUBERNETES_VERSION" ]; then
     bail "kubernetes-version is required"
 fi
 
+export KUBECONFIG=/etc/kubernetes/admin.conf
+
+setK8sPatchVersion
+
 checkFirewalld
 
 k8sInstalled=
@@ -271,6 +276,7 @@ if ps aux | grep -qE "[k]ubelet"; then
     exit 0
 fi
 
+must_disable_selinux
 installKubernetesComponents "$KUBERNETES_VERSION"
 systemctl enable kubelet && systemctl start kubelet
 

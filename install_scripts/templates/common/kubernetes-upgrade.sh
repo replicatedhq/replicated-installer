@@ -12,7 +12,7 @@
 #######################################
 
 #######################################
-# If kubernetes is installed and version is less than specified, upgrade.
+# If kubernetes is installed and version is less than specified, upgrade. Kubeadm requires installing every minor version between current and target.
 # Globals:
 #   None
 # Arguments:
@@ -21,22 +21,29 @@
 #   None
 #######################################
 maybeUpgradeKubernetes() {
-    export KUBECONFIG=/etc/kubernetes/admin.conf
+    local k8sTargetVersion="$1"
+    semverParse "$k8sTargetVersion"
+    local k8sTargetMajor="$major"
+    local k8sTargetMinor="$minor"
+    local k8sTargetPatch="$patch"
 
-    local upgradeVersion="$1"
-    semverParse "$upgradeVersion"
-    local upgradeMajor="$major"
-    local upgradeMinor="$minor"
+    local kubeletVersion="$(getKubeletVersion)"
+    semverParse "$kubeletVersion"
+    local kubeletMajor="$major"
+    local kubeletMinor="$minor"
+    local kubeletPatch="$patch"
 
-    if [ "$upgradeMajor" -lt "1" ] || [ "$upgradeMinor" -lt "10" ]; then
-        return
+    if [ "$kubeletMajor" -ne "$k8sTargetMajor" ]; then
+        printf "Cannot upgrade from %s to %s\n" "$kubeletVersion" "$k8sTargetVersion"
+        return 1
     fi
 
-    local masterVersion="$(getK8sNodeVersion)"
-    semverParse "$masterVersion"
+    if [ "$kubeletMinor" -eq "9" ] && [ "$k8sTargetMinor" -eq "9" ]; then
+        return 0
+    fi
 
-    if [ "$major" -eq "1" ] && [ "$minor" -eq "9" ]; then
-        logStep "Kubernetes version v$masterVersion detected, upgrading to version v1.10.6"
+    if [ "$kubeletMinor" -eq "9" ] && [ "$k8sTargetMinor" -gt "9" ]; then
+        logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.10.6"
         if [ "$AIRGAP" = "1" ]; then
             airgapLoadKubernetesCommonImages 1.10.6
             airgapLoadKubernetesControlImages 1.10.6
@@ -45,18 +52,21 @@ maybeUpgradeKubernetes() {
         logSuccess "Kubernetes upgraded to version v1.10.6"
     fi
 
-    upgradeK8sWorkers "1.10.6"
+    upgradeK8sWorkers "1.10.6" "0"
 
-    masterVersion="$(getK8sNodeVersion)"
-    semverParse "$masterVersion"
+    kubeletVersion="$(getK8sNodeVersion)"
+    semverParse "$kubeletVersion"
+    kubeletMajor="$major"
+    kubeletMinor="$minor"
+    kubeletPatch="$patch"
 
-    if [ "$major" -eq "1" ] && [ "$minor" -eq "10" ]; then
-        logStep "Kubernetes version v$masterVersion detected, upgrading to version v1.11.5"
+    if [ "$kubeletMinor" -eq "10" ] || ([ "$kubeletMinor" -eq "11" ] && [ "$k8sTargetVersion" -eq "11" ] && [ "$kubeletPatch" -lt "$k8sTargetPatch" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
+        logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.11.5"
         upgradeK8sMaster "1.11.5" "$UBUNTU_1604_K8S_11" "$CENTOS_74_K8S_11"
         logSuccess "Kubernetes upgraded to version v1.11.5"
     fi
 
-    upgradeK8sWorkers "1.11.5"
+    upgradeK8sWorkers "1.11.5" "$K8S_UPGRADE_PATCH_VERSION"
 }
 
 #######################################
@@ -69,20 +79,28 @@ maybeUpgradeKubernetes() {
 #   None
 #######################################
 maybeUpgradeKubernetesNode() {
-    upgradeVersion="$1"
-    semverParse "$upgradeVersion"
-    local upgradeMajor="$major"
-    local upgradeMinor="$minor"
+    local k8sTargetVersion="$1"
+    semverParse "$k8sTargetVersion"
+    local k8sTargetMajor="$major"
+    local k8sTargetMinor="$minor"
+    local k8sTargetPatch="$patch"
 
-    local nodeVersion="$(getK8sNodeVersion)"
-    semverParse "$nodeVersion"
+    local kubeletVersion="$(getK8sNodeVersion)"
+    semverParse "$kubeletVersion"
+    local kubeletMajor="$major"
+    local kubeletMinor="$minor"
+    local kubeletPatch="$patch"
 
-    if [ "$major" -eq "$upgradeMajor" ] && [ "$minor" -lt "$upgradeMinor" ]; then
-        logStep "Kubernetes version v$nodeVersion detected, upgrading node to version v$upgradeVersion"
+    if [ "$kubeletMajor" -ne "$k8sTargetMajor" ]; then
+        printf "Cannot upgrade from %s to %s\n" "$kubeletVersion" "$k8sTargetVersion"
+        return 1
+    fi
+    if [ "$kubeletMinor" -lt "$k8sTargetMinor" ] || ([ "$kubeletMinor" -eq "$k8sTargetMinor" ] && [ "$kubeletPatch" -lt "$k8sTargetPatch" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = 0 ]); then
+        logStep "Kubernetes version v$kubeletVersion detected, upgrading node to version v$k8sTargetVersion"
 
-        upgradeK8sNode "$upgradeVersion"
+        upgradeK8sNode "$k8sTargetVersion"
 
-        if [ "$upgradeMinor" -gt 10 ]; then
+        if [ "$k8sTargetMinor" -gt 10 ]; then
             # kubeadm alpha phase kubelet write-env-file failed in airgap
             local cgroupDriver=$(sudo docker info 2> /dev/null | grep "Cgroup Driver" | cut -d' ' -f 3)
             local envFile="KUBELET_KUBEADM_ARGS=--cgroup-driver=%s --cni-bin-dir=/opt/cni/bin --cni-conf-dir=/etc/cni/net.d --network-plugin=cni\n"
@@ -101,49 +119,62 @@ maybeUpgradeKubernetesNode() {
 
         systemctl restart kubelet
 
-        logSuccess "Kubernetes node upgraded to version v$upgradeVersion"
+        logSuccess "Kubernetes node upgraded to version v$k8sTargetVersion"
     fi
 }
 
 #######################################
-# Upgrade Kubernetes on remote workers to version
+# Upgrade Kubernetes on remote workers to version. Never downgrades a worker.
 # Globals:
 #   AIRGAP
 # Arguments:
 #   k8sVersion - e.g. 1.10.6
+#   shouldUpgradePatch
 # Returns:
 #   None
 #######################################
 upgradeK8sWorkers() {
     k8sVersion="$1"
+    shouldUpgradePatch="$2"
+
     semverParse "$k8sVersion"
     local upgradeMajor="$major"
     local upgradeMinor="$minor"
 
     local nodes=
     n=0
-    while ! nodes="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes 2>/dev/null)"; do
+    while ! nodes="$(kubectl get nodes 2>/dev/null)"; do
         n="$(( $n + 1 ))"
         if [ "$n" -ge "30" ]; then
             # this should exit script on non-zero exit code and print error message
-            nodes="$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes)"
+            nodes="$(kubectl get nodes)"
         fi
         sleep 2
     done
     # not an error if there are no workers
+    # TODO better master identification
     local workers="$(echo "$nodes" | sed '1d' | grep -v master || :)"
 
     while read -r node; do
         if [ -z "$node" ]; then
             continue
         fi
-        semverParse $(echo "$node" | awk '{ print $5 }' | sed 's/v//' )
+        nodeVersion="$(echo "$node" | awk '{ print $5 }' | sed 's/v//' )"
+        semverParse "$nodeVersion"
         nodeMajor="$major"
         nodeMinor="$minor"
-        if [ "$nodeMajor" -gt "$upgradeMajor" ]; then
+        nodePatch="$patch"
+        if [ "$nodeMajor" -ne "$upgradeMajor" ]; then
+            printf "Cannot upgrade from %s to %s\n" "$nodeVersion" "$k8sVersion"
+            return 1
+        fi
+        if [ "$nodeMinor" -gt "$upgradeMinor" ]; then
             continue
         fi
-        if [ "$nodeMajor" -eq "$upgradeMajor" ] && [ "$nodeMinor" -ge "$upgradeMinor" ]; then
+        if [ "$nodeMinor" -eq "$upgradeMinor" ] && [ "$nodePatch" -eq "$upgradePatch" ]; then
+            continue
+        fi
+        if [ "$nodeMinor" -eq "$upgradeMinor" ] && [ "$shouldUpgradePatch" != "1" ]; then
             continue
         fi
         nodeName=$(echo "$node" | awk '{ print $1 }')
@@ -188,11 +219,7 @@ upgradeK8sMaster() {
     chmod a+rx /usr/bin/kubeadm
 
     kubeadm upgrade apply "v$k8sVersion" --yes --config=/opt/replicated/kubeadm.conf
-
-    # upgrade master
     waitForNodes
-    master=$(kubectl get nodes | grep master | awk '{ print $1 }')
-    # ignore error about unmanaged pods
 
     case "$LSB_DIST$DIST_VERSION" in
         ubuntu16.04)
@@ -213,7 +240,7 @@ upgradeK8sMaster() {
     systemctl restart kubelet
 
     sed -i "s/kubernetesVersion:.*/kubernetesVersion: v$k8sVersion/" /opt/replicated/kubeadm.conf
-    
+
     waitForNodes
     spinnerNodeVersion "$(k8sMasterNodeName)" "$k8sVersion"
     spinnerNodesReady
