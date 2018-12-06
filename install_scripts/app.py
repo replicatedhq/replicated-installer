@@ -633,7 +633,7 @@ def get_kubernetes_init_master(replicated_channel=None,
     kubernetes_version = helpers.get_arg('kubernetes_version',
                                          pinned_kubernetes_version)
 
-    kubernetes_upgrade_patch_version = '0' if replicated_version == '2.30.3' else '1'
+    kubernetes_upgrade_patch_version = '1' if replicated_version == '2.30.3' else '0'
 
     storage_provisioner = helpers.get_arg('storage_provisioner', 'rook')
     storage_class = helpers.get_arg('storage_class', 'default')
