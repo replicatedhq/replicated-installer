@@ -60,7 +60,7 @@ maybeUpgradeKubernetes() {
     kubeletMinor="$minor"
     kubeletPatch="$patch"
 
-    if [ "$kubeletMinor" -eq "10" ] || ([ "$kubeletMinor" -eq "11" ] && [ "$k8sTargetVersion" -eq "11" ] && [ "$kubeletPatch" -lt "$k8sTargetPatch" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
+    if [ "$kubeletMinor" -eq "10" ] || ([ "$kubeletMinor" -eq "11" ] && [ "$k8sTargetMinor" -eq "11" ] && [ "$kubeletPatch" -lt "$k8sTargetPatch" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
         logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.11.5"
         upgradeK8sMaster "1.11.5" "$UBUNTU_1604_K8S_11" "$CENTOS_74_K8S_11"
         logSuccess "Kubernetes upgraded to version v1.11.5"
@@ -95,7 +95,7 @@ maybeUpgradeKubernetesNode() {
         printf "Cannot upgrade from %s to %s\n" "$kubeletVersion" "$k8sTargetVersion"
         return 1
     fi
-    if [ "$kubeletMinor" -lt "$k8sTargetMinor" ] || ([ "$kubeletMinor" -eq "$k8sTargetMinor" ] && [ "$kubeletPatch" -lt "$k8sTargetPatch" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = 0 ]); then
+    if [ "$kubeletMinor" -lt "$k8sTargetMinor" ] || ([ "$kubeletMinor" -eq "$k8sTargetMinor" ] && [ "$kubeletPatch" -lt "$k8sTargetPatch" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
         logStep "Kubernetes version v$kubeletVersion detected, upgrading node to version v$k8sTargetVersion"
 
         upgradeK8sNode "$k8sTargetVersion"
@@ -140,6 +140,7 @@ upgradeK8sWorkers() {
     semverParse "$k8sVersion"
     local upgradeMajor="$major"
     local upgradeMinor="$minor"
+    local upgradePatch="$patch"
 
     local nodes=
     n=0
@@ -180,10 +181,14 @@ upgradeK8sWorkers() {
         nodeName=$(echo "$node" | awk '{ print $1 }')
 
         printf "\n\n\tRun the upgrade script on remote node before proceeding: ${GREEN}$nodeName${NC}\n\n"
+        local upgradePatchFlag=""
+        if [ "$shouldUpgradePatch" = "1" ]; then
+            upgradePatchFlag=" kubernetes-upgrade-patch-version"
+        fi
         if [ "$AIRGAP" = "1" ]; then
-            printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s airgap kubernetes-version=$k8sVersion${NC}"
+            printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s airgap kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
         else
-            printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s kubernetes-version=$k8sVersion${NC}"
+            printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
         fi
         while true; do
             echo

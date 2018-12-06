@@ -2,7 +2,7 @@
 
 set -e
 AIRGAP=0
-K8S_UPGRADE_PATCH_VERSION=0
+K8S_UPGRADE_PATCH_VERSION="{{ k8s_upgrade_patch_version }}"
 
 {% include 'common/common.sh' %}
 {% include 'common/kubernetes.sh' %}
@@ -28,6 +28,9 @@ while [ "$1" != "" ]; do
             ;;
         kubernetes-version|kubernetes_version)
             KUBERNETES_VERSION="$_value"
+            ;;
+        kubernetes-upgrade-patch-version|kubernetes_upgrade_patch_version)
+            K8S_UPGRADE_PATCH_VERSION=1
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""

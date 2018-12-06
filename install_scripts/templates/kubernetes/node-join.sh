@@ -14,7 +14,7 @@ HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 KUBERNETES_ONLY=0
 ADDITIONAL_NO_PROXY=
 KUBERNETES_VERSION="{{ kubernetes_version }}"
-K8S_UPGRADE_PATCH_VERSION=0
+K8S_UPGRADE_PATCH_VERSION="{{ k8s_upgrade_patch_version }}"
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -198,6 +198,9 @@ while [ "$1" != "" ]; do
             else
                 ADDITIONAL_NO_PROXY="$ADDITIONAL_NO_PROXY,$_value"
             fi
+            ;;
+        kubernetes-upgrade-patch-version|kubernetes_upgrade_patch_version)
+            K8S_UPGRADE_PATCH_VERSION=1
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
