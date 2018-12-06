@@ -146,7 +146,6 @@ k8sPackageTag() {
 # Globals:
 #   LSB_DIST
 #   LSB_VERSION
-#   K8S_UPGRADE_PATCH_VERSION
 # Arguments:
 #   k8sVersion - e.g. 1.9.3
 # Returns:
@@ -202,7 +201,6 @@ installKubernetesComponents() {
 #######################################
 # Returns 0 if all Kubernetes host commands exist
 # Globals:
-#   K8S_UPGRADE_PATCH_VERSION
 #   KUBERNETES_VERSION
 # Arguments:
 #   None

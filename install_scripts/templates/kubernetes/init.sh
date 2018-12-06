@@ -27,7 +27,7 @@ BOOTSTRAP_TOKEN=
 BOOTSTRAP_TOKEN_TTL="24h"
 KUBERNETES_NAMESPACE="default"
 KUBERNETES_VERSION="{{ kubernetes_version }}"
-K8S_UPGRADE_PATCH_VERSION=0
+K8S_UPGRADE_PATCH_VERSION="{{ k8s_upgrade_patch_version }}"
 STORAGE_CLASS="{{ storage_class }}"
 STORAGE_PROVISIONER="{{ storage_provisioner }}"
 NO_CE_ON_EE="{{ no_ce_on_ee }}"
@@ -572,6 +572,9 @@ while [ "$1" != "" ]; do
             else
                 ADDITIONAL_NO_PROXY="$ADDITIONAL_NO_PROXY,$_value"
             fi
+            ;;
+        kubernetes-upgrade-patch-version|kubernetes_upgrade_patch_version)
+            K8S_UPGRADE_PATCH_VERSION=1
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
