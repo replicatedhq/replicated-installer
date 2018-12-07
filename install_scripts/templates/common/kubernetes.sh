@@ -325,8 +325,10 @@ airgapLoadKubernetesCommonImages1106() {
 airgapLoadKubernetesCommonImages1115() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.11.5-20181204"
+        "quay.io/replicated/k8s-images-common:v1.11.5-20181207"
 
+    # kube-proxy is a daemon set so clusters that started at v1.11.1 will need this available on all nodes
+    docker tag d5c25579d0ff k8s.gcr.io/kube-proxy-amd64:v1.11.1
     docker tag aa7b610992c0 k8s.gcr.io/kube-proxy-amd64:v1.11.5
     docker tag da86e6ba6ca1 k8s.gcr.io/pause:3.1
     docker tag b3b94275d97c k8s.gcr.io/coredns:1.1.3
