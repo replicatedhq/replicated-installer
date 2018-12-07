@@ -264,6 +264,7 @@ loadIPVSKubeProxyModules() {
 #   None
 #######################################
 airgapLoadKubernetesCommonImages() {
+    local k8sVersion="$1"
     logStep "common images"
 
     # TODO if the install is 1.11.1 and is not being upgraded to 1.11.5 this will unnecessarily load the 1.11.5 images
@@ -349,6 +350,7 @@ airgapLoadKubernetesCommonImages1115() {
 #   None
 #######################################
 airgapLoadKubernetesControlImages() {
+    local k8sVersion="$1"
     logStep "control plane images"
 
     # TODO if the install is 1.11.1 and is not being upgraded to 1.11.5 this will unnecessarily load the 1.11.5 images
