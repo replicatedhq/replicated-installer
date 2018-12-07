@@ -15,6 +15,7 @@ KUBERNETES_ONLY=0
 ADDITIONAL_NO_PROXY=
 KUBERNETES_VERSION="{{ kubernetes_version }}"
 K8S_UPGRADE_PATCH_VERSION="{{ k8s_upgrade_patch_version }}"
+IPVS=1
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -213,27 +214,15 @@ done
 if [ -z "$KUBERNETES_VERSION" ]; then
     bail "kubernetes-version is required"
 fi
+if [ "$KUBERNETES_VERSION" == "1.9.3" ]; then
+    IPVS=0
+fi
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
 
 setK8sPatchVersion
 
 checkFirewalld
-
-k8sInstalled=
-if isKubeletInstalled; then
-    isK8sInstalled=1
-fi
-
-if [ -n "$isK8sInstalled" ]; then
-    maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
-
-    if [ "$AIRGAP" = "1" ]; then
-        airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"
-    fi
-
-    exit 0
-fi
 
 promptForAddress
 promptForToken
@@ -251,11 +240,19 @@ fi
 
 exportProxy
 
+# never upgrade docker underneath kubernetes
+if commandExists docker ; then
+    SKIP_DOCKER_INSTALL=1
+fi
 if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
     if [ "$OFFLINE_DOCKER_INSTALL" != "1" ]; then
-        installDockerK8s "$PINNED_DOCKER_VERSION" "$MIN_DOCKER_VERSION"
+        installDocker "$PINNED_DOCKER_VERSION" "$MIN_DOCKER_VERSION"
+
+        if [ "$PINNED_DOCKER_VERSION" = "17.09.1" ]; then
+            lockPackageVersion docker-ce
+        fi
     else
-        installDocker_1_12_Offline
+        installDockerOffline
     fi
     checkDockerDriver
     checkDockerStorageDriver "$HARD_FAIL_ON_LOOPBACK"
@@ -272,11 +269,6 @@ fi
 
 if [ "$RESTART_DOCKER" = "1" ]; then
     restartDocker
-fi
-
-if ps aux | grep -qE "[k]ubelet"; then
-    logSuccess "Node Kubelet Initialized"
-    exit 0
 fi
 
 must_disable_selinux
@@ -301,8 +293,12 @@ else
 fi
 
 loadIPVSKubeProxyModules
-joinKubernetes
 
+if ! docker ps | grep -q 'k8s.gcr.io/pause'; then
+    joinKubernetes
+fi
+
+maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
 ensureRookPluginsRegistered
 
 exit 0

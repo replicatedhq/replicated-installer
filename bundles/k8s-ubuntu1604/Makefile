@@ -14,3 +14,13 @@ v1.11.5:
 	docker build --build-arg VERSION=1.11.5 \
 		-t quay.io/replicated/k8s-packages:ubuntu-1604-v1.11.5-${DATE} .
 	docker push quay.io/replicated/k8s-packages:ubuntu-1604-v1.11.5-${DATE}
+
+v1.12.3:
+	docker build --build-arg VERSION=1.12.3 \
+		-t quay.io/replicated/k8s-packages:ubuntu-1604-v1.12.3-${DATE} .
+	docker push quay.io/replicated/k8s-packages:ubuntu-1604-v1.12.3-${DATE}
+
+v1.13.0:
+	docker build --build-arg VERSION=1.13.0 \
+		-t quay.io/replicated/k8s-packages:ubuntu-1604-v1.13.0-${DATE} .
+	docker push quay.io/replicated/k8s-packages:ubuntu-1604-v1.13.0-${DATE}

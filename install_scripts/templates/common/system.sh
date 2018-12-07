@@ -224,3 +224,24 @@ detectInitSystemConfDir() {
     fi
     mkdir -p "$CONFDIR"
 }
+
+#######################################
+# prevent a package from being automatically updated
+# Globals:
+#   LSB_DIST
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+lockPackageVersion() {
+    case $LSB_DIST in
+        rhel|centos)
+            yum install -y yum-plugin-versionlock
+            yum versionlock ${1}-*
+            ;;
+        ubuntu)
+            apt-mark hold $1
+            ;;
+    esac
+}

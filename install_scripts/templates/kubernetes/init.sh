@@ -81,6 +81,35 @@ set -e
 {% include 'common/firewall.sh' %}
 
 initKubeadmConfig() {
+    local kubeadmVersion=$(getKubeadmVersion)
+    semverParse "$kubeadmVersion"
+
+    # don't overwrite an alpha3 config created by kubeadm 1.12
+    if [ "$minor" -gt "12" ]; then
+        initKubeadmConfigBeta
+    elif [ "$minor" -lt "12" ]; then
+        initKubeadmConfigAlpha
+    fi
+}
+
+initKubeadmConfigBeta() {
+    mkdir -p /opt/replicated
+    cat <<EOF > /opt/replicated/kubeadm.conf
+kind: InitConfiguration
+apiVersion: kubeadm.k8s.io/v1beta1
+bootstrapTokens:
+- groups:
+  - system:bootstrappers:kubeadm:default-node-token
+  token: $BOOTSTRAP_TOKEN
+  ttl: $BOOTSTRAP_TOKEN_TTL
+  usages:
+  - signing
+  - authentication
+EOF
+    makeKubeadmConfig
+}
+
+initKubeadmConfigAlpha() {
     mkdir -p /opt/replicated
     cat <<EOF > /opt/replicated/kubeadm.conf
 apiVersion: kubeadm.k8s.io/v1alpha1
@@ -117,34 +146,39 @@ EOF
 - $PUBLIC_ADDRESS
 EOF
     fi
-
-
-
 }
 
 initKube() {
     logStep "Verify Kubelet"
     if [ ! -e "/etc/kubernetes/manifests/kube-apiserver.yaml" ]; then
         logStep "Initialize Kubernetes"
+        local kubeV=$(kubeadm version --output=short)
+
         initKubeadmConfig
+
         loadIPVSKubeProxyModules
         set +e
 
-        local kubeV=$(kubeadm version --output=short)
-
+        # TODO 11 and 13 might be the same
         if [ "$kubeV" = "v1.9.3" ]; then
             kubeadm init \
                 --skip-preflight-checks \
                 --config /opt/replicated/kubeadm.conf \
                 | tee /tmp/kubeadm-init
             _status=$?
-        else
+        elif [ "$kubeV" = "v1.11.5" ]; then
             kubeadm init \
                 --ignore-preflight-errors=all \
                 --config /opt/replicated/kubeadm.conf \
                 | tee /tmp/kubeadm-init
             _status=$?
             patchCoreDNS
+		else
+			kubeadm init \
+			    --ignore-preflight-errors=all \
+				--config /opt/replicated/kubeadm.conf \
+				--skip-token-print \
+				| tee /tmp/kubeadm-init
         fi
         set -e
         if [ "$_status" -ne "0" ]; then
@@ -161,7 +195,6 @@ initKube() {
     fi
     cp /etc/kubernetes/admin.conf $HOME/admin.conf
     chown $SUDO_USER:$SUDO_GID $HOME/admin.conf
-
 
     chmod 444 /etc/kubernetes/admin.conf
     echo 'export KUBECONFIG=/etc/kubernetes/admin.conf' >> /etc/profile
@@ -644,11 +677,19 @@ exportProxy
 # kubeadm requires this in the environment to reach the K8s API server
 export no_proxy="$NO_PROXY_ADDRESSES"
 
+# never upgrade docker underneath kubernetes
+if commandExists docker ; then
+    SKIP_DOCKER_INSTALL=1
+fi
 if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
     if [ "$OFFLINE_DOCKER_INSTALL" != "1" ]; then
-        installDockerK8s "$PINNED_DOCKER_VERSION" "$MIN_DOCKER_VERSION"
+        installDocker "$PINNED_DOCKER_VERSION" "$MIN_DOCKER_VERSION"
+
+        if [ "$PINNED_DOCKER_VERSION" = "17.09.1" ] && [ "$DID_INSTALL_DOCKER" = "1" ]; then
+            lockPackageVersion docker-ce
+        fi
     else
-        installDocker_1_12_Offline
+        installDockerOffline
     fi
     checkDockerDriver
     checkDockerStorageDriver "$HARD_FAIL_ON_LOOPBACK"

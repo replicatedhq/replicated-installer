@@ -9,10 +9,14 @@
 UBUNTU_1604_K8S_9=ubuntu-1604-v1.9.3-20181112
 UBUNTU_1604_K8S_10=ubuntu-1604-v1.10.6-20181112
 UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.5-20181204
+UBUNTU_1604_K8S_12=ubuntu-1604-v1.12.3-20181211
+UBUNTU_1604_K8S_13=ubuntu-1604-v1.13.0-20181211
 
 RHEL7_K8S_9=rhel7-v1.9.3-20180806
 RHEL7_K8S_10=rhel7-v1.10.6-20180806
 RHEL7_K8S_11=rhel7-v1.11.5-20181204
+RHEL7_K8S_12=rhel7-v1.12.3-20181211
+RHEL7_K8S_13=rhel7-v1.13.0-20181211
 
 DAEMON_NODE_KEY=replicated.com/daemon
 
@@ -41,6 +45,9 @@ setK8sPatchVersion() {
             # 1.11.5
             k8sPatch="5"
             ;;
+        13)
+            # 1.13.0
+            k8sPatch="0"
     esac
     KUBERNETES_VERSION="$k8sMajor.$k8sMinor.$k8sPatch"
 }
@@ -113,6 +120,12 @@ k8sPackageTag() {
                 1.11.5)
                     echo "$UBUNTU_1604_K8S_11"
                     ;;
+                1.12.3)
+                    echo "$UBUNTU_1604_K8S_12"
+                    ;;
+                1.13.0)
+                    echo "$UBUNTU_1604_K8S_13"
+                    ;;
                 *)
                     bail "Unsupported Kubernetes version $k8sVersion"
                     ;;
@@ -128,6 +141,12 @@ k8sPackageTag() {
                     ;;
                 1.11.5)
                     echo "$RHEL7_K8S_11"
+                    ;;
+                1.12.3)
+                    echo "$RHEL7_K8S_12"
+                    ;;
+                1.13.0)
+                    echo "$RHEL7_K8S_13"
                     ;;
                 *)
                     bail "Unsupported Kubernetes version $k8sVersion"
@@ -280,6 +299,12 @@ airgapLoadKubernetesCommonImages() {
         1.11.5)
             airgapLoadKubernetesCommonImages1115
             ;;
+        1.12.3)
+            airgapLoadKubernetesCommonImages1123
+            ;;
+        1.13.0)
+            airgapLoadKubernetesCommonImages1130
+            ;;
         *)
             bail "Unsupported Kubernetes version $k8sVersion"
             ;;
@@ -342,6 +367,36 @@ airgapLoadKubernetesCommonImages1115() {
     docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
 }
 
+# only the images needed for kubeadm to upgrade from 1.11 to 1.13
+airgapLoadKubernetesCommonImages1123() {
+    docker run \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        "quay.io/replicated/k8s-images-common:v1.12.3-20181207"
+
+    docker tag ab97fa69b926 k8s.gcr.io/kube-proxy-amd64:v1.12.3
+    docker tag da86e6ba6ca1 k8s.gcr.io/pause-amd64:3.1
+    docker tag 367cdc8433a4 k8s.gcr.io/coredns:1.2.2
+}
+
+airgapLoadKubernetesCommonImages1130() {
+    docker run \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        "quay.io/replicated/k8s-images-common:v1.13.0-20181207"
+
+    docker tag 8fa56d18961f k8s.gcr.io/kube-proxy:v1.13.0
+    docker tag da86e6ba6ca1 k8s.gcr.io/pause:3.1
+    docker tag f59dcacceff4 k8s.gcr.io/coredns:1.2.6
+    docker tag a5103f96993a weaveworks/weave-kube:2.5.0
+    docker tag d499500e93d3 weaveworks/weave-npc:2.5.0
+    docker tag 6568ae41694a weaveworks/weaveexec:2.5.0
+    docker tag 2e2f252f3c88 docker.io/registry:2
+    docker tag d7b5da521177 docker.io/envoyproxy/envoy-alpine:v1.7.0
+    docker tag d3309c525d48 gcr.io/heptio-images/contour:v0.8.0
+    docker tag b4b5b76c6c00 rook/ceph:v0.9.0
+    docker tag 53567bf7436e ceph/ceph:v12.2.8-20181023
+    docker tag 53ec938af4ea quay.io/replicated/replicated-hostpath-provisioner:cd1d272
+}
+
 #######################################
 # Unpack kubernetes images
 # Globals:
@@ -367,6 +422,12 @@ airgapLoadKubernetesControlImages() {
             ;;
         1.11.5)
             airgapLoadKubernetesControlImages1115
+            ;;
+        1.12.3)
+            airgapLoadKubernetesControlImages1123
+            ;;
+        1.13.0)
+            airgapLoadKubernetesControlImages1130
             ;;
         *)
             bail "Unsupported Kubernetes version $k8sVersion"
@@ -414,6 +475,28 @@ airgapLoadKubernetesControlImages1115() {
     docker tag b8df3b177be2 k8s.gcr.io/etcd-amd64:3.2.18
 }
 
+airgapLoadKubernetesControlImages1123() {
+    docker run \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        "quay.io/replicated/k8s-images-control:v1.12.3-20181210"
+
+    docker tag 6b54f7bebd72 k8s.gcr.io/kube-apiserver-amd64:v1.12.3
+    docker tag 5e75513787b1 k8s.gcr.io/kube-scheduler-amd64:v1.12.3
+    docker tag c79022eb8bc9 k8s.gcr.io/kube-controller-manager-amd64:v1.12.3
+    docker tag 3cab8e1b9802 k8s.gcr.io/etcd-amd64:3.2.24
+}
+
+airgapLoadKubernetesControlImages1130() {
+    docker run \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        "quay.io/replicated/k8s-images-control:v1.11.5-20181204"
+
+    docker tag f1ff9b7e3d6e k8s.gcr.io/kube-apiserver-amd64:v1.13.0
+    docker tag d82530ead066 k8s.gcr.io/kube-controller-manager-amd64:v1.13.0
+    docker tag 9508b7d8008d k8s.gcr.io/kube-scheduler-amd64:v1.13.0
+    docker tag 3cab8e1b9802 k8s.gcr.io/etcd-amd64:3.2.24
+}
+
 #######################################
 # Creates an archives directory with the correct K8s packages for a given
 # version of K8s on the current distribution.
@@ -449,9 +532,9 @@ prepareK8sPackageArchives() {
 #######################################
 k8sMasterNodeName() {
     set +e
-    _master="$(kubectl get nodes 2>/dev/null | grep master | awk '{ print $1 }')"
+    _master="$(kubectl get nodes --show-labels 2>/dev/null | grep 'node-role.kubernetes.io/master' | awk '{ print $1 }')"
     until [ -n "$_master" ]; do
-        _master="$(kubectl get nodes 2>/dev/null | grep master | awk '{ print $1 }')"
+        _master="$(kubectl get nodes --show-labels 2>/dev/null | grep 'node-role.kubernetes.io/master' | awk '{ print $1 }')"
     done
     set -e
     printf "$_master"
@@ -720,7 +803,7 @@ weave_reset()
     DATAPATH=datapath
     CONTAINER_IFNAME=ethwe
 
-    WEAVE_TAG=2.4.0
+    WEAVE_TAG=2.5.0
     DOCKER_BRIDGE=docker0
 
     # if we never unpacked/pulled the weave image, its unlikely we need to do any of this
@@ -876,4 +959,52 @@ getKubectlVersion() {
 #######################################
 getKubeadmVersion() {
     kubeadm version | tr " " "\n" | grep GitVersion | cut -d'"' -f2 | sed 's/v//'
+}
+
+#######################################
+# Generate kubeadm ClusterConfiguration v1beta1 and KubeProxyConfiguration v1alpha1
+# Globals:
+#   KUBERNETES_VERSION
+#   PRIVATE_ADDRESS
+#   PUBLIC_ADDRESS
+#   IPVS
+# Arguments:
+#   None
+# Returns:
+#   version - e.g. 1.11.5
+#######################################
+makeKubeadmConfig() {
+    cat << EOF >> /opt/replicated/kubeadm.conf
+---
+kind: ClusterConfiguration
+apiVersion: kubeadm.k8s.io/v1beta1
+kubernetesVersion: v$KUBERNETES_VERSION
+networking:
+  serviceSubnet: $SERVICE_CIDR
+apiServer:
+  extraArgs:
+    service-node-port-range: "80-60000"
+EOF
+    # if we have a private address, add it to SANs
+    if [ -n "$PRIVATE_ADDRESS" ]; then
+          cat <<EOF >> /opt/replicated/kubeadm.conf
+  certSANs:
+  - $PRIVATE_ADDRESS
+EOF
+    fi
+    # if we have a public address, add it to SANs
+    if [ -n "$PUBLIC_ADDRESS" ] && [ -n "$PRIVATE_ADDRESS" ]; then
+          cat <<EOF >> /opt/replicated/kubeadm.conf
+  - $PUBLIC_ADDRESS
+EOF
+    fi
+
+    if [ "$IPVS" = "1" ]; then
+        cat <<EOF >> /opt/replicated/kubeadm.conf
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: ipvs
+EOF
+    fi
 }
