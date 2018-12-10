@@ -13,6 +13,7 @@ CEPH_DASHBOARD_URL=
 # booleans
 AIRGAP="{{ airgap }}"
 ENCRYPT_NETWORK="{{ encrypt_network }}"
+WEAVE_SECRET=1
 REPLICATED_YAML=1
 REPLICATED_PVC=1
 ROOK_SYSTEM_YAML=0
@@ -93,6 +94,9 @@ while [ "$1" != "" ]; do
             ;;
         encrypt-network|encrypt_network)
             ENCRYPT_NETWORK="$_value"
+            ;;
+        weave-secret|weave_secret)
+            WEAVE_SECRET="$_value"
             ;;
         replicated-pvc|replicated_pvc)
             REPLICATED_PVC="$_value"
@@ -971,7 +975,6 @@ EOF
 render_weave_yaml() {
     weave_passwd_env=
     if [ "$ENCRYPT_NETWORK" != "0" ]; then
-        weave_password=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c9)
         weave_passwd_env=$(cat <<-EOF
                 - name: WEAVE_PASSWORD
                   valueFrom:
@@ -980,7 +983,9 @@ render_weave_yaml() {
                       key: weave-passwd
 EOF
         )
-        cat <<EOF
+        if [ "$WEAVE_SECRET" != "0" ]; then
+            weave_password=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c9)
+            cat <<EOF
 ---
 apiVersion: v1
 kind: Secret
@@ -990,6 +995,7 @@ metadata:
 stringData:
   weave-passwd: $weave_password
 EOF
+        fi
     fi
 
     cat <<EOF
