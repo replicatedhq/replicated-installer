@@ -126,8 +126,6 @@ while [ "$1" != "" ]; do
     shift
 done
 
-checkFirewalld
-
 if [ "$NO_PROXY" != "1" ]; then
     if [ -z "$PROXY_ADDRESS" ]; then
         discoverProxy

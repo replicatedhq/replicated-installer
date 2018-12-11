@@ -360,8 +360,6 @@ while [ "$1" != "" ]; do
     shift
 done
 
-checkFirewalld
-
 if [ "$ONLY_INSTALL_DOCKER" = "1" ]; then
     # no min if only installing docker
     installDocker "$PINNED_DOCKER_VERSION" "0.0.0"
