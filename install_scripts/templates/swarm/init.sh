@@ -342,6 +342,8 @@ while [ "$1" != "" ]; do
     shift
 done
 
+checkFirewalld
+
 if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" -ne "1" ]; then
     printf "Determining service address\n"
     discoverPublicIp
