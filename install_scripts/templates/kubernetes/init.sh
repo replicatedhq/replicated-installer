@@ -84,7 +84,7 @@ initKubeadmConfig() {
     local kubeadmVersion=$(getKubeadmVersion)
     semverParse "$kubeadmVersion"
 
-    # don't overwrite an alpha3 config created by kubeadm 1.12
+    # don't overwrite an alpha3 config migrated by kubeadm 1.12 from 1.11
     if [ "$minor" -gt "12" ]; then
         initKubeadmConfigBeta
     elif [ "$minor" -lt "12" ]; then
@@ -157,7 +157,6 @@ initKube() {
 
         loadIPVSKubeProxyModules
 
-        set +e
         local kubeV=$(kubeadm version --output=short)
         if [ "$kubeV" = "v1.9.3" ]; then
             kubeadm init \
@@ -179,7 +178,6 @@ initKube() {
 				--skip-token-print \
 				| tee /tmp/kubeadm-init
         fi
-        set -e
         if [ "$_status" -ne "0" ]; then
             printf "${RED}Failed to initialize the kubernetes cluster.${NC}\n" 1>&2
             exit $_status

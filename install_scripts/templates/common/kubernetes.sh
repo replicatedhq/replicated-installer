@@ -984,15 +984,18 @@ apiServer:
   extraArgs:
     service-node-port-range: "80-60000"
 EOF
-    # if we have a private address, add it to SANs
-    if [ -n "$PRIVATE_ADDRESS" ]; then
+    # if we have a private address or public address, add it to SANs
+    if [ -n "$PRIVATE_ADDRESS" ] || [ -n "$PUBLIC_ADDRESS" ]; then
           cat <<EOF >> /opt/replicated/kubeadm.conf
   certSANs:
+EOF
+    fi
+    if [ -n "$PRIVATE_ADDRESS" ]; then
+          cat <<EOF >> /opt/replicated/kubeadm.conf
   - $PRIVATE_ADDRESS
 EOF
     fi
-    # if we have a public address, add it to SANs
-    if [ -n "$PUBLIC_ADDRESS" ] && [ -n "$PRIVATE_ADDRESS" ]; then
+    if [ -n "$PUBLIC_ADDRESS" ]; then
           cat <<EOF >> /opt/replicated/kubeadm.conf
   - $PUBLIC_ADDRESS
 EOF
