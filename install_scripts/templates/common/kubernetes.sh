@@ -374,7 +374,6 @@ airgapLoadKubernetesCommonImages1123() {
         "quay.io/replicated/k8s-images-common:v1.12.3-20181207"
 
     docker tag ab97fa69b926 k8s.gcr.io/kube-proxy-amd64:v1.12.3
-    docker tag da86e6ba6ca1 k8s.gcr.io/pause-amd64:3.1
     docker tag 367cdc8433a4 k8s.gcr.io/coredns:1.2.2
 }
 
