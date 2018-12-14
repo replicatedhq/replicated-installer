@@ -488,7 +488,7 @@ airgapLoadKubernetesControlImages1123() {
 airgapLoadKubernetesControlImages1130() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-control:v1.11.5-20181204"
+        "quay.io/replicated/k8s-images-control:v1.13.0-20181210"
 
     docker tag f1ff9b7e3d6e k8s.gcr.io/kube-apiserver-amd64:v1.13.0
     docker tag d82530ead066 k8s.gcr.io/kube-controller-manager-amd64:v1.13.0
