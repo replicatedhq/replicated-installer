@@ -152,14 +152,13 @@ initKube() {
     logStep "Verify Kubelet"
     if [ ! -e "/etc/kubernetes/manifests/kube-apiserver.yaml" ]; then
         logStep "Initialize Kubernetes"
-        local kubeV=$(kubeadm version --output=short)
 
         initKubeadmConfig
 
         loadIPVSKubeProxyModules
-        set +e
 
-        # TODO 11 and 13 might be the same
+        set +e
+        local kubeV=$(kubeadm version --output=short)
         if [ "$kubeV" = "v1.9.3" ]; then
             kubeadm init \
                 --skip-preflight-checks \
