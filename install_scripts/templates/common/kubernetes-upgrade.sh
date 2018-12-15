@@ -13,6 +13,10 @@
 
 #######################################
 # If kubernetes is installed and version is less than specified, upgrade. Kubeadm requires installing every minor version between current and target.
+# kubeadm < 1.11 uses v1alpha1 config file format
+# kubeadm 1.11 writes v1alpha2 configs and can also read v1alpha1
+# kubeadm 1.12 writes v1alpha3 configs and can also read v1alpha2
+# kubeadm 1.13 writes v1beta1 configs and can also read v1alpha3
 # Globals:
 #   None
 # Arguments:
@@ -38,7 +42,7 @@ maybeUpgradeKubernetes() {
         return 1
     fi
 
-    if [ "$kubeletMinor" -eq "9" ] && [ "$k8sTargetMinor" -eq "9" ]; then
+    if [ "$k8sTargetMinor" -eq "9" ]; then
         return 0
     fi
 
@@ -62,11 +66,66 @@ maybeUpgradeKubernetes() {
 
     if [ "$kubeletMinor" -eq "10" ] || ([ "$kubeletMinor" -eq "11" ] && [ "$k8sTargetMinor" -eq "11" ] && [ "$kubeletPatch" -lt "$k8sTargetPatch" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
         logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.11.5"
-        upgradeK8sMaster "1.11.5" "$UBUNTU_1604_K8S_11" "$CENTOS_74_K8S_11"
+        upgradeK8sMaster "1.11.5"
         logSuccess "Kubernetes upgraded to version v1.11.5"
     fi
 
     upgradeK8sWorkers "1.11.5" "$K8S_UPGRADE_PATCH_VERSION"
+
+    kubeletVersion="$(getK8sNodeVersion)"
+    semverParse "$kubeletVersion"
+    kubeletMajor="$major"
+    kubeletMinor="$minor"
+    kubeletPatch="$patch"
+
+    if [ "$k8sTargetMinor" -eq "11" ]; then
+        return 0
+    fi
+
+    if [ "$kubeletMinor" -eq "11" ] &&  [ "$k8sTargetMinor" -gt "11" ]; then
+        logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.12.3"
+        if [ "$AIRGAP" = "1" ]; then
+            airgapLoadKubernetesCommonImages 1.12.3
+            airgapLoadKubernetesControlImages 1.12.3
+        fi
+        # must migrate alpha1 to alpha2 with kubeadm 1.11 while it's still available
+        kubeadm config migrate --old-config /opt/replicated/kubeadm.conf --new-config /opt/replicated/kubeadm.conf
+        upgradeK8sMaster "1.12.3"
+        logSuccess "Kubernetes upgraded to version v1.12.3"
+    fi
+
+    upgradeK8sWorkers "1.12.3" "0"
+
+    kubeletVersion="$(getK8sNodeVersion)"
+    semverParse "$kubeletVersion"
+    kubeletMajor="$major"
+    kubeletMinor="$minor"
+    kubeletPatch="$patch"
+
+    # no patch versions of 1.13 yet.
+    local did13Upgrade=0
+    if [ "$kubeletMinor" -eq "12" ]; then
+        logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.13.0"
+        if [ "$AIRGAP" = "1" ]; then
+            airgapLoadKubernetesCommonImages 1.13.0
+            airgapLoadKubernetesControlImages 1.13.0
+        fi
+        : > /opt/replicated/kubeadm.conf
+        makeKubeadmConfig
+        upgradeK8sMaster "1.13.0"
+        did13Upgrade=1
+        logSuccess "Kubernetes upgraded to version v1.13.0"
+    fi
+
+    upgradeK8sWorkers "1.13.0" "$K8S_UPGRADE_PATCH_VERSION"
+
+    if [ "$did13Upgrade" = "1" ]; then
+        # all pods with PVCs were stuck on Terminating after the upgrade and their owner ReplicaSet was gone
+        sleep 30
+        kubectl get pods | grep Terminating | awk '{ print $1 }' | xargs -I '{}' sh -c "kubectl delete pod '{}' --force --grace-period=0 || :"
+        local appNS=$(kubectl get ns | grep replicated- | awk '{ print $1 }')
+        kubectl get pods --namespace "$appNS" |  grep Terminating | awk '{ print $1 }' | xargs -I '{}' sh -c "kubectl delete pod '{}' --force --grace-period=0 || :"
+    fi
 }
 
 #######################################
@@ -302,24 +361,6 @@ getK8sServerVersion() {
     done
     logSuccess "got k8s server version: $_current"
     printf "$_current"
-}
-
-#######################################
-# Check if kubelet is installed
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   1 if kubelet is not installed
-#######################################
-isKubeletInstalled() {
-    _out=0
-    kubelet --version 2>/dev/null || _out="$?"
-    if [ "$_out" -ne "0" ]; then
-        return 1
-    fi
-    return 0
 }
 
 #######################################

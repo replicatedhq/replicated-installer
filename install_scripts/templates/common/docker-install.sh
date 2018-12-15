@@ -51,10 +51,8 @@ installDocker() {
     fi
 }
 
-
 #######################################
-# Installs requested docker version.
-# Requires at least min docker version to proceed.
+# Install docker from a prepared image
 # Globals:
 #   LSB_DIST
 #   INIT_SYSTEM
@@ -62,7 +60,7 @@ installDocker() {
 #   DID_INSTALL_DOCKER
 #######################################
 DID_INSTALL_DOCKER=0
-installDocker_1_12_Offline() {
+installDockerOffline() {
     if commandExists "docker"; then
         return
     fi
@@ -91,32 +89,8 @@ installDocker_1_12_Offline() {
         *)
    esac
 
-   printf "Offline Docker install is not surpported on ${LSB_DIST} ${DIST_MAJOR}"
+   printf "Offline Docker install is not supported on ${LSB_DIST} ${DIST_MAJOR}"
    exit 1
-}
-
-######################################
-# For RHEL and derivatives install from yum docker repo
-# Globals:
-#   LSB_DIST
-# Arguments:
-#   Requested Docker Version
-#   Minimum Docker Version
-# Returns:
-#   DID_INSTALL_DOCKER
-######################################
-installDockerK8s() {
-    case "$LSB_DIST" in
-        rhel|centos)
-            if yum info docker &>/dev/null; then
-                yum install -y -q docker
-                DID_INSTALL_DOCKER=1
-                return
-            fi
-        ;;
-    esac
-
-    installDocker $1 $2
 }
 
 _installDocker() {

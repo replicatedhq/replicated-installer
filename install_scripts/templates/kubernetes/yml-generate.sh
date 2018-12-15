@@ -479,6 +479,8 @@ parameters:
 EOF
 }
 
+# https://github.com/rook/rook/blob/master/cluster/examples/kubernetes/ceph/operator.yaml
+# Deployment node affinity added to ensure image is available for airgap
 render_rook_system_yaml() {
     cat <<EOF
 apiVersion: v1
@@ -489,66 +491,143 @@ metadata:
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: clusters.ceph.rook.io
+  name: cephclusters.ceph.rook.io
 spec:
   group: ceph.rook.io
   names:
-    kind: Cluster
-    listKind: ClusterList
-    plural: clusters
-    singular: cluster
-    shortNames:
-    - rcc
+    kind: CephCluster
+    listKind: CephClusterList
+    plural: cephclusters
+    singular: cephcluster
   scope: Namespaced
-  version: v1beta1
+  version: v1
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            cephVersion:
+              properties:
+                allowUnsupported:
+                  type: boolean
+                image:
+                  type: string
+                name:
+                  pattern: ^(luminous|mimic|nautilus)$
+                  type: string
+            dashboard:
+              properties:
+                enabled:
+                  type: boolean
+                urlPrefix:
+                  type: string
+            dataDirHostPath:
+              pattern: ^/(\S+)
+              type: string
+            mon:
+              properties:
+                allowMultiplePerNode:
+                  type: boolean
+                count:
+                  maximum: 9
+                  minimum: 1
+                  type: integer
+              required:
+              - count
+            network:
+              properties:
+                hostNetwork:
+                  type: boolean
+            storage:
+              properties:
+                nodes:
+                  items: {}
+                  type: array
+                useAllDevices: {}
+                useAllNodes:
+                  type: boolean
+          required:
+          - mon
+  additionalPrinterColumns:
+    - name: DataDirHostPath
+      type: string
+      description: Directory used on the K8s nodes
+      JSONPath: .spec.dataDirHostPath
+    - name: MonCount
+      type: string
+      description: Number of MONs
+      JSONPath: .spec.mon.count
+    - name: Age
+      type: date
+      JSONPath: .metadata.creationTimestamp
+    - name: State
+      type: string
+      description: Current State
+      JSONPath: .status.state
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: filesystems.ceph.rook.io
+  name: cephfilesystems.ceph.rook.io
 spec:
   group: ceph.rook.io
   names:
-    kind: Filesystem
-    listKind: FilesystemList
-    plural: filesystems
-    singular: filesystem
-    shortNames:
-    - rcfs
+    kind: CephFilesystem
+    listKind: CephFilesystemList
+    plural: cephfilesystems
+    singular: cephfilesystem
   scope: Namespaced
-  version: v1beta1
+  version: v1
+  additionalPrinterColumns:
+    - name: MdsCount
+      type: string
+      description: Number of MDSs
+      JSONPath: .spec.metadataServer.activeCount
+    - name: Age
+      type: date
+      JSONPath: .metadata.creationTimestamp
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: objectstores.ceph.rook.io
+  name: cephobjectstores.ceph.rook.io
 spec:
   group: ceph.rook.io
   names:
-    kind: ObjectStore
-    listKind: ObjectStoreList
-    plural: objectstores
-    singular: objectstore
-    shortNames:
-    - rco
+    kind: CephObjectStore
+    listKind: CephObjectStoreList
+    plural: cephobjectstores
+    singular: cephobjectstore
   scope: Namespaced
-  version: v1beta1
+  version: v1
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: pools.ceph.rook.io
+  name: cephobjectstoreusers.ceph.rook.io
 spec:
   group: ceph.rook.io
   names:
-    kind: Pool
-    listKind: PoolList
-    plural: pools
-    singular: pool
-    shortNames:
-    - rcp
+    kind: CephObjectStoreUser
+    listKind: CephObjectStoreUserList
+    plural: cephobjectstoreusers
+    singular: cephobjectstoreuser
   scope: Namespaced
-  version: v1beta1
+  version: v1
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: cephblockpools.ceph.rook.io
+spec:
+  group: ceph.rook.io
+  names:
+    kind: CephBlockPool
+    listKind: CephBlockPoolList
+    plural: cephblockpools
+    singular: cephblockpool
+  scope: Namespaced
+  version: v1
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
@@ -580,6 +659,7 @@ rules:
   resources:
   - secrets
   - pods
+  - pods/log
   - services
   - configmaps
   verbs:
@@ -707,6 +787,26 @@ rules:
   verbs:
   - "*"
 ---
+# Aspects of ceph-mgr that require cluster-wide access
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: rook-ceph-mgr-cluster
+  labels:
+    operator: rook
+    storage-backend: ceph
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - nodes
+  - nodes/proxy
+  verbs:
+  - get
+  - list
+  - watch
+---
 # The rook system service account used by the operator, agent, and discovery pods
 apiVersion: v1
 kind: ServiceAccount
@@ -779,7 +879,7 @@ spec:
       serviceAccountName: rook-ceph-system
       containers:
       - name: rook-ceph-operator
-        image: rook/ceph:v0.8.1
+        image: rook/ceph:v0.9.0
         args: ["ceph", "operator"]
         volumeMounts:
         - mountPath: /var/lib/rook
@@ -793,17 +893,30 @@ spec:
         # Rook Agent toleration. Will tolerate all taints with all keys.
         # Choose between NoSchedule, PreferNoSchedule and NoExecute:
         # - name: AGENT_TOLERATION
-        #  value: "NoSchedule"
+        #   value: "NoSchedule"
         # (Optional) Rook Agent toleration key. Set this to the key of the taint you want to tolerate
         # - name: AGENT_TOLERATION_KEY
-        #  value: "<KeyOfTheTaintToTolerate>"
+        #   value: "<KeyOfTheTaintToTolerate>"
+        # (Optional) Rook Agent mount security mode. Can by `Any` or `Restricted`.
+        # `Any` uses Ceph admin credentials by default/fallback.
+        # For using `Restricted` you must have a Ceph secret in each namespace storage should be consumed from and
+        # set `mountUser` to the Ceph user, `mountSecret` to the Kubernetes secret name.
+        # to the namespace in which the `mountSecret` Kubernetes secret namespace.
+        # - name: AGENT_MOUNT_SECURITY_MODE
+        #   value: "Any"
         # Set the path where the Rook agent can find the flex volumes
         # - name: FLEXVOLUME_DIR_PATH
         #  value: "<PathToFlexVolumes>"
+        # Set the path where kernel modules can be found
+        # - name: LIB_MODULES_DIR_PATH
+        #  value: "<PathToLibModules>"
+        # Mount any extra directories into the agent container
+        # - name: AGENT_MOUNTS
+        #  value: "somemount=/host/path:/container/path,someothermount=/host/path2:/container/path2"
         # Rook Discover toleration. Will tolerate all taints with all keys.
         # Choose between NoSchedule, PreferNoSchedule and NoExecute:
         # - name: DISCOVER_TOLERATION
-        #  value: "NoSchedule"
+        #   value: "NoSchedule"
         # (Optional) Rook Discover toleration key. Set this to the key of the taint you want to tolerate
         # - name: DISCOVER_TOLERATION_KEY
         #  value: "<KeyOfTheTaintToTolerate>"
@@ -823,6 +936,9 @@ spec:
         # current mon with a new mon (useful for compensating flapping network).
         - name: ROOK_MON_OUT_TIMEOUT
           value: "300s"
+        # The duration between discovering devices in the rook-discover daemonset.
+        - name: ROOK_DISCOVER_DEVICES_INTERVAL
+          value: "60m"
         # Whether to start pods as privileged that mount a host path, which includes the Ceph mon and osd pods.
         # This is necessary to workaround the anyuid issues when running on OpenShift.
         # For more details see https://github.com/rook/rook/issues/1314#issuecomment-355799641
@@ -851,6 +967,7 @@ spec:
 EOF
 }
 
+# https://github.com/rook/rook/blob/master/cluster/examples/kubernetes/ceph/cluster.yaml
 render_rook_cluster_yaml() {
     PV_BASE_PATH="${PV_BASE_PATH:-"/opt/replicated/rook"}"
 
@@ -863,18 +980,74 @@ metadata:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: rook-ceph-cluster
+  name: rook-ceph-osd
+  namespace: rook-ceph
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rook-ceph-mgr
   namespace: rook-ceph
 ---
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: rook-ceph-cluster
+  name: rook-ceph-osd
   namespace: rook-ceph
 rules:
 - apiGroups: [""]
   resources: ["configmaps"]
   verbs: [ "get", "list", "watch", "create", "update", "delete" ]
+---
+# Aspects of ceph-mgr that require access to the system namespace
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: rook-ceph-mgr-system
+  namespace: rook-ceph
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+---
+# Aspects of ceph-mgr that operate within the cluster's namespace
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: rook-ceph-mgr
+  namespace: rook-ceph
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - delete
+- apiGroups:
+  - ceph.rook.io
+  resources:
+  - "*"
+  verbs:
+  - "*"
 ---
 # Allow the operator to create resources in this cluster's namespace
 kind: RoleBinding
@@ -891,30 +1064,86 @@ subjects:
   name: rook-ceph-system
   namespace: rook-ceph-system
 ---
-# Allow the pods in this namespace to work with configmaps
+# Allow the osd pods in this namespace to work with configmaps
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: rook-ceph-cluster
+  name: rook-ceph-osd
   namespace: rook-ceph
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: rook-ceph-cluster
+  name: rook-ceph-osd
 subjects:
 - kind: ServiceAccount
-  name: rook-ceph-cluster
+  name: rook-ceph-osd
   namespace: rook-ceph
 ---
-apiVersion: ceph.rook.io/v1beta1
-kind: Cluster
+# Allow the ceph mgr to access the cluster-specific resources necessary for the mgr modules
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: rook-ceph-mgr
+  namespace: rook-ceph
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rook-ceph-mgr
+subjects:
+- kind: ServiceAccount
+  name: rook-ceph-mgr
+  namespace: rook-ceph
+---
+# Allow the ceph mgr to access the rook system resources necessary for the mgr modules
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: rook-ceph-mgr-system
+  namespace: rook-ceph-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rook-ceph-mgr-system
+subjects:
+- kind: ServiceAccount
+  name: rook-ceph-mgr
+  namespace: rook-ceph
+---
+# Allow the ceph mgr to access cluster-wide resources necessary for the mgr modules
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: rook-ceph-mgr-cluster
+  namespace: rook-ceph
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rook-ceph-mgr-cluster
+subjects:
+- kind: ServiceAccount
+  name: rook-ceph-mgr
+  namespace: rook-ceph
+---
+apiVersion: ceph.rook.io/v1
+kind: CephCluster
 metadata:
   name: rook-ceph
   namespace: rook-ceph
 spec:
+  cephVersion:
+    # The container image used to launch the Ceph daemon pods (mon, mgr, osd, mds, rgw).
+    # v12 is luminous, v13 is mimic, and v14 is nautilus.
+    # RECOMMENDATION: In production, use a specific version tag instead of the general v13 flag, which pulls the latest release and could result in different
+    # versions running within the cluster. See tags available at https://hub.docker.com/r/ceph/ceph/tags/.
+    image: ceph/ceph:v12.2.8-20181023
+    # Whether to allow unsupported versions of Ceph. Currently only luminous and mimic are supported.
+    # After nautilus is released, Rook will be updated to support nautilus.
+    # Do not set to true in production.
+    allowUnsupported: false
+  # The path on the host where configuration files will be persisted. If not specified, a kubernetes emptyDir will be created (not recommended).
+  # Important: if you reinstall the cluster, make sure you delete this directory from each host or else the mons will fail to start on the new cluster.
+  # In Minikube, the '/data' directory is configured to persist across reboots. Use "/data/rook" in Minikube environment.
   dataDirHostPath: /var/lib/replicated/rook
-  # The service account under which to run the daemon pods in this cluster if the default account is not sufficient (OSDs)
-  serviceAccount: rook-ceph-cluster
   # set the amount of mons to be started
   mon:
     count: 3
@@ -925,20 +1154,85 @@ spec:
   network:
     # toggle to use hostNetwork
     hostNetwork: false
+  rbdMirroring:
+    # The number of daemons that will perform the rbd mirroring.
+    # rbd mirroring must be configured with "rbd mirror" from the rook toolbox.
+    workers: 0
+  # To control where various services will be scheduled by kubernetes, use the placement configuration sections below.
+  # The example under 'all' would have all services scheduled on kubernetes nodes labeled with 'role=storage-node' and
+  # tolerate taints with a key of 'storage-node'.
+#  placement:
+#    all:
+#      nodeAffinity:
+#        requiredDuringSchedulingIgnoredDuringExecution:
+#          nodeSelectorTerms:
+#          - matchExpressions:
+#            - key: role
+#              operator: In
+#              values:
+#              - storage-node
+#      podAffinity:
+#      podAntiAffinity:
+#      tolerations:
+#      - key: storage-node
+#        operator: Exists
+# The above placement information can also be specified for mon, osd, and mgr components
+#    mon:
+#    osd:
+#    mgr:
   resources:
+# The requests and limits set here, allow the mgr pod to use half of one CPU core and 1 gigabyte of memory
+#    mgr:
+#      limits:
+#        cpu: "500m"
+#        memory: "1024Mi"
+#      requests:
+#        cpu: "500m"
+#        memory: "1024Mi"
+# The above example requests/limits can also be added to the mon and osd components
+#    mon:
+#    osd:
   storage: # cluster level storage configuration and selection
     useAllNodes: true
     useAllDevices: false
     deviceFilter:
     location:
     config:
+      # The default and recommended storeType is dynamically set to bluestore for devices and filestore for directories.
+      # Set the storeType explicitly only if it is required not to use the default.
+      # storeType: bluestore
       databaseSizeMB: "1024" # this value can be removed for environments with normal sized disks (100 GB or larger)
       journalSizeMB: "1024"  # this value can be removed for environments with normal sized disks (20 GB or larger)
+      osdsPerDevice: "1" # this value can be overridden at the node or device level
+# Cluster level list of directories to use for storage. These values will be set for all nodes that have no `directories` set.
     directories:
     - path: "$PV_BASE_PATH"
+# Individual nodes and their config can be specified as well, but 'useAllNodes' above must be set to false. Then, only the named
+# nodes below will be used as storage resources.  Each node's 'name' field should match their 'kubernetes.io/hostname' label.
+#    nodes:
+#    - name: "172.17.4.101"
+#      directories: # specific directories to use for storage can be specified for each node
+#      - path: "/rook/storage-dir"
+#      resources:
+#        limits:
+#          cpu: "500m"
+#          memory: "1024Mi"
+#        requests:
+#          cpu: "500m"
+#          memory: "1024Mi"
+#    - name: "172.17.4.201"
+#      devices: # specific devices to use for storage can be specified for each node
+#      - name: "sdb"
+#      - name: "nvme01" # multiple osds can be created on high performance devices
+#        config:
+#          osdsPerDevice: "5"
+#      config: # configuration can be specified at the node level which overrides the cluster level config
+#        storeType: filestore
+#    - name: "172.17.4.301"
+#      deviceFilter: "^sd."
 ---
-apiVersion: ceph.rook.io/v1beta1
-kind: Pool
+apiVersion: ceph.rook.io/v1
+kind: CephBlockPool
 metadata:
   name: replicapool
   namespace: rook-ceph
@@ -1121,7 +1415,7 @@ items:
                 - name: IPALLOC_RANGE
                   value: $IP_ALLOC_RANGE
 $weave_passwd_env
-              image: 'weaveworks/weave-kube:2.4.0'
+              image: 'weaveworks/weave-kube:2.5.0'
               livenessProbe:
                 httpGet:
                   host: 127.0.0.1
@@ -1156,7 +1450,7 @@ $weave_passwd_env
                     fieldRef:
                       apiVersion: v1
                       fieldPath: spec.nodeName
-              image: 'weaveworks/weave-npc:2.4.0'
+              image: 'weaveworks/weave-npc:2.5.0'
               resources:
                 requests:
                   cpu: 10m
@@ -1229,9 +1523,134 @@ spec:
   names:
     plural: ingressroutes
     kind: IngressRoute
+  additionalPrinterColumns:
+    - name: FQDN
+      type: string
+      description: Fully qualified domain name
+      JSONPath: .spec.virtualhost.fqdn
+    - name: TLS Secret
+      type: string
+      description: Secret with TLS credentials
+      JSONPath: .spec.virtualhost.tls.secretName
+    - name: First route
+      type: string
+      description: First routes defined
+      JSONPath: .spec.routes[0].match
+    - name: Status
+      type: string
+      description: The current status of the IngressRoute
+      JSONPath: .status.currentStatus
+    - name: Status Description
+      type: string
+      description: Description of the current status
+      JSONPath: .status.description
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            virtualhost:
+              properties:
+                fqdn:
+                  type: string
+                  pattern: ^([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*\.)+[a-z]{2,}$
+                tls:
+                  properties:
+                    secretName:
+                      type: string
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$ # DNS-1123 subdomain
+                    minimumProtocolVersion:
+                      type: string
+                      enum:
+                        - "1.3"
+                        - "1.2"
+                        - "1.1"
+            strategy:
+              type: string
+              enum:
+                - RoundRobin
+                - WeightedLeastRequest
+                - Random
+                - RingHash
+                - Maglev
+            healthCheck:
+              type: object
+              required:
+                - path
+              properties:
+                path:
+                  type: string
+                  pattern: ^\/.*$
+                intervalSeconds:
+                  type: integer
+                timeoutSeconds:
+                  type: integer
+                unhealthyThresholdCount:
+                  type: integer
+                healthyThresholdCount:
+                  type: integer
+            routes:
+              type: array
+              items:
+                required:
+                  - match
+                properties:
+                  match:
+                    type: string
+                    pattern: ^\/.*$
+                  delegate:
+                    type: object
+                    required:
+                      - name
+                    properties:
+                      name:
+                        type: string
+                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$ # DNS-1123 subdomain
+                      namespace:
+                        type: string
+                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123 label
+                  services:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - name
+                        - port
+                      properties:
+                        name:
+                          type: string
+                          pattern: ^[a-z]([-a-z0-9]*[a-z0-9])?$ # DNS-1035 label
+                        port:
+                          type: integer
+                        weight:
+                          type: integer
+                        strategy:
+                          type: string
+                          enum:
+                            - RoundRobin
+                            - WeightedLeastRequest
+                            - Random
+                            - RingHash
+                            - Maglev
+                        healthCheck:
+                          type: object
+                          required:
+                            - path
+                          properties:
+                            path:
+                              type: string
+                              pattern: ^\/.*$
+                            intervalSeconds:
+                              type: integer
+                            timeoutSeconds:
+                              type: integer
+                            unhealthyThresholdCount:
+                              type: integer
+                            healthyThresholdCount:
+                              type: integer
 ---
 apiVersion: apps/v1
-kind: DaemonSet
+kind: Deployment
 metadata:
   labels:
     app: contour
@@ -1241,20 +1660,24 @@ spec:
   selector:
     matchLabels:
       app: contour
-  updateStrategy:
-    type: RollingUpdate
+  replicas: 2
   template:
     metadata:
       labels:
         app: contour
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9001"
+        prometheus.io/port: "8002"
         prometheus.io/path: "/stats"
         prometheus.io/format: "prometheus"
     spec:
       containers:
-      - image: envoyproxy/envoy-alpine:v1.6.0
+      - image: gcr.io/heptio-images/contour:v0.8.0
+        imagePullPolicy: Always
+        name: contour
+        command: ["contour"]
+        args: ["serve", "--incluster"]
+      - image: docker.io/envoyproxy/envoy-alpine:v1.7.0
         name: envoy
         ports:
         - containerPort: 8080
@@ -1262,19 +1685,38 @@ spec:
         - containerPort: 8443
           name: https
         command: ["envoy"]
-        args: ["-c", "/config/contour.yaml", "--service-cluster", "cluster0", "--service-node", "node0", "-l", "info", "--v2-config-only"]
+        args:
+        - --config-path /config/contour.yaml
+        - --service-cluster cluster0
+        - --service-node node0
+        - --log-level info
+        - --v2-config-only
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8002
+          initialDelaySeconds: 3
+          periodSeconds: 3
         volumeMounts:
         - name: contour-config
           mountPath: /config
-      - image: gcr.io/heptio-images/contour:v0.5.0
-        name: contour
-        command: ["contour"]
-        args: ["serve", "--incluster"]
+        lifecycle:
+          preStop:
+            exec:
+              command: ["wget", "-qO-", "http://localhost:9001/healthcheck/fail"] 
       initContainers:
-      - image: gcr.io/heptio-images/contour:v0.5.0
+      - image: gcr.io/heptio-images/contour:v0.8.0
+        imagePullPolicy: Always
         name: envoy-initconfig
         command: ["contour"]
-        args: ["bootstrap", "/config/contour.yaml"]
+        args:
+        - bootstrap
+        # Uncomment the statsd-enable to enable statsd metrics
+        #- --statsd-enable
+        # Uncomment to set a custom stats emission address and port
+        #- --stats-address=0.0.0.0
+        #- --stats-port=8002
+        - /config/contour.yaml
         volumeMounts:
         - name: contour-config
           mountPath: /config
@@ -1284,6 +1726,17 @@ spec:
       dnsPolicy: ClusterFirst
       serviceAccountName: contour
       terminationGracePeriodSeconds: 30
+      # The affinity stanza below tells Kubernetes to try hard not to place 2 of
+      # these pods on the same node.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: contour
+              topologyKey: kubernetes.io/hostname
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
@@ -1342,8 +1795,10 @@ rules:
   - get
   - list
   - watch
+  - put
+  - post
+  - patch
 ---
-
 apiVersion: v1
 kind: Service
 metadata:
