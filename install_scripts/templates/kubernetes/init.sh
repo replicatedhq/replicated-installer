@@ -171,12 +171,13 @@ initKube() {
                 | tee /tmp/kubeadm-init
             _status=$?
             patchCoreDNS
-		else
-			kubeadm init \
-			    --ignore-preflight-errors=all \
-				--config /opt/replicated/kubeadm.conf \
-				--skip-token-print \
-				| tee /tmp/kubeadm-init
+        else
+            kubeadm init \
+                --ignore-preflight-errors=all \
+                --config /opt/replicated/kubeadm.conf \
+                --skip-token-print \
+                | tee /tmp/kubeadm-init
+            _status=$?
         fi
         if [ "$_status" -ne "0" ]; then
             printf "${RED}Failed to initialize the kubernetes cluster.${NC}\n" 1>&2
