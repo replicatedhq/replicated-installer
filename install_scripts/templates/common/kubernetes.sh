@@ -373,7 +373,7 @@ airgapLoadKubernetesCommonImages1123() {
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-common:v1.12.3-20181207"
 
-    docker tag ab97fa69b926 k8s.gcr.io/kube-proxy-amd64:v1.12.3
+    docker tag ab97fa69b926 k8s.gcr.io/kube-proxy:v1.12.3
     docker tag 367cdc8433a4 k8s.gcr.io/coredns:1.2.2
 }
 
@@ -393,7 +393,7 @@ airgapLoadKubernetesCommonImages1130() {
     docker tag d3309c525d48 gcr.io/heptio-images/contour:v0.8.0
     docker tag b4b5b76c6c00 rook/ceph:v0.9.0
     docker tag 53567bf7436e ceph/ceph:v12.2.8-20181023
-    docker tag 53ec938af4ea quay.io/replicated/replicated-hostpath-provisioner:cd1d272
+    docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
 }
 
 #######################################
@@ -479,10 +479,10 @@ airgapLoadKubernetesControlImages1123() {
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-control:v1.12.3-20181210"
 
-    docker tag 6b54f7bebd72 k8s.gcr.io/kube-apiserver-amd64:v1.12.3
-    docker tag 5e75513787b1 k8s.gcr.io/kube-scheduler-amd64:v1.12.3
-    docker tag c79022eb8bc9 k8s.gcr.io/kube-controller-manager-amd64:v1.12.3
-    docker tag 3cab8e1b9802 k8s.gcr.io/etcd-amd64:3.2.24
+    docker tag 6b54f7bebd72 k8s.gcr.io/kube-apiserver:v1.12.3
+    docker tag 5e75513787b1 k8s.gcr.io/kube-scheduler:v1.12.3
+    docker tag c79022eb8bc9 k8s.gcr.io/kube-controller-manager:v1.12.3
+    docker tag 3cab8e1b9802 k8s.gcr.io/etcd:3.2.24
 }
 
 airgapLoadKubernetesControlImages1130() {
@@ -490,10 +490,10 @@ airgapLoadKubernetesControlImages1130() {
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-control:v1.13.0-20181210"
 
-    docker tag f1ff9b7e3d6e k8s.gcr.io/kube-apiserver-amd64:v1.13.0
-    docker tag d82530ead066 k8s.gcr.io/kube-controller-manager-amd64:v1.13.0
-    docker tag 9508b7d8008d k8s.gcr.io/kube-scheduler-amd64:v1.13.0
-    docker tag 3cab8e1b9802 k8s.gcr.io/etcd-amd64:3.2.24
+    docker tag f1ff9b7e3d6e k8s.gcr.io/kube-apiserver:v1.13.0
+    docker tag d82530ead066 k8s.gcr.io/kube-controller-manager:v1.13.0
+    docker tag 9508b7d8008d k8s.gcr.io/kube-scheduler:v1.13.0
+    docker tag 3cab8e1b9802 k8s.gcr.io/etcd:3.2.24
 }
 
 #######################################
