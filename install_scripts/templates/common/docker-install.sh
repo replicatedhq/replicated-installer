@@ -76,6 +76,16 @@ installDockerOffline() {
             DID_INSTALL_DOCKER=1
             return
             ;;
+        ubuntu18.04)
+            mkdir -p image/
+            layer_id=$(tar xvf packages-docker-ubuntu1804.tar -C image/ | grep layer.tar | cut -d'/' -f1)
+            tar xvf image/${layer_id}/layer.tar
+            pushd archives/
+               dpkg -i --force-depends-version *.deb
+            popd
+            DID_INSTALL_DOCKER=1
+            return
+            ;;
         rhel7.4|rhel7.5|rhel7.6|centos7.4|centos7.5|centos7.6)
             mkdir -p image/
             layer_id=$(tar xvf packages-docker-rhel7.tar -C image/ | grep layer.tar | cut -d'/' -f1)

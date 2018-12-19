@@ -10,6 +10,7 @@ UBUNTU_1604_K8S_9=ubuntu-1604-v1.9.3-20181112
 UBUNTU_1604_K8S_10=ubuntu-1604-v1.10.6-20181112
 UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.5-20181204
 UBUNTU_1604_K8S_12=ubuntu-1604-v1.12.3-20181211
+# the ubuntu-1604 packages also install on Ubuntu 18.04
 UBUNTU_1604_K8S_13=ubuntu-1604-v1.13.0-20181211
 
 RHEL7_K8S_9=rhel7-v1.9.3-20180806
@@ -64,7 +65,7 @@ setK8sPatchVersion() {
 #######################################
 bailIfUnsupportedOS() {
     case "$LSB_DIST$DIST_VERSION" in
-        ubuntu16.04|rhel7.4|rhel7.5|rhel7.6|centos7.4|centos7.5|centos7.6)
+        ubuntu16.04|ubuntu18.04|rhel7.4|rhel7.5|rhel7.6|centos7.4|centos7.5|centos7.6)
             ;;
         *)
             bail "Kubernetes install is not supported on ${LSB_DIST} ${DIST_VERSION}"
@@ -109,7 +110,7 @@ k8sPackageTag() {
     k8sVersion=$1
 
     case "$LSB_DIST$DIST_VERSION" in
-        ubuntu16.04)
+        ubuntu16.04|ubuntu18.04)
             case "$k8sVersion" in
                 1.9.3)
                     echo "$UBUNTU_1604_K8S_9"
@@ -183,7 +184,7 @@ installKubernetesComponents() {
     prepareK8sPackageArchives $k8sVersion
 
     case "$LSB_DIST$DIST_VERSION" in
-        ubuntu16.04)
+        ubuntu16.04|ubuntu18.04)
             export DEBIAN_FRONTEND=noninteractive
             dpkg -i --force-depends-version archives/*.deb
             ;;
