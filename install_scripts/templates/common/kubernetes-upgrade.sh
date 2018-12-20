@@ -157,6 +157,7 @@ maybeUpgradeKubernetesNode() {
     if [ "$kubeletMinor" -lt "$k8sTargetMinor" ] || ([ "$kubeletMinor" -eq "$k8sTargetMinor" ] && [ "$kubeletPatch" -lt "$k8sTargetPatch" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
         logStep "Kubernetes version v$kubeletVersion detected, upgrading node to version v$k8sTargetVersion"
 
+        systemctl stop kubelet
         upgradeK8sNode "$k8sTargetVersion"
 
         if [ "$k8sTargetMinor" -gt 10 ]; then
@@ -176,7 +177,7 @@ maybeUpgradeKubernetesNode() {
             done
         fi
 
-        systemctl restart kubelet
+        systemctl start kubelet
 
         logSuccess "Kubernetes node upgraded to version v$k8sTargetVersion"
     fi
@@ -284,6 +285,7 @@ upgradeK8sMaster() {
 
     kubeadm upgrade apply "v$k8sVersion" --yes --config=/opt/replicated/kubeadm.conf
     waitForNodes
+    systemctl stop kubelet
 
     case "$LSB_DIST$DIST_VERSION" in
         ubuntu16.04)
@@ -301,7 +303,7 @@ upgradeK8sMaster() {
     rm -rf archives
 
     systemctl daemon-reload
-    systemctl restart kubelet
+    systemctl start kubelet
 
     sed -i "s/kubernetesVersion:.*/kubernetesVersion: v$k8sVersion/" /opt/replicated/kubeadm.conf
 
