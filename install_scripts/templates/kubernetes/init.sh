@@ -150,6 +150,8 @@ EOF
 
 initKube() {
     logStep "Verify Kubelet"
+    local kubeV=$(kubeadm version --output=short)
+
     if [ ! -e "/etc/kubernetes/manifests/kube-apiserver.yaml" ]; then
         logStep "Initialize Kubernetes"
 
@@ -157,7 +159,6 @@ initKube() {
 
         loadIPVSKubeProxyModules
 
-        local kubeV=$(kubeadm version --output=short)
         if [ "$kubeV" = "v1.9.3" ]; then
             kubeadm init \
                 --skip-preflight-checks \
@@ -183,7 +184,8 @@ initKube() {
             printf "${RED}Failed to initialize the kubernetes cluster.${NC}\n" 1>&2
             exit $_status
         fi
-    else
+    # we don't write any init files that can be read by kubeadm v1.12
+    elif [ "$kubeV" != "v1.12.3" ]; then
         logStep "verify kubernetes config"
         chmod 444 /etc/kubernetes/admin.conf
         initKubeadmConfig
