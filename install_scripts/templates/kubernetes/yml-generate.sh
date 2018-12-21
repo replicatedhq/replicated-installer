@@ -113,22 +113,6 @@ while [ "$1" != "" ]; do
 done
 
 render_replicated_deployment() {
-    # For airgap the replicated pod has to run on the node where the airgap
-    # package was unpacked
-    AFFINITY=
-    if [ "$AIRGAP" = "1" ]; then
-        AFFINITY=$(cat <<-EOF
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: "$DAEMON_NODE_KEY"
-                operator: Exists
-EOF
-        )
-    fi
-
     # For airgap the local address is the hostIP so docker on remote nodes can
     # pull from the local registry.
     LOCAL_ADDRESS_SOURCE=status.podIP
@@ -191,7 +175,13 @@ spec:
         app: replicated
         tier: master
     spec:
-$AFFINITY
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: "$DAEMON_NODE_KEY"
+                operator: Exists
       containers:
       - name: replicated
         image: "{{ replicated_docker_host }}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
@@ -887,43 +877,6 @@ spec:
         - mountPath: /etc/ceph
           name: default-config-dir
         env:
-        # To disable RBAC, uncomment the following:
-        # - name: RBAC_ENABLED
-        #  value: "false"
-        # Rook Agent toleration. Will tolerate all taints with all keys.
-        # Choose between NoSchedule, PreferNoSchedule and NoExecute:
-        # - name: AGENT_TOLERATION
-        #   value: "NoSchedule"
-        # (Optional) Rook Agent toleration key. Set this to the key of the taint you want to tolerate
-        # - name: AGENT_TOLERATION_KEY
-        #   value: "<KeyOfTheTaintToTolerate>"
-        # (Optional) Rook Agent mount security mode. Can by `Any` or `Restricted`.
-        # `Any` uses Ceph admin credentials by default/fallback.
-        # For using `Restricted` you must have a Ceph secret in each namespace storage should be consumed from and
-        # set `mountUser` to the Ceph user, `mountSecret` to the Kubernetes secret name.
-        # to the namespace in which the `mountSecret` Kubernetes secret namespace.
-        # - name: AGENT_MOUNT_SECURITY_MODE
-        #   value: "Any"
-        # Set the path where the Rook agent can find the flex volumes
-        # - name: FLEXVOLUME_DIR_PATH
-        #  value: "<PathToFlexVolumes>"
-        # Set the path where kernel modules can be found
-        # - name: LIB_MODULES_DIR_PATH
-        #  value: "<PathToLibModules>"
-        # Mount any extra directories into the agent container
-        # - name: AGENT_MOUNTS
-        #  value: "somemount=/host/path:/container/path,someothermount=/host/path2:/container/path2"
-        # Rook Discover toleration. Will tolerate all taints with all keys.
-        # Choose between NoSchedule, PreferNoSchedule and NoExecute:
-        # - name: DISCOVER_TOLERATION
-        #   value: "NoSchedule"
-        # (Optional) Rook Discover toleration key. Set this to the key of the taint you want to tolerate
-        # - name: DISCOVER_TOLERATION_KEY
-        #  value: "<KeyOfTheTaintToTolerate>"
-        # Allow rook to create multiple file systems. Note: This is considered
-        # an experimental feature in Ceph as described at
-        # http://docs.ceph.com/docs/master/cephfs/experimental-features/#multiple-filesystems-within-a-ceph-cluster
-        # which might cause mons to crash as seen in https://github.com/rook/rook/issues/1027
         - name: ROOK_ALLOW_MULTIPLE_FILESYSTEMS
           value: "false"
         # The logging level for the operator: INFO | DEBUG
