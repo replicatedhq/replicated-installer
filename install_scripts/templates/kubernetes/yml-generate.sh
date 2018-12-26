@@ -1106,7 +1106,7 @@ spec:
     enabled: true
   network:
     # toggle to use hostNetwork
-    hostNetwork: false
+    hostNetwork: true
   rbdMirroring:
     # The number of daemons that will perform the rbd mirroring.
     # rbd mirroring must be configured with "rbd mirror" from the rook toolbox.

@@ -31,6 +31,12 @@ maybeUpgradeKubernetes() {
     local k8sTargetMinor="$minor"
     local k8sTargetPatch="$patch"
 
+    if allNodesUpgraded "$k8sTargetVersion"; then
+        return
+    fi
+    # stop Replicated
+    kubectl delete all --all
+
     local kubeletVersion="$(getKubeletVersion)"
     semverParse "$kubeletVersion"
     local kubeletMajor="$major"
@@ -103,7 +109,6 @@ maybeUpgradeKubernetes() {
     kubeletPatch="$patch"
 
     # no patch versions of 1.13 yet.
-    local did13Upgrade=0
     if [ "$kubeletMinor" -eq "12" ]; then
         logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.13.0"
         if [ "$AIRGAP" = "1" ]; then
@@ -113,19 +118,17 @@ maybeUpgradeKubernetes() {
         : > /opt/replicated/kubeadm.conf
         makeKubeadmConfig
         upgradeK8sMaster "1.13.0"
-        did13Upgrade=1
         logSuccess "Kubernetes upgraded to version v1.13.0"
     fi
 
     upgradeK8sWorkers "1.13.0" "$K8S_UPGRADE_PATCH_VERSION"
 
-    if [ "$did13Upgrade" = "1" ]; then
-        # all pods with PVCs were stuck on Terminating after the upgrade and their owner ReplicaSet was gone
-        sleep 30
-        kubectl get pods | grep Terminating | awk '{ print $1 }' | xargs -I '{}' sh -c "kubectl delete pod '{}' --force --grace-period=0 || :"
-        local appNS=$(kubectl get ns | grep replicated- | awk '{ print $1 }')
-        kubectl get pods --namespace "$appNS" |  grep Terminating | awk '{ print $1 }' | xargs -I '{}' sh -c "kubectl delete pod '{}' --force --grace-period=0 || :"
-    fi
+    # all pods with PVCs were stuck on Terminating after the upgrade and their owner ReplicaSet was gone
+    sleep 30
+    maybeRestartOSD
+    kubectl get pods | grep Terminating | awk '{ print $1 }' | xargs -I '{}' sh -c "kubectl delete pod '{}' --force --grace-period=0 || :"
+    local appNS=$(kubectl get ns | grep replicated- | awk '{ print $1 }')
+    kubectl get pods --namespace "$appNS" |  grep Terminating | awk '{ print $1 }' | xargs -I '{}' sh -c "kubectl delete pod '{}' --force --grace-period=0 || :"
 }
 
 #######################################
@@ -184,6 +187,63 @@ maybeUpgradeKubernetesNode() {
 }
 
 #######################################
+# Run `kubectl get nodes` until it succeeds or up to 1 minute
+# Globals:
+#   K8S_UPGRADE_PATCH_VERSION
+# Arguments:
+#   k8sVersion - e.g. 1.10.6
+# Returns:
+#   None
+#######################################
+listNodes() {
+    local nodes=
+    n=0
+    while ! nodes="$(kubectl get nodes 2>/dev/null)"; do
+        n="$(( $n + 1 ))"
+        if [ "$n" -ge "30" ]; then
+            # this should exit script on non-zero exit code and print error message
+            local nodes="$(kubectl get nodes)"
+        fi
+        sleep 2
+    done
+    echo "$nodes" | sed '1d'
+}
+
+#######################################
+# Upgrade Kubernetes on remote workers to version. Never downgrades a worker.
+# Globals:
+#   K8S_UPGRADE_PATCH_VERSION
+# Arguments:
+#   k8sVersion - e.g. 1.10.6
+# Returns:
+#   None
+#######################################
+allNodesUpgraded() {
+    local k8sTargetVersion="$1"
+    semverParse "$k8sTargetVersion"
+    local k8sTargetMajor="$major"
+    local k8sTargetMinor="$minor"
+    local k8sTargetPatch="$patch"
+
+    while read -r node; do
+        local nodeVersion="$(echo "$node" | awk '{ print $5 }' | sed 's/v//' )"
+        semverParse "$nodeVersion"
+        local nodeMajor="$major"
+        local nodeMinor="$minor"
+        local nodePatch="$patch"
+
+        if [ "$nodeMajor" -eq "$k8sTargetMajor" ] &&  [ "$nodeMinor" -lt "$k8sTargetMinor" ]; then
+            return 1
+        fi
+        if [ "$nodeMajor" -eq "$k8sTargetMajor" ] && [ "$nodeMinor" -eq "$k8sTargetMinor" ] && [ "$nodePatch" -lt "$k8sTargetPatch" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]; then
+            return 1
+        fi
+    done <<< "$(listNodes)"
+
+    return 0
+}
+
+#######################################
 # Upgrade Kubernetes on remote workers to version. Never downgrades a worker.
 # Globals:
 #   AIRGAP
@@ -239,6 +299,14 @@ upgradeK8sWorkers() {
             continue
         fi
         nodeName=$(echo "$node" | awk '{ print $1 }')
+        kubectl drain "$nodeName" \
+            --delete-local-data \
+            --ignore-daemonsets \
+            --force \
+            --grace-period=30 \
+            --timeout=300s \
+            --pod-selector 'app notin (rook-ceph-mon,rook-ceph-osd,rook-ceph-osd-prepare,rook-ceph-operator,rook-ceph-agent)' || :
+
 
         printf "\n\n\tRun the upgrade script on remote node before proceeding: ${GREEN}$nodeName${NC}\n\n"
         local upgradePatchFlag=""
@@ -258,6 +326,8 @@ upgradeK8sWorkers() {
                 break
             fi
         done
+        kubectl uncordon "$nodeName"
+        maybeRestartOSD
     done <<< "$workers"
 
     spinnerNodesReady
@@ -275,6 +345,7 @@ upgradeK8sWorkers() {
 #######################################
 upgradeK8sMaster() {
     k8sVersion=$1
+    local node=$(k8sMasterNodeName)
 
     prepareK8sPackageArchives "$k8sVersion"
 
@@ -283,8 +354,17 @@ upgradeK8sMaster() {
     cp archives/kubeadm /usr/bin/kubeadm
     chmod a+rx /usr/bin/kubeadm
 
-    kubeadm upgrade apply "v$k8sVersion" --yes --config=/opt/replicated/kubeadm.conf
+    kubeadm upgrade apply "v$k8sVersion" --yes --config=/opt/replicated/kubeadm.conf --force
     waitForNodes
+
+    kubectl drain "$node" \
+        --delete-local-data \
+        --ignore-daemonsets \
+        --force \
+        --grace-period=30 \
+        --timeout=300s \
+        --pod-selector 'app notin (rook-ceph-mon,rook-ceph-osd,rook-ceph-osd-prepare,rook-ceph-operator,rook-ceph-agent)' || :
+ 
     systemctl stop kubelet
 
     case "$LSB_DIST$DIST_VERSION" in
@@ -304,12 +384,14 @@ upgradeK8sMaster() {
 
     systemctl daemon-reload
     systemctl start kubelet
+    kubectl uncordon "$node"
 
     sed -i "s/kubernetesVersion:.*/kubernetesVersion: v$k8sVersion/" /opt/replicated/kubeadm.conf
 
     waitForNodes
     spinnerNodeVersion "$(k8sMasterNodeName)" "$k8sVersion"
     spinnerNodesReady
+    maybeRestartOSD
 }
 
 #######################################
@@ -376,4 +458,41 @@ getK8sServerVersion() {
 #######################################
 getK8sNodeVersion() {
     echo "$(kubelet --version | cut -d ' ' -f 2 | sed 's/v//')"
+}
+
+numcpus() {
+        cat /proc/cpuinfo | grep processor | wc -l
+}
+
+load() {
+       cat /proc/loadavg | sed 's/\./\n/' | head -n1
+}
+
+if [ $(load) -lt $(numcpus) ]; then
+        echo "ok"
+else
+        echo "not ok"
+fi
+
+######################################
+# Check if OSD pods need restarting
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+######################################
+maybeRestartOSD() {
+    # After upgrading nodes, pod IP changes and the OSD fails to bind to the address in /opt/replicated/rook/osd*/rook-ceph.config.
+    # Deleting the current osd pod causes Rook to re-create this file with the correct pod IP.
+    spinnerNodesReady
+    local osd="$(kubectl get pods -n rook-ceph -o wide | grep rook-ceph-osd | grep CrashLoopBackOff)"
+    while read -r osd; do
+        local podName="$(echo $osd | awk '{ print $1 }')"
+        if [ -n "$podName" ]; then
+            echo "Restarting OSD $podName"
+            kubectl -n rook-ceph delete pod "$podName"
+        fi
+    done <<< "$osd"
 }
