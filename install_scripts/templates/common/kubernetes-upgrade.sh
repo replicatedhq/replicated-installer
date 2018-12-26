@@ -122,13 +122,6 @@ maybeUpgradeKubernetes() {
     fi
 
     upgradeK8sWorkers "1.13.0" "$K8S_UPGRADE_PATCH_VERSION"
-
-    # all pods with PVCs were stuck on Terminating after the upgrade and their owner ReplicaSet was gone
-    sleep 30
-    maybeRestartOSD
-    kubectl get pods | grep Terminating | awk '{ print $1 }' | xargs -I '{}' sh -c "kubectl delete pod '{}' --force --grace-period=0 || :"
-    local appNS=$(kubectl get ns | grep replicated- | awk '{ print $1 }')
-    kubectl get pods --namespace "$appNS" |  grep Terminating | awk '{ print $1 }' | xargs -I '{}' sh -c "kubectl delete pod '{}' --force --grace-period=0 || :"
 }
 
 #######################################
@@ -327,7 +320,6 @@ upgradeK8sWorkers() {
             fi
         done
         kubectl uncordon "$nodeName"
-        maybeRestartOSD
     done <<< "$workers"
 
     spinnerNodesReady
@@ -391,7 +383,6 @@ upgradeK8sMaster() {
     waitForNodes
     spinnerNodeVersion "$(k8sMasterNodeName)" "$k8sVersion"
     spinnerNodesReady
-    maybeRestartOSD
 }
 
 #######################################
@@ -458,41 +449,4 @@ getK8sServerVersion() {
 #######################################
 getK8sNodeVersion() {
     echo "$(kubelet --version | cut -d ' ' -f 2 | sed 's/v//')"
-}
-
-numcpus() {
-        cat /proc/cpuinfo | grep processor | wc -l
-}
-
-load() {
-       cat /proc/loadavg | sed 's/\./\n/' | head -n1
-}
-
-if [ $(load) -lt $(numcpus) ]; then
-        echo "ok"
-else
-        echo "not ok"
-fi
-
-######################################
-# Check if OSD pods need restarting
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-######################################
-maybeRestartOSD() {
-    # After upgrading nodes, pod IP changes and the OSD fails to bind to the address in /opt/replicated/rook/osd*/rook-ceph.config.
-    # Deleting the current osd pod causes Rook to re-create this file with the correct pod IP.
-    spinnerNodesReady
-    local osd="$(kubectl get pods -n rook-ceph -o wide | grep rook-ceph-osd | grep CrashLoopBackOff)"
-    while read -r osd; do
-        local podName="$(echo $osd | awk '{ print $1 }')"
-        if [ -n "$podName" ]; then
-            echo "Restarting OSD $podName"
-            kubectl -n rook-ceph delete pod "$podName"
-        fi
-    done <<< "$osd"
 }
