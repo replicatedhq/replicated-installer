@@ -22,8 +22,7 @@ weave_version=2.5.0
 registry_version=2.6.2
 envoy_version=v1.7.0
 contour_version=v0.8.0
-rook_version=v0.9.0
-ceph_version=v12.2.8-20181023
+rook_version=v0.8.1
 replicated_hostpath_provisioner_version=cd1d272
 
 common="
@@ -37,7 +36,6 @@ common="
 	docker.io/envoyproxy/envoy-alpine:$envoy_version
 	gcr.io/heptio-images/contour:$contour_version
 	rook/ceph:$rook_version
-	ceph/ceph:$ceph_version
 	quay.io/replicated/replicated-hostpath-provisioner:$replicated_hostpath_provisioner_version"
 
 control="
