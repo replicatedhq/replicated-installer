@@ -34,8 +34,9 @@ maybeUpgradeKubernetes() {
     if allNodesUpgraded "$k8sTargetVersion"; then
         return
     fi
-    # stop Replicated
-    kubectl delete all --all
+    # attempt to stop Replicated to reduce Docker load during upgrade
+    kubectl delete all --all --grace-period=30 --timeout=60s || true
+
 
     local kubeletVersion="$(getKubeletVersion)"
     semverParse "$kubeletVersion"
