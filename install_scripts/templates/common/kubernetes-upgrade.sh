@@ -18,7 +18,7 @@
 # kubeadm 1.12 writes v1alpha3 configs and can also read v1alpha2
 # kubeadm 1.13 writes v1beta1 configs and can also read v1alpha3
 # Globals:
-#   None
+#   KUBERNETES_ONLY
 # Arguments:
 #   upgradeVersion - e.g. 1.10.6
 # Returns:
@@ -35,7 +35,9 @@ maybeUpgradeKubernetes() {
         return
     fi
     # attempt to stop Replicated to reduce Docker load during upgrade
-    kubectl delete all --all --grace-period=30 --timeout=60s || true
+    if [ "$KUBERNETES_ONLY" != "1" ]; then
+        kubectl delete all --all --grace-period=30 --timeout=60s || true
+    fi
 
 
     local kubeletVersion="$(getKubeletVersion)"
