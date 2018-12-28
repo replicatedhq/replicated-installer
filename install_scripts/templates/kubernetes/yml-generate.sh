@@ -18,6 +18,7 @@ REPLICATED_YAML=1
 REPLICATED_PVC=1
 ROOK_SYSTEM_YAML=0
 ROOK_CLUSTER_YAML=0
+ROOK_SHARED_FS=0
 HOSTPATH_PROVISIONER_YAML=0
 WEAVE_YAML=0
 CONTOUR_YAML=0
@@ -103,6 +104,10 @@ while [ "$1" != "" ]; do
             ;;
         ceph-dashboard-url|ceph_dashboard_url)
             CEPH_DASHBOARD_URL="$_value"
+            ;;
+        rook-shared-fs|rook_shared_fs)
+            ROOK_SHARED_FS="$_value"
+            REPLICATED_YAML=0
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
@@ -841,6 +846,26 @@ spec:
 EOF
 }
 
+render_rook_shared_fs_yaml() {
+    cat <<EOF
+apiVersion: ceph.rook.io/v1beta1
+kind: Filesystem
+metadata:
+  name: rook-shared-fs
+  namespace: rook-ceph
+spec:
+  metadataPool:
+    replicated:
+      size: 1
+  dataPools:
+  - replicated:
+      size: 1
+  metadataServer:
+    activeCount: 1
+    activeStandby: true
+EOF
+}
+
 render_rook_cluster_yaml() {
     PV_BASE_PATH="${PV_BASE_PATH:-"/opt/replicated/rook"}"
 
@@ -1544,6 +1569,10 @@ fi
 
 if [ "$ROOK_SYSTEM_YAML" = "1" ]; then
     render_rook_system_yaml
+fi
+
+if [ "$ROOK_SHARED_FS" = "1" ]; then
+	render_rook_shared_fs_yaml
 fi
 
 if [ "$HOSTPATH_PROVISIONER_YAML" = "1" ]; then

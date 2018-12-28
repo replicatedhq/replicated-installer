@@ -44,6 +44,7 @@ ENCRYPT_NETWORK=
 ADDITIONAL_NO_PROXY=
 IPVS=1
 CEPH_DASHBOARD_URL=
+ROOK_SHARED_FS=
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -344,6 +345,7 @@ rookDeploy() {
 
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_system_yaml=1 > /tmp/rook-ceph-system.yml
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_cluster_yaml=1 > /tmp/rook-ceph.yml
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_shared_fs=1 > /tmp/rook-shared-fs.yml
 
     kubectl apply -f /tmp/rook-ceph-system.yml
     spinnerRookReady # creating the cluster before the operator is ready fails
@@ -351,6 +353,11 @@ rookDeploy() {
     # during tests it was required occasionally on 1.11.
     sudo systemctl restart kubelet
     kubectl apply -f /tmp/rook-ceph.yml
+
+    if [ "$ROOK_SHARED_FS" = "1" ]; then
+        kubectl apply -f /tmp/rook-shared-fs.yml
+    fi
+
     logSuccess "Rook deployed"
 }
 
@@ -613,6 +620,9 @@ while [ "$1" != "" ]; do
             ;;
         kubernetes-upgrade-patch-version|kubernetes_upgrade_patch_version)
             K8S_UPGRADE_PATCH_VERSION=1
+            ;;
+        rook-shared-fs|rook_shared_fs)
+            ROOK_SHARED_FS=1
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
