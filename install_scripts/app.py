@@ -28,7 +28,6 @@ def get_metricz():
 
 @app.route('/docker-install.sh')
 def get_docker():
-    print("docker_version")
     docker_version = helpers.get_arg('docker_version',
                                      helpers.get_default_docker_version())
     lsb_dist = helpers.get_arg('lsb_dist', '')
