@@ -327,7 +327,7 @@ airgapLoadKubernetesCommonImages193() {
     docker tag 86ff1a48ce14 weaveworks/weave-kube:2.4.0
     docker tag 647ad6d59818 weaveworks/weave-npc:2.4.0
     docker tag bf0c403ea58d weaveworks/weaveexec:2.4.0
-    docker tag 2e2f252f3c88 docker.io/registry:2
+    docker tag 9c1f09fe9a86 docker.io/registry:2
     docker tag 6521ac58ca80 envoyproxy/envoy-alpine:v1.6.0
     docker tag 6a9ec4bcb60e gcr.io/heptio-images/contour:v0.5.0
     docker tag b5c343f1a3a6 rook/ceph:v0.8.1
@@ -359,7 +359,7 @@ airgapLoadKubernetesCommonImages1115() {
     docker tag 86ff1a48ce14 weaveworks/weave-kube:2.4.0
     docker tag 647ad6d59818 weaveworks/weave-npc:2.4.0
     docker tag bf0c403ea58d weaveworks/weaveexec:2.4.0
-    docker tag 2e2f252f3c88 docker.io/registry:2
+    docker tag 9c1f09fe9a86 docker.io/registry:2
     docker tag 6521ac58ca80 docker.io/envoyproxy/envoy-alpine:v1.6.0
     docker tag 6a9ec4bcb60e gcr.io/heptio-images/contour:v0.5.0
     docker tag b5c343f1a3a6 rook/ceph:v0.8.1
@@ -387,7 +387,7 @@ airgapLoadKubernetesCommonImages1130() {
     docker tag a5103f96993a weaveworks/weave-kube:2.5.0
     docker tag d499500e93d3 weaveworks/weave-npc:2.5.0
     docker tag 6568ae41694a weaveworks/weaveexec:2.5.0
-    docker tag 2e2f252f3c88 docker.io/registry:2
+    docker tag 9c1f09fe9a86 docker.io/registry:2
     docker tag d7b5da521177 docker.io/envoyproxy/envoy-alpine:v1.7.0
     docker tag d3309c525d48 gcr.io/heptio-images/contour:v0.8.0
     docker tag b5c343f1a3a6 rook/ceph:v0.8.1
