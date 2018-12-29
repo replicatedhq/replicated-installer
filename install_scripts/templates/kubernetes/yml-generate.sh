@@ -1369,7 +1369,7 @@ spec:
     spec:
       containers:
       - image: gcr.io/heptio-images/contour:v0.8.0
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         name: contour
         command: ["contour"]
         args: ["serve", "--incluster"]
@@ -1402,7 +1402,7 @@ spec:
               command: ["wget", "-qO-", "http://localhost:9001/healthcheck/fail"] 
       initContainers:
       - image: gcr.io/heptio-images/contour:v0.8.0
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         name: envoy-initconfig
         command: ["contour"]
         args:
