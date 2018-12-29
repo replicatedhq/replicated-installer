@@ -371,6 +371,9 @@ contourDeploy() {
     fi
 
     logStep "deploy Contour ingress controller"
+    # prior to 2.31.0 this was a DaemonSet but now is a Deployment
+    kubectl -n heptio-contour delete daemonset contour 2>/dev/null || true
+
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS contour_yaml=1 > /tmp/contour.yml
     kubectl apply -f /tmp/contour.yml
     logSuccess "Contour deployed"
