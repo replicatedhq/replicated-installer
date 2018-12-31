@@ -389,7 +389,9 @@ SWARM_NODE_ADDRESS="$(docker info --format "{{ '{{.Swarm.NodeAddr}}' }}")"
 SWARM_MASTER_ADDRESS="$(docker info --format "{{ '{{with index .Swarm.RemoteManagers 0}}{{.Addr}}{{end}}' }}")"
 
 if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
-    getNoProxyAddresses "$SWARM_NODE_ADDRESS"
+    getNetworkCidrFromIp "$SWARM_NODE_ADDRESS" || :
+
+    getNoProxyAddresses "$SWARM_NODE_ADDRESS" "$NETWORK_CIDR"
     requireDockerProxy
 fi
 

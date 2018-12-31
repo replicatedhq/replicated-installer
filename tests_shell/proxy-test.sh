@@ -166,4 +166,11 @@ EOF
     rm -f "$tempTestingFile"
 }
 
+test_getNoProxyAddresses()
+{
+    ADDITIONAL_NO_PROXY="146.148.47.17"
+    getNoProxyAddresses "10.128.0.39" "10.128.0.39/32"
+    assertEquals "localhost,127.0.0.1,172.17.0.1,146.148.47.17,10.128.0.39,10.128.0.39/32" "$NO_PROXY_ADDRESSES"
+}
+
 . shunit2

@@ -304,9 +304,11 @@ getNoProxyAddresses() {
 
     while [ "$#" -gt 0 ]
     do
-        # [10.138.0.2]:9878 -> 10.138.0.2
-        hostname=`echo $1 | sed -e 's/:[0-9]*$//' | sed -e 's/[][]//g'`
-        NO_PROXY_ADDRESSES="$NO_PROXY_ADDRESSES,$hostname"
+        if [ -n "$1" ]; then
+            # [10.138.0.2]:9878 -> 10.138.0.2
+            hostname=`echo $1 | sed -e 's/:[0-9]*$//' | sed -e 's/[][]//g'`
+            NO_PROXY_ADDRESSES="$NO_PROXY_ADDRESSES,$hostname"
+        fi
         shift
     done
 

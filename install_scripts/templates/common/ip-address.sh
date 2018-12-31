@@ -8,6 +8,7 @@
 #######################################
 
 PRIVATE_ADDRESS=
+PRIVATE_CIDR=
 PUBLIC_ADDRESS=
 
 #######################################
@@ -18,15 +19,17 @@ PUBLIC_ADDRESS=
 #   None
 # Returns:
 #   PRIVATE_ADDRESS
+#   PRIVATE_CIDR
 #######################################
 promptForPrivateIp() {
     _count=0
-    _regex="^[[:digit:]]+: ([^[:space:]]+)[[:space:]]+[[:alnum:]]+ ([[:digit:].]+)"
+    _regex="^[[:digit:]]+: ([^[:space:]]+)[[:space:]]+[[:alnum:]]+ (([[:digit:].]+)\/[[:digit:].]+)"
     while read -r _line; do
         [[ $_line =~ $_regex ]]
         if [ "${BASH_REMATCH[1]}" != "lo" ]; then
             _iface_names[$((_count))]=${BASH_REMATCH[1]}
-            _iface_addrs[$((_count))]=${BASH_REMATCH[2]}
+            _iface_cidrs[$((_count))]=${BASH_REMATCH[2]}
+            _iface_addrs[$((_count))]=${BASH_REMATCH[3]}
             let "_count += 1"
         fi
     done <<< "$(ip -4 -o addr)"
@@ -37,6 +40,7 @@ promptForPrivateIp() {
         exit 1
     elif [ "$_count" -eq "1" ]; then
         PRIVATE_ADDRESS=${_iface_addrs[0]}
+        PRIVATE_CIDR=${_iface_cidrs[0]}
         printf "The installer will use network interface '%s' (with IP address '%s')\n" "${_iface_names[0]}" "${_iface_addrs[0]}"
         return
     fi
@@ -53,6 +57,7 @@ promptForPrivateIp() {
         fi
         if [ "$PROMPT_RESULT" -ge "0" ] && [ "$PROMPT_RESULT" -lt "$_count" ]; then
             PRIVATE_ADDRESS=${_iface_addrs[$PROMPT_RESULT]}
+            PRIVATE_CIDR=${_iface_cidrs[$PROMPT_RESULT]}
             printf "The installer will use network interface '%s' (with IP address '%s').\n" "${_iface_names[$PROMPT_RESULT]}" "$PRIVATE_ADDRESS"
             return
         fi
@@ -160,6 +165,28 @@ promptForPublicIp() {
             break
         fi
     done
+}
+
+#######################################
+# Gets the network CIDR from the IP address specified in the first argument.
+# Globals:
+#   None
+# Arguments:
+#   IP
+# Returns:
+#   NETWORK_CIDR
+#######################################
+NETWORK_CIDR=
+getNetworkCidrFromIp() {
+    _regex="^[[:digit:]]+: ([^[:space:]]+)[[:space:]]+[[:alnum:]]+ (([[:digit:].]+)\/[[:digit:].]+)"
+    while read -r _line; do
+        [[ $_line =~ $_regex ]]
+        if [ "${BASH_REMATCH[3]}" = "$1" ]; then
+            NETWORK_CIDR="${BASH_REMATCH[2]}"
+            return 0
+        fi
+    done <<< "$(ip -4 -o addr)"
+    return 1
 }
 
 #######################################
