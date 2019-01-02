@@ -672,7 +672,7 @@ if [ "$NO_PROXY" != "1" ]; then
     fi
 
     if [ -n "$PROXY_ADDRESS" ]; then
-        getNoProxyAddresses "$PRIVATE_ADDRESS" "$PRIVATE_CIDR" "$SERVICE_CIDR"
+        getNoProxyAddresses "$PRIVATE_ADDRESS" "$SERVICE_CIDR" # NOTE: maybe add "$PRIVATE_CIDR" here
     fi
 fi
 

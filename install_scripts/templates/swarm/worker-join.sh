@@ -152,6 +152,7 @@ fi
 promptForSwarmMasterAddress
 
 if [ -n "$PROXY_ADDRESS" ]; then
+    NETWORK_CIDR=
     matchNetworkCidrWithIp "$SWARM_MASTER_ADDRESS" || :
     getNoProxyAddresses "$SWARM_MASTER_ADDRESS"
     requireDockerProxy
