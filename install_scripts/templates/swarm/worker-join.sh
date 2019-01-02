@@ -152,7 +152,7 @@ fi
 promptForSwarmMasterAddress
 
 if [ -n "$PROXY_ADDRESS" ]; then
-    # TODO: add private address cidr range to no proxy
+    matchNetworkCidrWithIp "$SWARM_MASTER_ADDRESS" || :
     getNoProxyAddresses "$SWARM_MASTER_ADDRESS"
     requireDockerProxy
 fi

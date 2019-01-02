@@ -16,4 +16,72 @@ testIsValidIpv6()
     assertEquals "localhost" "1" "$(isValidIpv6 "localhost"; echo $?)"
 }
 
+testDoesCidrMatchIp()
+{
+    cidr="10.128.1.0/8"
+    ip="10.128.1.3"
+    expected=0
+    fail=0
+    doesCidrMatchIp "$cidr" "$ip" || fail=1
+    assertTrue "doesCidrMatchIp($cidr $ip) should return $expected" "[ $fail -eq $expected ]"
+
+    cidr="10.128.1.0/16"
+    ip="10.128.1.3"
+    expected=0
+    fail=0
+    doesCidrMatchIp "$cidr" "$ip" || fail=1
+    assertTrue "doesCidrMatchIp($cidr $ip) should return $expected" "[ $fail -eq $expected ]"
+
+    cidr="10.128.1.0/24"
+    ip="10.128.1.3"
+    expected=0
+    fail=0
+    doesCidrMatchIp "$cidr" "$ip" || fail=1
+    assertTrue "doesCidrMatchIp($cidr $ip) should return $expected" "[ $fail -eq $expected ]"
+
+    cidr="10.128.1.0/15"
+    ip="10.129.1.3"
+    expected=0
+    fail=0
+    doesCidrMatchIp "$cidr" "$ip" || fail=1
+    assertTrue "doesCidrMatchIp($cidr $ip) should return $expected" "[ $fail -eq $expected ]"
+
+    cidr="10.128.1.0/16"
+    ip="10.129.1.3"
+    expected=1
+    fail=0
+    doesCidrMatchIp "$cidr" "$ip" || fail=1
+    assertTrue "doesCidrMatchIp($cidr $ip) should return $expected" "[ $fail -eq $expected ]"
+
+    cidr="10.128.1.0/23"
+    ip="10.128.2.3"
+    expected=0
+    fail=0
+    doesCidrMatchIp "$cidr" "$ip" || fail=1
+    assertTrue "doesCidrMatchIp($cidr $ip) should return $expected" "[ $fail -eq $expected ]"
+
+    cidr="10.128.1.0/24"
+    ip="10.128.2.3"
+    expected=1
+    fail=0
+    doesCidrMatchIp "$cidr" "$ip" || fail=1
+    assertTrue "doesCidrMatchIp($cidr $ip) should return $expected" "[ $fail -eq $expected ]"
+
+    # invalid ip
+    cidr="10.128.1.0/8"
+    ip=""
+    expected=1
+    fail=0
+    doesCidrMatchIp "$cidr" "$ip" || fail=1
+    assertTrue "doesCidrMatchIp($cidr $ip) should return $expected" "[ $fail -eq $expected ]"
+
+    # invalid cidr
+    cidr=""
+    ip="10.128.1.3"
+    expected=1
+    fail=0
+    doesCidrMatchIp "$cidr" "$ip" || fail=1
+    assertTrue "doesCidrMatchIp($cidr $ip) should return $expected" "[ $fail -eq $expected ]"
+}
+
 . shunit2

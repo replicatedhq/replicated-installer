@@ -11,6 +11,8 @@ PRIVATE_ADDRESS=
 PRIVATE_CIDR=
 PUBLIC_ADDRESS=
 
+ipCmdRegex="^[[:digit:]]+: ([^[:space:]]+)[[:space:]]+[[:alnum:]]+ (([[:digit:].]+)\/[[:digit:].]+)"
+
 #######################################
 # Prompts the user for a private address.
 # Globals:
@@ -23,9 +25,8 @@ PUBLIC_ADDRESS=
 #######################################
 promptForPrivateIp() {
     _count=0
-    _regex="^[[:digit:]]+: ([^[:space:]]+)[[:space:]]+[[:alnum:]]+ (([[:digit:].]+)\/[[:digit:].]+)"
     while read -r _line; do
-        [[ $_line =~ $_regex ]]
+        [[ $_line =~ $ipCmdRegex ]]
         if [ "${BASH_REMATCH[1]}" != "lo" ]; then
             _iface_names[$((_count))]=${BASH_REMATCH[1]}
             _iface_cidrs[$((_count))]=${BASH_REMATCH[2]}
@@ -168,7 +169,7 @@ promptForPublicIp() {
 }
 
 #######################################
-# Gets the network CIDR from the IP address specified in the first argument.
+# Attempts to find the network CIDR from the IP address specified in the first argument.
 # Globals:
 #   None
 # Arguments:
@@ -177,16 +178,62 @@ promptForPublicIp() {
 #   NETWORK_CIDR
 #######################################
 NETWORK_CIDR=
-getNetworkCidrFromIp() {
-    _regex="^[[:digit:]]+: ([^[:space:]]+)[[:space:]]+[[:alnum:]]+ (([[:digit:].]+)\/[[:digit:].]+)"
+matchNetworkCidrWithIp() {
     while read -r _line; do
-        [[ $_line =~ $_regex ]]
-        if [ "${BASH_REMATCH[3]}" = "$1" ]; then
+        [[ $_line =~ $ipCmdRegex ]]
+        if doesCidrMatchIp "${BASH_REMATCH[2]}" "$1"; then
             NETWORK_CIDR="${BASH_REMATCH[2]}"
             return 0
         fi
     done <<< "$(ip -4 -o addr)"
     return 1
+}
+
+#######################################
+# Returns 0 if CIDR matches IP, else 1. This is a pretty fuzzy match but it
+# should serve our purposes.
+# Globals:
+#   None
+# Arguments:
+#   CIDR
+#   IP
+# Returns:
+#   None
+#######################################
+doesCidrMatchIp() {
+    _cidr="$1"
+    _ip="$2"
+    # sanity checks
+    if [ "$(echo "$_ip" | awk -F"." '{print NF-1}')" != "3" ]; then
+        return 1
+    fi
+    if [ "$(echo "$_cidr" | awk -F"." '{print NF-1}')" != "3" ]; then
+        return 1
+    fi
+    if [ "$(echo "$_cidr" | awk -F"/" '{print NF-1}')" != "1" ]; then
+        return 1
+    fi
+    _cr="$(echo "$_cidr" | cut -d "/" -f 2)"
+    # this is not a cidr or the range is too big
+    if [ "$_cr" -lt "8" ]; then
+        return 1
+    fi
+    if [ "$(echo "$_ip" | cut -d "." -f 1)" != "$(echo "$_cidr" | cut -d "." -f 1)" ]; then
+        return 1
+    fi
+    if [ "$_cr" -lt "16" ]; then
+        return 0
+    fi
+    if [ "$(echo "$_ip" | cut -d "." -f 2)" != "$(echo "$_cidr" | cut -d "." -f 2)" ]; then
+        return 1
+    fi
+    if [ "$_cr" -lt "24" ]; then
+        return 0
+    fi
+    if [ "$(echo "$_ip" | cut -d "." -f 3)" != "$(echo "$_cidr" | cut -d "." -f 3)" ]; then
+        return 1
+    fi
+    return 0
 }
 
 #######################################
