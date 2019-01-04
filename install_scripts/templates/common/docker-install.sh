@@ -165,7 +165,7 @@ _installDocker() {
     $URLGET_CMD "$_docker_install_url?docker_version=${1}&lsb_dist=${LSB_DIST}&dist_version=${DIST_VERSION_MAJOR}" > /tmp/docker_install.sh
     # When this script is piped into bash as stdin, apt-get will eat the remaining parts of this script,
     # preventing it from being executed.  So using /dev/null here to change stdin for the docker script.
-    sh /tmp/docker_install.sh < /dev/null
+    VERSION="${1}" sh /tmp/docker_install.sh < /dev/null
 
     printf "${GREEN}External script is finished${NC}\n"
 

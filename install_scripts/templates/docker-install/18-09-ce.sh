@@ -23,7 +23,7 @@ SCRIPT_COMMIT_SHA=UNKNOWN
 #   * edge
 #   * test
 #   * experimental
-DEFAULT_CHANNEL_VALUE="test"
+DEFAULT_CHANNEL_VALUE="stable"
 if [ -z "$CHANNEL" ]; then
 	CHANNEL=$DEFAULT_CHANNEL_VALUE
 fi
@@ -39,9 +39,14 @@ if [ -z "$REPO_FILE" ]; then
 fi
 
 SUPPORT_MAP="
-x86_64-centos-7
+86_64-centos-7
+x86_64-centos-6
+x86_64-fedora-25
+x86_64-fedora-26
+x86_64-fedora-27
 x86_64-fedora-28
 x86_64-fedora-29
+x86_64-debian-wheezy
 x86_64-debian-jessie
 x86_64-debian-stretch
 x86_64-debian-buster
@@ -49,15 +54,23 @@ x86_64-ubuntu-trusty
 x86_64-ubuntu-xenial
 x86_64-ubuntu-bionic
 x86_64-ubuntu-cosmic
+x86_64-ubuntu-zesty
+x86_64-ubuntu-artful
 s390x-ubuntu-xenial
 s390x-ubuntu-bionic
 s390x-ubuntu-cosmic
+s390x-ubuntu-zesty
+s390x-ubuntu-artful
 ppc64le-ubuntu-xenial
 ppc64le-ubuntu-bionic
 ppc64le-ubuntu-cosmic
+ppc64le-ubuntu-zesty
+ppc64le-ubuntu-artful
 aarch64-ubuntu-xenial
 aarch64-ubuntu-bionic
 aarch64-ubuntu-cosmic
+aarch64-ubuntu-zesty
+aarch64-ubuntu-artful
 aarch64-debian-jessie
 aarch64-debian-stretch
 aarch64-debian-buster
@@ -75,6 +88,8 @@ armv7l-ubuntu-trusty
 armv7l-ubuntu-xenial
 armv7l-ubuntu-bionic
 armv7l-ubuntu-cosmic
+armv7l-ubuntu-zesty
+armv7l-ubuntu-artful
 "
 
 mirror=''
@@ -419,7 +434,15 @@ do_install() {
 				if ! is_dry_run; then
 					set -x
 				fi
-				$sh_c "apt-get install -y -qq --no-install-recommends docker-ce$pkg_version >/dev/null"
+                _status=0
+				$sh_c "apt-get install -y -qq --no-install-recommends docker-ce$pkg_version >/dev/null" || _status="$?"
+				# NOTE: On debian there is a race condition between docker.service and docker.socket
+				# that causes docker to fail to start the first time, so we will try again...
+				# https://github.com/docker/for-linux/issues/351
+				if [ "$_status" -ne "0" ]; then
+					sleep 5
+					$sh_c "apt-get install -y -qq --no-install-recommends docker-ce$pkg_version >/dev/null"
+				fi
 			)
 			echo_docker_as_nonroot
 			exit 0
