@@ -9,6 +9,18 @@ spec:
       labels:
         app: install-scripts
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 2
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - install-scripts
+              topologyKey: "kubernetes.io/hostname"
       containers:
         - name: install-scripts
           image: replicated/install-scripts
