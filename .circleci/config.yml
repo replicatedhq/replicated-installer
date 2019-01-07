@@ -139,30 +139,6 @@ jobs:
             export CIRCLE_PROJECT_REPONAME=$PROJECT_NAME
             push-docker
 
-  deploy_staging_ecs:
-    <<: *defaults
-    steps:
-      - setup_remote_docker
-      - deploy:
-          name: Maybe deploy staging to ecs
-          command: |
-            set -vu
-            if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedhq" ]; then
-              export AWS_ACCESS_KEY_ID=$STAGING_AWS_ACCESS_KEY_ID
-              export AWS_SECRET_ACCESS_KEY=$STAGING_AWS_SECRET_ACCESS_KEY
-              $(/home/circleci/.local/bin/aws ecr get-login --no-include-email --region us-east-1)
-              docker run -it \
-                -e AWS_ACCESS_KEY_ID=$STAGING_AWS_ACCESS_KEY_ID \
-                -e AWS_SECRET_ACCESS_KEY=$STAGING_AWS_SECRET_ACCESS_KEY \
-                923411875752.dkr.ecr.us-east-1.amazonaws.com/deployer:latest \
-                ecs \
-                deploy \
-                --timeout 1200 \
-                -i ${PROJECT_NAME} 923411875752.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:${CIRCLE_SHA1:0:7} \
-                --region us-east-1 \
-                tf-api-staging ${PROJECT_NAME}
-            fi
-
   deploy_staging_eks:
     <<: *defaults
     steps:
@@ -176,30 +152,6 @@ jobs:
             export WORKDIR=`pwd`
             export CIRCLE_PROJECT_REPONAME=$PROJECT_NAME
             deploy
-
-  deploy_production_ecs:
-    <<: *defaults
-    steps:
-      - setup_remote_docker
-      - deploy:
-          name: Maybe deploy production to ecs
-          command: |
-            set -vu
-            if [ "${CIRCLE_PROJECT_USERNAME}" == "replicatedhq" ]; then
-              export AWS_ACCESS_KEY_ID=$PRODUCTION_AWS_ACCESS_KEY_ID
-              export AWS_SECRET_ACCESS_KEY=$PRODUCTION_AWS_SECRET_ACCESS_KEY
-              $(/home/circleci/.local/bin/aws ecr get-login --no-include-email --region us-east-1)
-              docker run -it \
-                -e AWS_ACCESS_KEY_ID=$PRODUCTION_AWS_ACCESS_KEY_ID \
-                -e AWS_SECRET_ACCESS_KEY=$PRODUCTION_AWS_SECRET_ACCESS_KEY \
-                799720048698.dkr.ecr.us-east-1.amazonaws.com/deployer:latest \
-                ecs \
-                deploy \
-                --timeout 1200 \
-                -i ${PROJECT_NAME} 799720048698.dkr.ecr.us-east-1.amazonaws.com/${PROJECT_NAME}:${CIRCLE_SHA1:0:7} \
-                --region us-east-1 \
-                tf-api-production ${PROJECT_NAME}
-            fi
 
   deploy_production_eks:
     <<: *defaults
@@ -234,13 +186,6 @@ workflows:
           filters:
             branches:
               only: master
-      - deploy_staging_ecs:
-          requires:
-            - test
-            - build_staging_docker_image
-          filters:
-            branches:
-              only: master
       - deploy_staging_eks:
           requires:
             - test
@@ -251,15 +196,7 @@ workflows:
       - hold:
           type: approval
           requires:
-            - deploy_staging_ecs
             - deploy_staging_eks
-          filters:
-            branches:
-              only: master
-      - deploy_production_ecs:
-          requires:
-            - build_production_docker_image
-            - hold
           filters:
             branches:
               only: master
