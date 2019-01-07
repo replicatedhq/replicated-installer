@@ -39,7 +39,7 @@ if [ -z "$REPO_FILE" ]; then
 fi
 
 SUPPORT_MAP="
-86_64-centos-7
+x86_64-centos-7
 x86_64-centos-6
 x86_64-fedora-25
 x86_64-fedora-26
