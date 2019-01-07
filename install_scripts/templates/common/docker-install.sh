@@ -105,11 +105,14 @@ _installDocker() {
         printf "${YELLOW}Pinning Docker version not supported on Amazon Linux${NC}\n"
         printf "${GREEN}Installing Docker from Yum repository${NC}\n"
 
-        # 6/12/18
-        # Amazon Linux 14.03, 17.03, and 18.03 have Docker 17.12.1ce and Docker
-        # 18.03.1ce available. Amazon Linux 2 has Docker 17.06.2ce available.
-        # Attempt to install 17.12.1 until we support 18.XX.
-        yum -y -q install docker-17.12.1ce || yum -y -q install docker
+        # 2019-01-07
+        # Amazon Linux has Docker 17.12.1ce and Docker 18.06.1ce available.
+        compareDockerVersions "18.0.0" "${1}"
+        if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
+            ( set -x; yum -y -q install docker-18.06.1ce || yum -y -q install docker )
+        else
+            ( set -x; yum -y -q install docker-17.12.1ce || yum -y -q install docker )
+        fi
 
         service docker start || true
         DID_INSTALL_DOCKER=1
