@@ -238,6 +238,23 @@ check_forked() {
 	fi
 }
 
+# courtesy of replicated
+check_ce_on_ee() {
+	case "$lsb_dist" in
+		rhel|ol)
+			lsb_dist="centos"
+			dist_version="$(echo $dist_version | cut -d. -f1)"
+		;;
+		sles)
+			lsb_dist="centos"
+			case "$(echo $dist_version | cut -d. -f1)" in
+				12|15)
+					dist_version="7"
+				;;
+			esac
+	esac
+}
+
 semverParse() {
 	major="${1%%.*}"
 	minor="${1#$major.}"
@@ -349,16 +366,11 @@ do_install() {
 			esac
 		;;
 
-		centos)
+		centos|rhel|ol|sles)
 			if [ -z "$dist_version" ] && [ -r /etc/os-release ]; then
 				dist_version="$(. /etc/os-release && echo "$VERSION_ID")"
 			fi
 		;;
-
-		rhel|ol|sles)
-			ee_notice "$lsb_dist"
-			exit 1
-			;;
 
 		*)
 			if command_exists lsb_release; then
@@ -373,6 +385,7 @@ do_install() {
 
 	# Check if this is a forked Linux distro
 	check_forked
+	check_ce_on_ee
 
 	# Check if we actually support this configuration
 	if ! echo "$SUPPORT_MAP" | grep "$(uname -m)-$lsb_dist-$dist_version" >/dev/null; then
@@ -434,7 +447,7 @@ do_install() {
 				if ! is_dry_run; then
 					set -x
 				fi
-                _status=0
+				_status=0
 				$sh_c "apt-get install -y -qq --no-install-recommends docker-ce$pkg_version >/dev/null" || _status="$?"
 				# NOTE: On debian there is a race condition between docker.service and docker.socket
 				# that causes docker to fail to start the first time, so we will try again...
