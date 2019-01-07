@@ -143,11 +143,10 @@ getMaxDockerVersion() {
     if [ "$LSB_DIST" = "amzn" ]; then
         MAX_DOCKER_VERSION_RESULT="18.06.1"
     fi
-    # Max Docker version on SUSE Linux Enterprise Server 12 is 17.09.1.
+    # 2019-01-07
+    # Max Docker version on SUSE Linux Enterprise Server 12 and 15 is 18.06.1.
     if [ "$LSB_DIST" = "sles" ]; then
-        if [ "$DIST_VERSION_MAJOR" = "12" ]; then
-            MAX_DOCKER_VERSION_RESULT="17.09.1"
-        fi
+        MAX_DOCKER_VERSION_RESULT="18.06.1"
     fi
     # Max Docker version on Oracle Linux 6.x seems to be 17.05.0.
     if [ "$LSB_DIST" = "ol" ]; then
