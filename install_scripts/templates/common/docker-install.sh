@@ -118,20 +118,15 @@ _installDocker() {
         DID_INSTALL_DOCKER=1
         return
     elif [ "$LSB_DIST" = "sles" ]; then
-        # Docker install script no longer supports SUSE
-        # SUSE vesions as of now are 17.09.1, 17.04.0, 1.12.6 ...
-        printf "${GREEN}Installing docker from Zypper repository${NC}\n"
-        compareDockerVersions "17.0.0" "${1}"
+        # 2019-01-07
+        # SUSE has Docker 17.09.1_ce and Docker 18.06.1_ce available.
+        compareDockerVersions "18.0.0" "${1}"
         if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
-            compareDockerVersions "17.09.0" "${1}"
-            if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
-                sudo zypper -n install "docker=${1}_ce"
-            else
-                sudo zypper -n install "docker=17.04.0_ce"
-            fi
+            ( set -x; zypper -n install "docker=18.06.1_ce" || zypper -n install docker )
         else
-            sudo zypper -n install "docker=1.12.6"
+            ( set -x; zypper -n install "docker=17.09.1_ce" || zypper -n install docker )
         fi
+
         service docker start || true
         DID_INSTALL_DOCKER=1
         return
