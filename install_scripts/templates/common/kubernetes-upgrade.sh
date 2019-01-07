@@ -363,7 +363,7 @@ upgradeK8sMaster() {
     systemctl stop kubelet
 
     case "$LSB_DIST$DIST_VERSION" in
-        ubuntu16.04)
+        ubuntu16.04|ubuntu18.04)
             export DEBIAN_FRONTEND=noninteractive
             dpkg -i --force-depends-version archives/*.deb
             ;;
@@ -404,7 +404,7 @@ upgradeK8sNode() {
     prepareK8sPackageArchives "$k8sVersion"
 
     case "$LSB_DIST$DIST_VERSION" in
-        ubuntu16.04)
+        ubuntu16.04|ubuntu18.04)
             export DEBIAN_FRONTEND=noninteractive
             dpkg -i --force-depends-version archives/*.deb
             ;;

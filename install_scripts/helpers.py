@@ -332,6 +332,8 @@ def get_docker_deb_pkg_version(docker_version, lsb_dist, dist_version):
             return '{}~ce-0~${{lsb_dist}}-${{dist_version}}'.format(
                 docker_version)
         return '{}~ce-0~${{lsb_dist}}'.format(docker_version)
+    elif major == 18:
+        return '18.06.1~ce~3-0~ubuntu'
     # if docker version is unknown lets just return default version
     return get_docker_deb_pkg_version(get_default_docker_version(), lsb_dist,
                                       dist_version)
@@ -352,6 +354,8 @@ def get_docker_rpm_pkg_version(docker_version, lsb_dist, dist_version):
         elif lsb_dist == 'fedora':
             return '{}.ce-1.fc${{dist_version}}'.format(docker_version)
         return '{}.ce-1.el${{dist_version}}.centos'.format(docker_version)
+    elif major == 18:
+        return '18.06.1.ce-3.el7';
     # if docker version is unknown lets just return default version
     return get_docker_rpm_pkg_version(get_default_docker_version(), lsb_dist,
                                       dist_version)
