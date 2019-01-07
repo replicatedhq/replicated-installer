@@ -385,7 +385,7 @@ do_install() {
 
 	# Check if this is a forked Linux distro
 	check_forked
-    check_ce_on_ee
+	check_ce_on_ee
 
 	# Check if we actually support this configuration
 	if ! echo "$SUPPORT_MAP" | grep "$(uname -m)-$lsb_dist-$dist_version" >/dev/null; then
@@ -447,7 +447,7 @@ do_install() {
 				if ! is_dry_run; then
 					set -x
 				fi
-                _status=0
+				_status=0
 				$sh_c "apt-get install -y -qq --no-install-recommends docker-ce$pkg_version >/dev/null" || _status="$?"
 				# NOTE: On debian there is a race condition between docker.service and docker.socket
 				# that causes docker to fail to start the first time, so we will try again...
