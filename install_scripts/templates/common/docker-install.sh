@@ -142,8 +142,8 @@ _installDocker() {
         return
     fi
 
-    # TODO: does this affect 17.12?
-    if { [ "$LSB_DIST" = "rhel" ] || [ "$LSB_DIST" = "ol" ] ; } && [ "$DIST_VERSION_MAJOR" = "7" ] && [[ "${1}" == *"17.06"* ]]; then
+    compareDockerVersions "17.06.0" "${1}"
+    if { [ "$LSB_DIST" = "rhel" ] || [ "$LSB_DIST" = "ol" ] ; } && [ "$COMPARE_DOCKER_VERSIONS_RESULT" -le "0" ]; then
         if yum list installed "container-selinux" >/dev/null 2>&1; then
             # container-selinux installed
             printf "Skipping install of container-selinux as a version of it was already present\n"
