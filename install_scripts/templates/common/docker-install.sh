@@ -119,15 +119,26 @@ _installDocker() {
         # Amazon Linux has Docker 17.12.1ce and Docker 18.06.1ce available.
         compareDockerVersions "18.0.0" "${1}"
         if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
-            ( set -x; yum -y -q install docker-18.06.1ce || yum -y -q install docker )
+            if commandExists "amazon-linux-extras"; then
+                ( set -x; amazon-linux-extras install -y -q docker=18.06.1 || amazon-linux-extras install -y -q docker )
+            else
+                ( set -x; yum install -y -q docker-18.06.1ce || yum install -y -q docker )
+            fi
         else
-            ( set -x; yum -y -q install docker-17.12.1ce || yum -y -q install docker )
+            if commandExists "amazon-linux-extras"; then
+                ( set -x; amazon-linux-extras install -y -q docker=17.12.1 || amazon-linux-extras install -y -q docker )
+            else
+                ( set -x; yum install -y -q docker-17.12.1ce || yum install -y -q docker )
+            fi
         fi
 
         service docker start || true
         DID_INSTALL_DOCKER=1
         return
     elif [ "$LSB_DIST" = "sles" ]; then
+        printf "${YELLOW}Pinning Docker version not supported on SUSE Linux${NC}\n"
+        printf "${GREEN}Installing Docker from Zypper repository${NC}\n"
+
         # 2019-01-07
         # SUSE has Docker 17.09.1_ce and Docker 18.06.1_ce available.
         compareDockerVersions "18.0.0" "${1}"
