@@ -60,7 +60,7 @@ parseDockerVersion() {
 }
 
 #######################################
-# Compare two docker versions.
+# Compare two docker versions ignoring the patch version.
 # Returns -1 if A lt B, 0 if eq, 1 A gt B.
 # Globals:
 #   None
@@ -71,17 +71,15 @@ parseDockerVersion() {
 #   COMPARE_DOCKER_VERSIONS_RESULT
 #######################################
 COMPARE_DOCKER_VERSIONS_RESULT=
-compareDockerVersions() {
+compareDockerVersionsIgnorePatch() {
     # reset
     COMPARE_DOCKER_VERSIONS_RESULT=
     parseDockerVersion "$1"
     _a_major="$DOCKER_VERSION_MAJOR"
     _a_minor="$DOCKER_VERSION_MINOR"
-    _a_patch="$DOCKER_VERSION_PATCH"
     parseDockerVersion "$2"
     _b_major="$DOCKER_VERSION_MAJOR"
     _b_minor="$DOCKER_VERSION_MINOR"
-    _b_patch="$DOCKER_VERSION_PATCH"
     if [ "$_a_major" -lt "$_b_major" ]; then
         COMPARE_DOCKER_VERSIONS_RESULT=-1
         return
@@ -98,6 +96,32 @@ compareDockerVersions() {
         COMPARE_DOCKER_VERSIONS_RESULT=1
         return
     fi
+    COMPARE_DOCKER_VERSIONS_RESULT=0
+}
+
+#######################################
+# Compare two docker versions.
+# Returns -1 if A lt B, 0 if eq, 1 A gt B.
+# Globals:
+#   None
+# Arguments:
+#   Docker Version A
+#   Docker Version B
+# Returns:
+#   COMPARE_DOCKER_VERSIONS_RESULT
+#######################################
+COMPARE_DOCKER_VERSIONS_RESULT=
+compareDockerVersions() {
+    # reset
+    COMPARE_DOCKER_VERSIONS_RESULT=
+    compareDockerVersionsIgnorePatch "$1" "$2"
+    if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -ne "0" ]; then
+        return
+    fi
+    parseDockerVersion "$1"
+    _a_patch="$DOCKER_VERSION_PATCH"
+    parseDockerVersion "$2"
+    _b_patch="$DOCKER_VERSION_PATCH"
     if [ "$_a_patch" -lt "$_b_patch" ]; then
         COMPARE_DOCKER_VERSIONS_RESULT=-1
         return

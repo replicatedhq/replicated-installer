@@ -9,7 +9,7 @@ from flask import request, render_template, Response
 
 from . import db, param
 
-_default_docker_version = '18.09.0'
+_default_docker_version = '18.09.1'
 
 
 def template_args(**kwargs):

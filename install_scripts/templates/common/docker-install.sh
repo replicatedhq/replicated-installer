@@ -44,7 +44,11 @@ installDocker() {
                 _dockerProceedAnyway "$BEST_DOCKER_VERSION_RESULT"
             fi
         elif [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "1" ]; then
-            _dockerProceedAnyway "$BEST_DOCKER_VERSION_RESULT"
+            # allow patch versions greater than the current version
+            compareDockerVersionsIgnorePatch "$DOCKER_VERSION" "$BEST_DOCKER_VERSION_RESULT"
+            if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "1" ]; then
+                _dockerProceedAnyway "$BEST_DOCKER_VERSION_RESULT"
+            fi
         fi
         # The system has the exact pinned version installed.
         # No need to run the Docker install script.
