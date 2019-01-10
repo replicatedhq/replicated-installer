@@ -59,4 +59,19 @@ testCompareDockerVersionsGt()
     assertEquals "Docker versions gt comparison failed 17.04.0-ce 17.03.0-ce" "1" "$COMPARE_DOCKER_VERSIONS_RESULT"
 }
 
+testCompareDockerVersionsIgnorePatch()
+{
+    compareDockerVersionsIgnorePatch "1.13.1" "1.13.1"
+    assertEquals "Docker versions gt comparison failed 1.13.1 1.13.1" "0" "$COMPARE_DOCKER_VERSIONS_RESULT"
+
+    compareDockerVersionsIgnorePatch "1.13.1" "1.13.0"
+    assertEquals "Docker versions gt comparison failed 1.13.1 1.13.0" "0" "$COMPARE_DOCKER_VERSIONS_RESULT"
+
+    compareDockerVersionsIgnorePatch "1.13.1" "1.13.2"
+    assertEquals "Docker versions gt comparison failed 1.13.1 1.13.0" "0" "$COMPARE_DOCKER_VERSIONS_RESULT"
+
+    compareDockerVersionsIgnorePatch "1.13.1" "1.12.1"
+    assertEquals "Docker versions gt comparison failed 1.13.1 1.12.1" "1" "$COMPARE_DOCKER_VERSIONS_RESULT"
+}
+
 . shunit2
