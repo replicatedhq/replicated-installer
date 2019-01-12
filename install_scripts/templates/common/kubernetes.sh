@@ -981,19 +981,11 @@ networking:
   serviceSubnet: $SERVICE_CIDR
 apiServer:
   extraArgs:
+    bind-address: $PRIVATE_ADDRESS
     service-node-port-range: "80-60000"
-EOF
-    # if we have a private address or public address, add it to SANs
-    if [ -n "$PRIVATE_ADDRESS" ] || [ -n "$PUBLIC_ADDRESS" ]; then
-          cat <<EOF >> /opt/replicated/kubeadm.conf
   certSANs:
-EOF
-    fi
-    if [ -n "$PRIVATE_ADDRESS" ]; then
-          cat <<EOF >> /opt/replicated/kubeadm.conf
   - $PRIVATE_ADDRESS
 EOF
-    fi
     if [ -n "$PUBLIC_ADDRESS" ]; then
           cat <<EOF >> /opt/replicated/kubeadm.conf
   - $PUBLIC_ADDRESS
@@ -1008,4 +1000,34 @@ kind: KubeProxyConfiguration
 mode: ipvs
 EOF
     fi
+}
+
+#######################################
+# Generate kubeadm JoinConfiguration
+# Globals:
+#   PRIVATE_ADDRESS
+#   KUBEADM_TOKEN
+#   KUBEADM_TOKEN_CA_HASH
+#   KUBERNETES_MASTER_ADDR
+#   KUBERNETES_MASTER_PORT
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+makeKubeadmJoinConfig() {
+        cat << EOF > /opt/replicated/kubeadm.conf
+---
+kind: JoinConfiguration
+apiVersion: kubeadm.k8s.io/v1beta1
+nodeRegistration:
+  kubeletExtraArgs:
+    node-ip: $PRIVATE_ADDRESS
+discovery:
+  bootstrapToken:
+    token: $KUBEADM_TOKEN
+    apiServerEndpoint: ${KUBERNETES_MASTER_ADDR}:${KUBERNETES_MASTER_PORT}
+    caCertHashes:
+    - $KUBEADM_TOKEN_CA_HASH
+EOF
 }
