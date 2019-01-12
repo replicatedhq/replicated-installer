@@ -76,7 +76,7 @@ promptForDaemonToken() {
 }
 
 #######################################
-# Prompts for daemon token if not already set.
+# Creates user and adds to Docker group
 # Globals:
 #   REPLICATED_USERNAME
 # Arguments:

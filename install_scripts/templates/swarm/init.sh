@@ -25,6 +25,7 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 ADDITIONAL_NO_PROXY=
+REPLICATED_USERNAME=replicated
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -378,8 +379,10 @@ else
     requireDocker
 fi
 
-# TODO: docker group
-# TODO: replicated user
+detectDockerGroupId
+maybeCreateReplicatedUser
+USER_ID="$REPLICATED_USER_ID"
+GROUP_ID="$DOCKER_GROUP_ID"
 
 initSwarm
 
