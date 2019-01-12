@@ -105,6 +105,9 @@ bootstrapTokens:
   usages:
   - signing
   - authentication
+nodeRegistration:
+  kubeletExtraArgs:
+    node-ip: $PRIVATE_ADDRESS
 EOF
     makeKubeadmConfig
 }
@@ -120,6 +123,7 @@ tokenTTL: ${BOOTSTRAP_TOKEN_TTL}
 networking:
   serviceSubnet: $SERVICE_CIDR
 apiServerExtraArgs:
+  bind-address: $PRIVATE_ADDRESS
   service-node-port-range: "80-60000"
 EOF
 

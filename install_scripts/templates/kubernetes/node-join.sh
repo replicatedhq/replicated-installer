@@ -16,6 +16,7 @@ ADDITIONAL_NO_PROXY=
 KUBERNETES_VERSION="{{ kubernetes_version }}"
 K8S_UPGRADE_PATCH_VERSION="{{ k8s_upgrade_patch_version }}"
 IPVS=1
+PRIVATE_ADDRESS=
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -43,8 +44,15 @@ SERVICE_CIDR="10.96.0.0/12" # kubeadm default
 
 joinKubernetes() {
     logStep "Join Kubernetes Node"
+    semverParse "$KUBERNETES_VERSION"
     set +e
-    kubeadm join --discovery-token-ca-cert-hash "${KUBEADM_TOKEN_CA_HASH}" --token "${KUBEADM_TOKEN}" "${KUBERNETES_MASTER_ADDR}:${KUBERNETES_MASTER_PORT}"
+    if [ "$minor" -ge 13 ]; then
+        mkdir -p /opt/replicated
+        makeKubeadmJoinConfig
+        kubeadm join --config=/opt/replicated/kubeadm.conf
+    else
+        kubeadm join --discovery-token-ca-cert-hash "${KUBEADM_TOKEN_CA_HASH}" --token "${KUBEADM_TOKEN}" "${KUBERNETES_MASTER_ADDR}:${KUBERNETES_MASTER_PORT}"
+    fi
     _status=$?
     set -e
     if [ "$_status" -ne "0" ]; then
@@ -214,6 +222,9 @@ while [ "$1" != "" ]; do
         kubernetes-upgrade-patch-version|kubernetes_upgrade_patch_version)
             K8S_UPGRADE_PATCH_VERSION=1
             ;;
+        private-address|private_address)
+            PRIVATE_ADDRESS="$_value"
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -238,6 +249,10 @@ checkFirewalld
 promptForAddress
 promptForToken
 promptForTokenCAHash
+
+if [ -z "$PRIVATE_ADDRESS" ]; then
+    promptForPrivateIp
+fi
 
 if [ "$NO_PROXY" != "1" ]; then
     if [ -z "$PROXY_ADDRESS" ]; then
