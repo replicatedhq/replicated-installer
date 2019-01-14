@@ -10,6 +10,7 @@
 set -e
 
 AIRGAP="{{ airgap|default('0', true) }}"
+GROUP_ID="{{ group_id }}"
 LOG_LEVEL="{{ log_level|default('info', true) }}"
 PUBLIC_ADDRESS="{{ public_address }}"
 REGISTRY_BIND_PORT="{{ registry_bind_port|default('9874', true) }}"
@@ -18,6 +19,7 @@ SWARM_NODE_ADDRESS="{{ swarm_node_address }}"
 SWARM_STACK_NAMESPACE="{{ swarm_stack_namespace }}"
 TLS_CERT_PATH="{{ tls_cert_path }}"
 UI_BIND_PORT="{{ ui_bind_port|default('8800', true) }}"
+USER_ID="{{ user_id }}"
 
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"
@@ -25,6 +27,9 @@ while [ "$1" != "" ]; do
     case $_param in
         airgap)
             AIRGAP=1
+            ;;
+        group-id|group_id)
+            GROUP_ID="$_value"
             ;;
         log-level|log_level)
             LOG_LEVEL="$_value"
@@ -53,6 +58,9 @@ while [ "$1" != "" ]; do
         ui-bind-port|ui_bind_port)
             UI_BIND_PORT="$_value"
             ;;
+        user-id|user_id)
+            USER_ID="$_value"
+            ;;
         http-proxy)
             HTTP_PROXY="$_value"
             ;;
@@ -75,9 +83,12 @@ fi
 
 # TODO: detect
 # - public_address
+# - user_id
+# - group_id
 # - tls_cert_path
 
 echo "# optional query parameters:
+# - group_id
 # - log_level
 # - public_address
 # - registry_bind_port
@@ -85,6 +96,7 @@ echo "# optional query parameters:
 # - swarm_stack_namespace
 # - tls_cert_path
 # - ui_bind_port
+# - user_id
 
 # secrets:
 # - daemon_token (external, required)
@@ -145,7 +157,12 @@ echo "      - /var/run/docker.sock:/host/var/run/docker.sock"
 echo "      - /proc:/host/proc:ro"
 echo "      - /etc:/host/etc:ro"
 echo "      - /etc/os-release:/host/etc/os-release:ro"
-echo "    user: \"replicated:docker\""
+if [ -n "$USER_ID" ] && [ -n "$GROUP_ID" ]; then
+    echo "    user: \"${USER_ID}:${GROUP_ID}\""
+fi
+if [ -n "$USER_ID" ]; then
+    echo "    user: \"${USER_ID}\""
+fi
 echo "    deploy:"
 echo "      mode: replicated"
 echo "      replicas: 1"
@@ -164,7 +181,13 @@ echo "        delay: 5s"
 echo "    secrets:"
 echo "      - source: daemon_token"
 echo "        target: daemon_token"
-echo "        mode: 0444"
+if [ -n "$USER_ID" ]; then
+    echo "        uid: \"${USER_ID}\""
+fi
+if [ -n "$GROUP_ID" ]; then
+    echo "        gid: \"${GROUP_ID}\""
+fi
+echo "        mode: 0440"
 echo ""
 echo "  replicated-ui:"
 echo "    image: {{ replicated_docker_host|default('quay.io', true) }}/replicated/replicated-ui:{{ replicated_ui_tag|default('stable', true) }}{{ environment_tag_suffix }}"
@@ -177,7 +200,12 @@ echo "    depends_on:"
 echo "      - replicated"
 echo "    volumes:"
 echo "      - replicated-sock-volume:/var/run/replicated"
-echo "    user: \"replicated:docker\""
+if [ -n "$USER_ID" ] && [ -n "$GROUP_ID" ]; then
+    echo "    user: \"${USER_ID}:${GROUP_ID}\""
+fi
+if [ -n "$USER_ID" ]; then
+    echo "    user: \"${USER_ID}\""
+fi
 echo "    deploy:"
 echo "      mode: replicated"
 echo "      replicas: 1"
@@ -223,7 +251,12 @@ echo "      - /var/run/docker.sock:/host/var/run/docker.sock"
 echo "      - /proc:/host/proc:ro"
 echo "      - /etc:/host/etc:ro"
 echo "      - /etc/os-release:/host/etc/os-release:ro"
-echo "    user: \"replicated:docker\""
+if [ -n "$USER_ID" ] && [ -n "$GROUP_ID" ]; then
+    echo "    user: \"${USER_ID}:${GROUP_ID}\""
+fi
+if [ -n "$USER_ID" ]; then
+    echo "    user: \"${USER_ID}\""
+fi
 echo "    deploy:"
 echo "      mode: global"
 echo "      restart_policy:"
@@ -237,7 +270,13 @@ echo "        delay: 5s"
 echo "    secrets:"
 echo "      - source: daemon_token"
 echo "        target: daemon_token"
-echo "        mode: 0444"
+if [ -n "$USER_ID" ]; then
+    echo "        uid: \"${USER_ID}\""
+fi
+if [ -n "$GROUP_ID" ]; then
+    echo "        gid: \"${GROUP_ID}\""
+fi
+echo "        mode: 0440"
 echo ""
 echo "volumes:"
 echo "  replicated-data-volume:"
