@@ -124,13 +124,15 @@ _installDocker() {
         compareDockerVersions "18.0.0" "${1}"
         if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
             if commandExists "amazon-linux-extras"; then
-                ( set -x; amazon-linux-extras install -y -q docker=18.06.1 || amazon-linux-extras install -y -q docker )
+                ( set -x; amazon-linux-extras install -y -q docker=18.06.1 || amazon-linux-extras install docker=18.06.1 || \
+                    amazon-linux-extras install -y -q docker || amazon-linux-extras install docker )
             else
                 ( set -x; yum install -y -q docker-18.06.1ce || yum install -y -q docker )
             fi
         else
             if commandExists "amazon-linux-extras"; then
-                ( set -x; amazon-linux-extras install -y -q docker=17.12.1 || amazon-linux-extras install -y -q docker )
+                ( set -x; amazon-linux-extras install -y -q docker=17.12.1 || amazon-linux-extras install docker=17.12.1 \
+                    || amazon-linux-extras install -y -q docker || amazon-linux-extras install docker )
             else
                 ( set -x; yum install -y -q docker-17.12.1ce || yum install -y -q docker )
             fi
