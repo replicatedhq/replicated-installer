@@ -162,6 +162,12 @@ getMaxDockerVersion() {
             MAX_DOCKER_VERSION_RESULT="18.06.1"
         fi
     fi
+    if [ "$LSB_DIST" = "debian" ]; then
+        # Max Docker version on Debian 8 is 18.06.1.
+        if [ "$DIST_VERSION" = "8" ]; then
+            MAX_DOCKER_VERSION_RESULT="18.06.1"
+        fi
+    fi
     # 2019-01-07
     # Max Docker version on Amazon Linux 2 is 18.06.1.
     if [ "$LSB_DIST" = "amzn" ]; then
