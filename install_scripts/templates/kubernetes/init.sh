@@ -692,7 +692,8 @@ if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
     if [ "$OFFLINE_DOCKER_INSTALL" != "1" ]; then
         installDocker "$PINNED_DOCKER_VERSION" "$MIN_DOCKER_VERSION"
 
-        if [ "$PINNED_DOCKER_VERSION" = "17.09.1" ] && [ "$DID_INSTALL_DOCKER" = "1" ]; then
+        semverParse "$PINNED_DOCKER_VERSION"
+        if [ "$major" -ge "17" ]; then
             lockPackageVersion docker-ce
         fi
     else
