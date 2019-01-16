@@ -43,9 +43,6 @@ TERMS_EOM
 set -e
 {%- endif %}
 
-# TODO
-# - user_id
-# - group_id
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
