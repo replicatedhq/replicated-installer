@@ -156,10 +156,10 @@ getMaxDockerVersion() {
             MAX_DOCKER_VERSION_RESULT="1.7.1"
         fi
     fi
-    # Max Docker version on Ubuntu 15.04 is 1.9.1.
     if [ "$LSB_DIST" = "ubuntu" ]; then
-        if [ "$DIST_VERSION" = "15.04" ]; then
-            MAX_DOCKER_VERSION_RESULT="1.9.1"
+        # Max Docker version on Ubuntu 14.04 is 18.06.1.
+        if [ "$DIST_VERSION" = "14.04" ]; then
+            MAX_DOCKER_VERSION_RESULT="18.06.1"
         fi
     fi
     # 2019-01-07
