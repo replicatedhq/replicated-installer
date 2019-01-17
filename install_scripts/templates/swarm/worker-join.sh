@@ -11,6 +11,7 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 ADDITIONAL_NO_PROXY=
+REPLICATED_USERNAME="{{ replicated_username }}"
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -180,6 +181,11 @@ if [ -n "$DAEMON_REGISTRY_ADDRESS" ]; then
         echo "$(echo "$CERT" | base64 --decode)" > "/etc/docker/certs.d/$DAEMON_REGISTRY_ADDRESS/cert.crt"
     fi
 fi
+
+# creating the Replicated user on workers is optional but gives nicer output in `ps` if the uid is
+# the same as on the master node
+detectDockerGroupId
+maybeCreateReplicatedUser
 
 echo "Joining the swarm"
 joinSwarm

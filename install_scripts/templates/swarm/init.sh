@@ -25,7 +25,7 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 ADDITIONAL_NO_PROXY=
-REPLICATED_USERNAME=replicated
+REPLICATED_USERNAME="{{ replicated_username }}"
 
 CHANNEL_CSS={% if channel_css %}
 set +e
