@@ -163,6 +163,10 @@ getMaxDockerVersion() {
         fi
     fi
     if [ "$LSB_DIST" = "debian" ]; then
+        # Max Docker version on Debian 7 is 18.03.1
+        if [ "$DIST_VERSION" = "7" ]; then
+            MAX_DOCKER_VERSION_RESULT="18.03.1"
+        fi
         # Max Docker version on Debian 8 is 18.06.1.
         if [ "$DIST_VERSION" = "8" ]; then
             MAX_DOCKER_VERSION_RESULT="18.06.1"
