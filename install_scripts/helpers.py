@@ -148,7 +148,7 @@ def get_replicated_username(version_tag):
     return 'replicated'
 
 def get_replicated_username_swarm(version_tag):
-    if semver.lt(version_tag, '2.32.0', loose-False):
+    if semver.lt(version_tag, '2.32.0', loose=False):
         return 'root'
     return 'replicated'
 

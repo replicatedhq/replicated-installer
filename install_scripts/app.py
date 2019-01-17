@@ -552,7 +552,6 @@ def get_swarm_init_master(replicated_channel=None,
 
     query = urllib.urlencode(request.args)
 
-    # Replicated versions at or later than 2.32.0 should run as non root users
     username = helpers.get_replicated_username_swarm(replicated_version)
 
     response = render_template(
@@ -591,7 +590,6 @@ def get_swarm_init_worker(replicated_channel=None,
         replicated_version, 'swarm')
     swarm_master_address = helpers.get_arg('swarm_master_address')
     swarm_token = helpers.get_arg('swarm_token')
-    # Replicated versions at or later than 2.32.0 should run as non root users
     username = helpers.get_replicated_username_swarm(replicated_version)
     response = render_template(
         'swarm/worker-join.sh',
