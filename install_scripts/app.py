@@ -552,6 +552,8 @@ def get_swarm_init_master(replicated_channel=None,
 
     query = urllib.urlencode(request.args)
 
+    username = helpers.get_replicated_username_swarm(replicated_version)
+
     response = render_template(
         'swarm/init.sh',
         **helpers.template_args(
@@ -565,6 +567,7 @@ def get_swarm_init_master(replicated_channel=None,
             app_channel_css=helpers.base64_encode(channel_css),
             terms=helpers.base64_encode(terms),
             docker_compose_query=query,
+            replicated_username=username,
         ))
     return Response(response, mimetype='text/x-shellscript')
 
@@ -587,12 +590,14 @@ def get_swarm_init_worker(replicated_channel=None,
         replicated_version, 'swarm')
     swarm_master_address = helpers.get_arg('swarm_master_address')
     swarm_token = helpers.get_arg('swarm_token')
+    username = helpers.get_replicated_username_swarm(replicated_version)
     response = render_template(
         'swarm/worker-join.sh',
         **helpers.template_args(
             pinned_docker_version=pinned_docker_version,
             swarm_master_address=swarm_master_address,
             swarm_token=swarm_token,
+            replicated_username=username,
         ))
     return Response(response, mimetype='text/x-shellscript')
 

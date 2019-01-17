@@ -147,6 +147,10 @@ def get_replicated_username(version_tag):
         return 'root'
     return 'replicated'
 
+def get_replicated_username_swarm(version_tag):
+    if semver.lt(version_tag, '2.32.0', loose=False):
+        return 'root'
+    return 'replicated'
 
 def get_port_range(replicated_tag):
     if semver.lt(replicated_tag, '2.0.1654', loose=False):

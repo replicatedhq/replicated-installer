@@ -159,8 +159,7 @@ echo "      - /etc:/host/etc:ro"
 echo "      - /etc/os-release:/host/etc/os-release:ro"
 if [ -n "$USER_ID" ] && [ -n "$GROUP_ID" ]; then
     echo "    user: \"${USER_ID}:${GROUP_ID}\""
-fi
-if [ -n "$USER_ID" ]; then
+elif [ -n "$USER_ID" ]; then
     echo "    user: \"${USER_ID}\""
 fi
 echo "    deploy:"
@@ -202,8 +201,7 @@ echo "    volumes:"
 echo "      - replicated-sock-volume:/var/run/replicated"
 if [ -n "$USER_ID" ] && [ -n "$GROUP_ID" ]; then
     echo "    user: \"${USER_ID}:${GROUP_ID}\""
-fi
-if [ -n "$USER_ID" ]; then
+elif [ -n "$USER_ID" ]; then
     echo "    user: \"${USER_ID}\""
 fi
 echo "    deploy:"
@@ -253,8 +251,7 @@ echo "      - /etc:/host/etc:ro"
 echo "      - /etc/os-release:/host/etc/os-release:ro"
 if [ -n "$USER_ID" ] && [ -n "$GROUP_ID" ]; then
     echo "    user: \"${USER_ID}:${GROUP_ID}\""
-fi
-if [ -n "$USER_ID" ]; then
+elif [ -n "$USER_ID" ]; then
     echo "    user: \"${USER_ID}\""
 fi
 echo "    deploy:"
