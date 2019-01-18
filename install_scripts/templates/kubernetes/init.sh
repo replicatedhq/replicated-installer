@@ -246,7 +246,7 @@ untaintMaster() {
 }
 
 getYAMLOpts() {
-    opts=
+    opts="bind-daemon-node"
     if [ "$AIRGAP" = "1" ]; then
         opts=$opts" airgap"
     fi
