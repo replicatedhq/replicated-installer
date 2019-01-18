@@ -22,6 +22,7 @@ HOSTPATH_PROVISIONER_YAML=0
 WEAVE_YAML=0
 CONTOUR_YAML=0
 DEPLOYMENT_YAML=0
+BIND_DAEMON_NODE=0
 
 {% include 'common/kubernetes.sh' %}
 
@@ -31,6 +32,10 @@ while [ "$1" != "" ]; do
     case $_param in
         airgap)
             AIRGAP=1
+            BIND_DAEMON_NODE=1
+            ;;
+        bind-daemon-node|bind_daemon_node)
+            BIND_DAEMON_NODE=1
             ;;
         log-level|log_level)
             LOG_LEVEL="$_value"
@@ -133,6 +138,23 @@ EOF
         )
     fi
 
+    # On airgap installs the daemon cannot change nodes because of the registry address.
+    # On AKA the daemon cannot change nodes because the kubeadm join script needs the K8s API address.
+    # The label is applied in the kubernetes-init script.
+    AFFINITY=	
+    if [ "$BIND_DAEMON_NODE" = "1" ]; then
+        AFFINITY=$(cat <<-EOF
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: "$DAEMON_NODE_KEY"
+                operator: Exists
+EOF
+        )
+    fi
+
     PROXY_ENVS=
     if [ -n "$PROXY_ADDRESS" ]; then
         PROXY_ENVS=$(cat <<-EOF
@@ -175,13 +197,7 @@ spec:
         app: replicated
         tier: master
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: "$DAEMON_NODE_KEY"
-                operator: Exists
+$AFFINITY
       containers:
       - name: replicated
         image: "{{ replicated_docker_host }}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
