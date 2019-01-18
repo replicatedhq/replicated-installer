@@ -105,6 +105,8 @@ bootstrapTokens:
   usages:
   - signing
   - authentication
+localAPIEndpoint:
+  advertiseAddress: $PRIVATE_ADDRESS
 nodeRegistration:
   kubeletExtraArgs:
     node-ip: $PRIVATE_ADDRESS
