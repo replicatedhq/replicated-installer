@@ -619,6 +619,38 @@ def get_kubernetes_upgrade_worker(replicated_channel=None):
         **helpers.template_args(kubernetes_version=kubernetes_version, ))
     return Response(response, mimetype='text/x-shellscript')
 
+@app.route('/kubernetes-migrate')
+@app.route('/kubernetes-migrate.sh')
+@app.route('/<replicated_channel>/kubernetes-migrate')
+@app.route('/<app_slug>/<app_channel>/kubernetes-migrate')
+@app.route('/<replicated_channel>/<app_slug>/<app_channel>/kubernetes-migrate')
+def get_kubernetes_migrate(replicated_channel=None,
+                            app_slug=None,
+                            app_channel=None):
+    replicated_channel = replicated_channel if replicated_channel else 'stable'
+
+    init_path = 'kubernetes-init'
+    if app_slug and app_channel:
+        init_path = app_slug + '/' + app_channel + '/' + init_path
+    if replicated_channel != 'stable':
+        init_path = replicated_channel + '/' + init_path
+
+    query_args = dict(request.args)
+    # unpack list args because otherwise we get weird stuff in YAML like
+    #    value: '[u'/data/stuff']'
+    query_args = {
+        k: v[0] if isinstance(v, list) and len(v) > 0 else v
+        for k, v in query_args.items()
+    }
+    query = urllib.urlencode(query_args)
+
+    response = render_template(
+        'kubernetes/migrate.sh',
+        **helpers.template_args(
+            kubernetes_init_path=init_path,
+            kubernetes_init_query=query,
+        ))
+    return Response(response, mimetype='text/x-shellscript')
 
 @app.route('/kubernetes-init')
 @app.route('/kubernetes-init.sh')
