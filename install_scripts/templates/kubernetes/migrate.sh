@@ -5,7 +5,6 @@ set -e
 TMP_DIR=/tmp/migrate-k8s
 LOG_LEVEL=info
 PRIVATE_ADDRESS=
-PUBLIC_ADDRESS=
 AIRGAP=0
 # If all state needed from the native app has been saved we can skip some steps
 HAS_NATIVE_STATE=0
@@ -14,6 +13,7 @@ HAS_APP=0
 
 {% include 'common/cli-script.sh' %}
 {% include 'common/common.sh' %}
+{% include 'common/kubernetes.sh' %}
 {% include 'common/log.sh' %}
 {% include 'common/system.sh' %}
 
@@ -30,6 +30,7 @@ startNativeScheduler() {
     fi
 
     waitReplicatedctlReady
+    waitNativeRetracedPostgresReady
 
     logSuccess "Native scheduler is running"
 }
@@ -71,6 +72,11 @@ stopNativeScheduler() {
     logSuccess "Native scheduler stopped"
 }
 
+purgeNativeScheduler() {
+    logStep "Removing native scheduler"
+    # TODO
+}
+
 startK8sScheduler() {
     logStep "Installing Kubernetes scheduler"
     local logLevel=$(getNativeEnv LOG_LEVEL)
@@ -81,17 +87,12 @@ startK8sScheduler() {
     if [ -n "$localAddress" ]; then
         PRIVATE_ADDRESS=$localAddress
     fi
-    local publicAddress=$(getNativeEnv PUBLIC_ADDRESS)
-    if [ -n "$publicAddress" ]; then
-        PUBLIC_ADDRESS=$publicAddress
-    fi
     getK8sInitScript
     bash /tmp/kubernetes-init.sh \
         no-clear \
         no-proxy \
         log-level="$LOG_LEVEL" \
-        private-address="$PRIVATE_ADDRESS" \
-        public-address="$PUBLIC_ADDRESS"
+        private-address="$PRIVATE_ADDRESS"
     logSuccess "Kubernetes scheduler installed"
 }
 
@@ -100,7 +101,8 @@ exportNativeState() {
     docker exec replicated printenv | grep -E '^(LOCAL_ADDRESS|LOG_LEVEL)=' > "${TMP_DIR}/native.env"
     replicatedctl app-config export --hidden > "${TMP_DIR}/app-config.json"
     replicatedctl migration export > "${TMP_DIR}/migration.json"
-    tar -cf "${TMP_DIR}/statsd.tar" -C /var/lib/replicated statsd
+    docker exec retraced-postgres /bin/bash -c 'PG_DATABASE=$POSTGRES_DATABASE PGHOST=$POSTGRES_HOST PGUSER=$POSTGRES_USER PGPASSWORD=$POSTGRES_PASSWORD pg_dump -c' > "${TMP_DIR}/retraced.sql"
+    tar -cf "${TMP_DIR}/secrets.tar" -C /var/lib/replicated secrets
     logSuccess "Native app state saved"
 }
 
@@ -116,7 +118,10 @@ checkNativeState() {
     if [ ! -f "${TMP_DIR}/migration.json" ]; then
         return
     fi
-    if [ ! -f "${TMP_DIR}/statsd.tar" ]; then
+    if [ ! -f "${TMP_DIR}/retraced.sql" ]; then
+        return
+    fi
+    if [ ! -f "${TMP_DIR}/secrets.tar" ]; then
         return
     fi
 
@@ -142,9 +147,49 @@ checkApp() {
     set -e
 }
 
+waitNativeRetracedPostgresReady() {
+    set +e
+    for i in {i..30}; do
+        if docker exec retraced-postgres pg_isready -q ; then
+            set -e
+            return
+        fi
+    done
+    echo "Timedout waiting for native Retraced Postgres to become ready"
+    exit 1
+}
+
+restoreRetraced() {
+    spinnerPodRunning "default" "retraced-postgres"
+    # the server can take a bit to be ready for connections after the pod is running
+    set +e
+    for i in {1..30}; do
+        cat "${TMP_DIR}/retraced.sql" | kubectl exec $(kubectl get pods | grep retraced-postgres | awk '{ print $1 }') -- \
+            /bin/bash -c 'PG_DATABASE=$POSTGRES_DATABASE PGHOST=$POSTGRES_HOST PGUSER=$POSTGRES_USER PGPASSWORD=$POSTGRES_PASSWORD psql' &>/dev/null
+        if [ "$?" -eq 0 ]; then
+            set -e
+            return
+        fi
+    done
+    echo "Failed to restore audit log"
+    exit 1
+}
+
+restoreSecrets() {
+    local replPod=$(kubectl get pods --selector='app=replicated,tier=master' | tail -1 | awk '{ print $1 }')
+    if [ -z "$replPod" ]; then
+        echo "Cannot restore secrets: Replicated pod not found"
+        return
+    fi
+    kubectl cp "${TMP_DIR}/secrets.tar" "$replPod":/tmp/secrets.tar -c replicated
+    kubectl exec "$replPod" -c replicated -- tar -xf /tmp/secrets.tar -C /var/lib/replicated 
+}
+
 startAppOnK8s() {
     logStep "Restoring app state"
     waitReplicatedctlReady
+    restoreRetraced
+    restoreSecrets
     replicatedctl migration import < "${TMP_DIR}/migration.json"
     replicatedctl app-config import < "${TMP_DIR}/app-config.json"
 }
@@ -176,3 +221,5 @@ if [ "$HAS_APP" != "1" ]; then
 fi
 
 logSuccess "App is running on Kubernetes"
+
+purgeNativeScheduler
