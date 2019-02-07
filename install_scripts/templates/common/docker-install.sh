@@ -204,12 +204,30 @@ _installDocker() {
         fi
     fi
 
+    # i guess the second arg means to skip this?
+    if [ "$2" -eq "1" ]; then
+        # set +e because df --output='fstype' doesn't exist on older versions of rhel and centos
+        set +e
+        _maybeRequireRhelDevicemapper
+        set -e
+    fi
+
+    DID_INSTALL_DOCKER=1
+}
+
+_maybeRequireRhelDevicemapper() {
     # If the distribution is CentOS or RHEL and the filesystem is XFS, it is possible that docker has installed with overlay as the device driver
     # In that case we should change the storage driver to devicemapper, because while loopback-lvm is slow it is also more likely to work
-    # set +e because df --output='fstype' doesn't exist on older versions of rhel and centos
-    set +e
-    if [ $2 -eq 1 ] && { [ "$LSB_DIST" = "centos" ] || [ "$LSB_DIST" = "rhel" ] ; } && { df --output='fstype' | grep -q -e '^xfs$' || grep -q -e ' xfs ' /etc/fstab ; } ; then
+    if { [ "$LSB_DIST" = "centos" ] || [ "$LSB_DIST" = "rhel" ] ; } && { df --output='fstype' | grep -q -e '^xfs$' || grep -q -e ' xfs ' /etc/fstab ; } ; then
         # If distribution is centos or rhel and filesystem is XFS
+
+        # xfs (RHEL 7.2 and higher), but only with d_type=true enabled. Use xfs_info to verify that the ftype option is set to 1.
+        # https://docs.docker.com/storage/storagedriver/overlayfs-driver/#prerequisites
+        oIFS="$IFS"; IFS=.; set -- $DIST_VERSION; IFS="$oIFS";
+        _dist_version_minor=$2
+        if [ "$DIST_VERSION_MAJOR" -eq "7" ] && [ "$_dist_version_minor" -ge "2" ] && xfs_info / | grep -q -e 'ftype=1'; then
+            return
+        fi
 
         # Get kernel version (and extract major+minor version)
         kernelVersion="$(uname -r)"
@@ -217,7 +235,8 @@ _installDocker() {
 
         if docker info | grep -q -e 'Storage Driver: overlay2\?' && { ! xfs_info / | grep -q -e 'ftype=1' || [ $major -lt 3 ] || { [ $major -eq 3 ] && [ $minor -lt 18 ]; }; }; then
             # If storage driver is overlay and (ftype!=1 OR kernel version less than 3.18)
-            printf "${YELLOW}Changing docker storage driver to devicemapper as using overlay/overlay2 requires ftype=1 on xfs filesystems and requires kernel 3.18 or higher.\n"
+            printf "${YELLOW}Changing docker storage driver to devicemapper."
+            printf "Using overlay/overlay2 requires CentOS/RHEL 7.2 or higher and ftype=1 on xfs filesystems.\n"
             printf "It is recommended to configure devicemapper to use direct-lvm mode for production.${NC}\n"
             systemctl stop docker
 
@@ -226,9 +245,6 @@ _installDocker() {
             systemctl start docker
         fi
     fi
-    set -e
-
-    DID_INSTALL_DOCKER=1
 }
 
 _dockerUpgrade() {
