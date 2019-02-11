@@ -7,7 +7,7 @@ RUN add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubunt
 RUN apt-get -y update
 
 RUN mkdir -p /packages/archives
-RUN apt-get -d -y install docker-ce=18.06.1~ce~3-0~ubuntu -oDebug::NoLocking=1 -o=dir::cache=/packages/
+RUN apt-get -d -y install docker-ce=18.06.2~ce~3-0~ubuntu -oDebug::NoLocking=1 -o=dir::cache=/packages/
 
 FROM scratch
 COPY --from=0 /packages /
