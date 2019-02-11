@@ -146,10 +146,11 @@ _installDocker() {
         printf "${GREEN}Installing Docker from Zypper repository${NC}\n"
 
         # 2019-01-07
-        # SUSE has Docker 17.09.1_ce and Docker 18.06.1_ce available.
+        # SUSE has Docker 17.09.1_ce and Docker 18.09.0_ce available.
+        # NOTE: need to patch here with 18.09.2 or 18.06.2 when available.
         compareDockerVersions "18.0.0" "${1}"
         if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
-            ( set -x; zypper -n install "docker=18.06.1_ce" || zypper -n install docker )
+            ( set -x; zypper -n install "docker=18.09.0_ce" || zypper -n install docker )
         else
             ( set -x; zypper -n install "docker=17.09.1_ce" || zypper -n install docker )
         fi

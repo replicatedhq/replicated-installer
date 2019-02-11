@@ -157,9 +157,9 @@ getMaxDockerVersion() {
         fi
     fi
     if [ "$LSB_DIST" = "ubuntu" ]; then
-        # Max Docker version on Ubuntu 14.04 is 18.06.1.
+        # Max Docker version on Ubuntu 14.04 is 18.06.2.
         if [ "$DIST_VERSION" = "14.04" ]; then
-            MAX_DOCKER_VERSION_RESULT="18.06.1"
+            MAX_DOCKER_VERSION_RESULT="18.06.2"
         fi
     fi
     if [ "$LSB_DIST" = "debian" ]; then
@@ -167,20 +167,21 @@ getMaxDockerVersion() {
         if [ "$DIST_VERSION" = "7" ]; then
             MAX_DOCKER_VERSION_RESULT="18.03.1"
         fi
-        # Max Docker version on Debian 8 is 18.06.1.
+        # Max Docker version on Debian 8 is 18.06.2.
         if [ "$DIST_VERSION" = "8" ]; then
-            MAX_DOCKER_VERSION_RESULT="18.06.1"
+            MAX_DOCKER_VERSION_RESULT="18.06.2"
         fi
     fi
     # 2019-01-07
     # Max Docker version on Amazon Linux 2 is 18.06.1.
+    # NOTE: need to patch here with 18.06.2 when available.
     if [ "$LSB_DIST" = "amzn" ]; then
         MAX_DOCKER_VERSION_RESULT="18.06.1"
     fi
     # 2019-01-07
-    # Max Docker version on SUSE Linux Enterprise Server 12 and 15 is 18.06.1.
+    # Max Docker version on SUSE Linux Enterprise Server 12 and 15 is 18.09.0.
     if [ "$LSB_DIST" = "sles" ]; then
-        MAX_DOCKER_VERSION_RESULT="18.06.1"
+        MAX_DOCKER_VERSION_RESULT="18.09.0"
     fi
     # Max Docker version on Oracle Linux 6.x seems to be 17.05.0.
     if [ "$LSB_DIST" = "ol" ]; then
