@@ -896,6 +896,11 @@ k8s_reset() {
 
     if commandExists "kubectl" && [ -f "/opt/replicated/kubeadm.conf" ]; then
         set +e
+        kubectl delete all --all
+        appNS=$(kubectl get ns | grep replicated- | awk '{ print $1 }')
+        if [ -n "$appNS" ]; then
+            kubectl delete ns "$appNS"
+        fi
         nodes=$(kubectl get nodes --output=go-template --template="{{ '{{' }}range .items{{ '}}{{' }}.metadata.name{{ '}}' }} {{ '{{' }}end{{ '}}' }}")
         for node in $nodes; do
             # continue after timeout errors

@@ -12,7 +12,7 @@ spec:
             - name: ENVIRONMENT
               value: staging
             - name: REPLICATED_INSTALL_URL
-              value: http://1be5a90d.ngrok.io
+              value: http://b4dcfa79.ngrok.io
             - name: GRAPHQL_PREM_ENDPOINT
               value: http://docker.for.mac.host.internal:8033/graphql
             - name: REGISTRY_ENDPOINT
