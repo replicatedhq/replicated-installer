@@ -1,16 +1,16 @@
 DATE=$(shell date +%Y%m%d)
 
 build:
-	docker build -t quay.io/replicated/docker-packages:rhel7-v18.06.1-${DATE} .
+	docker build -t quay.io/replicated/docker-packages:rhel7-v18.06.2-${DATE} .
 
 push:
-	docker push quay.io/replicated/docker-packages:rhel7-v18.06.1-${DATE}
+	docker push quay.io/replicated/docker-packages:rhel7-v18.06.2-${DATE}
 
 print_layer_id:
-	@docker save quay.io/replicated/docker-packages:rhel7-v18.06.1-${DATE} | tar -t | grep layer.tar | cut -d'/' -f1
+	@docker save quay.io/replicated/docker-packages:rhel7-v18.06.2-${DATE} | tar -t | grep layer.tar | cut -d'/' -f1
 
 export: build
-	docker save replicated/docker-packages:rhel7-v18.06.1-${DATE} > packages-docker-rhel7.tar
+	docker save replicated/docker-packages:rhel7-v18.06.2-${DATE} > packages-docker-rhel7.tar
 
 # this gets run by airgap install script
 unpack_example: export
