@@ -124,6 +124,7 @@ _installDocker() {
         compareDockerVersions "18.0.0" "${1}"
         if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
             if commandExists "amazon-linux-extras"; then
+                # NOTE: need to patch here with 18.09.2 or 18.06.2 when available.
                 ( set -x; amazon-linux-extras install -y -q docker=18.06.1 || amazon-linux-extras install docker=18.06.1 || \
                     amazon-linux-extras install -y -q docker || amazon-linux-extras install docker )
             else
@@ -150,7 +151,7 @@ _installDocker() {
         # NOTE: need to patch here with 18.09.2 or 18.06.2 when available.
         compareDockerVersions "18.0.0" "${1}"
         if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
-            ( set -x; zypper -n install "docker=18.09.0_ce" || zypper -n install docker )
+            ( set -x; zypper -n install "docker=18.06.1_ce" || zypper -n install docker )
         else
             ( set -x; zypper -n install "docker=17.09.1_ce" || zypper -n install docker )
         fi
