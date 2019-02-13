@@ -795,14 +795,16 @@ if [ "$AIRGAP" = "1" ]; then
 fi
 
 kubernetesDeploy
+installCliFile \
+    "kubectl exec -c replicated" \
+    '$(kubectl get pods -o=jsonpath="{.items[0].metadata.name}" -l tier=master) --'
 spinnerReplicatedReady
+
+waitReplicatedctlReady
 
 includeBranding
 
 printf "Installing replicated command alias\n"
-installCliFile \
-    "kubectl exec -c replicated" \
-    '$(kubectl get pods -o=jsonpath="{.items[0].metadata.name}" -l tier=master) --'
 installAliasFile
 outro "$NO_CLEAR"
 

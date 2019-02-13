@@ -12,7 +12,7 @@ HAS_KUBERNETES=0
 HAS_APP=0
 AIRGAP_LICENSE_PATH=
 AIRGAP_PACKAGE_PATH=
-INIT_FLAGS="no-clear no-proxy" # TOOD proxy
+INIT_FLAGS="no-clear"
 
 {% include 'common/cli-script.sh' %}
 {% include 'common/common.sh' %}
@@ -23,13 +23,13 @@ INIT_FLAGS="no-clear no-proxy" # TOOD proxy
 startNativeScheduler() {
     logStep "Ensuring native scheduler is running"
 
-    # online installs can co-exist but airgap installs bind the same host ports
-    if [ "$AIRGAP" = "1" ] && commandExists "kubectl" ; then
-        logSubstep "stop replicated pod"
+    # remove NodePort services since they will contend with native container published ports
+    if commandExists "kubectl" ; then
+        logSubstep "stop kubernetes services"
         kubectl delete services replicated replicated-ui &>/dev/null || true
     fi
 
-    logSubstep "start systemd services"
+    logSubstep "start systemd units"
     systemctl start replicated
     systemctl start replicated-operator
     systemctl start replicated-ui
@@ -49,20 +49,6 @@ startNativeScheduler() {
 
 
     logSuccess "Native scheduler is running"
-}
-
-waitReplicatedctlReady() {
-    for i in {1..30}; do
-        if isReplicatedctlReady; then
-            return 0
-        fi
-        sleep 2
-    done
-    return 1
-}
-
-isReplicatedctlReady() {
-    replicatedctl system status 2>/dev/null | grep -q '"ready"'
 }
 
 checkVersion() {
@@ -118,6 +104,16 @@ startK8sScheduler() {
     if [ -n "$localAddress" ]; then
         INIT_FLAGS="private-address=$localAddress $INIT_FLAGS"
     fi
+    local httpProxy=$(getNativeEnv HTTP_PROXY)
+    if [ -n "$httpProxy" ]; then
+        INIT_FLAGS="http-proxy=$httpProxy $INIT_FLAGS"
+    else
+        INIT_FLAGS="no-proxy $INIT_FLAGS"
+    fi
+    local noProxyAddresses=$(getNativeEnv NO_PROXY)
+    if [ -n "$noProxyAddresses" ]; then
+        INIT_FLAGS="additional-no-proxy=$noProxyAddresses $INIT_FLAGS"
+    fi
     getK8sInitScript
     bash /tmp/kubernetes-init.sh $INIT_FLAGS
     logSuccess "Kubernetes scheduler installed"
@@ -125,23 +121,37 @@ startK8sScheduler() {
 
 exportNativeState() {
     logStep "Saving native app state to $TMP_DIR"
+    set -e
 
     logSubstep "export native environment"
-    docker exec replicated printenv | grep -E '^(LOCAL_ADDRESS|LOG_LEVEL)=' > "${TMP_DIR}/native.env"
+    docker exec replicated printenv | grep -E '^(LOCAL_ADDRESS|LOG_LEVEL|HTTP_PROXY|NO_PROXY)=' > "${TMP_DIR}/native.env"
+    checkOutput "${TMP_DIR}/native.env"
 
     logSubstep "export app config"
     replicatedctl app-config export --hidden > "${TMP_DIR}/app-config.json"
+    checkOutput "${TMP_DIR}/app-config.json"
 
     logSubstep "export console settings"
     replicatedctl migration export > "${TMP_DIR}/migration.json"
+    checkOutput "${TMP_DIR}/migration.json"
 
     logSubstep "export audit log"
     docker exec retraced-postgres /bin/bash -c 'PG_DATABASE=$POSTGRES_DATABASE PGHOST=$POSTGRES_HOST PGUSER=$POSTGRES_USER PGPASSWORD=$POSTGRES_PASSWORD pg_dump -c' > "${TMP_DIR}/retraced.sql"
+    checkOutput "${TMP_DIR}/retraced.sql"
 
     logSubstep "export certificates"
     tar -cf "${TMP_DIR}/secrets.tar" -C /var/lib/replicated secrets
 
+    set +e
     logSuccess "Native app state saved"
+}
+
+checkOutput() {
+    if [ "$?" -ne 0 ]; then
+        cat "$1"
+        rm "$1"
+        exit 1
+    fi
 }
 
 # if all state needed from the native app has been saved, set the HAS_NATIVE_STATE flag to skip
@@ -188,7 +198,7 @@ checkApp() {
 waitNativeRetracedPostgresReady() {
     set +e
     for i in {1..30}; do
-        if docker exec retraced-postgres pg_isready -q ; then
+        if docker exec retraced-postgres pg_isready -q 2>/dev/null ; then
             set -e
             return
         fi
@@ -238,7 +248,24 @@ startAppOnK8s() {
     restoreSecrets
 
     logSubstep "restore console settings"
-    replicatedctl migration import < "${TMP_DIR}/migration.json"
+    set +e
+    local needsActivation=0
+    replicatedctl migration import < "${TMP_DIR}/migration.json" 2>"${TMP_DIR}/import.txt"
+    if [ "$?" -ne 0 ] ; then
+        if grep -q 'Activation code invalid' "${TMP_DIR}/import.txt" ; then
+            needsActivation=1
+        else
+            cat "${TMP_DIR}/import.txt"
+            exit 1
+        fi
+    fi
+    set -e
+    if [ "$needsActivation" = "1" ]; then
+        read -p "Activation code has been emailed. Enter it here to proceed: " code < /dev/tty
+        echo $code
+        replicatedctl license activate "$code"
+    fi
+
     waitReplicatedctlReady # the migration import may cause the daemon to restart
 
     if [ "$AIRGAP" = "1" ]; then
@@ -317,6 +344,7 @@ if [ "$HAS_NATIVE_STATE" != "1" ]; then
     exportNativeState
 fi
 
+checkKubernetes
 if [ "$HAS_KUBERNETES" != "1" ]; then
     stopNativeScheduler
     startK8sScheduler
