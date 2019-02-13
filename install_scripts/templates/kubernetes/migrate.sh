@@ -260,6 +260,13 @@ startAppOnK8s() {
         fi
     fi
     set -e
+
+    # restart ui container to pick up new TLS certs from daemon
+    local replPod=$(kubectl get pods --selector='app=replicated,tier=master' | tail -1 | awk '{ print $1 }')
+    if [ -n "$replPod" ]; then
+        kubectl exec "$replPod" -c replicated-ui -- kill 1
+    fi
+
     if [ "$needsActivation" = "1" ]; then
         read -p "Activation code has been emailed. Enter it here to proceed: " code < /dev/tty
         echo $code
