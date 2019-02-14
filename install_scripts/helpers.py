@@ -77,17 +77,25 @@ def get_pinned_docker_version(replicated_version, scheduler):
     query = (
         'SELECT dockerversion '
         'FROM pinned_docker_version '
-        'WHERE major <= %s AND minor <= %s AND patch <= %s AND scheduler = %s '
+        'WHERE scheduler = %s AND ( '
+        '  (major < %s) OR '
+        '  (major = %s AND minor < %s) OR '
+        '  (major = %s AND minor = %s AND patch <= %s) '
+        ')'
         'ORDER BY major DESC, minor DESC, patch DESC '
         'LIMIT 1')
-    cursor.execute(query, (version_info.major, version_info.minor,
-                           version_info.patch, scheduler))
+    cursor.execute(query, (
+        scheduler,
+        version_info.major,
+        version_info.major, version_info.minor,
+        version_info.major, version_info.minor, version_info.patch,
+    ))
 
     (docker_version, ) = cursor.fetchone()
     cursor.close()
 
     if docker_version == 'default':
-        return get_default_docker_version()  #fall back to this if default
+        return get_default_docker_version()  # fall back to this if default
     return docker_version
 
 
@@ -147,10 +155,12 @@ def get_replicated_username(version_tag):
         return 'root'
     return 'replicated'
 
+
 def get_replicated_username_swarm(version_tag):
     if semver.lt(version_tag, '2.32.0', loose=False):
         return 'root'
     return 'replicated'
+
 
 def get_port_range(replicated_tag):
     if semver.lt(replicated_tag, '2.0.1654', loose=False):
@@ -326,7 +336,7 @@ def base64_encode(data):
 def get_docker_deb_pkg_version(docker_version, lsb_dist, dist_version):
     major, minor, patch = map(int, docker_version.split('.'))
     if major == 18:
-        return '' # unused
+        return ''  # unused
     elif major == 1:
         if minor < 12 or (minor == 12 and patch <= 3):
             return '{}-0~${{dist_version}}'.format(docker_version)
@@ -344,7 +354,7 @@ def get_docker_deb_pkg_version(docker_version, lsb_dist, dist_version):
 def get_docker_rpm_pkg_version(docker_version, lsb_dist, dist_version):
     major, minor, _ = map(int, docker_version.split('.'))
     if major == 18:
-        return '' # unused
+        return ''  # unused
     elif major == 1:
         if lsb_dist == 'ol' or (lsb_dist in ('centos', 'rhel')
                                 and dist_version == '6'):
