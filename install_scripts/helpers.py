@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import base64
 import json
+import sys
 import yaml
 
 import semver
@@ -243,7 +244,7 @@ def get_app_version_config(app_slug, app_channel):
             except StopIteration:
                 raise
             except Exception as exc:
-                print('Invalid yaml: {}:'.format(exc))
+                print('Invalid yaml: {}:'.format(exc), file=sys.stderr)
 
     cursor = db.get().cursor()
     query = ('SELECT ar.config '
@@ -275,7 +276,7 @@ def get_current_replicated_version(replicated_channel):
     cursor.close()
 
     print('Current Replicated version for {}: {}'.format(
-        replicated_channel, version))
+        replicated_channel, version), file=sys.stderr)
     return version
 
 
@@ -290,7 +291,7 @@ def get_best_replicated_version(version_range, replicated_channel):
     cursor.close()
 
     print('Best matching Replicated version for {}: {}'.format(
-        version_range, best_v))
+        version_range, best_v), file=sys.stderr)
     return best_v
 
 
@@ -300,7 +301,7 @@ def version_list_generator(cursor):
             semver.make_semver(version, loose=False)
             yield version
         except Exception as exc:
-            print('Skipping {}: {}'.format(version, exc))
+            print('Skipping {}: {}'.format(version, exc), file=sys.stderr)
             continue
 
 

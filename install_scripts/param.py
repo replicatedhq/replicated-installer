@@ -1,7 +1,8 @@
 from __future__ import print_function
 
-import os
 import boto3
+import os
+import sys
 
 from botocore.exceptions import ClientError
 
@@ -32,8 +33,9 @@ def new_param_cache(use_ssm):
     global param_cache
     svc = None
     if use_ssm:
-        print("Param is using SSM")
-        sess = boto3.session.Session(region_name=os.getenv('AWS_REGION', 'us-east-1'))
+        print("Param is using SSM", file=sys.stderr)
+        sess = boto3.session.Session(
+            region_name=os.getenv('AWS_REGION', 'us-east-1'))
         svc = sess.client('ssm')
     param_cache = {'ssm': svc, 'm': {}}
 

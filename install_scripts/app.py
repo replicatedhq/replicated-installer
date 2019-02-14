@@ -3,8 +3,9 @@ from __future__ import print_function
 from flask import Flask, Response, abort, render_template, request, jsonify
 import semver
 import subprocess
-import urllib
+import sys
 import traceback
+import urllib
 
 from . import db, helpers, param
 
@@ -106,7 +107,8 @@ def get_replicated_two_point_zero(replicated_channel=None,
                                   app_slug=None,
                                   app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
-    print("Looking up tags for:", replicated_channel, app_slug, app_channel)
+    print("Looking up tags for:", replicated_channel,
+          app_slug, app_channel, file=sys.stderr)
 
     replicated_version = helpers.get_replicated_version(
         replicated_channel, app_slug, app_channel)
@@ -181,7 +183,8 @@ def get_replicated_operator(replicated_channel=None,
                             app_slug=None,
                             app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
-    print("Looking up tags for:", replicated_channel, app_slug, app_channel)
+    print("Looking up tags for:", replicated_channel,
+          app_slug, app_channel, file=sys.stderr)
 
     replicated_operator_version = helpers.get_replicated_operator_version(
         replicated_channel, app_slug, app_channel)
@@ -315,7 +318,8 @@ def get_replicated_compose_v3_template_args(replicated_channel=None,
                                             app_slug=None,
                                             app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
-    print("Looking up tags for:", replicated_channel, app_slug, app_channel)
+    print("Looking up tags for:", replicated_channel,
+          app_slug, app_channel, file=sys.stderr)
 
     replicated_version = helpers.get_replicated_version(
         replicated_channel, app_slug, app_channel)
@@ -402,7 +406,8 @@ def get_replicated_compose_v2(replicated_channel=None,
                               app_slug=None,
                               app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
-    print("Looking up tags for:", replicated_channel, app_slug, app_channel)
+    print("Looking up tags for:", replicated_channel,
+          app_slug, app_channel, file=sys.stderr)
 
     replicated_version = helpers.get_replicated_version(
         replicated_channel, app_slug, app_channel)
@@ -451,7 +456,8 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
                                       app_slug=None,
                                       app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
-    print("Looking up tags for:", replicated_channel, app_slug, app_channel)
+    print("Looking up tags for:", replicated_channel,
+          app_slug, app_channel, file=sys.stderr)
     replicated_version = helpers.get_replicated_version(
         replicated_channel, app_slug, app_channel)
     replicated_ui_version = helpers.get_replicated_ui_version(
@@ -519,7 +525,8 @@ def get_swarm_init_master(replicated_channel=None,
                           app_slug=None,
                           app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
-    print("Looking up tags for:", replicated_channel, app_slug, app_channel)
+    print("Looking up tags for:", replicated_channel,
+          app_slug, app_channel, file=sys.stderr)
 
     replicated_version = helpers.get_replicated_version(
         replicated_channel, app_slug, app_channel)
