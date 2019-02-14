@@ -102,13 +102,21 @@ def get_pinned_docker_version(replicated_version, scheduler):
 def get_pinned_kubernetes_version(replicated_version):
     version_info = semver.parse(replicated_version, loose=False)
     cursor = db.get().cursor()
-    query = ('SELECT kubernetes_version '
-             'FROM pinned_kubernetes_version '
-             'WHERE major <= %s AND minor <= %s AND patch <= %s '
-             'ORDER BY major DESC, minor DESC, patch DESC '
-             'LIMIT 1')
-    cursor.execute(
-        query, (version_info.major, version_info.minor, version_info.patch))
+    query = (
+        'SELECT kubernetes_version '
+        'FROM pinned_kubernetes_version '
+        'WHERE ( '
+        '  (major < %s) OR '
+        '  (major = %s AND minor < %s) OR '
+        '  (major = %s AND minor = %s AND patch <= %s) '
+        ')'
+        'ORDER BY major DESC, minor DESC, patch DESC '
+        'LIMIT 1')
+    cursor.execute(query, (
+        version_info.major,
+        version_info.major, version_info.minor,
+        version_info.major, version_info.minor, version_info.patch,
+    ))
     (kubernetes_version, ) = cursor.fetchone()
     cursor.close()
 
