@@ -43,6 +43,7 @@ startNativeScheduler() {
     logSubstep "wait for native daemon to report ready"
     waitReplicatedctlReady
     checkVersion
+    replicatedctl app stop
 
     logSubstep "wait for audit log database"
     waitNativeRetracedPostgresReady
@@ -76,6 +77,12 @@ getK8sInitScript() {
 stopNativeScheduler() {
     logStep "Stopping native scheduler"
 
+    # app began stopping when replicatedctl was ready. Wait until stopped.
+    logSubstep "stop app"
+    while replicatedctl app status | grep IsTransitioning | grep true ; do
+        sleep 2
+    done
+
     logSubstep "stop systemd services"
     systemctl stop replicated
     systemctl stop replicated-operator
@@ -89,7 +96,20 @@ stopNativeScheduler() {
 
 purgeNativeScheduler() {
     logStep "Removing native scheduler"
-    # TODO
+    systemctl stop replicated replicated-ui replicated-operator
+    docker rm -f replicated \
+        replicated-ui \
+        replicated-operator \
+        replicated-premkit \
+        replicated-statsd \
+        retraced-api \
+        retraced-processor \
+        retraced-cron \
+        retraced-nsqd \
+        retraced-postgres
+    rm -rf /var/lib/replicated* \
+        /etc/default/replicated* \
+        /etc/sysconfig/replicated*
     logSuccess "Removed native scheduler"
 }
 
@@ -310,6 +330,10 @@ validate() {
             bail "airgap package path is required with airgap-package-path"
         fi
     fi
+
+    if [ -f /etc/replicated.conf ]; then
+        bail "migration script is incompatible with /etc/replicated.conf"
+    fi
 }
 
 ################################################################################
@@ -344,7 +368,6 @@ validate
 export KUBECONFIG=/etc/kubernetes/admin.conf
 mkdir -p "$TMP_DIR"
 
-checkKubernetes
 checkNativeState
 if [ "$HAS_NATIVE_STATE" != "1" ]; then
     startNativeScheduler

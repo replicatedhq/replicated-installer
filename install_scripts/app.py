@@ -628,10 +628,11 @@ def get_kubernetes_migrate(replicated_channel=None,
                             app_slug=None,
                             app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
-
+    # use app_channel to lookup replicated version, but don't add to init script because we don't
+    # want terms and branding
+    replicated_version = helpers.get_replicated_version(
+        replicated_channel, app_slug, app_channel)
     init_path = 'kubernetes-init'
-    if app_slug and app_channel:
-        init_path = app_slug + '/' + app_channel + '/' + init_path
     if replicated_channel != 'stable':
         init_path = replicated_channel + '/' + init_path
 
@@ -642,6 +643,7 @@ def get_kubernetes_migrate(replicated_channel=None,
         k: v[0] if isinstance(v, list) and len(v) > 0 else v
         for k, v in query_args.items()
     }
+    query_args['replicated_tag'] = query_args.get('replicated_tag', replicated_version)
     query = urllib.urlencode(query_args)
 
     response = render_template(
