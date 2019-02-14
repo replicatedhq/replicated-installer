@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-import os
+import sys
 
 import mysql.connector
 from flask import g
@@ -14,7 +14,7 @@ def get():
     if db is not None:
         return db
 
-    print("Connecting to db")
+    print("Connecting to db", file=sys.stderr)
     database = param.lookup('MYSQL_DATABASE', '/mysql/database')
     if not database:
         database = param.lookup('MYSQL_DB', '/mysql/database')
@@ -33,5 +33,5 @@ def get():
 def teardown():
     db = getattr(g, '_database', None)
     if db is not None:
-        print('Closing db connection')
+        print('Closing db connection', file=sys.stderr)
         db.close()

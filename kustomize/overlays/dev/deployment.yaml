@@ -10,7 +10,7 @@ spec:
         - name: install-scripts
           env:
             - name: ENVIRONMENT
-              value: staging
+              value: dev
             - name: REPLICATED_INSTALL_URL
               value: http://localhost:8090
             - name: GRAPHQL_PREM_ENDPOINT
