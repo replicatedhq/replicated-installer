@@ -224,8 +224,7 @@ waitNativeRetracedPostgresReady() {
         fi
         sleep 2
     done
-    echo "Timedout waiting for native Retraced Postgres to become ready"
-    exit 1
+    bail "Timedout waiting for native Retraced Postgres to become ready"
 }
 
 restoreRetraced() {
@@ -241,8 +240,7 @@ restoreRetraced() {
         fi
         sleep 2
     done
-    echo "Failed to restore audit log"
-    exit 1
+    bail "Failed to restore audit log"
 }
 
 restoreSecrets() {
@@ -308,7 +306,6 @@ validate() {
     if [ "$AIRGAP" = "1" ]; then
         if [ -z "$AIRGAP_LICENSE_PATH" ]; then
             bail "airgap-license-path is required for airgap installs"
-            exit 1
         fi
         if [ -z "$AIRGAP_PACKAGE_PATH" ]; then
             bail "airgap-package-path is required for airgap installs"
