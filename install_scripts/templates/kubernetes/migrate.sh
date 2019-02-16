@@ -40,7 +40,6 @@ startNativeScheduler() {
         installCliFile "sudo docker exec" "replicated"
     fi
 
-    logSubstep "wait for native daemon to report ready"
     waitReplicatedctlReady
     checkVersion
     replicatedctl app stop
@@ -256,7 +255,6 @@ restoreSecrets() {
 startAppOnK8s() {
     logStep "Restoring app state"
 
-    logSubstep "wait for daemon pod to report ready"
     waitReplicatedctlReady
 
     logSubstep "restore audit log"

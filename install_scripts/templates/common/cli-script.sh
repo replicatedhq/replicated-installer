@@ -143,6 +143,7 @@ EOF
 #   None
 #######################################
 waitReplicatedctlReady() {
+    logSubstep "wait for replicated to report ready"
     for i in {1..30}; do
         if isReplicatedctlReady; then
             return 0
