@@ -711,6 +711,7 @@ spinnerReplicatedReady()
 {
     logStep "Await replicated ready"
     spinnerPodRunning "default" "replicated-"
+    waitReplicatedctlReady
     logSuccess "Replicated Ready!"
 }
 

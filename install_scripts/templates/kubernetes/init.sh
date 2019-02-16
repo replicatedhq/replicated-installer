@@ -800,8 +800,6 @@ installCliFile \
     '$(kubectl get pods -o=jsonpath="{.items[0].metadata.name}" -l tier=master) --'
 spinnerReplicatedReady
 
-waitReplicatedctlReady
-
 includeBranding
 
 printf "Installing replicated command alias\n"

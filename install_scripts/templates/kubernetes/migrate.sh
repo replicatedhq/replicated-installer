@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/biin/sh
 
 set -e
 
@@ -291,8 +291,6 @@ startAppOnK8s() {
         replicatedctl license activate "$code"
     fi
 
-    waitReplicatedctlReady # the migration import may cause the daemon to restart
-
     if [ "$AIRGAP" = "1" ]; then
         logSubstep "load airgap license"
         replicatedctl license-load --airgap-package="$AIRGAP_PACKAGE_PATH" < "$AIRGAP_LICENSE_PATH"
@@ -331,6 +329,8 @@ validate() {
     if [ -f /etc/replicated.conf ]; then
         bail "migration script is incompatible with /etc/replicated.conf"
     fi
+
+    bailIfUnsupportedOS
 }
 
 ################################################################################
