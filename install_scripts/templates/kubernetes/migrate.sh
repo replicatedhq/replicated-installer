@@ -42,7 +42,7 @@ startNativeScheduler() {
 
     waitReplicatedctlReady
     checkVersion
-    replicatedctl app stop
+    replicatedctl app stop &>/dev/null
 
     logSubstep "wait for audit log database"
     waitNativeRetracedPostgresReady
@@ -78,7 +78,7 @@ stopNativeScheduler() {
 
     # app began stopping when replicatedctl was ready. Wait until stopped.
     logSubstep "stop app"
-    while replicatedctl app status | grep IsTransitioning | grep true ; do
+    while replicatedctl app status | grep IsTransitioning | grep -q true ; do
         sleep 2
     done
 
@@ -95,6 +95,7 @@ stopNativeScheduler() {
 
 purgeNativeScheduler() {
     logStep "Removing native scheduler"
+    set +e
     systemctl stop replicated replicated-ui replicated-operator
     docker rm -f replicated \
         replicated-ui \
@@ -105,10 +106,11 @@ purgeNativeScheduler() {
         retraced-processor \
         retraced-cron \
         retraced-nsqd \
-        retraced-postgres
+        retraced-postgres 2>/dev/null
     rm -rf /var/lib/replicated* \
         /etc/default/replicated* \
         /etc/sysconfig/replicated*
+    set -e
     logSuccess "Removed native scheduler"
 }
 
@@ -140,7 +142,7 @@ startK8sScheduler() {
 
 exportNativeState() {
     logStep "Saving native app state to $TMP_DIR"
-    set -e
+    set +e
 
     logSubstep "export native environment"
     docker exec replicated printenv | grep -E '^(LOCAL_ADDRESS|LOG_LEVEL|HTTP_PROXY|NO_PROXY)=' > "${TMP_DIR}/native.env"
@@ -161,7 +163,7 @@ exportNativeState() {
     logSubstep "export certificates"
     tar -cf "${TMP_DIR}/secrets.tar" -C /var/lib/replicated secrets
 
-    set +e
+    set -e
     logSuccess "Native app state saved"
 }
 
@@ -336,6 +338,7 @@ validate() {
 ################################################################################
 
 requireRootUser
+detectLsbDist
 
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"
