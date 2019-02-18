@@ -24,6 +24,19 @@ logStep() {
     printf "${BLUE}⚙ $1${NC}\n" 1>&2
 }
 
+#######################################
+# Prints the first arg indented in light blue
+# Globals:
+#   None
+# Arguments:
+#   Message
+# Returns:
+#   None
+#######################################
+logSubstep() {
+    printf "\t${LIGHT_BLUE}- $1${NC}\n" 1>&2
+}
+
 
 #######################################
 # Prints the first arg in Red

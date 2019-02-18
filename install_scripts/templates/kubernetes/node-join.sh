@@ -138,6 +138,15 @@ maybeOverridePinnedDockerVersion() {
     fi
 }
 
+# Clean up operator in case node was migrated from native.
+purgeNative() {
+    systemctl stop replicated-operator &>/dev/null || true
+    docker rm -f replicated-operator &>/dev/null || true
+    rm -rf /var/lib/replicated* \
+        /etc/default/replicated* \
+        /etc/sysconfig/replicated*
+}
+
 ################################################################################
 # Execution starts here
 ################################################################################
@@ -328,5 +337,7 @@ fi
 
 maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
 ensureRookPluginsRegistered
+
+purgeNative
 
 exit 0

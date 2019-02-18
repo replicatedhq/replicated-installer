@@ -132,3 +132,36 @@ sh -c "${2} \$flags \\
 EOF
   chmod a+x "${1}/replicatedctl"
 }
+
+#######################################
+# Blocks until `replicatedctl system status` succeeds
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+waitReplicatedctlReady() {
+    logSubstep "wait for replicated to report ready"
+    for i in {1..30}; do
+        if isReplicatedctlReady; then
+            return 0
+        fi
+        sleep 2
+    done
+    return 1
+}
+
+#######################################
+# Return code 0 unless `replicatedctl system status` succeeds
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+isReplicatedctlReady() {
+    replicatedctl system status 2>/dev/null | grep -q '"ready"'
+}

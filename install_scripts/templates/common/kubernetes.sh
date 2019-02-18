@@ -2,7 +2,7 @@
 #
 # kubernetes.sh
 #
-# require selinux.sh common.sh docker.sh
+# require selinux.sh common.sh docker.sh cli-script.sh
 #
 #######################################
 
@@ -711,6 +711,7 @@ spinnerReplicatedReady()
 {
     logStep "Await replicated ready"
     spinnerPodRunning "default" "replicated-"
+    waitReplicatedctlReady
     logSuccess "Replicated Ready!"
 }
 
@@ -896,6 +897,11 @@ k8s_reset() {
 
     if commandExists "kubectl" && [ -f "/opt/replicated/kubeadm.conf" ]; then
         set +e
+        kubectl delete all --all
+        appNSs=$(kubectl get ns | grep replicated- | awk '{ print $1 }')
+        for appNS in "$appNSs"; do
+            kubectl delete ns "$appNS"
+        done
         nodes=$(kubectl get nodes --output=go-template --template="{{ '{{' }}range .items{{ '}}{{' }}.metadata.name{{ '}}' }} {{ '{{' }}end{{ '}}' }}")
         for node in $nodes; do
             # continue after timeout errors
