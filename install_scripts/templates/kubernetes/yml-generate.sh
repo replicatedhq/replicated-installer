@@ -387,9 +387,6 @@ spec:
   - name: replicated-registry
     port: 9874
     protocol: TCP
-  - name: replicated-api
-    port: 9876
-    protocol: TCP
   - name: replicated-iapi
     port: 9877
     protocol: TCP
@@ -422,10 +419,6 @@ spec:
     port: 9874
     nodePort: 9874
     protocol: TCP
-  - name: replicated-api
-    port: 9876
-    nodePort: 9876
-    protocol: TCP
   - name: replicated-iapi
     port: 9877
     nodePort: 9877
@@ -437,6 +430,29 @@ spec:
   - name: replicated-support
     port: 9881
     nodePort: 9881
+    protocol: TCP
+EOF
+}
+
+render_replicated_api_service() {
+    cat <<EOF
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: replicated-api
+  labels:
+    app: replicated
+    tier: master
+spec:
+  type: NodePort
+  selector:
+    app: replicated
+    tier: master
+  ports:
+  - name: replicated-api
+    port: 9876
+    nodePort: 9876
     protocol: TCP
 EOF
 }
@@ -1633,6 +1649,8 @@ if [ "$REPLICATED_YAML" = "1" ]; then
     else
         render_replicated_cluster_ip_service
     fi
+
+    render_replicated_api_service
 
     if [ "$SERVICE_TYPE" = "NodePort" ]; then
         render_replicated_ui_node_port_service

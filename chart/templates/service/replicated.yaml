@@ -31,6 +31,7 @@ metadata:
     app: replicated
     tier: master
 spec:
+  type: NodePort
   selector:
     app: replicated
     tier: master
