@@ -12,6 +12,9 @@ YAML_GENERATE_OPTS=
 
 PUBLIC_ADDRESS=
 PRIVATE_ADDRESS=
+HA_CLUSTER=0
+LOAD_BALANCER_ADDRESS=
+LOAD_BALANCER_PORT=
 REGISTRY_BIND_PORT=
 SKIP_DOCKER_INSTALL=0
 OFFLINE_DOCKER_INSTALL=0
@@ -79,6 +82,29 @@ set -e
 {% include 'common/swap.sh' %}
 {% include 'common/kubernetes-upgrade.sh' %}
 {% include 'common/firewall.sh' %}
+
+promptForLoadBalancerAddress() {
+    if [ -z "$LOAD_BALANCER_ADDRESS" ]; then
+        printf "Please enter a load balancer address to route external and internal traffic to the API servers.\n"
+        printf "In the absence of a load balancer address, all traffic will be routed to the first master.\n"
+        printf "Load balancer address: "
+        promptTimeout
+        LOAD_BALANCER_ADDRESS="$PROMPT_RESULT"
+        if [ -z "$LOAD_BALANCER_ADDRESS" ]; then
+            LOAD_BALANCER_ADDRESS="$PRIVATE_ADDRESS"
+            LOAD_BALANCER_PORT=6443
+        fi
+    fi
+
+    if [ -z "$LOAD_BALANCER_PORT" ]; then
+        splitHostPort "$LOAD_BALANCER_ADDRESS"
+        LOAD_BALANCER_ADDRESS="$HOST"
+        LOAD_BALANCER_PORT="$PORT"
+    fi
+    if [ -z "$LOAD_BALANCER_PORT" ]; then
+        LOAD_BALANCER_PORT=443 # is it ok to assume this or should we show an error?
+    fi
+}
 
 initKubeadmConfig() {
     local kubeadmVersion=$(getKubeadmVersion)
@@ -161,6 +187,10 @@ initKube() {
     if [ ! -e "/etc/kubernetes/manifests/kube-apiserver.yaml" ]; then
         logStep "Initialize Kubernetes"
 
+        if [ "$HA_CLUSTER" -eq "1" ]; then
+            promptForLoadBalancerAddress
+        fi
+
         initKubeadmConfig
 
         loadIPVSKubeProxyModules
@@ -194,6 +224,7 @@ initKube() {
     elif [ "$kubeV" != "v1.12.3" ]; then
         logStep "verify kubernetes config"
         chmod 444 /etc/kubernetes/admin.conf
+        promptForLoadBalancerAddress # TODO: test this code path
         initKubeadmConfig
         loadIPVSKubeProxyModules
         kubeadm config upload from-file --config /opt/replicated/kubeadm.conf
@@ -263,6 +294,9 @@ getYAMLOpts() {
     fi
     if [ -n "$IP_ALLOC_RANGE" ]; then
         opts=$opts" ip-alloc-range=$IP_ALLOC_RANGE"
+    fi
+    if [ -n "$LOAD_BALANCER_ADDRESS" ] && [ -n "$LOAD_BALANCER_PORT" ]; then
+        opts=$opts" api-service-address=${LOAD_BALANCER_ADDRESS}:${LOAD_BALANCER_PORT}"
     fi
     if [ -n "$PROXY_ADDRESS" ]; then
         opts=$opts" http-proxy=$PROXY_ADDRESS"
@@ -541,11 +575,18 @@ while [ "$1" != "" ]; do
         docker-version|docker_version)
             PINNED_DOCKER_VERSION="$_value"
             ;;
+        ha)
+            HA_CLUSTER=1
+            ;;
         http-proxy|http_proxy)
             PROXY_ADDRESS="$_value"
             ;;
         ip-alloc-range|ip_alloc_range)
             IP_ALLOC_RANGE="$_value"
+            ;;
+        load-balancer-address|load_balancer_address)
+            LOAD_BALANCER_ADDRESS="$_value"
+            HA_CLUSTER=1
             ;;
         log-level|log_level)
             LOG_LEVEL="$_value"

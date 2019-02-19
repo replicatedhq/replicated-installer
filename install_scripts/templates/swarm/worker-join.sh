@@ -42,7 +42,7 @@ joinSwarm() {
         if [ -z "$SWARM_ADVERTISE_ADDR" ] || [ -z "$SWARM_LISTEN_ADDR" ]; then
             printf "${RED}It may be possible to re-run this installer with the flags -swarm-advertise-addr and -swarm-listen-addr to resolve the problem.${NC}\n" 1>&2
         fi
-        exit $?
+        exit $_status
     fi
 }
 

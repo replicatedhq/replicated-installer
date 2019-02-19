@@ -182,3 +182,17 @@ insertOrReplaceJsonParam() {
         fi
     fi
 }
+
+#######################################
+# Splits an address in the format "host:port".
+# Globals:
+#   None
+# Arguments:
+#   address
+# Returns:
+#   HOST
+#   PORT
+#######################################
+splitHostPort() {
+    oIFS="$IFS"; IFS=":" read -r HOST PORT <<< "$1"; IFS="$oIFS"
+}

@@ -37,29 +37,59 @@ PRIVATE_ADDRESS=
 {% include 'common/firewall.sh' %}
 
 KUBERNETES_MASTER_PORT="6443"
-KUBERNETES_MASTER_ADDR="{{ kubernetes_master_addr }}"
+KUBERNETES_MASTER_ADDR="{{ kubernetes_master_address }}"
+API_SERVICE_ADDRESS=
+MASTER_PKI_BUNDLE_URL=
+MASTER=0
 KUBEADM_TOKEN="{{ kubeadm_token }}"
 KUBEADM_TOKEN_CA_HASH="{{ kubeadm_token_ca_hash }}"
 SERVICE_CIDR="10.96.0.0/12" # kubeadm default
 
+downloadPkiBundle() {
+    if [ -z "$MASTER_PKI_BUNDLE_URL" ]; then
+        return
+    fi
+    logStep "Download Kubernetes PKI bundle"
+    getUrlCmd
+    if commandExists "curl"; then
+        (set -x; $URLGET_CMD -k "$MASTER_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
+    else
+        (set -x; $URLGET_CMD --no-check-certificate "$MASTER_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
+    fi
+    (set -x; tar -C /etc/kubernetes/ -xvf /tmp/etc-kubernetes.tar)
+    logSuccess "Kubernetes PKI downloaded successfully"
+}
+
 joinKubernetes() {
-    logStep "Join Kubernetes Node"
+    if [ "$MASTER" -eq "1" ]; then
+        logStep "Join Kubernetes master node"
+    else
+        logStep "Join Kubernetes node"
+    fi
     semverParse "$KUBERNETES_VERSION"
     set +e
     if [ "$minor" -ge 13 ]; then
         mkdir -p /opt/replicated
         makeKubeadmJoinConfig
-        kubeadm join --config=/opt/replicated/kubeadm.conf
+        (set -x; kubeadm join --config=/opt/replicated/kubeadm.conf)
     else
-        kubeadm join --discovery-token-ca-cert-hash "${KUBEADM_TOKEN_CA_HASH}" --token "${KUBEADM_TOKEN}" "${KUBERNETES_MASTER_ADDR}:${KUBERNETES_MASTER_PORT}"
+        if [ "$MASTER" -eq "1" ]; then
+            (set -x; kubeadm join --discovery-token-ca-cert-hash "${KUBEADM_TOKEN_CA_HASH}" --token "${KUBEADM_TOKEN}" "${API_SERVICE_ADDRESS} --experimental-control-plane")
+        else
+            (set -x; kubeadm join --discovery-token-ca-cert-hash "${KUBEADM_TOKEN_CA_HASH}" --token "${KUBEADM_TOKEN}" "${API_SERVICE_ADDRESS}")
+        fi
     fi
     _status=$?
     set -e
     if [ "$_status" -ne "0" ]; then
         printf "${RED}Failed to join the kubernetes cluster.${NC}\n" 1>&2
-        exit $?
+        exit $_status
     fi
-    logSuccess "Node Joined successfully"
+    if [ "$MASTER" -eq "1" ]; then
+        logStep "Master node joined successfully"
+    else
+        logStep "Node joined successfully"
+    fi
 }
 
 promptForToken() {
@@ -94,7 +124,7 @@ promptForTokenCAHash() {
     done
 }
 
-promptForAddress() {
+promptForMasterAddress() {
     if [ -n "$KUBERNETES_MASTER_ADDR" ]; then
         return
     fi
@@ -194,6 +224,13 @@ while [ "$1" != "" ]; do
         kubernetes-master-address|kubernetes_master_address)
             KUBERNETES_MASTER_ADDR="$_value"
             ;;
+        api-service-address|api_service_address)
+            API_SERVICE_ADDRESS="$_value"
+            ;;
+        master-pki-bundle-url|master_pki_bundle_url)
+            MASTER_PKI_BUNDLE_URL="$_value"
+            MASTER=1
+            ;;
         kubeadm-token|kubeadm_token)
             KUBEADM_TOKEN="$_value"
             ;;
@@ -255,7 +292,14 @@ setK8sPatchVersion
 
 checkFirewalld
 
-promptForAddress
+if [ -n "$API_SERVICE_ADDRESS" ]; then
+    splitHostPort "$API_SERVICE_ADDRESS"
+    KUBERNETES_MASTER_ADDR="$HOST"
+    KUBERNETES_MASTER_PORT="$PORT"
+else
+    promptForMasterAddress
+    API_SERVICE_ADDRESS="${KUBERNETES_MASTER_ADDR}:${KUBERNETES_MASTER_PORT}"
+fi
 promptForToken
 promptForTokenCAHash
 
@@ -330,6 +374,8 @@ else
 fi
 
 loadIPVSKubeProxyModules
+
+downloadPkiBundle
 
 if ! docker ps | grep -q 'k8s.gcr.io/pause'; then
     joinKubernetes
