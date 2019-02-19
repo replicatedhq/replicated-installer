@@ -50,11 +50,10 @@ downloadPkiBundle() {
         return
     fi
     logStep "Download Kubernetes PKI bundle"
-    getUrlCmd
     if commandExists "curl"; then
-        (set -x; $URLGET_CMD -k "$MASTER_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
+        (set -x; curl --noproxy "*" --max-time 5 --connect-timeout 2 -kqSs "$MASTER_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
     else
-        (set -x; $URLGET_CMD --no-check-certificate "$MASTER_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
+        (set -x; wget --no-proxy -t 1 --timeout=5 --connect-timeout=2 --no-check-certificate -qO- "$MASTER_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
     fi
     (set -x; tar -C /etc/kubernetes/ -xvf /tmp/etc-kubernetes.tar)
     logSuccess "Kubernetes PKI downloaded successfully"
