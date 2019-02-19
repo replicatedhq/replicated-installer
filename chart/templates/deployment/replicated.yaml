@@ -61,6 +61,7 @@ spec:
         {{- end }}
         ports:
         - containerPort: 9874
+        - containerPort: 9876
         - containerPort: 9877
         - containerPort: 9878
         volumeMounts:

@@ -19,4 +19,19 @@ testCreateInsertUpdateJson()
     rm -f "$tempTestingJSONfile"
 }
 
+testSplitHostPort()
+{
+    splitHostPort "1.1.1.1:9876"
+    assertEquals "Split host port 1.1.1.1:9876 failed, host" "1.1.1.1" "$HOST"
+    assertEquals "Split host port 1.1.1.1:9876 failed, port" "9876" "$PORT"
+
+    splitHostPort "1.1.1.1"
+    assertEquals "Split host port 1.1.1.1 failed, host" "1.1.1.1" "$HOST"
+    assertEquals "Split host port 1.1.1.1 failed, port" "" "$PORT"
+
+    splitHostPort ""
+    assertEquals "Split host port failed, host" "" "$HOST"
+    assertEquals "Split host port failed, port" "" "$PORT"
+}
+
 . shunit2

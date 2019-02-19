@@ -23,6 +23,7 @@ WEAVE_YAML=0
 CONTOUR_YAML=0
 DEPLOYMENT_YAML=0
 BIND_DAEMON_NODE=0
+API_SERVICE_ADDRESS=
 
 {% include 'common/kubernetes.sh' %}
 
@@ -48,6 +49,9 @@ while [ "$1" != "" ]; do
             ;;
         kubernetes-namespace|kubernetes_namespace)
             KUBERNETES_NAMESPACE="$_value"
+            ;;
+        api-service-address|api_service_address)
+            API_SERVICE_ADDRESS="$_value"
             ;;
         pv-base-path|pv_base_path)
             PV_BASE_PATH="$_value"
@@ -233,6 +237,14 @@ $K8S_MASTER_ADDRESS
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+EOF
+    if [ -n "$API_SERVICE_ADDRESS" ]; then
+      cat <<EOF
+        - name: K8S_SERVICE_ADDRESS
+          value: "$API_SERVICE_ADDRESS"
+EOF
+    fi
+    cat <<EOF
         - name: K8S_STORAGECLASS
           value: "$STORAGE_CLASS"
         - name: LOG_LEVEL
@@ -242,6 +254,7 @@ $K8S_MASTER_ADDRESS
 $PROXY_ENVS
         ports:
         - containerPort: 9874
+        - containerPort: 9876
         - containerPort: 9877
         - containerPort: 9878
         volumeMounts:
@@ -313,20 +326,6 @@ EOF
 render_replicated_specs() {
     cat <<EOF
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: replicated-admin
-  namespace: "$KUBERNETES_NAMESPACE"
-roleRef:
-  kind: ClusterRole
-  name: cluster-admin
-  apiGroup: rbac.authorization.k8s.io
-subjects:
-  - kind: ServiceAccount
-    name: default
-    namespace: "$KUBERNETES_NAMESPACE"
----
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -375,6 +374,9 @@ spec:
   - name: replicated-registry
     port: 9874
     protocol: TCP
+  - name: replicated-api
+    port: 9876
+    protocol: TCP
   - name: replicated-iapi
     port: 9877
     protocol: TCP
@@ -406,6 +408,10 @@ spec:
   - name: replicated-registry
     port: 9874
     nodePort: 9874
+    protocol: TCP
+  - name: replicated-api
+    port: 9876
+    nodePort: 9876
     protocol: TCP
   - name: replicated-iapi
     port: 9877
@@ -465,6 +471,25 @@ spec:
     port: ${UI_BIND_PORT}
     targetPort: 8800
     protocol: TCP
+EOF
+}
+
+render_service_account() {
+  cat <<EOF
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: replicated-admin
+  namespace: "$KUBERNETES_NAMESPACE"
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: "$KUBERNETES_NAMESPACE"
 EOF
 }
 
@@ -1568,6 +1593,10 @@ if [ "$HOSTPATH_PROVISIONER_YAML" = "1" ]; then
 fi
 
 if [ "$REPLICATED_YAML" = "1" ]; then
+    # +++ TODO: render this for k8s-only install
+
+    render_service_account
+
     case "$STORAGE_PROVISIONER" in
         rook|1)
             render_rook_storage_class
@@ -1581,6 +1610,8 @@ if [ "$REPLICATED_YAML" = "1" ]; then
             bail "Error: unknown storage provisioner \"$STORAGE_PROVISIONER\""
             ;;
     esac
+
+    # --- TODO: render this for k8s-only install
 
     if [ "$REPLICATED_PVC" != "0" ]; then
         render_replicated_pvc

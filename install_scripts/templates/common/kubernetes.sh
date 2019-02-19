@@ -985,6 +985,7 @@ getKubeadmVersion() {
 #   PRIVATE_ADDRESS
 #   PUBLIC_ADDRESS
 #   IPVS
+#   HA_CLUSTER
 # Arguments:
 #   None
 # Returns:
@@ -1003,11 +1004,21 @@ apiServer:
     bind-address: $PRIVATE_ADDRESS
     service-node-port-range: "80-60000"
   certSANs:
-  - $PRIVATE_ADDRESS
 EOF
     if [ -n "$PUBLIC_ADDRESS" ]; then
-          cat <<EOF >> /opt/replicated/kubeadm.conf
+        cat <<EOF >> /opt/replicated/kubeadm.conf
   - $PUBLIC_ADDRESS
+EOF
+    fi
+    if [ -n "$LOAD_BALANCER_ADDRESS" ] && [ -n "$LOAD_BALANCER_PORT" ]; then
+        cat <<EOF >> /opt/replicated/kubeadm.conf
+  - $LOAD_BALANCER_ADDRESS
+controlPlaneEndpoint: "$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
+EOF
+    else
+        cat <<EOF >> /opt/replicated/kubeadm.conf
+  - $PRIVATE_ADDRESS
+controlPlaneEndpoint: "$PRIVATE_ADDRESS"
 EOF
     fi
 
@@ -1027,15 +1038,14 @@ EOF
 #   PRIVATE_ADDRESS
 #   KUBEADM_TOKEN
 #   KUBEADM_TOKEN_CA_HASH
-#   KUBERNETES_MASTER_ADDR
-#   KUBERNETES_MASTER_PORT
+#   API_SERVICE_ADDRESS
 # Arguments:
 #   None
 # Returns:
 #   None
 #######################################
 makeKubeadmJoinConfig() {
-        cat << EOF > /opt/replicated/kubeadm.conf
+    cat << EOF > /opt/replicated/kubeadm.conf
 ---
 kind: JoinConfiguration
 apiVersion: kubeadm.k8s.io/v1beta1
@@ -1045,8 +1055,13 @@ nodeRegistration:
 discovery:
   bootstrapToken:
     token: $KUBEADM_TOKEN
-    apiServerEndpoint: ${KUBERNETES_MASTER_ADDR}:${KUBERNETES_MASTER_PORT}
+    apiServerEndpoint: $API_SERVICE_ADDRESS
     caCertHashes:
     - $KUBEADM_TOKEN_CA_HASH
 EOF
+    if [ "$MASTER" -eq "1" ]; then
+        cat << EOF >> /opt/replicated/kubeadm.conf
+controlPlane: {}
+EOF
+    fi
 }
