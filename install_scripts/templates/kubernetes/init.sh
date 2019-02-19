@@ -84,11 +84,16 @@ set -e
 {% include 'common/firewall.sh' %}
 
 promptForLoadBalancerAddress() {
+    # Check if we already have the load balancer address set in the kubeadm config
+    if [ -z "$LOAD_BALANCER_ADDRESS" ] && kubeadm config view >/dev/null 2>&1; then
+        LOAD_BALANCER_ADDRESS="$(kubeadm config view | grep 'controlPlaneEndpoint:' | sed 's/controlPlaneEndpoint: //')"
+    fi
+
     if [ -z "$LOAD_BALANCER_ADDRESS" ]; then
         printf "Please enter a load balancer address to route external and internal traffic to the API servers.\n"
         printf "In the absence of a load balancer address, all traffic will be routed to the first master.\n"
         printf "Load balancer address: "
-        promptTimeout
+        prompt
         LOAD_BALANCER_ADDRESS="$PROMPT_RESULT"
         if [ -z "$LOAD_BALANCER_ADDRESS" ]; then
             LOAD_BALANCER_ADDRESS="$PRIVATE_ADDRESS"
@@ -102,7 +107,7 @@ promptForLoadBalancerAddress() {
         LOAD_BALANCER_PORT="$PORT"
     fi
     if [ -z "$LOAD_BALANCER_PORT" ]; then
-        LOAD_BALANCER_PORT=443 # is it ok to assume this or should we show an error?
+        LOAD_BALANCER_PORT=6443
     fi
 }
 
@@ -222,7 +227,7 @@ initKube() {
         fi
     # we don't write any init files that can be read by kubeadm v1.12
     elif [ "$kubeV" != "v1.12.3" ]; then
-        logStep "verify kubernetes config"
+        logStep "Verify kubernetes config"
         chmod 444 /etc/kubernetes/admin.conf
         promptForLoadBalancerAddress # TODO: test this code path
         initKubeadmConfig
@@ -517,7 +522,7 @@ outroKubeadm() {
         printf "\nTo add nodes to this installation, copy and unpack this bundle on your other nodes, and run the following:"
         printf "\n"
         printf "\n"
-        printf "${GREEN}    cat ./kubernetes-node-join.sh  | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION \n"
+        printf "${GREEN}    cat ./kubernetes-node-join.sh | sudo bash -s airgap kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION \n"
         printf "${NC}"
         printf "\n"
         printf "\n"
