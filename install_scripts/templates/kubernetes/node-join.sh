@@ -73,11 +73,7 @@ joinKubernetes() {
         makeKubeadmJoinConfig
         (set -x; kubeadm join --config=/opt/replicated/kubeadm.conf)
     else
-        if [ "$MASTER" -eq "1" ]; then
-            (set -x; kubeadm join --discovery-token-ca-cert-hash "${KUBEADM_TOKEN_CA_HASH}" --token "${KUBEADM_TOKEN}" "${API_SERVICE_ADDRESS} --experimental-control-plane")
-        else
-            (set -x; kubeadm join --discovery-token-ca-cert-hash "${KUBEADM_TOKEN_CA_HASH}" --token "${KUBEADM_TOKEN}" "${API_SERVICE_ADDRESS}")
-        fi
+        (set -x; kubeadm join --discovery-token-ca-cert-hash "${KUBEADM_TOKEN_CA_HASH}" --token "${KUBEADM_TOKEN}" "${API_SERVICE_ADDRESS}")
     fi
     _status=$?
     set -e
