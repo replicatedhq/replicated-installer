@@ -300,6 +300,9 @@ getYAMLOpts() {
     if [ -n "$IP_ALLOC_RANGE" ]; then
         opts=$opts" ip-alloc-range=$IP_ALLOC_RANGE"
     fi
+    if [ "$HA_CLUSTER" -eq "1" ]; then
+        opts=$opts" ha"
+    fi
     if [ -n "$LOAD_BALANCER_ADDRESS" ] && [ -n "$LOAD_BALANCER_PORT" ]; then
         opts=$opts" api-service-address=${LOAD_BALANCER_ADDRESS}:${LOAD_BALANCER_PORT}"
     fi

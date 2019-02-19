@@ -24,6 +24,7 @@ CONTOUR_YAML=0
 DEPLOYMENT_YAML=0
 BIND_DAEMON_NODE=0
 API_SERVICE_ADDRESS=
+HA_CLUSTER=
 
 {% include 'common/kubernetes.sh' %}
 
@@ -49,6 +50,9 @@ while [ "$1" != "" ]; do
             ;;
         kubernetes-namespace|kubernetes_namespace)
             KUBERNETES_NAMESPACE="$_value"
+            ;;
+        ha)
+            HA_CLUSTER=1
             ;;
         api-service-address|api_service_address)
             API_SERVICE_ADDRESS="$_value"
@@ -242,6 +246,12 @@ EOF
       cat <<EOF
         - name: K8S_SERVICE_ADDRESS
           value: "$API_SERVICE_ADDRESS"
+EOF
+    fi
+    if [ "$HA_CLUSTER" -eq 1 ]; then
+      cat <<EOF
+        - name: HA_CLUSTER
+          value: "true"
 EOF
     fi
     cat <<EOF
