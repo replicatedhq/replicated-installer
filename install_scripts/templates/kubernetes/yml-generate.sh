@@ -1,3 +1,7 @@
+#!/bin/bash
+
+set -e
+
 LOG_LEVEL="{{ log_level }}"
 RELEASE_SEQUENCE="{{ release_sequence }}"
 UI_BIND_PORT="{{ ui_bind_port }}"
@@ -24,7 +28,7 @@ CONTOUR_YAML=0
 DEPLOYMENT_YAML=0
 BIND_DAEMON_NODE=0
 API_SERVICE_ADDRESS=
-HA_CLUSTER=
+HA_CLUSTER=0
 
 {% include 'common/kubernetes.sh' %}
 

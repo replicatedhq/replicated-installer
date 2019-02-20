@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+
 AIRGAP=0
 DAEMON_TOKEN=
 GROUP_ID=
