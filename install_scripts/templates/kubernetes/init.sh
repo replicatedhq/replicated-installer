@@ -238,9 +238,8 @@ initKube() {
     cp /etc/kubernetes/admin.conf $HOME/admin.conf
     chown $SUDO_USER:$SUDO_GID $HOME/admin.conf
 
-    chmod 444 /etc/kubernetes/admin.conf
-    echo 'export KUBECONFIG=/etc/kubernetes/admin.conf' >> /etc/profile
-    echo "source <(kubectl completion bash)" >> /etc/profile
+    exportKubeconfig
+
     logSuccess "Kubernetes Master Initialized"
 }
 
@@ -516,13 +515,13 @@ outroKubeadm() {
     printf "\t\t${GREEN}Installation${NC}\n"
     printf "\t\t${GREEN}  Complete ✔${NC}\n"
     printf "\n"
-    printf "\nTo access the cluster with kubectl, reload your shell:\n\n"
+    printf "To access the cluster with kubectl, reload your shell:\n"
     printf "\n"
-    printf "${GREEN}    bash -l${NC}"
-    printf "\n"
+    printf "${GREEN}    bash -l${NC}\n"
     printf "\n"
     if [ "$AIRGAP" -eq "1" ]; then
-        printf "\nTo add nodes to this installation, copy and unpack this bundle on your other nodes, and run the following:"
+        printf "\n"
+        printf "To add nodes to this installation, copy and unpack this bundle on your other nodes, and run the following:"
         printf "\n"
         printf "\n"
         printf "${GREEN}    cat ./kubernetes-node-join.sh | sudo bash -s airgap kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION \n"
@@ -530,7 +529,8 @@ outroKubeadm() {
         printf "\n"
         printf "\n"
     else
-        printf "\nTo add nodes to this installation, run the following script on your other nodes"
+        printf "\n"
+        printf "To add nodes to this installation, run the following script on your other nodes"
         printf "\n"
         printf "${GREEN}    curl {{ replicated_install_url }}/{{ kubernetes_node_join_path }} | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION \n"
         printf "${NC}"

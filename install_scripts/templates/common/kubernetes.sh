@@ -1052,3 +1052,9 @@ controlPlane: {}
 EOF
     fi
 }
+
+exportKubeconfig() {
+    chmod 444 /etc/kubernetes/admin.conf
+    echo 'export KUBECONFIG=/etc/kubernetes/admin.conf' >> /etc/profile
+    echo "source <(kubectl completion bash)" >> /etc/profile
+}
