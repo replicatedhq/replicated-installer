@@ -172,6 +172,19 @@ purgeNative() {
         /etc/sysconfig/replicated*
 }
 
+outro() {
+    printf "\n"
+    printf "\t\t${GREEN}Installation${NC}\n"
+    printf "\t\t${GREEN}  Complete ✔${NC}\n"
+    if [ "$MASTER" -eq "1" ]; then
+        printf "\n"
+        printf "To access the cluster with kubectl, reload your shell:\n"
+        printf "\n"
+        printf "${GREEN}    bash -l${NC}\n"
+    fi
+    printf "\n"
+}
+
 ################################################################################
 # Execution starts here
 ################################################################################
@@ -370,9 +383,9 @@ fi
 
 loadIPVSKubeProxyModules
 
-downloadPkiBundle
-
 if ! docker ps | grep -q 'k8s.gcr.io/pause'; then
+    downloadPkiBundle
+
     joinKubernetes
 fi
 
@@ -380,5 +393,11 @@ maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
 ensureRookPluginsRegistered
 
 purgeNative
+
+if [ "$MASTER" -eq "1" ]; then
+    exportKubeconfig
+fi
+
+outro
 
 exit 0
