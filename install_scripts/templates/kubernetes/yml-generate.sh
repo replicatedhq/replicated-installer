@@ -241,6 +241,10 @@ $AFFINITY
             fieldRef:
               fieldPath: "$LOCAL_ADDRESS_SOURCE"
 $K8S_MASTER_ADDRESS
+        - name: K8S_HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
         - name: K8S_NAMESPACE
           valueFrom:
             fieldRef:

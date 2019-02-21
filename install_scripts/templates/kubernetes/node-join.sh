@@ -40,7 +40,10 @@ KUBERNETES_MASTER_PORT="6443"
 KUBERNETES_MASTER_ADDR="{{ kubernetes_master_address }}"
 API_SERVICE_ADDRESS=
 MASTER_PKI_BUNDLE_URL=
+INSECURE=0
 MASTER=0
+CA=
+CERT=
 KUBEADM_TOKEN="{{ kubeadm_token }}"
 KUBEADM_TOKEN_CA_HASH="{{ kubeadm_token_ca_hash }}"
 SERVICE_CIDR="10.96.0.0/12" # kubeadm default
@@ -50,10 +53,23 @@ downloadPkiBundle() {
         return
     fi
     logStep "Download Kubernetes PKI bundle"
+    _opt=
     if commandExists "curl"; then
-        (set -x; curl --noproxy "*" --max-time 5 --connect-timeout 2 -kqSs "$MASTER_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
+        if [ "$INSECURE" -eq "1" ]; then
+            _opt="-k"
+        elif [ -n "$CA" ]; then
+            echo "$CA" | base64 -d > /tmp/replicated-ca.crt
+            _opt="--cacert /tmp/replicated-ca.crt"
+        fi
+        (set -x; curl --noproxy "*" --max-time 30 --connect-timeout 2 $_opt -qSs "$MASTER_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
     else
-        (set -x; wget --no-proxy -t 1 --timeout=5 --connect-timeout=2 --no-check-certificate -qO- "$MASTER_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
+        if [ "$INSECURE" -eq "1" ]; then
+            _opt="--no-check-certificate"
+        elif [ -n "$CA" ]; then
+            echo "$CA" | base64 -d > /tmp/replicated-ca.crt
+            _opt="--ca-certificate=/tmp/replicated-ca.crt"
+        fi
+        (set -x; wget --no-proxy -t 1 --timeout=30 --connect-timeout=2 $_opt -qO- "$MASTER_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
     fi
     (set -x; tar -C /etc/kubernetes/ -xvf /tmp/etc-kubernetes.tar)
     logSuccess "Kubernetes PKI downloaded successfully"
@@ -238,6 +254,9 @@ while [ "$1" != "" ]; do
         master-pki-bundle-url|master_pki_bundle_url)
             MASTER_PKI_BUNDLE_URL="$_value"
             MASTER=1
+            ;;
+        insecure)
+            INSECURE=1
             ;;
         kubeadm-token|kubeadm_token)
             KUBEADM_TOKEN="$_value"
