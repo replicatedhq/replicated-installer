@@ -7,7 +7,7 @@ import sys
 import traceback
 import urllib
 
-from . import db, helpers, param
+from . import db, helpers
 
 app = Flask(__name__)
 
@@ -349,7 +349,8 @@ def get_replicated_compose_v3_template_args(replicated_channel=None,
         replicated_version)
     # Replicated versions at or later than 2.5.0 should run as non root users
     username = helpers.get_replicated_username(replicated_version)
-    # Replicated versions at or later than 2.22.0 use replicated_default overlay network for snapshots
+    # Replicated versions at or later than 2.22.0 use replicated_default
+    # overlay network for snapshots
     snapshots_use_overlay = helpers.snapshots_use_overlay(replicated_version)
 
     airgap = helpers.get_arg('airgap', '')
@@ -480,6 +481,8 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
     proxy_address = helpers.get_arg('http_proxy', '')
     # 10.96.0.0/12 is the default service cidr
     no_proxy_addresses = helpers.get_arg('no_proxy_addresses', '10.96.0.0/12')
+    api_service_address = helpers.get_arg('api_service_address')
+    ha_cluster = '1' if helpers.get_arg('ha_cluster') == 'true' else '0'
 
     return helpers.template_args(
         channel_name=replicated_channel,
@@ -493,9 +496,11 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
         service_type=service_type,
         kubernetes_namespace=kubernetes_namespace,
         ui_bind_port=ui_bind_port,
+        customer_base_url_override=customer_base_url,
         proxy_address=proxy_address,
         no_proxy_addresses=no_proxy_addresses,
-        customer_base_url_override=customer_base_url,
+        api_service_address=api_service_address,
+        ha_cluster=ha_cluster,
     )
 
 
@@ -627,17 +632,18 @@ def get_kubernetes_upgrade_worker(replicated_channel=None):
         **helpers.template_args(kubernetes_version=kubernetes_version, ))
     return Response(response, mimetype='text/x-shellscript')
 
+
 @app.route('/kubernetes-migrate')
 @app.route('/kubernetes-migrate.sh')
 @app.route('/<replicated_channel>/kubernetes-migrate')
 @app.route('/<app_slug>/<app_channel>/kubernetes-migrate')
 @app.route('/<replicated_channel>/<app_slug>/<app_channel>/kubernetes-migrate')
 def get_kubernetes_migrate(replicated_channel=None,
-                            app_slug=None,
-                            app_channel=None):
+                           app_slug=None,
+                           app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
-    # use app_channel to lookup replicated version, but don't add to init script because we don't
-    # want terms and branding
+    # use app_channel to lookup replicated version, but don't add to
+    # init script because we don't want terms and branding
     replicated_version = helpers.get_replicated_version(
         replicated_channel, app_slug, app_channel)
     init_path = 'kubernetes-init'
@@ -651,7 +657,8 @@ def get_kubernetes_migrate(replicated_channel=None,
         k: v[0] if isinstance(v, list) and len(v) > 0 else v
         for k, v in query_args.items()
     }
-    query_args['replicated_tag'] = query_args.get('replicated_tag', replicated_version)
+    query_args['replicated_tag'] = query_args.get(
+        'replicated_tag', replicated_version)
     query = urllib.urlencode(query_args)
 
     response = render_template(
@@ -661,6 +668,7 @@ def get_kubernetes_migrate(replicated_channel=None,
             kubernetes_init_query=query,
         ))
     return Response(response, mimetype='text/x-shellscript')
+
 
 @app.route('/kubernetes-init')
 @app.route('/kubernetes-init.sh')
