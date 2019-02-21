@@ -27,8 +27,8 @@ WEAVE_YAML=0
 CONTOUR_YAML=0
 DEPLOYMENT_YAML=0
 BIND_DAEMON_NODE=0
-API_SERVICE_ADDRESS=
-HA_CLUSTER=0
+API_SERVICE_ADDRESS="{{ api_service_address }}"
+HA_CLUSTER="{{ ha_cluster }}"
 
 {% include 'common/kubernetes.sh' %}
 
@@ -256,7 +256,7 @@ EOF
           value: "$API_SERVICE_ADDRESS"
 EOF
     fi
-    if [ "$HA_CLUSTER" -eq 1 ]; then
+    if [ "$HA_CLUSTER" -eq "1" ]; then
       cat <<EOF
         - name: HA_CLUSTER
           value: "true"
