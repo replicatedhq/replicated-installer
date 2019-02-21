@@ -251,6 +251,7 @@ restoreSecrets() {
         return
     fi
     kubectl cp "${TMP_DIR}/secrets.tar" "$replPod":/tmp/secrets.tar -c replicated
+    kubectl exec "$replPod" -c replicated -- rm -rf /var/lib/replicated/secrets
     kubectl exec "$replPod" -c replicated -- tar -xf /tmp/secrets.tar -C /var/lib/replicated 
 }
 
