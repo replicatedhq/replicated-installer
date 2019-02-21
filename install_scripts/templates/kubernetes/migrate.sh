@@ -18,6 +18,7 @@ INIT_FLAGS="no-clear"
 {% include 'common/common.sh' %}
 {% include 'common/kubernetes.sh' %}
 {% include 'common/log.sh' %}
+{% include 'common/proxy.sh' %}
 {% include 'common/system.sh' %}
 
 startNativeScheduler() {
@@ -128,6 +129,9 @@ startK8sScheduler() {
     local httpProxy=$(getNativeEnv HTTP_PROXY)
     if [ -n "$httpProxy" ]; then
         INIT_FLAGS="http-proxy=$httpProxy $INIT_FLAGS"
+        # export http_proxy for fetching kubernetes-init script from get.replicated.com
+        PROXY_ADDRESS="$httpProxy"
+        exportProxy
     else
         INIT_FLAGS="no-proxy $INIT_FLAGS"
     fi
