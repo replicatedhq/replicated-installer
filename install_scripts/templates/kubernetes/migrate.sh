@@ -132,6 +132,8 @@ startK8sScheduler() {
         # export http_proxy for fetching kubernetes-init script from get.replicated.com
         PROXY_ADDRESS="$httpProxy"
         exportProxy
+        # set no_proxy so kubectl can reach the api server
+        export no_proxy="$localAddress"
     else
         INIT_FLAGS="no-proxy $INIT_FLAGS"
     fi
@@ -302,7 +304,7 @@ startAppOnK8s() {
     fi
 
     logSubstep "restore app config"
-    replicatedctl app-config import < "${TMP_DIR}/app-config.json"
+    replicatedctl app-config import --skip-validation < "${TMP_DIR}/app-config.json"
 }
 
 validate() {
