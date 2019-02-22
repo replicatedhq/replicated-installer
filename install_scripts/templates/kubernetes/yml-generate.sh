@@ -130,26 +130,6 @@ while [ "$1" != "" ]; do
 done
 
 render_replicated_deployment() {
-    # For airgap the local address is the hostIP so docker on remote nodes can
-    # pull from the local registry.
-    LOCAL_ADDRESS_SOURCE=status.podIP
-    if [ "$AIRGAP" = "1" ]; then
-        LOCAL_ADDRESS_SOURCE=status.hostIP
-    fi
-
-    # If using podID as the local address (non-airgap) then specify join address
-    # for kubeadm on remote nodes
-    K8S_MASTER_ADDRESS=
-    if [ "$AIRGAP" != "1" ]; then
-        K8S_MASTER_ADDRESS=$(cat <<-EOF
-        - name: K8S_MASTER_ADDRESS
-          valueFrom:
-            fieldRef:
-              fieldPath: status.hostIP
-EOF
-        )
-    fi
-
     # On airgap installs the daemon cannot change nodes because of the registry address.
     # On AKA the daemon cannot change nodes because the kubeadm join script needs the K8s API address.
     # The label is applied in the kubernetes-init script.
@@ -239,12 +219,19 @@ $AFFINITY
         - name: LOCAL_ADDRESS
           valueFrom:
             fieldRef:
-              fieldPath: "$LOCAL_ADDRESS_SOURCE"
-$K8S_MASTER_ADDRESS
+              fieldPath: status.podIP
+        - name: K8S_MASTER_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
         - name: K8S_HOST_IP
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
+        - name: K8S_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
         - name: K8S_NAMESPACE
           valueFrom:
             fieldRef:
