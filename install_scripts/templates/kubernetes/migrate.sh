@@ -43,7 +43,7 @@ startNativeScheduler() {
 
     waitReplicatedctlReady
     checkVersion
-    replicatedctl app stop &>/dev/null
+    /usr/local/bin/replicatedctl app stop &>/dev/null
 
     logSubstep "wait for audit log database"
     waitNativeRetracedPostgresReady
@@ -53,7 +53,7 @@ startNativeScheduler() {
 }
 
 checkVersion() {
-    local version=$(replicatedctl version | awk '{ print $3 }')
+    local version=$(/usr/local/bin/replicatedctl version | awk '{ print $3 }')
     semverParse "$version"
     if [ "$minor" -lt 33 ]; then
         bail "Migrations require Replicated >= 2.33.0"
@@ -79,7 +79,7 @@ stopNativeScheduler() {
 
     # app began stopping when replicatedctl was ready. Wait until stopped.
     logSubstep "stop app"
-    while replicatedctl app status | grep IsTransitioning | grep -q true ; do
+    while /usr/local/bin/replicatedctl app status | grep IsTransitioning | grep -q true ; do
         sleep 2
     done
 
@@ -155,11 +155,11 @@ exportNativeState() {
     checkOutput "${TMP_DIR}/native.env"
 
     logSubstep "export app config"
-    replicatedctl app-config export --hidden > "${TMP_DIR}/app-config.json"
+    /usr/local/bin/replicatedctl app-config export --hidden > "${TMP_DIR}/app-config.json"
     checkOutput "${TMP_DIR}/app-config.json"
 
     logSubstep "export console settings"
-    replicatedctl migration export > "${TMP_DIR}/migration.json"
+    /usr/local/bin/replicatedctl migration export > "${TMP_DIR}/migration.json"
     checkOutput "${TMP_DIR}/migration.json"
 
     logSubstep "export audit log"
@@ -216,7 +216,7 @@ checkKubernetes() {
 
 checkApp() {
     set +e
-    if replicatedctl app status &>/dev/null ; then
+    if /usr/local/bin/replicatedctl app status &>/dev/null ; then
         HAS_APP=1
     fi
     set -e
@@ -275,7 +275,7 @@ startAppOnK8s() {
     logSubstep "restore console settings"
     set +e
     local needsActivation=0
-    replicatedctl migration import < "${TMP_DIR}/migration.json" 2>"${TMP_DIR}/import.txt"
+    /usr/local/bin/replicatedctl migration import < "${TMP_DIR}/migration.json" 2>"${TMP_DIR}/import.txt"
     if [ "$?" -ne 0 ] ; then
         if grep -q 'Activation code invalid' "${TMP_DIR}/import.txt" ; then
             needsActivation=1
@@ -295,16 +295,16 @@ startAppOnK8s() {
     if [ "$needsActivation" = "1" ]; then
         read -p "Activation code has been emailed. Enter it here to proceed: " code < /dev/tty
         echo $code
-        replicatedctl license activate "$code"
+        /usr/local/bin/replicatedctl license activate "$code"
     fi
 
     if [ "$AIRGAP" = "1" ]; then
         logSubstep "load airgap license"
-        replicatedctl license-load --airgap-package="$AIRGAP_PACKAGE_PATH" < "$AIRGAP_LICENSE_PATH"
+        /usr/local/bin/replicatedctl license-load --airgap-package="$AIRGAP_PACKAGE_PATH" < "$AIRGAP_LICENSE_PATH"
     fi
 
     logSubstep "restore app config"
-    replicatedctl app-config import --skip-validation < "${TMP_DIR}/app-config.json"
+    /usr/local/bin/replicatedctl app-config import --skip-validation < "${TMP_DIR}/app-config.json"
 }
 
 validate() {

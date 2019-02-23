@@ -163,5 +163,5 @@ waitReplicatedctlReady() {
 #   None
 #######################################
 isReplicatedctlReady() {
-    replicatedctl system status 2>/dev/null | grep -q '"ready"'
+    /usr/local/bin/replicatedctl system status 2>/dev/null | grep -q '"ready"'
 }
