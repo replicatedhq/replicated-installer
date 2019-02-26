@@ -323,6 +323,12 @@ validate() {
         if [ ! -f "$AIRGAP_PACKAGE_PATH" ]; then
             bail "airgap-package-path file not found: $AIRGAP_PACKAGE_PATH"
         fi
+        # ensure no other packages exist in the same directory
+        dir=$(dirname $AIRGAP_PACKAGE_PATH)
+        count=$(ls $dir/*.airgap | wc -l)
+        if [ "$count" -gt 1 ]; then
+            bail "airgap-package-path directory must contain a single .airgap file"
+        fi
         if [ ! -f "$AIRGAP_LICENSE_PATH" ]; then
             bail "airgap-license-path file not found: $AIRGAP_LICENSE_PATH"
         fi
