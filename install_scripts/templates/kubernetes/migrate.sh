@@ -163,7 +163,7 @@ exportNativeState() {
     checkOutput "${TMP_DIR}/migration.json"
 
     logSubstep "export audit log"
-    docker exec retraced-postgres /bin/bash -c 'PG_DATABASE=$POSTGRES_DATABASE PGHOST=$POSTGRES_HOST PGUSER=$POSTGRES_USER PGPASSWORD=$POSTGRES_PASSWORD pg_dump -c' > "${TMP_DIR}/retraced.sql"
+    docker exec retraced-postgres /bin/bash -c 'PG_DATABASE=$POSTGRES_DATABASE PGHOST=$POSTGRES_HOST PGUSER=$POSTGRES_USER PGPASSWORD=$POSTGRES_PASSWORD pg_dump --clean' > "${TMP_DIR}/retraced.sql"
     checkOutput "${TMP_DIR}/retraced.sql"
 
     logSubstep "export certificates"
@@ -239,7 +239,7 @@ restoreRetraced() {
     # the server can take a bit to be ready for connections after the pod is running
     set +e
     for i in {1..30}; do
-        cat "${TMP_DIR}/retraced.sql" | kubectl exec $(kubectl get pods | grep retraced-postgres | awk '{ print $1 }') -- \
+        cat "${TMP_DIR}/retraced.sql" | kubectl exec -i $(kubectl get pods | grep retraced-postgres | awk '{ print $1 }') -- \
             /bin/bash -c 'PG_DATABASE=$POSTGRES_DATABASE PGHOST=$POSTGRES_HOST PGUSER=$POSTGRES_USER PGPASSWORD=$POSTGRES_PASSWORD psql' &>/dev/null
         if [ "$?" -eq 0 ]; then
             set -e
