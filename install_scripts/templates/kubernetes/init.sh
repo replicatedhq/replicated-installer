@@ -46,8 +46,9 @@ DEFAULT_CLUSTER_DNS="10.96.0.10"
 CLUSTER_DNS=$DEFAULT_CLUSTER_DNS
 ENCRYPT_NETWORK=
 ADDITIONAL_NO_PROXY=
-IPVS=1
+IPVS=0 # ipvs does not support addressing node port services with localhost
 CEPH_DASHBOARD_URL=
+REGISTRY_NODE_PORT=31500
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -436,6 +437,39 @@ contourDeploy() {
     logSuccess "Contour deployed"
 }
 
+registryDeploy() {
+    logStep "Deploy registry"
+
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS registry_yaml=1 > /tmp/registry.yml
+    kubectl apply -f /tmp/registry.yml
+
+    logStep "Waiting for registry..."
+    waitForRegistry
+
+    logSuccess "Registry deployed"
+}
+
+waitForRegistry() {
+    local delay=0.75
+    local spinstr='|/-\'
+    while true; do
+        if commandExists "curl"; then
+            if curl -s -o /dev/null -I -w "%{http_code}" "http://localhost:$REGISTRY_NODE_PORT/v2/" | grep -q 200; then
+                return
+            fi
+        else
+            if wget -qO- --server-response  "http://localhost:$REGISTRY_NODE_PORT/v2/" | awk '/^  HTTP/{print $2}' | grep -q 200; then
+                return
+            fi
+        fi
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
+}
+
 kubernetesDeploy() {
     logStep "deploy replicated components"
 
@@ -455,7 +489,7 @@ includeBranding() {
         echo "$TERMS" | base64 --decode > /tmp/terms.json
     fi
 
-    REPLICATED_POD_ID="$(kubectl get pods 2> /dev/null | grep -E "^replicated-[^-]+-[^-]+$" | awk '{ print $1}')"
+    REPLICATED_POD_ID="$(kubectl get pods 2>/dev/null | grep -E "^replicated-[^-]+-[^-]+$" | awk '{ print $1}')"
 
     # then copy in the branding file
     if [ -n "$REPLICATED_POD_ID" ]; then
@@ -811,6 +845,22 @@ spinnerMasterNodeReady
 labelMasterNode
 
 maybeUpgradeKubernetes "$KUBERNETES_VERSION"
+if [ "$DID_UPGRADE_KUBERNETES" = "0" ]; then
+    WAS_IPVS=0
+    if isKubeproxyInIpvsMode; then
+        WAS_IPVS=1
+    fi
+
+    # If we did not upgrade k8s then just apply the config in case it changed.
+    kubeadm upgrade apply --force --yes --config=/opt/replicated/kubeadm.conf
+    waitForNodes
+
+    # Check if we switched kube-proxy mode from ipvs to iptables. If so then we need to let
+    # Kubernetes recreate all kube-proxy pods.
+    if [ "$WAS_IPVS" = "1" ] && ! isKubeproxyInIpvsMode; then
+        restartKubeproxy
+    fi
+fi
 
 echo
 kubectl get nodes
@@ -845,12 +895,19 @@ if [ "$KUBERNETES_ONLY" -eq "1" ]; then
 fi
 
 if [ "$AIRGAP" = "1" ]; then
-    logStep "Loading replicated and replicated-ui images from package\n"
+    logStep "Loading replicated, replicated-ui and replicated-operator images from package\n"
     airgapLoadReplicatedImages
+    airgapLoadReplicatedAddonImages
     logStep "Loading replicated debian, command, statsd-graphite, and premkit images from package\n"
     airgapLoadSupportImages
     airgapMaybeLoadSupportBundle
     airgapMaybeLoadRetraced
+
+    # If this is an airgap installation we need to deploy a registry and push all Replicated images
+    # to it so that Replicated components can get rescheduled to additional nodes.
+    registryDeploy
+
+    airgapPushReplicatedImagesToRegistry "localhost:$REGISTRY_NODE_PORT"
 fi
 
 kubernetesDeploy
