@@ -189,3 +189,68 @@ detectDockerGroupId() {
 dockerImageExists() {
     [[ "$(docker images -q "$@" 2> /dev/null)" != "" ]];
 }
+
+#######################################
+# Gets the image repo tag from the tar file.
+# Globals:
+#   None
+# Arguments:
+#   - Path to the tar file
+# Returns:
+#   REPO_TAG
+#######################################
+REPO_TAG=
+dockerGetRepoTagFromTar() {
+    REPO_TAG="$(tar -xOf "$1" manifest.json | sed 's/.*RepoTags":\["\([^"]*\).*/\1/')"
+}
+
+#######################################
+# Replaces the registry address from a docker repo tag.
+# Globals:
+#   None
+# Arguments:
+#   - Repo tag
+#   - New registry address
+# Returns:
+#   REPO_TAG
+#######################################
+REPO_TAG=
+dockerReplaceRegistryAddress() {
+    local first
+    local rest
+    oIFS="$IFS"; IFS="/" read -r first rest <<< "$1"; IFS="$oIFS"
+    if [ -z "$rest" ]; then
+        # There are no slashes so this is an official image in the official registry.
+        REPO_TAG="$2/library/$1"
+    elif echo "$rest" | grep -q '/'; then
+        REPO_TAG="$2/$rest"
+    else
+        # NOTE: This makes some assumptions about the domain component vs the org component that
+        # are probably not true but it seems good enough for our use case.
+        if echo "$first" | grep -q '\.' || echo "$first" | grep -q ':'; then
+            # There is probably just no org component here.
+            REPO_TAG="$2/$rest"
+        else
+            # This is the official registry since there is no domain component.
+            REPO_TAG="$2/$1"
+        fi
+    fi
+}
+
+#######################################
+# Re-tags and pushes image to specified registry.
+# Globals:
+#   None
+# Arguments:
+#   - Repo tag
+#   - New registry address
+# Returns:
+#   None
+#######################################
+REPO_TAG=
+dockerRetagAndPushImageToRegistry() {
+    dockerReplaceRegistryAddress "$1" "$2"
+    local _localTag="$REPO_TAG"
+    (set -x; docker tag "$1" "$_localTag")
+    (set -x; docker push "$_localTag")
+}

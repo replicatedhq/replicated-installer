@@ -385,13 +385,13 @@ airgapLoadKubernetesCommonImages1130() {
     docker tag 8fa56d18961f k8s.gcr.io/kube-proxy:v1.13.0
     docker tag da86e6ba6ca1 k8s.gcr.io/pause:3.1
     docker tag f59dcacceff4 k8s.gcr.io/coredns:1.2.6
-    docker tag a5103f96993a weaveworks/weave-kube:2.5.0
-    docker tag d499500e93d3 weaveworks/weave-npc:2.5.0
-    docker tag 6568ae41694a weaveworks/weaveexec:2.5.0
-    docker tag 9c1f09fe9a86 docker.io/registry:2
+    docker tag a5103f96993a docker.io/weaveworks/weave-kube:2.5.0
+    docker tag d499500e93d3 docker.io/weaveworks/weave-npc:2.5.0
+    docker tag 6568ae41694a docker.io/weaveworks/weaveexec:2.5.0
+    docker tag 9c1f09fe9a86 docker.io/library/registry:2
     docker tag d7b5da521177 docker.io/envoyproxy/envoy-alpine:v1.7.0
     docker tag d3309c525d48 gcr.io/heptio-images/contour:v0.8.0
-    docker tag b5c343f1a3a6 rook/ceph:v0.8.1
+    docker tag b5c343f1a3a6 docker.io/rook/ceph:v0.8.1
     docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
 }
 
@@ -433,7 +433,18 @@ airgapLoadKubernetesControlImages() {
     esac
 
     logSuccess "control plane images"
+}
 
+airgapLoadReplicatedAddonImagesWorker() {
+    semverCompare "{{ replicated_version }}" "2.34.0"
+    if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
+        return
+    fi
+
+    airgapLoadReplicatedAddonImages
+}
+
+airgapLoadReplicatedAddonImages() {
     logStep "replicated addons"
     docker load < replicated-sidecar-controller.tar
     docker load < replicated-operator.tar
@@ -493,6 +504,97 @@ airgapLoadKubernetesControlImages1130() {
     docker tag d82530ead066 k8s.gcr.io/kube-controller-manager:v1.13.0
     docker tag 9508b7d8008d k8s.gcr.io/kube-scheduler:v1.13.0
     docker tag 3cab8e1b9802 k8s.gcr.io/etcd:3.2.24
+}
+
+airgapPushReplicatedImagesToRegistry() {
+    logStep "Pushing images to registry at $1"
+
+    dockerGetRepoTagFromTar replicated.tar
+    dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+
+    dockerGetRepoTagFromTar replicated-ui.tar
+    dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+
+    dockerGetRepoTagFromTar replicated-operator.tar
+    dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+
+    dockerGetRepoTagFromTar replicated-sidecar-controller.tar
+    dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+
+    dockerGetRepoTagFromTar cmd.tar
+    dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+
+    dockerGetRepoTagFromTar statsd-graphite.tar
+    dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+
+    dockerGetRepoTagFromTar premkit.tar
+    dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+
+    if [ -f debian.tar ]; then
+        dockerGetRepoTagFromTar debian.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+    fi
+
+    if [ -f support-bundle.tar ]; then
+        dockerGetRepoTagFromTar support-bundle.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+    fi
+
+    # these have been monocontainer'd since 2.24.0
+    if [ -f retraced.tar ]; then
+        dockerGetRepoTagFromTar retraced.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+
+        dockerGetRepoTagFromTar retraced-postgres.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+
+        dockerGetRepoTagFromTar retraced-nsqd.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+    fi
+
+    # these have been included together prior to 2.21.0
+    if [ -f retraced-processor.tar ]; then
+        dockerGetRepoTagFromTar retraced-processor.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+
+        dockerGetRepoTagFromTar retraced-db.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+
+        dockerGetRepoTagFromTar retraced-api.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+
+        dockerGetRepoTagFromTar retraced-cron.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+    fi
+
+    # single retraced bundle no longer included since 2.21.0
+    if [ -f retraced-bundle.tar.gz ]; then
+        dockerGetRepoTagFromTar retraced-processor.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+
+        dockerGetRepoTagFromTar retraced-postgres.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+
+        dockerGetRepoTagFromTar retraced-nsqd.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+
+        dockerGetRepoTagFromTar retraced-db.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+
+        dockerGetRepoTagFromTar retraced-api.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+
+        dockerGetRepoTagFromTar retraced-cron.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+    fi
+
+    # redis is included in Retraced <= 1.1.10
+    if [ -f retraced-redis.tar ]; then
+        dockerGetRepoTagFromTar retraced-redis.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+    fi
+
+    logSuccess "Images pushed to registry at $1 successfully"
 }
 
 #######################################
@@ -673,6 +775,55 @@ labelMasterNode()
 }
 
 #######################################
+# Get the current node id
+# Globals:
+#   None
+# Arguments:
+#   node
+# Returns:
+#   NODE
+#######################################
+NODE=
+getCurrentNodeId()
+{
+    local _node
+    if [ -n "$HOSTNAME" ]; then
+        _node="$(kubectl get node -o wide | grep "$HOSTNAME" | awk '{print $1}')"
+        if [ -n "$_node" ]; then
+            NODE="$_node"
+            return
+        fi
+    fi
+    _node="$(kubectl get node -o wide | grep "$PRIVATE_ADDRESS" | awk '{print $1}')"
+    if [ -n "$_node" ]; then
+        NODE="$_node"
+        return
+    fi
+}
+
+#######################################
+# Check if the node is a master
+# Globals:
+#   None
+# Arguments:
+#   node
+# Returns:
+#   0 if master node, else 1
+#######################################
+isMasterNode()
+{
+    node=$1
+
+    local nout="$(kubectl get node $node 2>/dev/null)"
+
+    if [ "$(echo "$nout" | sed '1d' | awk '{ print $3 }')" == "master" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+#######################################
 # Spinner Pod Running
 # Globals:
 #   None
@@ -688,7 +839,7 @@ spinnerPodRunning()
 
     local delay=0.75
     local spinstr='|/-\'
-    while ! kubectl -n "$namespace" get pods 2> /dev/null | grep "^$podPrefix" | awk '{ print $3}' | grep '^Running$' > /dev/null ; do
+    while ! kubectl -n "$namespace" get pods 2>/dev/null | grep "^$podPrefix" | awk '{ print $3}' | grep '^Running$' > /dev/null ; do
         local temp=${spinstr#?}
         printf " [%c]  " "$spinstr"
         local spinstr=$temp${spinstr%"$temp"}
@@ -988,7 +1139,6 @@ networking:
   serviceSubnet: $SERVICE_CIDR
 apiServer:
   extraArgs:
-    bind-address: $PRIVATE_ADDRESS
     service-node-port-range: "80-60000"
   certSANs:
 EOF

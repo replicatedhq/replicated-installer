@@ -22,8 +22,9 @@
 # Arguments:
 #   upgradeVersion - e.g. 1.10.6
 # Returns:
-#   None
+#   DID_UPGRADE_KUBERNETES
 #######################################
+DID_UPGRADE_KUBERNETES=0
 maybeUpgradeKubernetes() {
     local k8sTargetVersion="$1"
     semverParse "$k8sTargetVersion"
@@ -60,9 +61,11 @@ maybeUpgradeKubernetes() {
         if [ "$AIRGAP" = "1" ]; then
             airgapLoadKubernetesCommonImages 1.10.6
             airgapLoadKubernetesControlImages 1.10.6
+            airgapLoadReplicatedAddonImagesWorker
         fi
         upgradeK8sMaster "1.10.6"
         logSuccess "Kubernetes upgraded to version v1.10.6"
+        DID_UPGRADE_KUBERNETES=1
     fi
 
     upgradeK8sWorkers "1.10.6" "0"
@@ -77,6 +80,7 @@ maybeUpgradeKubernetes() {
         logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.11.5"
         upgradeK8sMaster "1.11.5"
         logSuccess "Kubernetes upgraded to version v1.11.5"
+        DID_UPGRADE_KUBERNETES=1
     fi
 
     upgradeK8sWorkers "1.11.5" "$K8S_UPGRADE_PATCH_VERSION"
@@ -96,11 +100,13 @@ maybeUpgradeKubernetes() {
         if [ "$AIRGAP" = "1" ]; then
             airgapLoadKubernetesCommonImages 1.12.3
             airgapLoadKubernetesControlImages 1.12.3
+            airgapLoadReplicatedAddonImagesWorker
         fi
         # must migrate alpha1 to alpha2 with kubeadm 1.11 while it's still available
         kubeadm config migrate --old-config /opt/replicated/kubeadm.conf --new-config /opt/replicated/kubeadm.conf
         upgradeK8sMaster "1.12.3"
         logSuccess "Kubernetes upgraded to version v1.12.3"
+        DID_UPGRADE_KUBERNETES=1
     fi
 
     upgradeK8sWorkers "1.12.3" "0"
@@ -117,11 +123,13 @@ maybeUpgradeKubernetes() {
         if [ "$AIRGAP" = "1" ]; then
             airgapLoadKubernetesCommonImages 1.13.0
             airgapLoadKubernetesControlImages 1.13.0
+            airgapLoadReplicatedAddonImagesWorker
         fi
         : > /opt/replicated/kubeadm.conf
         makeKubeadmConfig
         upgradeK8sMaster "1.13.0"
         logSuccess "Kubernetes upgraded to version v1.13.0"
+        DID_UPGRADE_KUBERNETES=1
     fi
 
     upgradeK8sWorkers "1.13.0" "$K8S_UPGRADE_PATCH_VERSION"
@@ -179,7 +187,39 @@ maybeUpgradeKubernetesNode() {
         systemctl start kubelet
 
         logSuccess "Kubernetes node upgraded to version v$k8sTargetVersion"
+    elif [ "$k8sTargetMinor" -ge 13 ]; then
+        # Sync the config in case it changed.
+        getCurrentNodeId
+        if [ -n "$NODE" ]; then
+            logStep "Sync Kubernetes node config"
+            if isMasterNode "$NODE"; then
+                (set -x; kubeadm upgrade node experimental-control-plane)
+            else
+                (set -x; kubeadm upgrade node config --kubelet-version v1.13.0)
+            fi
+            logSuccess "Kubernetes node config upgraded"
+        fi
     fi
+}
+
+isKubeproxyInIpvsMode() {
+    if kubectl -n kube-system get cm/kube-proxy -o yaml | grep -q 'mode: ipvs'; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+restartKubeproxy() {
+    logStep "Recreating kube-proxy pods, switching mode from ipvs to iptables\n"
+    kubectl -n kube-system get pods 2>/dev/null | grep kube-proxy | awk '{print $1}' | xargs kubectl -n kube-system delete pods
+
+    # wait for all pods running
+    while kubectl -n kube-system get pods | grep kube-proxy | grep -v Running | grep -q kube-proxy; do
+        sleep 1
+    done
+
+    logSuccess "Kube-proxy pods recreated"
 }
 
 #######################################

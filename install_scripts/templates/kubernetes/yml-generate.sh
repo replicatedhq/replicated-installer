@@ -12,6 +12,8 @@ STORAGE_CLASS="{{ storage_class }}"
 SERVICE_TYPE="{{ service_type }}"
 PROXY_ADDRESS="{{ proxy_address }}"
 NO_PROXY_ADDRESSES="{{ no_proxy_addresses }}"
+REPLICATED_DOCKER_HOST="{{ replicated_docker_host }}"
+REGISTRY_ADDRESS_OVERRIDE=
 IP_ALLOC_RANGE=10.32.0.0/12  # default for weave
 CEPH_DASHBOARD_URL=
 # booleans
@@ -26,9 +28,11 @@ HOSTPATH_PROVISIONER_YAML=0
 WEAVE_YAML=0
 CONTOUR_YAML=0
 DEPLOYMENT_YAML=0
+REGISTRY_YAML=0
 BIND_DAEMON_NODE=0
 API_SERVICE_ADDRESS="{{ api_service_address }}"
 HA_CLUSTER="{{ ha_cluster }}"
+REGISTRY_NODE_PORT=31500
 
 {% include 'common/kubernetes.sh' %}
 
@@ -94,6 +98,10 @@ while [ "$1" != "" ]; do
             ;;
         contour-yaml|contour_yaml)
             CONTOUR_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
+        registry-yaml|registry_yaml)
+            REGISTRY_YAML="$_value"
             REPLICATED_YAML=0
             ;;
         deployment-yaml|deployment_yaml)
@@ -192,7 +200,7 @@ spec:
 $AFFINITY
       containers:
       - name: replicated
-        image: "{{ replicated_docker_host }}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
+        image: "${REGISTRY_ADDRESS_OVERRIDE:-$REPLICATED_DOCKER_HOST}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
         imagePullPolicy: IfNotPresent
         env:
         - name: SCHEDULER_ENGINE
@@ -201,6 +209,8 @@ $AFFINITY
           value: "{{ channel_name }}"{% if release_sequence %}
         - name: RELEASE_SEQUENCE
           value: "$RELEASE_SEQUENCE"
+        - name: REGISTRY_ADDRESS_OVERRIDE
+          value: "$REGISTRY_ADDRESS_OVERRIDE"
 {%- endif %}{% if customer_base_url_override %}
         - name: MARKET_BASE_URL
           value: "{{customer_base_url_override}}"
@@ -275,7 +285,7 @@ $PROXY_ENVS
           mountPath: /host/proc
           readOnly: true
       - name: replicated-ui
-        image: "{{ replicated_docker_host }}/replicated/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}"
+        image: "${REGISTRY_ADDRESS_OVERRIDE:-$REPLICATED_DOCKER_HOST}/replicated/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}"
         imagePullPolicy: IfNotPresent
         env:
         - name: RELEASE_CHANNEL
@@ -1173,7 +1183,7 @@ items:
                 - name: IPALLOC_RANGE
                   value: $IP_ALLOC_RANGE
 $weave_passwd_env
-              image: 'weaveworks/weave-kube:2.5.0'
+              image: weaveworks/weave-kube:2.5.0
               livenessProbe:
                 httpGet:
                   host: 127.0.0.1
@@ -1208,7 +1218,7 @@ $weave_passwd_env
                     fieldRef:
                       apiVersion: v1
                       fieldPath: spec.nodeName
-              image: 'weaveworks/weave-npc:2.5.0'
+              image: weaveworks/weave-npc:2.5.0
               resources:
                 requests:
                   cpu: 10m
@@ -1588,9 +1598,147 @@ spec:
 EOF
 }
 
+render_registry_yaml() {
+    cat <<EOF
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: docker-registry-config
+  labels:
+    app: docker-registry
+data:
+  config.yml: |-
+    health:
+      storagedriver:
+        enabled: true
+        interval: 10s
+        threshold: 3
+    http:
+      addr: :5000
+      headers:
+        X-Content-Type-Options:
+        - nosniff
+    log:
+      fields:
+        service: registry
+    storage:
+      cache:
+        blobdescriptor: inmemory
+    version: 0.1
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: docker-registry-secret
+  labels:
+    app: docker-registry
+type: Opaque
+data:
+  haSharedSecret: U29tZVZlcnlTdHJpbmdTZWNyZXQK # TODO: generate
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: docker-registry
+spec:
+  selector:
+    matchLabels:
+      app: docker-registry
+  serviceName: "registry"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: docker-registry
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: docker-registry
+        image: registry:2
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/registry
+        - serve
+        - /etc/docker/registry/config.yml
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+        volumeMounts:
+        - name: registry-data
+          mountPath: /var/lib/registry/
+        - name: docker-registry-config
+          mountPath: /etc/docker/registry
+        env:
+        - name: REGISTRY_HTTP_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: haSharedSecret
+              name: docker-registry-secret
+        - name: REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY
+          value: /var/lib/registry
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 5000
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 5000
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+      volumes:
+      - name: registry-data
+        persistentVolumeClaim:
+          claimName: docker-registry
+      - name: docker-registry-config
+        configMap:
+          name: docker-registry-config
+  volumeClaimTemplates:
+  - metadata:
+      name: registry-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 20Gi
+      storageClassName: "$STORAGE_CLASS"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker-registry
+  labels:
+    app: docker-registry
+spec:
+  type: NodePort
+  ports:
+  - port: 5000
+    name: registry
+    targetPort: 5000
+    nodePort: $REGISTRY_NODE_PORT
+    protocol: TCP
+  selector:
+    app: docker-registry
+EOF
+}
+
 ################################################################################
 # Execution starts here
 ################################################################################
+
+if [ "$AIRGAP" = "1" ]; then
+    REGISTRY_ADDRESS_OVERRIDE="localhost:$REGISTRY_NODE_PORT"
+fi
 
 if [ "$WEAVE_YAML" = "1" ]; then
     render_weave_yaml
@@ -1610,6 +1758,10 @@ fi
 
 if [ "$HOSTPATH_PROVISIONER_YAML" = "1" ]; then
     render_hostpath_provisioner_yaml
+fi
+
+if [ "$REGISTRY_YAML" = "1" ]; then
+    render_registry_yaml
 fi
 
 if [ "$REPLICATED_YAML" = "1" ]; then
@@ -1639,6 +1791,7 @@ if [ "$REPLICATED_YAML" = "1" ]; then
     render_replicated_specs
     render_replicated_deployment
 
+    # TODO: determine if this is still necessary in latest replicated with on-prem registry.
     if [ "$AIRGAP" = "1" ]; then
         render_replicated_node_port_service
     else

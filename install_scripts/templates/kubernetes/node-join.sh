@@ -15,7 +15,7 @@ KUBERNETES_ONLY=0
 ADDITIONAL_NO_PROXY=
 KUBERNETES_VERSION="{{ kubernetes_version }}"
 K8S_UPGRADE_PATCH_VERSION="{{ k8s_upgrade_patch_version }}"
-IPVS=1
+IPVS=0 # ipvs does not support addressing node port services with localhost
 PRIVATE_ADDRESS=
 
 {% include 'common/common.sh' %}

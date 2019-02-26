@@ -463,10 +463,14 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
         replicated_channel, app_slug, app_channel)
     replicated_ui_version = helpers.get_replicated_ui_version(
         replicated_channel, app_slug, app_channel)
+    replicated_operator_version = helpers.get_replicated_operator_version(
+        replicated_channel, app_slug, app_channel)
 
     replicated_tag = '{}-{}'.format(replicated_channel, replicated_version)
     replicated_ui_tag = '{}-{}'.format(replicated_channel,
                                        replicated_ui_version)
+    replicated_operator_tag = '{}-{}'.format(replicated_channel,
+                                             replicated_operator_version)
 
     storage_provisioner = helpers.get_arg('storage_provisioner', 'rook')
     pv_base_path = helpers.get_arg('pv_base_path', '')
@@ -487,6 +491,7 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
         channel_name=replicated_channel,
         replicated_tag=replicated_tag,
         replicated_ui_tag=replicated_ui_tag,
+        replicated_operator_tag=replicated_operator_tag,
         pv_base_path=pv_base_path,
         log_level=log_level,
         release_sequence=release_sequence,
@@ -680,6 +685,10 @@ def get_kubernetes_init_master(replicated_channel=None,
     replicated_channel = replicated_channel if replicated_channel else 'stable'
     replicated_version = helpers.get_replicated_version(
         replicated_channel, app_slug, app_channel)
+    replicated_ui_version = helpers.get_replicated_ui_version(
+        replicated_channel, app_slug, app_channel)
+    replicated_operator_version = helpers.get_replicated_operator_version(
+        replicated_channel, app_slug, app_channel)
 
     pinned_docker_version = helpers.get_pinned_docker_version(
         replicated_version, 'kubernetes')
@@ -688,6 +697,12 @@ def get_kubernetes_init_master(replicated_channel=None,
         replicated_version)
     kubernetes_version = helpers.get_arg('kubernetes_version',
                                          pinned_kubernetes_version)
+
+    replicated_tag = '{}-{}'.format(replicated_channel, replicated_version)
+    replicated_ui_tag = '{}-{}'.format(replicated_channel,
+                                       replicated_ui_version)
+    replicated_operator_tag = '{}-{}'.format(replicated_channel,
+                                             replicated_operator_version)
 
     storage_provisioner = helpers.get_arg('storage_provisioner', 'rook')
     storage_class = helpers.get_arg('storage_class', 'default')
@@ -721,6 +736,9 @@ def get_kubernetes_init_master(replicated_channel=None,
         **helpers.template_args(
             pinned_docker_version=pinned_docker_version,
             kubernetes_version=kubernetes_version,
+            replicated_tag=replicated_tag,
+            replicated_ui_tag=replicated_ui_tag,
+            replicated_operator_tag=replicated_operator_tag,
             storage_provisioner=storage_provisioner,
             storage_class=storage_class,
             kubernetes_generate_path=generate_path,
