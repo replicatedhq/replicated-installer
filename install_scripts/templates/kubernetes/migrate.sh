@@ -289,7 +289,9 @@ startAppOnK8s() {
     # restart ui container to pick up new TLS certs from daemon
     local replPod=$(kubectl get pods --selector='app=replicated,tier=master' | tail -1 | awk '{ print $1 }')
     if [ -n "$replPod" ]; then
-        kubectl exec "$replPod" -c replicated-ui -- kill 1
+        logSubstep "waiting for replicated-ui to restart"
+        kubectl exec "$replPod" -c replicated-ui -- kill 1 || true
+        sleep 30
     fi
 
     if [ "$needsActivation" = "1" ]; then
