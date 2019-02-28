@@ -1,6 +1,11 @@
 #!/bin/sh
 set -e
 
+{% if docker_version -%}
+# this will hardcode the docker version in the script courtesy of replicated
+VERSION="{{ docker_version }}"
+{%- endif %}
+
 # This script is meant for quick & easy install via:
 #   $ curl -fsSL https://get.docker.com -o get-docker.sh
 #   $ sh get-docker.sh
