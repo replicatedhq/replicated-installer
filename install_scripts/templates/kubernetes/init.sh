@@ -88,7 +88,7 @@ set -e
 promptForLoadBalancerAddress() {
     # Check if we already have the load balancer address set in the kubeadm config
     if [ -z "$LOAD_BALANCER_ADDRESS" ] && kubeadm config view >/dev/null 2>&1; then
-        LOAD_BALANCER_ADDRESS="$(kubeadm config view | grep 'controlPlaneEndpoint:' | sed 's/controlPlaneEndpoint: //')"
+        LOAD_BALANCER_ADDRESS="$(kubeadm config view | grep 'controlPlaneEndpoint:' | sed 's/controlPlaneEndpoint: \|"//g')"
     fi
 
     if [ -z "$LOAD_BALANCER_ADDRESS" ]; then
@@ -231,7 +231,9 @@ initKube() {
     elif [ "$kubeV" != "v1.12.3" ]; then
         logStep "Verify kubernetes config"
         chmod 444 /etc/kubernetes/admin.conf
-        promptForLoadBalancerAddress # TODO: test this code path
+        if [ "$HA_CLUSTER" -eq "1" ]; then
+            promptForLoadBalancerAddress
+        fi
         initKubeadmConfig
         loadIPVSKubeProxyModules
         kubeadm config upload from-file --config /opt/replicated/kubeadm.conf
