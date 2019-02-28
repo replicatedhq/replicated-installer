@@ -198,7 +198,6 @@ spec:
         app: replicated
         tier: master
     spec:
-$AFFINITY
       containers:
       - name: replicated
         image: "${REGISTRY_ADDRESS_OVERRIDE:-$REPLICATED_DOCKER_HOST}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
@@ -210,9 +209,11 @@ $AFFINITY
           value: "{{ channel_name }}"{% if release_sequence %}
         - name: RELEASE_SEQUENCE
           value: "$RELEASE_SEQUENCE"
-        - name: REGISTRY_ADDRESS_OVERRIDE
-          value: "$REGISTRY_ADDRESS_OVERRIDE"
-{%- endif %}{% if customer_base_url_override %}
+{%- endif %}
+        - name: REGISTRY_ADVERTISE_ADDRESS
+          value: localhost:9874
+        - name: COMPONENT_IMAGES_REGISTRY_ADDRESS_OVERRIDE
+          value: "$REGISTRY_ADDRESS_OVERRIDE"{% if customer_base_url_override %}
         - name: MARKET_BASE_URL
           value: "{{customer_base_url_override}}"
 {%- endif %}{% if replicated_env == "staging" %}
@@ -372,7 +373,7 @@ spec:
 EOF
 }
 
-render_replicated_cluster_ip_service() {
+render_replicated_services() {
     cat <<EOF
 ---
 apiVersion: v1
@@ -387,9 +388,6 @@ spec:
     app: replicated
     tier: master
   ports:
-  - name: replicated-registry
-    port: 9874
-    protocol: TCP
   - name: replicated-iapi
     port: 9877
     protocol: TCP
@@ -399,16 +397,11 @@ spec:
   - name: replicated-support
     port: 9881
     protocol: TCP
-EOF
-}
-
-render_replicated_node_port_service() {
-    cat <<EOF
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: replicated
+  name: replicated-registry
   labels:
     app: replicated
     tier: master
@@ -421,18 +414,6 @@ spec:
   - name: replicated-registry
     port: 9874
     nodePort: 9874
-    protocol: TCP
-  - name: replicated-iapi
-    port: 9877
-    nodePort: 9877
-    protocol: TCP
-  - name: replicated-snapshots
-    port: 9878
-    nodePort: 9878
-    protocol: TCP
-  - name: replicated-support
-    port: 9881
-    nodePort: 9881
     protocol: TCP
 EOF
 }
@@ -831,13 +812,6 @@ spec:
       labels:
         app: rook-ceph-operator
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: "$DAEMON_NODE_KEY"
-                operator: Exists
       serviceAccountName: rook-ceph-system
       containers:
       - name: rook-ceph-operator
@@ -1787,13 +1761,7 @@ if [ "$REPLICATED_YAML" = "1" ]; then
     fi
     render_replicated_specs
     render_replicated_deployment
-
-    # TODO: determine if this is still necessary in latest replicated with on-prem registry.
-    if [ "$AIRGAP" = "1" ]; then
-        render_replicated_node_port_service
-    else
-        render_replicated_cluster_ip_service
-    fi
+    render_replicated_services
 
     render_replicated_api_service
 

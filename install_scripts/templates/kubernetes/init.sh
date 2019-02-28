@@ -859,7 +859,6 @@ weavenetDeploy
 untaintMaster
 
 spinnerMasterNodeReady
-labelMasterNode
 
 maybeUpgradeKubernetes "$KUBERNETES_VERSION"
 if [ "$DID_UPGRADE_KUBERNETES" = "0" ]; then

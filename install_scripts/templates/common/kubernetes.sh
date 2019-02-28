@@ -19,8 +19,6 @@ RHEL7_K8S_11=rhel7-v1.11.5-20181204
 RHEL7_K8S_12=rhel7-v1.12.3-20181211
 RHEL7_K8S_13=rhel7-v1.13.0-20181211
 
-DAEMON_NODE_KEY=replicated.com/daemon
-
 
 #######################################
 # Set the patch version in KUBERNETES_VERSION.
@@ -320,18 +318,21 @@ airgapLoadKubernetesCommonImages193() {
 
     # uh. its kind of insane that we have to do this. the linuxkit pkg
     # comes to us without tags, which seems super useless... we should build our own bundler maybe
-    docker tag 35fdc6da5fd8 gcr.io/google_containers/kube-proxy-amd64:v1.9.3
-    docker tag db76ee297b85 gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.7
-    docker tag 5d049a8c4eec gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.7
-    docker tag 5feec37454f4 gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.7
-    docker tag 99e59f495ffa gcr.io/google_containers/pause-amd64:3.0
-    docker tag 86ff1a48ce14 weaveworks/weave-kube:2.4.0
-    docker tag 647ad6d59818 weaveworks/weave-npc:2.4.0
-    docker tag bf0c403ea58d weaveworks/weaveexec:2.4.0
-    docker tag 9c1f09fe9a86 docker.io/registry:2
-    docker tag 6521ac58ca80 envoyproxy/envoy-alpine:v1.6.0
-    docker tag 6a9ec4bcb60e gcr.io/heptio-images/contour:v0.5.0
-    docker tag b5c343f1a3a6 rook/ceph:v0.8.1
+    (
+        set -x
+        docker tag 35fdc6da5fd8 gcr.io/google_containers/kube-proxy-amd64:v1.9.3
+        docker tag db76ee297b85 gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.7
+        docker tag 5d049a8c4eec gcr.io/google_containers/k8s-dns-kube-dns-amd64:1.14.7
+        docker tag 5feec37454f4 gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.7
+        docker tag 99e59f495ffa gcr.io/google_containers/pause-amd64:3.0
+        docker tag 86ff1a48ce14 weaveworks/weave-kube:2.4.0
+        docker tag 647ad6d59818 weaveworks/weave-npc:2.4.0
+        docker tag bf0c403ea58d weaveworks/weaveexec:2.4.0
+        docker tag 9c1f09fe9a86 docker.io/registry:2
+        docker tag 6521ac58ca80 envoyproxy/envoy-alpine:v1.6.0
+        docker tag 6a9ec4bcb60e gcr.io/heptio-images/contour:v0.5.0
+        docker tag b5c343f1a3a6 rook/ceph:v0.8.1
+    )
 }
 
 # only the images needed for kubeadm to upgrade from 1.9 to 1.11
@@ -340,11 +341,14 @@ airgapLoadKubernetesCommonImages1106() {
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-common:v1.10.6-20180809"
 
-    docker tag 8a9a40dda603 k8s.gcr.io/kube-proxy-amd64:v1.10.6
-    docker tag c2ce1ffb51ed k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64:1.14.8
-    docker tag 6f7f2dc7fab5 k8s.gcr.io/k8s-dns-sidecar-amd64:1.14.8
-    docker tag 80cc5ea4b547 k8s.gcr.io/k8s-dns-kube-dns-amd64:1.14.8
-    docker tag da86e6ba6ca1 k8s.gcr.io/pause-amd64:3.1
+    (
+        set -x
+        docker tag 8a9a40dda603 k8s.gcr.io/kube-proxy-amd64:v1.10.6
+        docker tag c2ce1ffb51ed k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64:1.14.8
+        docker tag 6f7f2dc7fab5 k8s.gcr.io/k8s-dns-sidecar-amd64:1.14.8
+        docker tag 80cc5ea4b547 k8s.gcr.io/k8s-dns-kube-dns-amd64:1.14.8
+        docker tag da86e6ba6ca1 k8s.gcr.io/pause-amd64:3.1
+    )
 }
 
 airgapLoadKubernetesCommonImages1115() {
@@ -353,18 +357,21 @@ airgapLoadKubernetesCommonImages1115() {
         "quay.io/replicated/k8s-images-common:v1.11.5-20181207"
 
     # kube-proxy is a daemon set so clusters that started at v1.11.1 will need this available on all nodes
-    docker tag d5c25579d0ff k8s.gcr.io/kube-proxy-amd64:v1.11.1
-    docker tag aa7b610992c0 k8s.gcr.io/kube-proxy-amd64:v1.11.5
-    docker tag da86e6ba6ca1 k8s.gcr.io/pause:3.1
-    docker tag b3b94275d97c k8s.gcr.io/coredns:1.1.3
-    docker tag 86ff1a48ce14 weaveworks/weave-kube:2.4.0
-    docker tag 647ad6d59818 weaveworks/weave-npc:2.4.0
-    docker tag bf0c403ea58d weaveworks/weaveexec:2.4.0
-    docker tag 9c1f09fe9a86 docker.io/registry:2
-    docker tag 6521ac58ca80 docker.io/envoyproxy/envoy-alpine:v1.6.0
-    docker tag 6a9ec4bcb60e gcr.io/heptio-images/contour:v0.5.0
-    docker tag b5c343f1a3a6 rook/ceph:v0.8.1
-    docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
+    (
+        set -x
+        docker tag d5c25579d0ff k8s.gcr.io/kube-proxy-amd64:v1.11.1
+        docker tag aa7b610992c0 k8s.gcr.io/kube-proxy-amd64:v1.11.5
+        docker tag da86e6ba6ca1 k8s.gcr.io/pause:3.1
+        docker tag b3b94275d97c k8s.gcr.io/coredns:1.1.3
+        docker tag 86ff1a48ce14 weaveworks/weave-kube:2.4.0
+        docker tag 647ad6d59818 weaveworks/weave-npc:2.4.0
+        docker tag bf0c403ea58d weaveworks/weaveexec:2.4.0
+        docker tag 9c1f09fe9a86 docker.io/registry:2
+        docker tag 6521ac58ca80 docker.io/envoyproxy/envoy-alpine:v1.6.0
+        docker tag 6a9ec4bcb60e gcr.io/heptio-images/contour:v0.5.0
+        docker tag b5c343f1a3a6 rook/ceph:v0.8.1
+        docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
+    )
 }
 
 # only the images needed for kubeadm to upgrade from 1.11 to 1.13
@@ -382,17 +389,20 @@ airgapLoadKubernetesCommonImages1130() {
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-common:v1.13.0-20181226"
 
-    docker tag 8fa56d18961f k8s.gcr.io/kube-proxy:v1.13.0
-    docker tag da86e6ba6ca1 k8s.gcr.io/pause:3.1
-    docker tag f59dcacceff4 k8s.gcr.io/coredns:1.2.6
-    docker tag a5103f96993a docker.io/weaveworks/weave-kube:2.5.0
-    docker tag d499500e93d3 docker.io/weaveworks/weave-npc:2.5.0
-    docker tag 6568ae41694a docker.io/weaveworks/weaveexec:2.5.0
-    docker tag 9c1f09fe9a86 docker.io/library/registry:2
-    docker tag d7b5da521177 docker.io/envoyproxy/envoy-alpine:v1.7.0
-    docker tag d3309c525d48 gcr.io/heptio-images/contour:v0.8.0
-    docker tag b5c343f1a3a6 docker.io/rook/ceph:v0.8.1
-    docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
+    (
+        set -x
+        docker tag 8fa56d18961f k8s.gcr.io/kube-proxy:v1.13.0
+        docker tag da86e6ba6ca1 k8s.gcr.io/pause:3.1
+        docker tag f59dcacceff4 k8s.gcr.io/coredns:1.2.6
+        docker tag a5103f96993a docker.io/weaveworks/weave-kube:2.5.0
+        docker tag d499500e93d3 docker.io/weaveworks/weave-npc:2.5.0
+        docker tag 6568ae41694a docker.io/weaveworks/weaveexec:2.5.0
+        docker tag 9c1f09fe9a86 docker.io/library/registry:2
+        docker tag d7b5da521177 docker.io/envoyproxy/envoy-alpine:v1.7.0
+        docker tag d3309c525d48 gcr.io/heptio-images/contour:v0.8.0
+        docker tag b5c343f1a3a6 docker.io/rook/ceph:v0.8.1
+        docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
+    )
 }
 
 #######################################
@@ -456,10 +466,13 @@ airgapLoadKubernetesControlImages193() {
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-control:v1.9.3-20180809"
 
-    docker tag 83dbda6ee810 gcr.io/google_containers/kube-controller-manager-amd64:v1.9.3
-    docker tag 360d55f91cbf gcr.io/google_containers/kube-apiserver-amd64:v1.9.3
-    docker tag d3534b539b76 gcr.io/google_containers/kube-scheduler-amd64:v1.9.3
-    docker tag 59d36f27cceb gcr.io/google_containers/etcd-amd64:3.1.11
+    (
+        set -x
+        docker tag 83dbda6ee810 gcr.io/google_containers/kube-controller-manager-amd64:v1.9.3
+        docker tag 360d55f91cbf gcr.io/google_containers/kube-apiserver-amd64:v1.9.3
+        docker tag d3534b539b76 gcr.io/google_containers/kube-scheduler-amd64:v1.9.3
+        docker tag 59d36f27cceb gcr.io/google_containers/etcd-amd64:3.1.11
+    )
 }
 
 airgapLoadKubernetesControlImages1106() {
@@ -467,10 +480,13 @@ airgapLoadKubernetesControlImages1106() {
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-control:v1.10.6-20180809"
 
-    docker tag 6e29896cbeca k8s.gcr.io/kube-apiserver-amd64:v1.10.6
-    docker tag dd246160bf59 k8s.gcr.io/kube-scheduler-amd64:v1.10.6
-    docker tag 3224e7c2de11 k8s.gcr.io/kube-controller-manager-amd64:v1.10.6
-    docker tag 52920ad46f5b k8s.gcr.io/etcd-amd64:3.1.12
+    (
+        set -x
+        docker tag 6e29896cbeca k8s.gcr.io/kube-apiserver-amd64:v1.10.6
+        docker tag dd246160bf59 k8s.gcr.io/kube-scheduler-amd64:v1.10.6
+        docker tag 3224e7c2de11 k8s.gcr.io/kube-controller-manager-amd64:v1.10.6
+        docker tag 52920ad46f5b k8s.gcr.io/etcd-amd64:3.1.12
+    )
 }
 
 airgapLoadKubernetesControlImages1115() {
@@ -478,10 +494,13 @@ airgapLoadKubernetesControlImages1115() {
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-control:v1.11.5-20181204"
 
-    docker tag 3a239c93cfbe k8s.gcr.io/kube-apiserver-amd64:v1.11.5
-    docker tag 67fbf264abce k8s.gcr.io/kube-controller-manager-amd64:v1.11.5
-    docker tag 3280f0c09d18 k8s.gcr.io/kube-scheduler-amd64:v1.11.5
-    docker tag b8df3b177be2 k8s.gcr.io/etcd-amd64:3.2.18
+    (
+        set -x
+        docker tag 3a239c93cfbe k8s.gcr.io/kube-apiserver-amd64:v1.11.5
+        docker tag 67fbf264abce k8s.gcr.io/kube-controller-manager-amd64:v1.11.5
+        docker tag 3280f0c09d18 k8s.gcr.io/kube-scheduler-amd64:v1.11.5
+        docker tag b8df3b177be2 k8s.gcr.io/etcd-amd64:3.2.18
+    )
 }
 
 airgapLoadKubernetesControlImages1123() {
@@ -489,10 +508,13 @@ airgapLoadKubernetesControlImages1123() {
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-control:v1.12.3-20181210"
 
-    docker tag 6b54f7bebd72 k8s.gcr.io/kube-apiserver:v1.12.3
-    docker tag 5e75513787b1 k8s.gcr.io/kube-scheduler:v1.12.3
-    docker tag c79022eb8bc9 k8s.gcr.io/kube-controller-manager:v1.12.3
-    docker tag 3cab8e1b9802 k8s.gcr.io/etcd:3.2.24
+    (
+        set -x
+        docker tag 6b54f7bebd72 k8s.gcr.io/kube-apiserver:v1.12.3
+        docker tag 5e75513787b1 k8s.gcr.io/kube-scheduler:v1.12.3
+        docker tag c79022eb8bc9 k8s.gcr.io/kube-controller-manager:v1.12.3
+        docker tag 3cab8e1b9802 k8s.gcr.io/etcd:3.2.24
+    )
 }
 
 airgapLoadKubernetesControlImages1130() {
@@ -500,10 +522,13 @@ airgapLoadKubernetesControlImages1130() {
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-control:v1.13.0-20181210"
 
-    docker tag f1ff9b7e3d6e k8s.gcr.io/kube-apiserver:v1.13.0
-    docker tag d82530ead066 k8s.gcr.io/kube-controller-manager:v1.13.0
-    docker tag 9508b7d8008d k8s.gcr.io/kube-scheduler:v1.13.0
-    docker tag 3cab8e1b9802 k8s.gcr.io/etcd:3.2.24
+    (
+        set -x
+        docker tag f1ff9b7e3d6e k8s.gcr.io/kube-apiserver:v1.13.0
+        docker tag d82530ead066 k8s.gcr.io/kube-controller-manager:v1.13.0
+        docker tag 9508b7d8008d k8s.gcr.io/kube-scheduler:v1.13.0
+        docker tag 3cab8e1b9802 k8s.gcr.io/etcd:3.2.24
+    )
 }
 
 airgapPushReplicatedImagesToRegistry() {
@@ -767,24 +792,6 @@ spinnerMasterNodeReady()
     logStep "Await node ready"
     spinnerNodesReady
     logSuccess "Master Node Ready!"
-}
-
-#######################################
-# Label master node
-# Globals:
-#   AIRGAP
-# Arguments:
-#   Namespace, Pod prefix
-# Returns:
-#   None
-#######################################
-labelMasterNode()
-{
-    if kubectl get nodes --show-labels | grep -q "$DAEMON_NODE_KEY" ; then
-        return
-    fi
-
-    kubectl label nodes --overwrite "$(k8sMasterNodeName)" "$DAEMON_NODE_KEY"=
 }
 
 #######################################
