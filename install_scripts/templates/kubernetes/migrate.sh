@@ -235,10 +235,11 @@ waitNativeRetracedPostgresReady() {
 }
 
 restoreRetraced() {
-    spinnerPodRunning "default" "retraced-postgres"
-    # the server can take a bit to be ready for connections after the pod is running
+    # wait for the retraced-api's migrate-pg init container to ensure postgres
+    # is runniung and to avoid race conditions
+    spinnerPodRunning "default" "retraced-api"
     set +e
-    for i in {1..30}; do
+    for i in {1..3}; do
         cat "${TMP_DIR}/retraced.sql" | kubectl exec -i $(kubectl get pods | grep retraced-postgres | awk '{ print $1 }') -- \
             /bin/bash -c 'PG_DATABASE=$POSTGRES_DATABASE PGHOST=$POSTGRES_HOST PGUSER=$POSTGRES_USER PGPASSWORD=$POSTGRES_PASSWORD psql' &>/dev/null
         if [ "$?" -eq 0 ]; then
@@ -290,7 +291,7 @@ startAppOnK8s() {
     local replPod=$(kubectl get pods --selector='app=replicated,tier=master' | tail -1 | awk '{ print $1 }')
     if [ -n "$replPod" ]; then
         logSubstep "waiting for replicated-ui to restart"
-        kubectl exec "$replPod" -c replicated-ui -- kill 1 || true
+        kubectl exec "$replPod" -c replicated-ui -- kill 1 &>/dev/null || true
         sleep 30
     fi
 
