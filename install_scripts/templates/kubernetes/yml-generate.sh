@@ -141,7 +141,7 @@ EOF
     # On airgap installs the daemon cannot change nodes because of the registry address.
     # On AKA the daemon cannot change nodes because the kubeadm join script needs the K8s API address.
     # The label is applied in the kubernetes-init script.
-    AFFINITY=	
+    AFFINITY=
     if [ "$BIND_DAEMON_NODE" = "1" ]; then
         AFFINITY=$(cat <<-EOF
       affinity:
@@ -478,6 +478,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
    name: "$STORAGE_CLASS"
+   annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
 provisioner: ceph.rook.io/block
 parameters:
   pool: replicapool
@@ -1415,7 +1417,7 @@ spec:
         lifecycle:
           preStop:
             exec:
-              command: ["wget", "-qO-", "http://localhost:9001/healthcheck/fail"] 
+              command: ["wget", "-qO-", "http://localhost:9001/healthcheck/fail"]
       initContainers:
       - image: gcr.io/heptio-images/contour:v0.8.0
         imagePullPolicy: IfNotPresent
