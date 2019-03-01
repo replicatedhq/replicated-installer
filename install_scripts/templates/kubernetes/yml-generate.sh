@@ -965,6 +965,8 @@ kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
   name: "$STORAGE_CLASS"
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
 provisioner: replicated.com/hostpath
 EOF
 }
