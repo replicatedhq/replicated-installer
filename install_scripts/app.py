@@ -48,7 +48,7 @@ def get_docker():
     else:
         tmpl_file = 'docker-install/17-12-ce.sh'
     kwargs = {
-        'docker_version': docker_version,
+        'docker_version': helpers.get_arg('docker_version', ''),
         'deb_version':
         helpers.get_docker_deb_pkg_version(docker_version, lsb_dist,
                                            dist_version),
