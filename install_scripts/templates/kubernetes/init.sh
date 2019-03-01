@@ -442,6 +442,15 @@ contourDeploy() {
     logSuccess "Contour deployed"
 }
 
+clusteradminDeploy() {
+    logStep "Deploying cluster admin resources"
+
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS clusteradmin_yaml=1 > /tmp/clusteradmin.yml
+    kubectl apply -f /tmp/clusteradmin.yml
+
+    logSuccess "Cluster admin resources deployed"
+}
+
 registryDeploy() {
     logStep "Deploy registry"
 
@@ -898,6 +907,8 @@ if [ "$KUBERNETES_ONLY" -eq "1" ]; then
     outroKubeadm "$NO_CLEAR"
     exit 0
 fi
+
+clusteradminDeploy
 
 if [ "$AIRGAP" = "1" ]; then
     logStep "Loading replicated, replicated-ui and replicated-operator images from package\n"

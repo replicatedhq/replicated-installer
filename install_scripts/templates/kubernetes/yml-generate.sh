@@ -28,6 +28,7 @@ HOSTPATH_PROVISIONER_YAML=0
 WEAVE_YAML=0
 CONTOUR_YAML=0
 DEPLOYMENT_YAML=0
+CLUSTERADMIN_YAML=0
 REGISTRY_YAML=0
 BIND_DAEMON_NODE=0
 API_SERVICE_ADDRESS="{{ api_service_address }}"
@@ -96,6 +97,10 @@ while [ "$1" != "" ]; do
             ;;
         contour-yaml|contour_yaml)
             CONTOUR_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
+        clusteradmin-yaml|clusteradmin_yaml)
+            CLUSTERADMIN_YAML="$_value"
             REPLICATED_YAML=0
             ;;
         registry-yaml|registry_yaml)
@@ -1731,13 +1736,7 @@ if [ "$HOSTPATH_PROVISIONER_YAML" = "1" ]; then
     render_hostpath_provisioner_yaml
 fi
 
-if [ "$REGISTRY_YAML" = "1" ]; then
-    render_registry_yaml
-fi
-
-if [ "$REPLICATED_YAML" = "1" ]; then
-    # +++ TODO: render this for k8s-only install
-
+if [ "$CLUSTERADMIN_YAML" = "1" ]; then
     render_service_account
 
     case "$STORAGE_PROVISIONER" in
@@ -1753,9 +1752,13 @@ if [ "$REPLICATED_YAML" = "1" ]; then
             bail "Error: unknown storage provisioner \"$STORAGE_PROVISIONER\""
             ;;
     esac
+fi
 
-    # --- TODO: render this for k8s-only install
+if [ "$REGISTRY_YAML" = "1" ]; then
+    render_registry_yaml
+fi
 
+if [ "$REPLICATED_YAML" = "1" ]; then
     if [ "$REPLICATED_PVC" != "0" ]; then
         render_replicated_pvc
     fi
