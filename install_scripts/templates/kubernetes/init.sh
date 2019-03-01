@@ -365,7 +365,7 @@ rookDeploy() {
 maybeDefaultRookStorageClass() {
     if ! defaultStorageClassForProvisionerExists ceph.rook.io/block ; then
         logSubstep "making existing rook storage class default"
-        kubectl patch storageclass default -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+        kubectl patch storageclass "$STORAGE_CLASS" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
     fi
 }
 
