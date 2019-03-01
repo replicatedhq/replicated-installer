@@ -307,7 +307,6 @@ spec:
   resources:
     requests:
       storage: "$size"
-  storageClassName: "$STORAGE_CLASS"
 EOF
 }
 
@@ -341,7 +340,6 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: "$STORAGE_CLASS"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -356,7 +354,6 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: "$STORAGE_CLASS"
 EOF
 }
 
