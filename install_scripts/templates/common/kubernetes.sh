@@ -556,12 +556,12 @@ k8sNamespaceExists() {
 # Globals:
 #   None
 # Arguments:
-#   namespace
+#   provisioner
 # Returns:
 #   None
 #######################################
 defaultStorageClassForProvisionerExists() {
-    kubectl get storageclass -o=jsonpath='{.items[?(@.provisioner=="$1")].metadata.annotations}' | grep "storageclass.kubernetes.io/is-default-class":"true" > /dev/null
+    kubectl get storageclass -o=jsonpath='{.items[?(@.provisioner=="$1")].metadata.annotations}' | grep -q "storageclass.kubernetes.io/is-default-class":"true"
 }
 
 
