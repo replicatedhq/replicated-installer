@@ -108,7 +108,7 @@ purgeNativeScheduler() {
         retraced-cron \
         retraced-nsqd \
         retraced-postgres 2>/dev/null
-    rm -rf /var/lib/replicated* \
+    rm -rf /var/lib/replicated-operator \
         /etc/default/replicated* \
         /etc/sysconfig/replicated*
     set -e
