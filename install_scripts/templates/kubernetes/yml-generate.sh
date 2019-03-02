@@ -918,7 +918,7 @@ metadata:
   name: rook-ceph
   namespace: rook-ceph
 spec:
-  dataDirHostPath: /var/lib/replicated/rook
+  dataDirHostPath: /var/lib/rook
   # The service account under which to run the daemon pods in this cluster if the default account is not sufficient (OSDs)
   serviceAccount: rook-ceph-cluster
   # set the amount of mons to be started
