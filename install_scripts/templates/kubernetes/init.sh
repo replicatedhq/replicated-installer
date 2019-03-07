@@ -480,6 +480,8 @@ kubernetesDeploy() {
 
     kubectl apply -f /tmp/kubernetes.yml -n $KUBERNETES_NAMESPACE
     kubectl -n $KUBERNETES_NAMESPACE get pods,svc
+    # remove affinity to node with label "replicated.com/daemon" from < 2.34
+    kubectl patch deployment replicated --type json -p='[{"op": "remove", "path": "/spec/template/spec/affinity"}]'
     logSuccess "Replicated Daemon"
 }
 

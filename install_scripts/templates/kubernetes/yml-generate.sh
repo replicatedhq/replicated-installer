@@ -154,7 +154,6 @@ render_replicated_deployment() {
 EOF
         )
     fi
-
     PROXY_ENVS=
     if [ -n "$PROXY_ADDRESS" ]; then
         PROXY_ENVS=$(cat <<-EOF
@@ -197,7 +196,6 @@ spec:
         app: replicated
         tier: master
     spec:
-$AFFINITY
       containers:
       - name: replicated
         image: "${REGISTRY_ADDRESS_OVERRIDE:-$REPLICATED_DOCKER_HOST}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
