@@ -218,6 +218,17 @@ restartKubeproxy() {
     while kubectl -n kube-system get pods | grep kube-proxy | grep -v Running | grep -q kube-proxy; do
         sleep 1
     done
+    # wait for the iptables rule in the KUBE-SERVICES chain
+    while ! sudo iptables -L -t nat | grep -qE '\b10.96.0.1\b' ; do
+        sleep 2
+    done
+    # restart rook-agent pod to trigger reconnection to the kubernetes service
+    if kubectl get ns | grep -q rook-ceph-system ; then
+        kubectl -n rook-ceph-system get pods 2>/dev/null | grep rook-ceph-agent | awk '{print $1}' | xargs kubectl -n rook-ceph-system delete pods
+        while kubectl -n rook-ceph-system get pods | grep rook-ceph-agent | grep -v Running | grep -q rook-ceph-agent; do
+            sleep 1
+        done
+    fi
 
     logSuccess "Kube-proxy pods recreated"
 }

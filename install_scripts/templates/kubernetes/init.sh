@@ -287,9 +287,12 @@ untaintMaster() {
 }
 
 getYAMLOpts() {
-    opts="bind-daemon-node"
+    opts=""
     if [ "$AIRGAP" = "1" ]; then
         opts=$opts" airgap"
+    fi
+    if [ "$HA_CLUSTER" != "1" ]; then
+        opts=$opts" bind-daemon-node"
     fi
     if [ -n "$LOG_LEVEL" ]; then
         opts=$opts" log-level=$LOG_LEVEL"
@@ -471,8 +474,6 @@ kubernetesDeploy() {
 
     kubectl apply -f /tmp/kubernetes.yml -n $KUBERNETES_NAMESPACE
     kubectl -n $KUBERNETES_NAMESPACE get pods,svc
-    # remove affinity to node with label "replicated.com/daemon" from < 2.34
-    kubectl patch deployment replicated --type json -p='[{"op": "remove", "path": "/spec/template/spec/affinity"}]'
     logSuccess "Replicated Daemon"
 }
 
