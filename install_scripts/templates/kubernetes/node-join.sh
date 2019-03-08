@@ -15,7 +15,7 @@ KUBERNETES_ONLY=0
 ADDITIONAL_NO_PROXY=
 KUBERNETES_VERSION="{{ kubernetes_version }}"
 K8S_UPGRADE_PATCH_VERSION="{{ k8s_upgrade_patch_version }}"
-IPVS=0 # ipvs does not support addressing node port services with localhost
+IPVS=1
 PRIVATE_ADDRESS=
 
 {% include 'common/common.sh' %}
@@ -395,6 +395,7 @@ if [ "$AIRGAP" = "1" ]; then
         fi
     fi
     airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"
+    addInsecureRegistry "$SERVICE_CIDR"
 else
     docker pull registry:2.6.2
     docker tag registry:2.6.2 registry:2

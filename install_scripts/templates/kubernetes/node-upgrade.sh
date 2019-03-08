@@ -59,4 +59,5 @@ if [ "$AIRGAP" = "1" ]; then
     if [ "$KUBERNETES_VERSION" = "1.10.6" ]; then
         airgapLoadKubernetesCommonImages 1.11.5
     fi
+    addInsecureRegistry "$SERVICE_CIDR"
 fi
