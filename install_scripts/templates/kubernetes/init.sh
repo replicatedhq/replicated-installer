@@ -746,6 +746,13 @@ setK8sPatchVersion
 
 checkFirewalld
 
+if [ "$HA_CLUSTER" = "1" ]; then
+    semverParse "{{replicated_version}}"
+    if [ "$minor" -lt 34 ]; then
+        bail "HA installs require Replicated >= 2.34.0"
+    fi
+fi
+
 if [ "$KUBERNETES_VERSION" == "1.9.3" ]; then
     IPVS=0
 fi

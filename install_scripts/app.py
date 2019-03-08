@@ -737,6 +737,7 @@ def get_kubernetes_init_master(replicated_channel=None,
         **helpers.template_args(
             pinned_docker_version=pinned_docker_version,
             kubernetes_version=kubernetes_version,
+            replicated_version=replicated_version,
             replicated_tag=replicated_tag,
             replicated_ui_tag=replicated_ui_tag,
             replicated_operator_tag=replicated_operator_tag,
