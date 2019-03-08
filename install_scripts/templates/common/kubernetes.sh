@@ -874,7 +874,8 @@ spinnerPodRunning()
 spinnerReplicatedReady()
 {
     logStep "Await replicated ready"
-    spinnerPodRunning "default" "replicated-"
+    sleep 2
+    kubectl rollout status deployment/replicated
     waitReplicatedctlReady
     logSuccess "Replicated Ready!"
 }
@@ -1220,4 +1221,28 @@ exportKubeconfig() {
     chmod 444 /etc/kubernetes/admin.conf
     echo 'export KUBECONFIG=/etc/kubernetes/admin.conf' >> /etc/profile
     echo "source <(kubectl completion bash)" >> /etc/profile
+}
+
+#######################################
+# Add insecure registry to Docker
+# Globals:
+#   None
+# Arguments:
+#   registry host
+# Returns:
+#   None
+#######################################
+addInsecureRegistry() {
+    if grep -q "insecure-registry $1" /etc/systemd/system/docker.service.d/replicated-registry.conf 2>/dev/null ; then
+        return
+    fi
+    mkdir -p /etc/systemd/system/docker.service.d
+    local execStart=$(cat /etc/systemd/system/multi-user.target.wants/docker.service | grep ExecStart)
+    cat <<EOF > /etc/systemd/system/docker.service.d/replicated-registry.conf
+[Service]
+ExecStart=
+$execStart --insecure-registry $1
+EOF
+    systemctl daemon-reload
+    systemctl restart docker
 }

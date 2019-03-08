@@ -13,7 +13,7 @@ SERVICE_TYPE="{{ service_type }}"
 PROXY_ADDRESS="{{ proxy_address }}"
 NO_PROXY_ADDRESSES="{{ no_proxy_addresses }}"
 REPLICATED_DOCKER_HOST="{{ replicated_docker_host }}"
-REGISTRY_ADDRESS_OVERRIDE=
+REGISTRY_ADDRESS_OVERRIDE="{{ registry_address_override }}"
 IP_ALLOC_RANGE=10.32.0.0/12  # default for weave
 CEPH_DASHBOARD_URL=
 # booleans
@@ -32,7 +32,6 @@ REGISTRY_YAML=0
 BIND_DAEMON_NODE=0
 API_SERVICE_ADDRESS="{{ api_service_address }}"
 HA_CLUSTER="{{ ha_cluster }}"
-REGISTRY_NODE_PORT=31500
 
 {% include 'common/kubernetes.sh' %}
 
@@ -42,7 +41,6 @@ while [ "$1" != "" ]; do
     case $_param in
         airgap)
             AIRGAP=1
-            BIND_DAEMON_NODE=1
             ;;
         bind-daemon-node|bind_daemon_node)
             BIND_DAEMON_NODE=1
@@ -128,6 +126,9 @@ while [ "$1" != "" ]; do
             ;;
         ceph-dashboard-url|ceph_dashboard_url)
             CEPH_DASHBOARD_URL="$_value"
+            ;;
+        registry-address-override|registry_address_override)
+            REGISTRY_ADDRESS_OVERRIDE="$_value"
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
@@ -1721,12 +1722,11 @@ metadata:
   labels:
     app: docker-registry
 spec:
-  type: NodePort
+  type: ClusterIP
   ports:
   - port: 5000
     name: registry
     targetPort: 5000
-    nodePort: $REGISTRY_NODE_PORT
     protocol: TCP
   selector:
     app: docker-registry
@@ -1736,10 +1736,6 @@ EOF
 ################################################################################
 # Execution starts here
 ################################################################################
-
-if [ "$AIRGAP" = "1" ]; then
-    REGISTRY_ADDRESS_OVERRIDE="localhost:$REGISTRY_NODE_PORT"
-fi
 
 if [ "$WEAVE_YAML" = "1" ]; then
     render_weave_yaml

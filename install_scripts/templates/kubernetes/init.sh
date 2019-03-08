@@ -46,9 +46,9 @@ DEFAULT_CLUSTER_DNS="10.96.0.10"
 CLUSTER_DNS=$DEFAULT_CLUSTER_DNS
 ENCRYPT_NETWORK=
 ADDITIONAL_NO_PROXY=
-IPVS=0 # ipvs does not support addressing node port services with localhost
+IPVS=1
 CEPH_DASHBOARD_URL=
-REGISTRY_NODE_PORT=31500
+REGISTRY_ADDRESS_OVERRIDE=
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -449,6 +449,14 @@ registryDeploy() {
     kubectl apply -f /tmp/registry.yml
 
     logStep "Waiting for registry..."
+    local registryIP=$(kubectl get service docker-registry -o jsonpath='{.spec.clusterIP}')
+    while [ -z "$registryIP" ]; do
+        sleep 1
+        registryIP=$(kubectl get service docker-registry -o jsonpath='{.spec.clusterIP}')
+    done
+    REGISTRY_ADDRESS_OVERRIDE="$registryIP:5000"
+    YAML_GENERATE_OPTS="$YAML_GENERATE_OPTS registry-address-override=$REGISTRY_ADDRESS_OVERRIDE"
+    addInsecureRegistry "$SERVICE_CIDR"
     waitForRegistry
 
     logSuccess "Registry deployed"
@@ -459,11 +467,11 @@ waitForRegistry() {
     local spinstr='|/-\'
     while true; do
         if commandExists "curl"; then
-            if curl -s -o /dev/null -I -w "%{http_code}" "http://localhost:$REGISTRY_NODE_PORT/v2/" | grep -q 200; then
+            if curl -s -o /dev/null -I -w "%{http_code}" "http://${REGISTRY_ADDRESS_OVERRIDE}/v2/" | grep -q 200; then
                 return
             fi
         else
-            if wget -qO- --server-response  "http://localhost:$REGISTRY_NODE_PORT/v2/" | awk '/^  HTTP/{print $2}' | grep -q 200; then
+            if wget -qO- --server-response  "http://${REGISTRY_ADDRESS_OVERRIDE}/v2/" | awk '/^  HTTP/{print $2}' | grep -q 200; then
                 return
             fi
         fi
@@ -477,6 +485,9 @@ waitForRegistry() {
 
 kubernetesDeploy() {
     logStep "deploy replicated components"
+    if [ "$HA_CLUSTER" -eq "1" ]; then
+        kubectl patch deployment replicated --type json -p='[{"op": "remove", "path": "/spec/template/spec/affinity"}]' 2>/dev/null || true
+    fi
 
     logStep "generate manifests"
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS > /tmp/kubernetes.yml
@@ -851,10 +862,10 @@ labelMasterNode
 
 maybeUpgradeKubernetes "$KUBERNETES_VERSION"
 if [ "$DID_UPGRADE_KUBERNETES" = "0" ]; then
-    WAS_IPVS=0
-    if isKubeproxyInIpvsMode; then
-        WAS_IPVS=1
-    fi
+    # WAS_IPVS=0
+    # if isKubeproxyInIpvsMode; then
+        # WAS_IPVS=1
+    # fi
 
     # If we did not upgrade k8s then just apply the config in case it changed.
     kubeadm upgrade apply --force --yes --config=/opt/replicated/kubeadm.conf
@@ -862,9 +873,9 @@ if [ "$DID_UPGRADE_KUBERNETES" = "0" ]; then
 
     # Check if we switched kube-proxy mode from ipvs to iptables. If so then we need to let
     # Kubernetes recreate all kube-proxy pods.
-    if [ "$WAS_IPVS" = "1" ] && ! isKubeproxyInIpvsMode; then
-        restartKubeproxy
-    fi
+    # if [ "$WAS_IPVS" = "1" ] && ! isKubeproxyInIpvsMode; then
+        # restartKubeproxy
+    # fi
 fi
 
 echo
@@ -912,7 +923,7 @@ if [ "$AIRGAP" = "1" ]; then
     # to it so that Replicated components can get rescheduled to additional nodes.
     registryDeploy
 
-    airgapPushReplicatedImagesToRegistry "localhost:$REGISTRY_NODE_PORT"
+    airgapPushReplicatedImagesToRegistry "$REGISTRY_ADDRESS_OVERRIDE"
 fi
 
 kubernetesDeploy
