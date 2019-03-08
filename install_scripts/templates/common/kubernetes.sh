@@ -158,7 +158,7 @@ k8sPackageTag() {
             bail "Unsupported distribution $LSB_DIST$DIST_VERSION"
             ;;
     esac
-    
+
 }
 
 #######################################
@@ -549,6 +549,19 @@ k8sMasterNodeName() {
 #######################################
 k8sNamespaceExists() {
     kubectl get namespaces | grep "$1" > /dev/null
+}
+
+#######################################
+# Return status code 0 if there is a storageclass with the default annotation, else 1
+# Globals:
+#   None
+# Arguments:
+#   provisioner
+# Returns:
+#   None
+#######################################
+defaultStorageClassExists() {
+    kubectl get storageclass -o=jsonpath='{.items[*].metadata.annotations}' | grep -q "storageclass.kubernetes.io/is-default-class":"true"
 }
 
 

@@ -339,12 +339,14 @@ rookDeploy() {
     # never upgrade an existing rook cluster
     if k8sNamespaceExists rook && k8sNamespaceExists rook-system ; then
         logSuccess "Rook 0.7.1 already deployed"
+        maybeDefaultRookStorageClass
         return
     fi
 
     # namespaces used in Rook 0.8+
     if k8sNamespaceExists rook-ceph && k8sNamespaceExists rook-ceph-system ; then
         logSuccess "Rook already deployed"
+        maybeDefaultRookStorageClass
         return
     fi
 
@@ -358,6 +360,13 @@ rookDeploy() {
     sudo systemctl restart kubelet
     kubectl apply -f /tmp/rook-ceph.yml
     logSuccess "Rook deployed"
+}
+
+maybeDefaultRookStorageClass() {
+    if ! defaultStorageClassExists ; then
+        logSubstep "making existing rook storage class default"
+        kubectl patch storageclass "$STORAGE_CLASS" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+    fi
 }
 
 hostpathProvisionerDeploy() {
