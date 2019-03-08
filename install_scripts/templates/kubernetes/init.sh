@@ -869,20 +869,9 @@ labelMasterNode
 
 maybeUpgradeKubernetes "$KUBERNETES_VERSION"
 if [ "$DID_UPGRADE_KUBERNETES" = "0" ]; then
-    # WAS_IPVS=0
-    # if isKubeproxyInIpvsMode; then
-        # WAS_IPVS=1
-    # fi
-
     # If we did not upgrade k8s then just apply the config in case it changed.
     kubeadm upgrade apply --force --yes --config=/opt/replicated/kubeadm.conf
     waitForNodes
-
-    # Check if we switched kube-proxy mode from ipvs to iptables. If so then we need to let
-    # Kubernetes recreate all kube-proxy pods.
-    # if [ "$WAS_IPVS" = "1" ] && ! isKubeproxyInIpvsMode; then
-        # restartKubeproxy
-    # fi
 fi
 
 echo
