@@ -54,23 +54,13 @@ downloadPkiBundle() {
     fi
     logStep "Download Kubernetes PKI bundle"
     _opt=
-    if commandExists "curl"; then
-        if [ "$INSECURE" -eq "1" ]; then
-            _opt="-k"
-        elif [ -n "$CA" ]; then
-            echo "$CA" | base64 -d > /tmp/replicated-ca.crt
-            _opt="--cacert /tmp/replicated-ca.crt"
-        fi
-        (set -x; curl --noproxy "*" --max-time 30 --connect-timeout 2 $_opt -qSsf "$MASTER_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
-    else
-        if [ "$INSECURE" -eq "1" ]; then
-            _opt="--no-check-certificate"
-        elif [ -n "$CA" ]; then
-            echo "$CA" | base64 -d > /tmp/replicated-ca.crt
-            _opt="--ca-certificate=/tmp/replicated-ca.crt"
-        fi
-        (set -x; wget --no-proxy -t 1 --timeout=30 --connect-timeout=2 $_opt -qO- "$MASTER_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
+    if [ "$INSECURE" -eq "1" ]; then
+        _opt="-k"
+    elif [ -n "$CA" ]; then
+        echo "$CA" | base64 -d > /tmp/replicated-ca.crt
+        _opt="--cacert /tmp/replicated-ca.crt"
     fi
+    (set -x; curl --noproxy "*" --max-time 30 --connect-timeout 2 $_opt -qSsf "$MASTER_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
     (set -x; tar -C /etc/kubernetes/ -xvf /tmp/etc-kubernetes.tar)
     logSuccess "Kubernetes PKI downloaded successfully"
 }
