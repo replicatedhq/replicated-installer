@@ -457,14 +457,8 @@ waitForRegistry() {
     local delay=0.75
     local spinstr='|/-\'
     while true; do
-        if commandExists "curl"; then
-            if curl -s -o /dev/null -I -w "%{http_code}" "http://${REGISTRY_ADDRESS_OVERRIDE}/v2/" | grep -q 200; then
-                return
-            fi
-        else
-            if wget -qO- --server-response  "http://${REGISTRY_ADDRESS_OVERRIDE}/v2/" | awk '/^  HTTP/{print $2}' | grep -q 200; then
-                return
-            fi
+        if curl -s -o /dev/null -I -w "%{http_code}" "http://${REGISTRY_ADDRESS_OVERRIDE}/v2/" | grep -q 200; then
+            return
         fi
         local temp=${spinstr#?}
         printf " [%c]  " "$spinstr"
