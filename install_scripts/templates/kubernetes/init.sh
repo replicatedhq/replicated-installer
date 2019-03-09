@@ -908,9 +908,11 @@ if [ "$AIRGAP" = "1" ]; then
 
     # If this is an airgap installation we need to deploy a registry and push all Replicated images
     # to it so that Replicated components can get rescheduled to additional nodes.
-    registryDeploy
-
-    airgapPushReplicatedImagesToRegistry "$REGISTRY_ADDRESS_OVERRIDE"
+    semverParse "{{ replicated_version }}"
+    if [ "$minor" -ge 34 ]; then
+        registryDeploy
+        airgapPushReplicatedImagesToRegistry "$REGISTRY_ADDRESS_OVERRIDE"
+    fi
 fi
 
 kubernetesDeploy
