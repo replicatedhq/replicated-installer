@@ -1271,3 +1271,19 @@ EOF
     systemctl daemon-reload
     systemctl restart docker
 }
+
+#######################################
+# Allow scheduling on control plane nodes
+# Globals:
+#   None
+# Arguments:
+#   registry host
+# Returns:
+#   None
+#######################################
+untaintMaster() {
+    logStep "remove NoSchedule taint from master node"
+    kubectl taint nodes --all node-role.kubernetes.io/master:NoSchedule- || \
+        echo "Taint not found or already removed. The above error can be ignored."
+    logSuccess "master taint removed"
+}

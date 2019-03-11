@@ -279,13 +279,6 @@ ensureCNIPlugins() {
     logSuccess "CNI configured"
 }
 
-untaintMaster() {
-    logStep "remove NoSchedule taint from master node"
-    kubectl taint nodes --all node-role.kubernetes.io/master:NoSchedule- || \
-        echo "Taint not found or already removed. The above error can be ignored."
-    logSuccess "master taint removed"
-}
-
 getYAMLOpts() {
     opts=""
     if [ "$AIRGAP" = "1" ]; then

@@ -400,6 +400,9 @@ if ! docker ps | grep -q 'k8s.gcr.io/pause'; then
 fi
 
 maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
+if [ "$MASTER" -eq "1" ]; then
+    untaintMaster
+fi
 ensureRookPluginsRegistered
 
 purgeNative
