@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+
 AIRGAP=0
 DAEMON_TOKEN=
 GROUP_ID=
@@ -12,6 +13,9 @@ YAML_GENERATE_OPTS=
 
 PUBLIC_ADDRESS=
 PRIVATE_ADDRESS=
+HA_CLUSTER=0
+LOAD_BALANCER_ADDRESS=
+LOAD_BALANCER_PORT=
 REGISTRY_BIND_PORT=
 SKIP_DOCKER_INSTALL=0
 OFFLINE_DOCKER_INSTALL=0
@@ -44,6 +48,7 @@ ENCRYPT_NETWORK=
 ADDITIONAL_NO_PROXY=
 IPVS=1
 CEPH_DASHBOARD_URL=
+REGISTRY_ADDRESS_OVERRIDE=
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -79,6 +84,34 @@ set -e
 {% include 'common/swap.sh' %}
 {% include 'common/kubernetes-upgrade.sh' %}
 {% include 'common/firewall.sh' %}
+
+promptForLoadBalancerAddress() {
+    # Check if we already have the load balancer address set in the kubeadm config
+    if [ -z "$LOAD_BALANCER_ADDRESS" ] && kubeadm config view >/dev/null 2>&1; then
+        LOAD_BALANCER_ADDRESS="$(kubeadm config view | grep 'controlPlaneEndpoint:' | sed 's/controlPlaneEndpoint: \|"//g')"
+    fi
+
+    if [ -z "$LOAD_BALANCER_ADDRESS" ]; then
+        printf "Please enter a load balancer address to route external and internal traffic to the API servers.\n"
+        printf "In the absence of a load balancer address, all traffic will be routed to the first master.\n"
+        printf "Load balancer address: "
+        prompt
+        LOAD_BALANCER_ADDRESS="$PROMPT_RESULT"
+        if [ -z "$LOAD_BALANCER_ADDRESS" ]; then
+            LOAD_BALANCER_ADDRESS="$PRIVATE_ADDRESS"
+            LOAD_BALANCER_PORT=6443
+        fi
+    fi
+
+    if [ -z "$LOAD_BALANCER_PORT" ]; then
+        splitHostPort "$LOAD_BALANCER_ADDRESS"
+        LOAD_BALANCER_ADDRESS="$HOST"
+        LOAD_BALANCER_PORT="$PORT"
+    fi
+    if [ -z "$LOAD_BALANCER_PORT" ]; then
+        LOAD_BALANCER_PORT=6443
+    fi
+}
 
 initKubeadmConfig() {
     local kubeadmVersion=$(getKubeadmVersion)
@@ -161,6 +194,10 @@ initKube() {
     if [ ! -e "/etc/kubernetes/manifests/kube-apiserver.yaml" ]; then
         logStep "Initialize Kubernetes"
 
+        if [ "$HA_CLUSTER" -eq "1" ]; then
+            promptForLoadBalancerAddress
+        fi
+
         initKubeadmConfig
 
         loadIPVSKubeProxyModules
@@ -192,8 +229,11 @@ initKube() {
         fi
     # we don't write any init files that can be read by kubeadm v1.12
     elif [ "$kubeV" != "v1.12.3" ]; then
-        logStep "verify kubernetes config"
+        logStep "Verify kubernetes config"
         chmod 444 /etc/kubernetes/admin.conf
+        if [ "$HA_CLUSTER" -eq "1" ]; then
+            promptForLoadBalancerAddress
+        fi
         initKubeadmConfig
         loadIPVSKubeProxyModules
         kubeadm config upload from-file --config /opt/replicated/kubeadm.conf
@@ -202,9 +242,8 @@ initKube() {
     cp /etc/kubernetes/admin.conf $HOME/admin.conf
     chown $SUDO_USER:$SUDO_GID $HOME/admin.conf
 
-    chmod 444 /etc/kubernetes/admin.conf
-    echo 'export KUBECONFIG=/etc/kubernetes/admin.conf' >> /etc/profile
-    echo "source <(kubectl completion bash)" >> /etc/profile
+    exportKubeconfig
+
     logSuccess "Kubernetes Master Initialized"
 }
 
@@ -240,17 +279,13 @@ ensureCNIPlugins() {
     logSuccess "CNI configured"
 }
 
-untaintMaster() {
-    logStep "remove NoSchedule taint from master node"
-    kubectl taint nodes --all node-role.kubernetes.io/master:NoSchedule- || \
-        echo "Taint not found or already removed. The above error can be ignored."
-    logSuccess "master taint removed"
-}
-
 getYAMLOpts() {
-    opts="bind-daemon-node"
+    opts=""
     if [ "$AIRGAP" = "1" ]; then
         opts=$opts" airgap"
+    fi
+    if [ "$HA_CLUSTER" != "1" ]; then
+        opts=$opts" bind-daemon-node"
     fi
     if [ -n "$LOG_LEVEL" ]; then
         opts=$opts" log-level=$LOG_LEVEL"
@@ -263,6 +298,12 @@ getYAMLOpts() {
     fi
     if [ -n "$IP_ALLOC_RANGE" ]; then
         opts=$opts" ip-alloc-range=$IP_ALLOC_RANGE"
+    fi
+    if [ "$HA_CLUSTER" -eq "1" ]; then
+        opts=$opts" ha"
+    fi
+    if [ -n "$LOAD_BALANCER_ADDRESS" ] && [ -n "$LOAD_BALANCER_PORT" ]; then
+        opts=$opts" api-service-address=${LOAD_BALANCER_ADDRESS}:${LOAD_BALANCER_PORT}"
     fi
     if [ -n "$PROXY_ADDRESS" ]; then
         opts=$opts" http-proxy=$PROXY_ADDRESS"
@@ -394,8 +435,55 @@ contourDeploy() {
     logSuccess "Contour deployed"
 }
 
+clusteradminDeploy() {
+    logStep "Deploying cluster admin resources"
+
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS clusteradmin_yaml=1 > /tmp/clusteradmin.yml
+    kubectl apply -f /tmp/clusteradmin.yml
+
+    logSuccess "Cluster admin resources deployed"
+}
+
+registryDeploy() {
+    logStep "Deploy registry"
+
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS registry_yaml=1 > /tmp/registry.yml
+    kubectl apply -f /tmp/registry.yml
+
+    logStep "Waiting for registry..."
+    local registryIP=$(kubectl get service docker-registry -o jsonpath='{.spec.clusterIP}')
+    while [ -z "$registryIP" ]; do
+        sleep 1
+        registryIP=$(kubectl get service docker-registry -o jsonpath='{.spec.clusterIP}')
+    done
+    REGISTRY_ADDRESS_OVERRIDE="$registryIP:5000"
+    YAML_GENERATE_OPTS="$YAML_GENERATE_OPTS registry-address-override=$REGISTRY_ADDRESS_OVERRIDE"
+    addInsecureRegistry "$SERVICE_CIDR"
+    waitForRegistry
+
+    logSuccess "Registry deployed"
+}
+
+waitForRegistry() {
+    local delay=0.75
+    local spinstr='|/-\'
+    while true; do
+        if curl -s -o /dev/null -I -w "%{http_code}" "http://${REGISTRY_ADDRESS_OVERRIDE}/v2/" | grep -q 200; then
+            return
+        fi
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
+}
+
 kubernetesDeploy() {
     logStep "deploy replicated components"
+    if [ "$HA_CLUSTER" -eq "1" ]; then
+        kubectl patch deployment replicated --type json -p='[{"op": "remove", "path": "/spec/template/spec/affinity"}]' 2>/dev/null || true
+    fi
 
     logStep "generate manifests"
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS > /tmp/kubernetes.yml
@@ -413,7 +501,7 @@ includeBranding() {
         echo "$TERMS" | base64 --decode > /tmp/terms.json
     fi
 
-    REPLICATED_POD_ID="$(kubectl get pods 2> /dev/null | grep -E "^replicated-[^-]+-[^-]+$" | awk '{ print $1}')"
+    REPLICATED_POD_ID="$(kubectl get pods 2>/dev/null | grep -E "^replicated-[^-]+-[^-]+$" | awk '{ print $1}')"
 
     # then copy in the branding file
     if [ -n "$REPLICATED_POD_ID" ]; then
@@ -483,21 +571,22 @@ outroKubeadm() {
     printf "\t\t${GREEN}Installation${NC}\n"
     printf "\t\t${GREEN}  Complete ✔${NC}\n"
     printf "\n"
-    printf "\nTo access the cluster with kubectl, reload your shell:\n\n"
+    printf "To access the cluster with kubectl, reload your shell:\n"
     printf "\n"
-    printf "${GREEN}    bash -l${NC}"
-    printf "\n"
+    printf "${GREEN}    bash -l${NC}\n"
     printf "\n"
     if [ "$AIRGAP" -eq "1" ]; then
-        printf "\nTo add nodes to this installation, copy and unpack this bundle on your other nodes, and run the following:"
+        printf "\n"
+        printf "To add nodes to this installation, copy and unpack this bundle on your other nodes, and run the following:"
         printf "\n"
         printf "\n"
-        printf "${GREEN}    cat ./kubernetes-node-join.sh  | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION \n"
+        printf "${GREEN}    cat ./kubernetes-node-join.sh | sudo bash -s airgap kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION \n"
         printf "${NC}"
         printf "\n"
         printf "\n"
     else
-        printf "\nTo add nodes to this installation, run the following script on your other nodes"
+        printf "\n"
+        printf "To add nodes to this installation, run the following script on your other nodes"
         printf "\n"
         printf "${GREEN}    curl {{ replicated_install_url }}/{{ kubernetes_node_join_path }} | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION \n"
         printf "${NC}"
@@ -550,11 +639,18 @@ while [ "$1" != "" ]; do
         docker-version|docker_version)
             PINNED_DOCKER_VERSION="$_value"
             ;;
+        ha)
+            HA_CLUSTER=1
+            ;;
         http-proxy|http_proxy)
             PROXY_ADDRESS="$_value"
             ;;
         ip-alloc-range|ip_alloc_range)
             IP_ALLOC_RANGE="$_value"
+            ;;
+        load-balancer-address|load_balancer_address)
+            LOAD_BALANCER_ADDRESS="$_value"
+            HA_CLUSTER=1
             ;;
         log-level|log_level)
             LOG_LEVEL="$_value"
@@ -645,6 +741,13 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 setK8sPatchVersion
 
 checkFirewalld
+
+if [ "$HA_CLUSTER" = "1" ]; then
+    semverCompare "{{ replicated_version }}" "2.34.0"
+    if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
+        bail "HA installs require Replicated >= 2.34.0"
+    fi
+fi
 
 if [ "$KUBERNETES_VERSION" == "1.9.3" ]; then
     IPVS=0
@@ -758,9 +861,16 @@ weavenetDeploy
 untaintMaster
 
 spinnerMasterNodeReady
-labelMasterNode
+if [ "$HA_CLUSTER" != "1" ]; then
+    labelMasterNode
+fi
 
 maybeUpgradeKubernetes "$KUBERNETES_VERSION"
+if [ "$DID_UPGRADE_KUBERNETES" = "0" ]; then
+    # If we did not upgrade k8s then just apply the config in case it changed.
+    kubeadm upgrade apply --force --yes --config=/opt/replicated/kubeadm.conf
+    waitForNodes
+fi
 
 echo
 kubectl get nodes
@@ -794,13 +904,24 @@ if [ "$KUBERNETES_ONLY" -eq "1" ]; then
     exit 0
 fi
 
+clusteradminDeploy
+
 if [ "$AIRGAP" = "1" ]; then
-    logStep "Loading replicated and replicated-ui images from package\n"
+    logStep "Loading replicated, replicated-ui and replicated-operator images from package\n"
     airgapLoadReplicatedImages
+    airgapLoadReplicatedAddonImages
     logStep "Loading replicated debian, command, statsd-graphite, and premkit images from package\n"
     airgapLoadSupportImages
     airgapMaybeLoadSupportBundle
     airgapMaybeLoadRetraced
+
+    # If this is an airgap installation we need to deploy a registry and push all Replicated images
+    # to it so that Replicated components can get rescheduled to additional nodes.
+    semverCompare "{{ replicated_version }}" "2.34.0"
+    if [ "$SEMVER_COMPARE_RESULT" -ge "0" ]; then
+        registryDeploy
+        airgapPushReplicatedImagesToRegistry "$REGISTRY_ADDRESS_OVERRIDE"
+    fi
 fi
 
 kubernetesDeploy

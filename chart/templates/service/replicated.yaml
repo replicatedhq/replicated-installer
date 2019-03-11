@@ -22,3 +22,21 @@ spec:
   - name: replicated-support
     port: 9881
     protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: replicated-api
+  labels:
+    app: replicated
+    tier: master
+spec:
+  type: NodePort
+  selector:
+    app: replicated
+    tier: master
+  ports:
+  - name: replicated-api
+    port: 9876
+    nodePort: 9876
+    protocol: TCP

@@ -211,7 +211,8 @@ def get_version_for_app(app_slug, app_channel, replicated_channel):
         if not doc or 'host_requirements' not in doc:
             continue
         host_requirements = doc['host_requirements']
-        if not host_requirements or 'replicated_version' not in host_requirements:
+        if (not host_requirements
+                or 'replicated_version' not in host_requirements):
             continue
         version_range = host_requirements['replicated_version']
         break

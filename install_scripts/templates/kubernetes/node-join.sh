@@ -37,29 +37,60 @@ PRIVATE_ADDRESS=
 {% include 'common/firewall.sh' %}
 
 KUBERNETES_MASTER_PORT="6443"
-KUBERNETES_MASTER_ADDR="{{ kubernetes_master_addr }}"
+KUBERNETES_MASTER_ADDR="{{ kubernetes_master_address }}"
+API_SERVICE_ADDRESS=
+MASTER_PKI_BUNDLE_URL=
+INSECURE=0
+MASTER=0
+CA=
+CERT=
 KUBEADM_TOKEN="{{ kubeadm_token }}"
 KUBEADM_TOKEN_CA_HASH="{{ kubeadm_token_ca_hash }}"
 SERVICE_CIDR="10.96.0.0/12" # kubeadm default
 
+downloadPkiBundle() {
+    if [ -z "$MASTER_PKI_BUNDLE_URL" ]; then
+        return
+    fi
+    logStep "Download Kubernetes PKI bundle"
+    _opt=
+    if [ "$INSECURE" -eq "1" ]; then
+        _opt="-k"
+    elif [ -n "$CA" ]; then
+        echo "$CA" | base64 -d > /tmp/replicated-ca.crt
+        _opt="--cacert /tmp/replicated-ca.crt"
+    fi
+    (set -x; curl --noproxy "*" --max-time 30 --connect-timeout 2 $_opt -qSsf "$MASTER_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
+    (set -x; tar -C /etc/kubernetes/ -xvf /tmp/etc-kubernetes.tar)
+    logSuccess "Kubernetes PKI downloaded successfully"
+}
+
 joinKubernetes() {
-    logStep "Join Kubernetes Node"
+    if [ "$MASTER" -eq "1" ]; then
+        logStep "Join Kubernetes master node"
+    else
+        logStep "Join Kubernetes node"
+    fi
     semverParse "$KUBERNETES_VERSION"
     set +e
     if [ "$minor" -ge 13 ]; then
         mkdir -p /opt/replicated
         makeKubeadmJoinConfig
-        kubeadm join --config=/opt/replicated/kubeadm.conf
+        (set -x; kubeadm join --config=/opt/replicated/kubeadm.conf)
     else
-        kubeadm join --discovery-token-ca-cert-hash "${KUBEADM_TOKEN_CA_HASH}" --token "${KUBEADM_TOKEN}" "${KUBERNETES_MASTER_ADDR}:${KUBERNETES_MASTER_PORT}"
+        (set -x; kubeadm join --discovery-token-ca-cert-hash "${KUBEADM_TOKEN_CA_HASH}" --token "${KUBEADM_TOKEN}" "${API_SERVICE_ADDRESS}")
     fi
     _status=$?
     set -e
     if [ "$_status" -ne "0" ]; then
         printf "${RED}Failed to join the kubernetes cluster.${NC}\n" 1>&2
-        exit $?
+        exit $_status
     fi
-    logSuccess "Node Joined successfully"
+    if [ "$MASTER" -eq "1" ]; then
+        logStep "Master node joined successfully"
+    else
+        logStep "Node joined successfully"
+    fi
 }
 
 promptForToken() {
@@ -94,7 +125,7 @@ promptForTokenCAHash() {
     done
 }
 
-promptForAddress() {
+promptForMasterAddress() {
     if [ -n "$KUBERNETES_MASTER_ADDR" ]; then
         return
     fi
@@ -147,6 +178,19 @@ purgeNative() {
         /etc/sysconfig/replicated*
 }
 
+outro() {
+    printf "\n"
+    printf "\t\t${GREEN}Installation${NC}\n"
+    printf "\t\t${GREEN}  Complete ✔${NC}\n"
+    if [ "$MASTER" -eq "1" ]; then
+        printf "\n"
+        printf "To access the cluster with kubectl, reload your shell:\n"
+        printf "\n"
+        printf "${GREEN}    bash -l${NC}\n"
+    fi
+    printf "\n"
+}
+
 ################################################################################
 # Execution starts here
 ################################################################################
@@ -193,6 +237,16 @@ while [ "$1" != "" ]; do
             ;;
         kubernetes-master-address|kubernetes_master_address)
             KUBERNETES_MASTER_ADDR="$_value"
+            ;;
+        api-service-address|api_service_address)
+            API_SERVICE_ADDRESS="$_value"
+            ;;
+        master-pki-bundle-url|master_pki_bundle_url)
+            MASTER_PKI_BUNDLE_URL="$_value"
+            MASTER=1
+            ;;
+        insecure)
+            INSECURE=1
             ;;
         kubeadm-token|kubeadm_token)
             KUBEADM_TOKEN="$_value"
@@ -255,7 +309,14 @@ setK8sPatchVersion
 
 checkFirewalld
 
-promptForAddress
+if [ -n "$API_SERVICE_ADDRESS" ]; then
+    splitHostPort "$API_SERVICE_ADDRESS"
+    KUBERNETES_MASTER_ADDR="$HOST"
+    KUBERNETES_MASTER_PORT="$PORT"
+else
+    promptForMasterAddress
+    API_SERVICE_ADDRESS="${KUBERNETES_MASTER_ADDR}:${KUBERNETES_MASTER_PORT}"
+fi
 promptForToken
 promptForTokenCAHash
 
@@ -324,6 +385,7 @@ if [ "$AIRGAP" = "1" ]; then
         fi
     fi
     airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"
+    addInsecureRegistry "$SERVICE_CIDR"
 else
     docker pull registry:2.6.2
     docker tag registry:2.6.2 registry:2
@@ -332,12 +394,23 @@ fi
 loadIPVSKubeProxyModules
 
 if ! docker ps | grep -q 'k8s.gcr.io/pause'; then
+    downloadPkiBundle
+
     joinKubernetes
 fi
 
 maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
+if [ "$MASTER" -eq "1" ]; then
+    untaintMaster
+fi
 ensureRookPluginsRegistered
 
 purgeNative
+
+if [ "$MASTER" -eq "1" ]; then
+    exportKubeconfig
+fi
+
+outro
 
 exit 0
