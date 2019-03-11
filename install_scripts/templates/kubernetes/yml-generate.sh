@@ -1616,7 +1616,7 @@ metadata:
   labels:
     app: docker-registry
 type: Opaque
-data:
+stringData:
   haSharedSecret: $haSharedSecret
 ---
 apiVersion: apps/v1beta1
