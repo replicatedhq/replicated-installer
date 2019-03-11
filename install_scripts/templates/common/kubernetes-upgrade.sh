@@ -202,14 +202,6 @@ maybeUpgradeKubernetesNode() {
     fi
 }
 
-isKubeproxyInIpvsMode() {
-    if kubectl -n kube-system get cm/kube-proxy -o yaml | grep -q 'mode: ipvs'; then
-        return 0
-    else
-        return 1
-    fi
-}
-
 #######################################
 # Run `kubectl get nodes` until it succeeds or up to 1 minute
 # Globals:

@@ -750,8 +750,8 @@ setK8sPatchVersion
 checkFirewalld
 
 if [ "$HA_CLUSTER" = "1" ]; then
-    semverParse "{{replicated_version}}"
-    if [ "$minor" -lt 34 ]; then
+    semverCompare "{{ replicated_version }}" "2.34.0"
+    if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
         bail "HA installs require Replicated >= 2.34.0"
     fi
 fi
@@ -868,6 +868,9 @@ weavenetDeploy
 untaintMaster
 
 spinnerMasterNodeReady
+if [ "$HA_CLUSTER" != "1" ]; then
+    labelMasterNode
+fi
 
 maybeUpgradeKubernetes "$KUBERNETES_VERSION"
 if [ "$DID_UPGRADE_KUBERNETES" = "0" ]; then
@@ -921,8 +924,8 @@ if [ "$AIRGAP" = "1" ]; then
 
     # If this is an airgap installation we need to deploy a registry and push all Replicated images
     # to it so that Replicated components can get rescheduled to additional nodes.
-    semverParse "{{ replicated_version }}"
-    if [ "$minor" -ge 34 ]; then
+    semverCompare "{{ replicated_version }}" "2.34.0"
+    if [ "$SEMVER_COMPARE_RESULT" -ge "0" ]; then
         registryDeploy
         airgapPushReplicatedImagesToRegistry "$REGISTRY_ADDRESS_OVERRIDE"
     fi

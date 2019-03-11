@@ -19,6 +19,7 @@ RHEL7_K8S_11=rhel7-v1.11.5-20181204
 RHEL7_K8S_12=rhel7-v1.12.3-20181211
 RHEL7_K8S_13=rhel7-v1.13.0-20181211
 
+DAEMON_NODE_KEY=replicated.com/daemon
 
 #######################################
 # Set the patch version in KUBERNETES_VERSION.
@@ -792,6 +793,23 @@ spinnerMasterNodeReady()
     logStep "Await node ready"
     spinnerNodesReady
     logSuccess "Master Node Ready!"
+}
+
+#######################################
+# Label master node
+# Globals:
+#   AIRGAP
+# Arguments:
+#   Namespace, Pod prefix
+# Returns:
+#   None
+#######################################
+labelMasterNode()
+{
+    if kubectl get nodes --show-labels | grep -q "$DAEMON_NODE_KEY" ; then
+        return
+    fi
+    kubectl label nodes --overwrite "$(k8sMasterNodeName)" "$DAEMON_NODE_KEY"=
 }
 
 #######################################

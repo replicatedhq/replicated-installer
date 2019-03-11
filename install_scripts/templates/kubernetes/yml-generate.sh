@@ -144,9 +144,8 @@ while [ "$1" != "" ]; do
 done
 
 render_replicated_deployment() {
-    # On airgap installs the daemon cannot change nodes because of the registry address.
-    # On AKA the daemon cannot change nodes because the kubeadm join script needs the K8s API address.
-    # The label is applied in the kubernetes-init script.
+    # On non-ha installs the daemon cannot change nodes because the join script uses the host IP
+    # for the Kubernetes API server IP
     AFFINITY=
     if [ "$BIND_DAEMON_NODE" = "1" ]; then
         AFFINITY=$(cat <<-EOF
@@ -203,6 +202,7 @@ spec:
         app: replicated
         tier: master
     spec:
+$AFFINITY
       containers:
       - name: replicated
         image: "${REGISTRY_ADDRESS_OVERRIDE:-$REPLICATED_DOCKER_HOST}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
@@ -1580,6 +1580,7 @@ EOF
 }
 
 render_registry_yaml() {
+    haSharedSecret=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c9)
     cat <<EOF
 ---
 apiVersion: v1
@@ -1616,7 +1617,7 @@ metadata:
     app: docker-registry
 type: Opaque
 data:
-  haSharedSecret: U29tZVZlcnlTdHJpbmdTZWNyZXQK # TODO: generate
+  haSharedSecret: $haSharedSecret
 ---
 apiVersion: apps/v1beta1
 kind: StatefulSet
