@@ -1255,10 +1255,27 @@ exportKubeconfig() {
 # Arguments:
 #   registry host
 # Returns:
-#   None
+#   ADDED_INSECURE_REGISTRY
 #######################################
+ADDED_INSECURE_REGISTRY=0
 addInsecureRegistry() {
     if grep -q "insecure-registry $1" /etc/systemd/system/docker.service.d/replicated-registry.conf 2>/dev/null ; then
+        return
+    fi
+    if grep "insecure-registries" /etc/docker/daemon.json 2>/dev/null | grep -q "$1" ; then
+        return
+    fi
+
+    # prefer to configure using /etc/docker/daemon.json since that does not require a docker restart
+    # but don't attempt to edit json if that file already exists.
+    if [ ! -f "/etc/docker/daemon.json" ]; then
+        cat <<EOF >/etc/docker/daemon.json
+{
+    "insecure-registries": ["$1"]
+}
+EOF
+        systemctl kill -s HUP --kill-who=main docker.service
+        ADDED_INSECURE_REGISTRY=1
         return
     fi
     mkdir -p /etc/systemd/system/docker.service.d
@@ -1270,6 +1287,9 @@ $execStart --insecure-registry $1
 EOF
     systemctl daemon-reload
     systemctl restart docker
+    spinnerNodesReady
+
+    ADDED_INSECURE_REGISTRY=1
 }
 
 #######################################
