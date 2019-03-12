@@ -462,8 +462,9 @@ registryDeploy() {
     addInsecureRegistry "$SERVICE_CIDR"
     # check if there are worker nodes that need to be configured for the insecure registry
     local workers=$(kubectl get nodes --selector='!node-role.kubernetes.io/master' -o jsonpath='{.items[*].metadata.name}')
-    # check the ADDED_INSECURE_REGISTRY flag to ensure this is only shown once
-    if [ "$ADDED_INSECURE_REGISTRY" = "1" ] && [ -n "$workers" ]; then
+    local numMasters=$(kubectl get nodes --selector='node-role.kubernetes.io/master' | sed '1d' | wc -l)
+    # check the ADDED_INSECURE_REGISTRY flag and the number of masters to ensure this is only shown once
+    if [ "$ADDED_INSECURE_REGISTRY" = "1" ] && [ -n "$workers" ] && [ "$numMasters" -eq "1" ]; then
         cat <<EOF
 Configure Docker on all worker nodes to use http when pulling from the in-cluster registry before proceeding.
 
