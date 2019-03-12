@@ -1274,7 +1274,7 @@ addInsecureRegistry() {
     "insecure-registries": ["$1"]
 }
 EOF
-        kill -SIGHUP $(pidof dockerd) || true
+        systemctl kill -s HUP --kill-who=main docker.service
         ADDED_INSECURE_REGISTRY=1
         return
     fi
