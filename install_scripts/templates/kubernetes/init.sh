@@ -86,6 +86,10 @@ set -e
 {% include 'common/firewall.sh' %}
 
 promptForLoadBalancerAddress() {
+    if isLoadBalancerAddressChanging "$LOAD_BALANCER_ADDRESS"; then
+        # TODO
+    fi
+
     # Check if we already have the load balancer address set in the kubeadm config
     if [ -z "$LOAD_BALANCER_ADDRESS" ] && kubeadm config view >/dev/null 2>&1; then
         LOAD_BALANCER_ADDRESS="$(kubeadm config view | grep 'controlPlaneEndpoint:' | sed 's/controlPlaneEndpoint: \|"//g')"

@@ -1132,6 +1132,8 @@ getKubeadmVersion() {
 #   PUBLIC_ADDRESS
 #   IPVS
 #   HA_CLUSTER
+#   LOAD_BALANCER_ADDRESS
+#   LOAD_BALANCER_PORT
 # Arguments:
 #   None
 # Returns:

@@ -12,7 +12,8 @@
 #######################################
 
 #######################################
-# If kubernetes is installed and version is less than specified, upgrade. Kubeadm requires installing every minor version between current and target.
+# If kubernetes is installed and version is less than specified, upgrade.
+# Kubeadm requires installing every minor version between current and target.
 # kubeadm < 1.11 uses v1alpha1 config file format
 # kubeadm 1.11 writes v1alpha2 configs and can also read v1alpha1
 # kubeadm 1.12 writes v1alpha3 configs and can also read v1alpha2
@@ -20,7 +21,7 @@
 # Globals:
 #   KUBERNETES_ONLY
 # Arguments:
-#   upgradeVersion - e.g. 1.10.6
+#   k8sTargetVersion - e.g. 1.10.6
 # Returns:
 #   DID_UPGRADE_KUBERNETES
 #######################################
@@ -33,6 +34,7 @@ maybeUpgradeKubernetes() {
     local k8sTargetPatch="$patch"
 
     if allNodesUpgraded "$k8sTargetVersion"; then
+        maybeUpgradeKubernetesLoadBalancer "$k8sTargetVersion"
         return
     fi
     # attempt to stop Replicated to reduce Docker load during upgrade
@@ -136,11 +138,140 @@ maybeUpgradeKubernetes() {
 }
 
 #######################################
+# Returns 0 if load balancer address is changing
+# Globals:
+#   None
+# Arguments:
+#   Load balancer address
+# Returns:
+#   1 if load balancer address is changing, 0 if not
+#######################################
+isLoadBalancerAddressChanging() {
+    local loadBalancerAddress="$1"
+    if [ -z "$loadBalancerAddress" ] || ! kubeadm config view >/dev/null 2>&1; then
+        return 1
+    fi
+    local previous_address="$(kubeadm config view | grep 'controlPlaneEndpoint:' | sed 's/controlPlaneEndpoint: \|"//g')"
+    if [ -z "$previous_address" ]; then
+        return 1
+    fi
+    splitHostPort "$previous_address"
+    local previous_address="$HOST"
+    local previous_port="$PORT"
+    if [ -z "$previous_port" ]; then
+        previous_port=6443
+    fi
+    splitHostPort "$loadBalancerAddress"
+    local next_address="$HOST"
+    local next_port="$PORT"
+    if [ -z "$next_port" ]; then
+        next_port=6443
+    fi
+    if [ "$previous_address" = "$next_address" ] && [ "$previous_port" = "$next_port" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+#######################################
+# TODO
+# Globals:
+#   LOAD_BALANCER_ADDRESS
+#   LOAD_BALANCER_PORT
+# Arguments:
+#   k8sTargetVersion - e.g. 1.10.6
+# Returns:
+#   DID_UPGRADE_KUBERNETES
+#######################################
+DID_UPGRADE_KUBERNETES=0
+maybeUpgradeKubernetesLoadBalancer() {
+    if [ -z "$LOAD_BALANCER_ADDRESS" ] || [ -z "$LOAD_BALANCER_PORT" ]; then
+        return
+    fi
+    if ! isLoadBalancerAddressChanging "$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"; then
+        return
+    fi
+
+    local k8sTargetVersion="$1"
+    semverParse "$k8sTargetVersion"
+    local k8sTargetMajor="$major"
+    local k8sTargetMinor="$minor"
+    local k8sTargetPatch="$patch"
+
+    if [ "$k8sTargetMinor" -lt 13 ]; then
+        return
+    fi
+
+    echo ""
+    logStep "Kubernetes control plane endpoint updated, upgrading control plane..."
+    echo ""
+
+    # this will use the new load balancer address to the kubeadm.conf
+    makeKubeadmConfig
+
+    logStep "Regenerate api server certs"
+    rm /etc/kubernetes/pki/apiserver.*
+    kubeadm init phase certs apiserver --config=/opt/replicated/kubeadm.conf
+    logSuccess "Api server certs regenerated"
+
+    logStep "Regenerate kubernetes control plane config"
+    rm /etc/kubernetes/*.conf
+    kubeadm init phase kubeconfig all --config=/opt/replicated/kubeadm.conf
+    chmod 444 /etc/kubernetes/admin.conf
+    logSuccess "Kubernetes control plane config regenerated"
+
+    logStep "Restart kubernetes api server"
+    docker ps | grep k8s_kube-apiserver | awk '{print $1}' | xargs docker rm -f
+    logSuccess "Kubernetes api server restarted"
+
+    logStep "Upgrading kubernetes control plane"
+    kubeadm upgrade apply -yf --config=/opt/replicated/kubeadm.conf
+    logSuccess "Kubernetes control plane upgraded"
+
+    logStep "Restarting kube-proxy"
+    kubectl -n kube-system get pods | grep kube-proxy | awk '{print $1}' | xargs kubectl -n kube-system delete pod
+    logSuccess "Kube-proxy restarted"
+
+    waitForNodes
+    spinnerNodesReady
+
+    if [ "$(kubectl get nodes | grep master | wc -l)" -gt "1" ]; then
+        echo ""
+        printf "Run the upgrade script on remote master nodes before proceeding:\n\n"
+        printf "$ replicatedctl cluster node-join-script --master\n\n${GREEN}"
+        replicatedctl cluster node-join-script --master
+        printf "${NC}\n\n"
+        kubectl get nodes | grep master
+        echo ""
+        echo ""
+
+        while true; do
+            echo ""
+            READ_TIMEOUT=""
+            printf "${YELLOW}Have all master nodes been updated?${NC} "
+            if confirmN; then
+                break
+            fi
+        done
+
+        waitForNodes
+        spinnerNodesReady
+    fi
+
+    echo ""
+    logSuccess "Kubernetes control plane endpoint updated"
+    echo ""
+
+    DID_UPGRADE_KUBERNETES=1
+}
+
+#######################################
 # If kubelet is installed and version is less than specified, upgrade.
 # Globals:
 #   None
 # Arguments:
-#   upgradeVersion - e.g. 1.10.6
+#   k8sTargetVersion - e.g. 1.10.6
 # Returns:
 #   None
 #######################################
@@ -169,7 +300,7 @@ maybeUpgradeKubernetesNode() {
 
         if [ "$k8sTargetMinor" -gt 10 ]; then
             # kubeadm alpha phase kubelet write-env-file failed in airgap
-            local cgroupDriver=$(sudo docker info 2> /dev/null | grep "Cgroup Driver" | cut -d' ' -f 3)
+            local cgroupDriver=$(docker info 2> /dev/null | grep "Cgroup Driver" | cut -d' ' -f 3)
             local envFile="KUBELET_KUBEADM_ARGS=--cgroup-driver=%s --cni-bin-dir=/opt/cni/bin --cni-conf-dir=/etc/cni/net.d --network-plugin=cni\n"
             printf "$envFile" "$cgroupDriver" > /var/lib/kubelet/kubeadm-flags.env
 
@@ -332,7 +463,7 @@ upgradeK8sWorkers() {
             printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
         fi
         while true; do
-            echo
+            echo ""
             READ_TIMEOUT=""
             printf "Has script completed? "
             if confirmN; then

@@ -10,11 +10,11 @@ spec:
         - name: install-scripts
           env:
             - name: ENVIRONMENT
-              value: dev
+              value: staging
             - name: REPLICATED_INSTALL_URL
-              value: http://localhost:8090
+              value: http://122fb230.ngrok.io
             - name: GRAPHQL_PREM_ENDPOINT
-              value: http://docker.for.mac.host.internal:8033/graphql
+              value: https://api.stating.replicated.com/graphql
             - name: REGISTRY_ENDPOINT
               value: 'registry.staging.replicated.com' # TODO
             - name: MYSQL_HOST
