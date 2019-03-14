@@ -397,9 +397,10 @@ if ! docker ps | grep -q 'k8s.gcr.io/pause'; then
     downloadPkiBundle
 
     joinKubernetes
+else
+    maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
 fi
 
-maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
 if [ "$MASTER" -eq "1" ]; then
     untaintMaster
 fi

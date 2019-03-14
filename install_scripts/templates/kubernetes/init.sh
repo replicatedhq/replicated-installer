@@ -891,12 +891,10 @@ if [ "$DID_UPGRADE_KUBERNETES" = "0" ]; then
 fi
 
 echo
-kubectl get nodes
+(set -x; kubectl get nodes)
 logSuccess "Kubernetes nodes"
 echo
-
-echo
-kubectl get pods -n kube-system
+(set -x; kubectl get pods -n kube-system)
 logSuccess "Kubernetes system"
 echo
 
