@@ -823,7 +823,7 @@ labelMasterNode()
 #######################################
 isMasterNode()
 {
-    if docker ps | grep -q etcd; then
+    if [ -f /etc/kubernetes/manifests/kube-apiserver.yaml ]; then
         return 0
     else
         return 1
