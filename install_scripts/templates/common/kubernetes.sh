@@ -813,48 +813,17 @@ labelMasterNode()
 }
 
 #######################################
-# Get the current node id
-# Globals:
-#   None
-# Arguments:
-#   node
-# Returns:
-#   NODE
-#######################################
-NODE=
-getCurrentNodeId()
-{
-    local _node
-    if [ -n "$HOSTNAME" ]; then
-        _node="$(kubectl get node -o wide | grep "$HOSTNAME" | awk '{print $1}')"
-        if [ -n "$_node" ]; then
-            NODE="$_node"
-            return
-        fi
-    fi
-    _node="$(kubectl get node -o wide | grep "$PRIVATE_ADDRESS" | awk '{print $1}')"
-    if [ -n "$_node" ]; then
-        NODE="$_node"
-        return
-    fi
-}
-
-#######################################
 # Check if the node is a master
 # Globals:
 #   None
 # Arguments:
-#   node
+#   None
 # Returns:
 #   0 if master node, else 1
 #######################################
 isMasterNode()
 {
-    node=$1
-
-    local nout="$(kubectl get node $node 2>/dev/null)"
-
-    if [ "$(echo "$nout" | sed '1d' | awk '{ print $3 }')" == "master" ]; then
+    if [ -f /etc/kubernetes/manifests/kube-apiserver.yaml ]; then
         return 0
     else
         return 1

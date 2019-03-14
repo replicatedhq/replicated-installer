@@ -189,16 +189,13 @@ maybeUpgradeKubernetesNode() {
         logSuccess "Kubernetes node upgraded to version v$k8sTargetVersion"
     elif [ "$k8sTargetMinor" -ge 13 ]; then
         # Sync the config in case it changed.
-        getCurrentNodeId
-        if [ -n "$NODE" ]; then
-            logStep "Sync Kubernetes node config"
-            if isMasterNode "$NODE"; then
-                (set -x; kubeadm upgrade node experimental-control-plane)
-            else
-                (set -x; kubeadm upgrade node config --kubelet-version v1.13.0)
-            fi
-            logSuccess "Kubernetes node config upgraded"
+        logStep "Sync Kubernetes node config"
+        if isMasterNode; then
+            (set -x; kubeadm upgrade node experimental-control-plane)
+        else
+            (set -x; kubeadm upgrade node config --kubelet-version v1.13.0)
         fi
+        logSuccess "Kubernetes node config upgraded"
     fi
 }
 
