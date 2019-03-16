@@ -190,6 +190,8 @@ maybeUpgradeKubernetesLoadBalancer() {
         return
     fi
     if ! isLoadBalancerAddressChanging "$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"; then
+        updateKubernetesAPIServerCerts "$LOAD_BALANCER_ADDRESS" "$LOAD_BALANCER_PORT"
+        updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
         return
     fi
 
@@ -208,22 +210,11 @@ maybeUpgradeKubernetesLoadBalancer() {
     echo ""
 
     # this will use the new load balancer address to the kubeadm.conf
+    : > /opt/replicated/kubeadm.conf
     makeKubeadmConfig
 
-    logStep "Regenerate api server certs"
-    rm /etc/kubernetes/pki/apiserver.*
-    kubeadm init phase certs apiserver --config=/opt/replicated/kubeadm.conf
-    logSuccess "Api server certs regenerated"
-
-    logStep "Regenerate kubernetes control plane config"
-    rm /etc/kubernetes/*.conf
-    kubeadm init phase kubeconfig all --config=/opt/replicated/kubeadm.conf
-    chmod 444 /etc/kubernetes/admin.conf
-    logSuccess "Kubernetes control plane config regenerated"
-
-    logStep "Restart kubernetes api server"
-    docker ps | grep k8s_kube-apiserver | awk '{print $1}' | xargs docker rm -f
-    logSuccess "Kubernetes api server restarted"
+    updateKubernetesAPIServerCerts "$LOAD_BALANCER_ADDRESS" "$LOAD_BALANCER_PORT"
+    updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
 
     logStep "Upgrading kubernetes control plane"
     kubeadm upgrade apply -yf --config=/opt/replicated/kubeadm.conf
@@ -233,14 +224,12 @@ maybeUpgradeKubernetesLoadBalancer() {
     kubectl -n kube-system get pods | grep kube-proxy | awk '{print $1}' | xargs kubectl -n kube-system delete pod
     logSuccess "Kube-proxy restarted"
 
-    waitForNodes
     spinnerNodesReady
 
     if [ "$(kubectl get nodes | grep master | wc -l)" -gt "1" ]; then
         echo ""
-        printf "Run the upgrade script on remote master nodes before proceeding:\n\n"
-        printf "$ replicatedctl cluster node-join-script --master\n\n${GREEN}"
-        replicatedctl cluster node-join-script --master
+        printf "Run the upgrade script on remote master nodes before proceeding:\n\n${GREEN}"
+        replicatedctl cluster node-join-script --master | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/"
         printf "${NC}\n\n"
         kubectl get nodes | grep master
         echo ""
@@ -255,7 +244,26 @@ maybeUpgradeKubernetesLoadBalancer() {
             fi
         done
 
-        waitForNodes
+        spinnerNodesReady
+    fi
+
+    if [ "$(kubectl get nodes | grep -v master | wc -l)" -gt "0" ]; then
+        echo ""
+        printf "Run the upgrade script on remote worker nodes before proceeding:\n\n${GREEN}"
+        replicatedctl cluster node-join-script | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/"
+        printf "${NC}\n\n"
+        kubectl get nodes | grep -v master
+        echo ""
+        echo ""
+        while true; do
+            echo ""
+            READ_TIMEOUT=""
+            printf "${YELLOW}Have all worker nodes been updated?${NC} "
+            if confirmN; then
+                break
+            fi
+        done
+
         spinnerNodesReady
     fi
 
@@ -264,6 +272,74 @@ maybeUpgradeKubernetesLoadBalancer() {
     echo ""
 
     DID_UPGRADE_KUBERNETES=1
+}
+
+#######################################
+# Regenerate certs if missing control plane endpoint in SANs
+# Globals:
+#   None
+# Arguments:
+#   ip or domain, port
+# Returns:
+#   K8S_API_SERVER_CERTS_RENEWED
+#######################################
+updateKubernetesAPIServerCerts()
+{
+    if ! certHasSAN /etc/kubernetes/pki/apiserver.crt "$1"; then
+        logStep "Regenerate api server certs"
+        rm -f /etc/kubernetes/pki/apiserver.*
+        kubeadm init phase certs apiserver --config=/opt/replicated/kubeadm.conf
+
+        logSuccess "API server certs regenerated"
+        logStep "Restart kubernetes api server"
+        # admin.conf may not have been updated yet so kubectl may not work
+        docker ps | grep k8s_kube-apiserver | awk '{print $1}' | xargs docker rm -f
+        while ! curl -skf "https://$1:$2/healthz" ; do
+            sleep 1
+        done
+        logSuccess "Kubernetes api server restarted"
+    fi
+}
+
+#######################################
+# Regenerate kubeconfigs if not pointing at control plane endpoint
+# Globals:
+#   None
+# Arguments:
+#   control plane endpoint
+# Returns:
+#   None
+#######################################
+updateKubeconfigs()
+{
+    local regenerate=0
+
+    if ! confHasEndpoint /etc/kubernetes/admin.conf "$1"; then
+        rm -f /etc/kubernetes/admin.conf
+        regenerate=1
+    fi
+
+    if ! confHasEndpoint /etc/kubernetes/kubelet.conf "$1"; then
+        rm -f /etc/kubernetes/kubelet.conf
+        regenerate=1
+    fi
+
+    if ! confHasEndpoint /etc/kubernetes/scheduler.conf "$1"; then
+        rm -f /etc/kubernetes/scheduler.conf
+        regenerate=1
+    fi
+
+    if ! confHasEndpoint /etc/kubernetes/controller-manager.conf "$1"; then
+        rm -f /etc/kubernetes/controller-manager.conf
+        regenerate=1
+    fi
+
+    if [ "$regenerate" = "1" ]; then
+        logStep "Regenerating control plane kubeconfig"
+        kubeadm init phase kubeconfig all --config=/opt/replicated/kubeadm.conf
+        chmod 444 /etc/kubernetes/*.conf
+        logSuccess "Kubernetes control plane kubeconfigs regenerated"
+    fi
 }
 
 #######################################
@@ -323,8 +399,15 @@ maybeUpgradeKubernetesNode() {
         logStep "Sync Kubernetes node config"
         if isMasterNode; then
             (set -x; kubeadm upgrade node experimental-control-plane)
+            : > /opt/replicated/kubeadm.conf
+            makeKubeadmConfig
+            updateKubernetesAPIServerCerts "$LOAD_BALANCER_ADDRESS" "$LOAD_BALANCER_PORT"
+            updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
         else
             (set -x; kubeadm upgrade node config --kubelet-version v1.13.0)
+            if [ -n "$LOAD_BALANCER_ADDRESS" ] && [ -n "$LOAD_BALANCER_PORT" ]; then
+                sudo sed -i "s/server: https.*/server: https:\/\/$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/" /etc/kubernetes/kubelet.conf
+            fi
         fi
         logSuccess "Kubernetes node config upgraded"
     fi
