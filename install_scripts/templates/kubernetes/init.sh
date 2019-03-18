@@ -187,6 +187,7 @@ EOF
     fi
 }
 
+DID_INSTALL_KUBERNETES=0
 initKube() {
     logStep "Verify Kubelet"
     local kubeV=$(kubeadm version --output=short)
@@ -227,6 +228,8 @@ initKube() {
             printf "${RED}Failed to initialize the kubernetes cluster.${NC}\n" 1>&2
             exit $_status
         fi
+
+        DID_INSTALL_KUBERNETES=1
     # we don't write any init files that can be read by kubeadm v1.12
     elif [ "$kubeV" != "v1.12.3" ]; then
         logStep "Verify kubernetes config"
@@ -238,6 +241,8 @@ initKube() {
         loadIPVSKubeProxyModules
         kubeadm config upload from-file --config /opt/replicated/kubeadm.conf
         _current=$(getK8sServerVersion)
+
+        DID_INSTALL_KUBERNETES=1
     fi
     cp /etc/kubernetes/admin.conf $HOME/admin.conf
     chown $SUDO_USER:$SUDO_GID $HOME/admin.conf
@@ -883,11 +888,13 @@ if [ "$HA_CLUSTER" != "1" ]; then
     labelMasterNode
 fi
 
-maybeUpgradeKubernetes "$KUBERNETES_VERSION"
-if [ "$DID_UPGRADE_KUBERNETES" = "0" ]; then
-    # If we did not upgrade k8s then just apply the config in case it changed.
-    kubeadm upgrade apply --force --yes --config=/opt/replicated/kubeadm.conf
-    waitForNodes
+if [ "$DID_INSTALL_KUBERNETES" = "0" ]; then
+    maybeUpgradeKubernetes "$KUBERNETES_VERSION"
+    if [ "$DID_UPGRADE_KUBERNETES" = "0" ]; then
+        # If we did not upgrade k8s then just apply the config in case it changed.
+        kubeadm upgrade apply --force --yes --config=/opt/replicated/kubeadm.conf
+        waitForNodes
+    fi
 fi
 
 echo
