@@ -217,7 +217,11 @@ maybeUpgradeKubernetesLoadBalancer() {
     updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
 
     logStep "Upgrading kubernetes control plane"
-    kubeadm upgrade apply -yf --config=/opt/replicated/kubeadm.conf
+    (
+        set -x
+        kubeadm upgrade apply -yf --ignore-preflight-errors=all \
+            --config=/opt/replicated/kubeadm.conf
+    )
     logSuccess "Kubernetes control plane upgraded"
 
     logStep "Restarting kube-proxy"
