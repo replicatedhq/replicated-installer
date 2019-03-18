@@ -241,8 +241,6 @@ initKube() {
         loadIPVSKubeProxyModules
         kubeadm config upload from-file --config /opt/replicated/kubeadm.conf
         _current=$(getK8sServerVersion)
-
-        DID_INSTALL_KUBERNETES=1
     fi
     cp /etc/kubernetes/admin.conf $HOME/admin.conf
     chown $SUDO_USER:$SUDO_GID $HOME/admin.conf
