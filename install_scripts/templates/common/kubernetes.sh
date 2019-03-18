@@ -1132,6 +1132,8 @@ getKubeadmVersion() {
 #   PUBLIC_ADDRESS
 #   IPVS
 #   HA_CLUSTER
+#   LOAD_BALANCER_ADDRESS
+#   LOAD_BALANCER_PORT
 # Arguments:
 #   None
 # Returns:
@@ -1275,4 +1277,35 @@ untaintMaster() {
     kubectl taint nodes --all node-role.kubernetes.io/master:NoSchedule- || \
         echo "Taint not found or already removed. The above error can be ignored."
     logSuccess "master taint removed"
+}
+
+#######################################
+# Check if a cert has an IP or Domain in its SANs
+# Globals:
+#   None
+# Arguments:
+#   cert filepath, IP
+# Returns:
+#   None
+#######################################
+certHasSAN()
+{
+    openssl x509 -in "$1" -noout -text | grep -Eq "DNS:$2|IP Address:$2"
+}
+
+#######################################
+# Check if a kubeconfig points to a specific endpoint
+# Globals:
+#   None
+# Arguments:
+#   cert filepath, endpoint
+# Returns:
+#   None
+#######################################
+confHasEndpoint()
+{
+    if [ "$(cat $1 | grep 'server:' | awk '{ print $2 }')" = "$2" ]; then
+        return 0
+    fi
+    return 1
 }
