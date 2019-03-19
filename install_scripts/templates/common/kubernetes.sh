@@ -1165,7 +1165,6 @@ EOF
     else
         cat <<EOF >> /opt/replicated/kubeadm.conf
   - $PRIVATE_ADDRESS
-controlPlaneEndpoint: "$PRIVATE_ADDRESS"
 EOF
     fi
 
