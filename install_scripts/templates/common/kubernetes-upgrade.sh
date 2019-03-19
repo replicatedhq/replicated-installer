@@ -230,13 +230,13 @@ maybeUpgradeKubernetesLoadBalancer() {
 
     spinnerNodesReady
 
-    if [ "$(kubectl get nodes | awk '{if(NR>1)print}' | grep master | wc -l)" -gt "1" ]; then
+    if [ "$(kubectl get nodes | sed '1d' | grep " master " | wc -l)" -gt "1" ]; then
         echo ""
         printf "Run the upgrade script on remote master nodes before proceeding:\n\n${GREEN}"
         replicatedctl cluster node-join-script --master | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/"
         printf "${NC}\n\n"
-        kubectl get nodes | awk '{if(NR==1)print}'
-        kubectl get nodes | awk '{if(NR>1)print}' | grep master
+        kubectl get nodes | sed -n '1p'
+        kubectl get nodes | sed '1d' | grep " master "
         echo ""
         echo ""
 
@@ -252,13 +252,13 @@ maybeUpgradeKubernetesLoadBalancer() {
         spinnerNodesReady
     fi
 
-    if [ "$(kubectl get nodes | awk '{if(NR>1)print}' | grep -v master | wc -l)" -gt "0" ]; then
+    if [ "$(kubectl get nodes | sed '1d' | grep -v " master " | wc -l)" -gt "0" ]; then
         echo ""
         printf "Run the upgrade script on remote worker nodes before proceeding:\n\n${GREEN}"
         replicatedctl cluster node-join-script | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/"
         printf "${NC}\n\n"
-        kubectl get nodes | awk '{if(NR==1)print}'
-        kubectl get nodes | awk '{if(NR>1)print}' | grep -v master
+        kubectl get nodes | sed -n '1p'
+        kubectl get nodes | sed '1d' | grep -v " master "
         echo ""
         echo ""
         while true; do
@@ -507,7 +507,7 @@ upgradeK8sWorkers() {
     done
     # not an error if there are no workers
     # TODO better master identification
-    local workers="$(echo "$nodes" | sed '1d' | grep -v master || :)"
+    local workers="$(echo "$nodes" | sed '1d' | grep -v " master " || :)"
 
     while read -r node; do
         if [ -z "$node" ]; then
