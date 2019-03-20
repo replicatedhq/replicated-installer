@@ -187,12 +187,13 @@ EOF
     fi
 }
 
-DID_INSTALL_KUBERNETES=0
+DID_INIT_KUBERNETES=0
 initKube() {
     logStep "Verify Kubelet"
     local kubeV=$(kubeadm version --output=short)
 
-    if [ ! -e "/etc/kubernetes/manifests/kube-apiserver.yaml" ]; then
+    # init is idempotent
+    if [ ! -e "/etc/kubernetes/manifests/kube-apiserver.yaml" ] || isLatestKubernetes; then
         logStep "Initialize Kubernetes"
 
         if [ "$HA_CLUSTER" -eq "1" ]; then
@@ -203,25 +204,35 @@ initKube() {
 
         loadIPVSKubeProxyModules
 
+        local skipPhases=
+        local numMasters="$(kubectl get nodes --selector='node-role.kubernetes.io/master' | sed '1d' | wc -l)"
+        if [ "$numMasters" -gt "0" ]; then
+            skipPhases="preflight,mark-control-plane"
+        fi
+
         if [ "$kubeV" = "v1.9.3" ]; then
-            kubeadm init \
+            ( set -x; kubeadm init \
                 --skip-preflight-checks \
                 --config /opt/replicated/kubeadm.conf \
                 | tee /tmp/kubeadm-init
+            )
             _status=$?
         elif [ "$kubeV" = "v1.11.5" ]; then
-            kubeadm init \
+            ( set -x; kubeadm init \
                 --ignore-preflight-errors=all \
                 --config /opt/replicated/kubeadm.conf \
                 | tee /tmp/kubeadm-init
+            )
             _status=$?
             patchCoreDNS
         else
-            kubeadm init \
+            (set -x; kubeadm init \
                 --ignore-preflight-errors=all \
                 --config /opt/replicated/kubeadm.conf \
+                --skip-phases "$skipPhases" \
                 --skip-token-print \
                 | tee /tmp/kubeadm-init
+            )
             _status=$?
         fi
         if [ "$_status" -ne "0" ]; then
@@ -229,14 +240,11 @@ initKube() {
             exit $_status
         fi
 
-        DID_INSTALL_KUBERNETES=1
+        DID_INIT_KUBERNETES=1
     # we don't write any init files that can be read by kubeadm v1.12
     elif [ "$kubeV" != "v1.12.3" ]; then
         logStep "Verify kubernetes config"
         chmod 444 /etc/kubernetes/admin.conf
-        if [ "$HA_CLUSTER" -eq "1" ]; then
-            promptForLoadBalancerAddress
-        fi
         initKubeadmConfig
         loadIPVSKubeProxyModules
         kubeadm config upload from-file --config /opt/replicated/kubeadm.conf
@@ -248,6 +256,14 @@ initKube() {
     exportKubeconfig
 
     logSuccess "Kubernetes Master Initialized"
+}
+
+isLatestKubernetes() {
+    local kubeV=$(kubeadm version --output=short)
+    if [ "$kubeV" == "v1.13.0" ]; then
+        return 0
+    fi
+    return 1
 }
 
 # workaround for https://github.com/kubernetes/kubeadm/issues/998
@@ -886,13 +902,8 @@ if [ "$HA_CLUSTER" != "1" ]; then
     labelMasterNode
 fi
 
-if [ "$DID_INSTALL_KUBERNETES" = "0" ]; then
+if [ "$DID_INIT_KUBERNETES" = "0" ]; then
     maybeUpgradeKubernetes "$KUBERNETES_VERSION"
-    if [ "$DID_UPGRADE_KUBERNETES" = "0" ]; then
-        # If we did not upgrade k8s then just apply the config in case it changed.
-        kubeadm upgrade apply --force --yes --config=/opt/replicated/kubeadm.conf
-        waitForNodes
-    fi
 fi
 
 echo
