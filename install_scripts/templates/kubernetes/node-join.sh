@@ -27,6 +27,8 @@ PRIVATE_ADDRESS=
 {% include 'common/docker-install.sh' %}
 {% include 'common/docker-swarm.sh' %}
 {% include 'common/replicated.sh' %}
+{% include 'common/cli-script.sh' %}
+{% include 'common/alias.sh' %}
 {% include 'common/ip-address.sh' %}
 {% include 'common/proxy.sh' %}
 {% include 'common/log.sh' %}
@@ -412,6 +414,14 @@ purgeNative
 
 if [ "$MASTER" -eq "1" ]; then
     exportKubeconfig
+
+    installCliFile \
+        "kubectl exec -c replicated" \
+        '$(kubectl get pods -o=jsonpath="{.items[0].metadata.name}" -l tier=master) --'
+    logSuccess "Installed replicated cli executable"
+
+    installAliasFile
+    logSuccess "Installed replicated command alias"
 fi
 
 waitForRook
