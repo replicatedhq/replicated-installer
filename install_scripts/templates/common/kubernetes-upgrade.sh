@@ -220,7 +220,7 @@ maybeUpgradeKubernetesLoadBalancer() {
     (
         set -x
         kubeadm upgrade apply -yf --ignore-preflight-errors=all \
-            --config=/opt/replicated/kubeadm.conf
+            --config /opt/replicated/kubeadm.conf
     )
     logSuccess "Kubernetes control plane upgraded"
 
@@ -230,13 +230,13 @@ maybeUpgradeKubernetesLoadBalancer() {
 
     spinnerNodesReady
 
-    if [ "$(kubectl get nodes | sed '1d' | grep " master " | wc -l)" -gt "1" ]; then
+    local numMasters="$(kubectl get nodes --selector='node-role.kubernetes.io/master' | sed '1d' | wc -l)"
+    if [ "$numMasters" -gt "1" ]; then
         echo ""
         printf "Run the upgrade script on remote master nodes before proceeding:\n\n${GREEN}"
         replicatedctl cluster node-join-script --master | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/"
         printf "${NC}\n\n"
-        kubectl get nodes | sed -n '1p'
-        kubectl get nodes | sed '1d' | grep " master "
+        kubectl get nodes --selector='node-role.kubernetes.io/master'
         echo ""
         echo ""
 
@@ -252,13 +252,13 @@ maybeUpgradeKubernetesLoadBalancer() {
         spinnerNodesReady
     fi
 
-    if [ "$(kubectl get nodes | sed '1d' | grep -v " master " | wc -l)" -gt "0" ]; then
+    local numWorkers="$(kubectl get nodes --selector='!node-role.kubernetes.io/master' | sed '1d' | wc -l)"
+    if [ "$numWorkers" -gt "0" ]; then
         echo ""
         printf "Run the upgrade script on remote worker nodes before proceeding:\n\n${GREEN}"
         replicatedctl cluster node-join-script | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/"
         printf "${NC}\n\n"
-        kubectl get nodes | sed -n '1p'
-        kubectl get nodes | sed '1d' | grep -v " master "
+        kubectl get nodes --selector='!node-role.kubernetes.io/master'
         echo ""
         echo ""
         while true; do
@@ -294,7 +294,7 @@ updateKubernetesAPIServerCerts()
     if ! certHasSAN /etc/kubernetes/pki/apiserver.crt "$1"; then
         logStep "Regenerate api server certs"
         rm -f /etc/kubernetes/pki/apiserver.*
-        kubeadm init phase certs apiserver --config=/opt/replicated/kubeadm.conf
+        kubeadm init phase certs apiserver --config /opt/replicated/kubeadm.conf
 
         logSuccess "API server certs regenerated"
         logStep "Restart kubernetes api server"
@@ -342,7 +342,7 @@ updateKubeconfigs()
 
     if [ "$regenerate" = "1" ]; then
         logStep "Regenerating control plane kubeconfig"
-        kubeadm init phase kubeconfig all --config=/opt/replicated/kubeadm.conf
+        kubeadm init phase kubeconfig all --config /opt/replicated/kubeadm.conf
         chmod 444 /etc/kubernetes/*.conf
         logSuccess "Kubernetes control plane kubeconfigs regenerated"
     fi
@@ -586,7 +586,7 @@ upgradeK8sMaster() {
     cp archives/kubeadm /usr/bin/kubeadm
     chmod a+rx /usr/bin/kubeadm
 
-    kubeadm upgrade apply "v$k8sVersion" --yes --config=/opt/replicated/kubeadm.conf --force
+    kubeadm upgrade apply "v$k8sVersion" --yes --config /opt/replicated/kubeadm.conf --force
     waitForNodes
 
     kubectl drain "$node" \
