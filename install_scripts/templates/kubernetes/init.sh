@@ -198,6 +198,7 @@ initKube() {
 
         if [ "$HA_CLUSTER" -eq "1" ]; then
             promptForLoadBalancerAddress
+            isLoadBalancerAddressChanging "$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
         fi
 
         initKubeadmConfig
@@ -239,6 +240,8 @@ initKube() {
             printf "${RED}Failed to initialize the kubernetes cluster.${NC}\n" 1>&2
             exit $_status
         fi
+
+        maybeUpgradeKubernetesLoadBalancer
 
         DID_INIT_KUBERNETES=1
     # we don't write any init files that can be read by kubeadm v1.12

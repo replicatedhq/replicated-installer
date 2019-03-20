@@ -144,16 +144,19 @@ maybeUpgradeKubernetes() {
 # Arguments:
 #   Load balancer address
 # Returns:
-#   1 if load balancer address is changing, 0 if not
+#   LOAD_BALANCER_ADDRESS_CHANGED
 #######################################
+LOAD_BALANCER_ADDRESS_CHANGED=0
 isLoadBalancerAddressChanging() {
     local loadBalancerAddress="$1"
     if [ -z "$loadBalancerAddress" ] || ! kubeadm config view >/dev/null 2>&1; then
-        return 1
+        LOAD_BALANCER_ADDRESS_CHANGED=1
+        return
     fi
     local previous_address="$(kubeadm config view | grep 'controlPlaneEndpoint:' | sed 's/controlPlaneEndpoint: \|"//g')"
     if [ -z "$previous_address" ]; then
-        return 1
+        LOAD_BALANCER_ADDRESS_CHANGED=1
+        return
     fi
     splitHostPort "$previous_address"
     local previous_address="$HOST"
@@ -170,7 +173,8 @@ isLoadBalancerAddressChanging() {
     if [ "$previous_address" = "$next_address" ] && [ "$previous_port" = "$next_port" ]; then
         return 0
     else
-        return 1
+        LOAD_BALANCER_ADDRESS_CHANGED=1
+        return
     fi
 }
 
@@ -189,7 +193,7 @@ maybeUpgradeKubernetesLoadBalancer() {
     if [ -z "$LOAD_BALANCER_ADDRESS" ] || [ -z "$LOAD_BALANCER_PORT" ]; then
         return
     fi
-    if ! isLoadBalancerAddressChanging "$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"; then
+    if [ "$LOAD_BALANCER_ADDRESS_CHANGE" = "0" ]; then
         updateKubernetesAPIServerCerts "$LOAD_BALANCER_ADDRESS" "$LOAD_BALANCER_PORT"
         updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
         return
