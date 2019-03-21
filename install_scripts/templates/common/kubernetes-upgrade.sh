@@ -149,6 +149,10 @@ maybeUpgradeKubernetes() {
 LOAD_BALANCER_ADDRESS_CHANGED=0
 isLoadBalancerAddressChanging() {
     local loadBalancerAddress="$1"
+    if [ ! -f "/opt/replicated/kubeadm.conf" ]; then
+        # new installs aren't a change
+        return
+    fi
     if [ -z "$loadBalancerAddress" ] || ! kubeadm config view >/dev/null 2>&1; then
         LOAD_BALANCER_ADDRESS_CHANGED=1
         return
@@ -193,7 +197,7 @@ maybeUpgradeKubernetesLoadBalancer() {
     if [ -z "$LOAD_BALANCER_ADDRESS" ] || [ -z "$LOAD_BALANCER_PORT" ]; then
         return
     fi
-    if [ "$LOAD_BALANCER_ADDRESS_CHANGE" = "0" ]; then
+    if [ "$LOAD_BALANCER_ADDRESS_CHANGED" = "0" ]; then
         updateKubernetesAPIServerCerts "$LOAD_BALANCER_ADDRESS" "$LOAD_BALANCER_PORT"
         updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
         return
