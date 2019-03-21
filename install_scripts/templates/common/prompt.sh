@@ -17,7 +17,7 @@ fi
 # Globals:
 #   READ_TIMEOUT, FAST_TIMEOUTS
 # Arguments:
-#   None
+#   Read timeout, formatted "-t int"
 # Returns:
 #   PROMPT_RESULT
 #######################################
@@ -36,13 +36,13 @@ promptTimeout() {
 # Globals:
 #   READ_TIMEOUT, FAST_TIMEOUTS
 # Arguments:
-#   None
+#   Read timeout, formatted "-t int"
 # Returns:
 #   None
 #######################################
 confirmY() {
     printf "(Y/n) "
-    promptTimeout
+    promptTimeout "$@"
     if [ "$PROMPT_RESULT" = "n" ] || [ "$PROMPT_RESULT" = "N" ]; then
         return 1
     fi
@@ -54,13 +54,13 @@ confirmY() {
 # Globals:
 #   READ_TIMEOUT, FAST_TIMEOUTS
 # Arguments:
-#   None
+#   Read timeout, formatted "-t int"
 # Returns:
 #   None
 #######################################
 confirmN() {
     printf "(y/N) "
-    promptTimeout
+    promptTimeout "$@"
     if [ "$PROMPT_RESULT" = "y" ] || [ "$PROMPT_RESULT" = "Y" ]; then
         return 0
     fi

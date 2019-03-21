@@ -237,7 +237,7 @@ maybeUpgradeKubernetesLoadBalancer() {
     if [ "$numMasters" -gt "1" ]; then
         echo ""
         printf "Run the upgrade script on remote master nodes before proceeding:\n\n${GREEN}"
-        replicatedctl cluster node-join-script --master | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/"
+        /usr/local/bin/replicatedctl cluster node-join-script --master | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/"
         printf "${NC}\n\n"
         kubectl get nodes --selector='node-role.kubernetes.io/master'
         echo ""
@@ -245,9 +245,8 @@ maybeUpgradeKubernetesLoadBalancer() {
 
         while true; do
             echo ""
-            READ_TIMEOUT=""
             printf "${YELLOW}Have all master nodes been updated?${NC} "
-            if confirmN; then
+            if confirmN " "; then
                 break
             fi
         done
@@ -259,16 +258,15 @@ maybeUpgradeKubernetesLoadBalancer() {
     if [ "$numWorkers" -gt "0" ]; then
         echo ""
         printf "Run the upgrade script on remote worker nodes before proceeding:\n\n${GREEN}"
-        replicatedctl cluster node-join-script | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/"
+        /usr/local/bin/replicatedctl cluster node-join-script | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/"
         printf "${NC}\n\n"
         kubectl get nodes --selector='!node-role.kubernetes.io/master'
         echo ""
         echo ""
         while true; do
             echo ""
-            READ_TIMEOUT=""
             printf "${YELLOW}Have all worker nodes been updated?${NC} "
-            if confirmN; then
+            if confirmN " "; then
                 break
             fi
         done
@@ -556,9 +554,8 @@ upgradeK8sWorkers() {
         fi
         while true; do
             echo ""
-            READ_TIMEOUT=""
             printf "Has script completed? "
-            if confirmN; then
+            if confirmN " "; then
                 break
             fi
         done

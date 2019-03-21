@@ -193,7 +193,7 @@ initKube() {
     local kubeV=$(kubeadm version --output=short)
 
     # init is idempotent
-    if [ ! -e "/etc/kubernetes/manifests/kube-apiserver.yaml" ] || isLatestKubernetes; then
+    if [ ! -e "/etc/kubernetes/manifests/kube-apiserver.yaml" ] || shouldReinitK8s; then
         logStep "Initialize Kubernetes"
 
         if [ "$HA_CLUSTER" -eq "1" ]; then
@@ -241,7 +241,7 @@ initKube() {
             exit $_status
         fi
 
-        maybeUpgradeKubernetesLoadBalancer
+        maybeUpgradeKubernetesLoadBalancer "$kubeV"
 
         DID_INIT_KUBERNETES=1
     # we don't write any init files that can be read by kubeadm v1.12
@@ -261,8 +261,22 @@ initKube() {
     logSuccess "Kubernetes Master Initialized"
 }
 
-isLatestKubernetes() {
-    kubectl version --short 2>/dev/null | grep -q 'Server Version: v1.13.0'
+shouldReinitK8s() {
+    if kubectl version --short 2>/dev/null | grep -q 'Server'; then
+        if kubectl version --short 2>/dev/null | grep -q 'Server Version: v1.13.0'; then
+            return 0
+        fi
+    elif curl -k https://localhost:6443/version 2>/dev/null | grep -q '"gitVersion": '; then
+        if curl -k https://localhost:6443/version 2>/dev/null | grep -q '"gitVersion": "v1.13.0"'; then
+            return 0
+        fi
+    else
+        printf "${YELLOW}The kube-apiserver seems to be unreachable. Would you like to re-initialize Kubernetes?${NC} "
+        if confirmN " "; then
+            return 0
+        fi
+    fi
+    return 1
 }
 
 # workaround for https://github.com/kubernetes/kubeadm/issues/998
@@ -898,6 +912,8 @@ untaintMaster
 
 spinnerMasterNodeReady
 if [ "$HA_CLUSTER" != "1" ]; then
+    # This label is not used in latest version of replicated with support for
+    # multi-master.
     labelMasterNode
 fi
 
