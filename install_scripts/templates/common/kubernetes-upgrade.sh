@@ -34,7 +34,6 @@ maybeUpgradeKubernetes() {
     local k8sTargetPatch="$patch"
 
     if allNodesUpgraded "$k8sTargetVersion"; then
-        maybeUpgradeKubernetesLoadBalancer "$k8sTargetVersion"
         return
     fi
     # attempt to stop Replicated to reduce Docker load during upgrade
