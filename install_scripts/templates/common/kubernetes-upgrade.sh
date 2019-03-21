@@ -232,10 +232,6 @@ maybeUpgradeKubernetesLoadBalancer() {
     )
     logSuccess "Kubernetes control plane upgraded"
 
-    logStep "Restarting kube-proxy"
-    kubectl -n kube-system get pods | grep kube-proxy | awk '{print $1}' | xargs kubectl -n kube-system delete pod
-    logSuccess "Kube-proxy restarted"
-
     spinnerNodesReady
 
     local numMasters="$(kubectl get nodes --selector='node-role.kubernetes.io/master' | sed '1d' | wc -l)"
