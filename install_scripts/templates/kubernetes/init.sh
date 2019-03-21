@@ -198,6 +198,7 @@ initKube() {
 
         if [ "$HA_CLUSTER" -eq "1" ]; then
             promptForLoadBalancerAddress
+            isLoadBalancerAddressChanging "$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
         fi
 
         initKubeadmConfig
@@ -240,6 +241,8 @@ initKube() {
             exit $_status
         fi
 
+        maybeUpgradeKubernetesLoadBalancer
+
         DID_INIT_KUBERNETES=1
     # we don't write any init files that can be read by kubeadm v1.12
     elif [ "$kubeV" != "v1.12.3" ]; then
@@ -259,11 +262,7 @@ initKube() {
 }
 
 isLatestKubernetes() {
-    local kubeV=$(kubeadm version --output=short)
-    if [ "$kubeV" == "v1.13.0" ]; then
-        return 0
-    fi
-    return 1
+    kubectl version --short 2>/dev/null | grep -q 'Server Version: v1.13.0'
 }
 
 # workaround for https://github.com/kubernetes/kubeadm/issues/998
