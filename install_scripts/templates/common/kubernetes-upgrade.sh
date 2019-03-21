@@ -245,9 +245,8 @@ maybeUpgradeKubernetesLoadBalancer() {
 
         while true; do
             echo ""
-            READ_TIMEOUT=""
             printf "${YELLOW}Have all master nodes been updated?${NC} "
-            if confirmN; then
+            if confirmN " "; then
                 break
             fi
         done
@@ -266,9 +265,8 @@ maybeUpgradeKubernetesLoadBalancer() {
         echo ""
         while true; do
             echo ""
-            READ_TIMEOUT=""
             printf "${YELLOW}Have all worker nodes been updated?${NC} "
-            if confirmN; then
+            if confirmN " "; then
                 break
             fi
         done
@@ -556,9 +554,8 @@ upgradeK8sWorkers() {
         fi
         while true; do
             echo ""
-            READ_TIMEOUT=""
             printf "Has script completed? "
-            if confirmN; then
+            if confirmN " "; then
                 break
             fi
         done
