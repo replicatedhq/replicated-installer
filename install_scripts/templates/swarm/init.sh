@@ -429,7 +429,7 @@ else
     fi
 
     # is this an update?
-    if replicatedctl app status inspect >/dev/null 2>&1; then
+    if /usr/local/bin/replicatedctl app status inspect >/dev/null 2>&1; then
         printf "Pushing replicated-operator container image to on-prem registry\n"
         tagAndPushOperatorImage "${SWARM_NODE_ADDRESS}:${REGISTRY_BIND_PORT:-9874}" || :
     fi

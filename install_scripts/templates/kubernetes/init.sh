@@ -193,7 +193,7 @@ initKube() {
     local kubeV=$(kubeadm version --output=short)
 
     # init is idempotent
-    if [ ! -e "/etc/kubernetes/manifests/kube-apiserver.yaml" ] || isLatestKubernetes; then
+    if [ ! -e "/etc/kubernetes/manifests/kube-apiserver.yaml" ] || shouldReinitK8s; then
         logStep "Initialize Kubernetes"
 
         if [ "$HA_CLUSTER" -eq "1" ]; then
@@ -261,7 +261,7 @@ initKube() {
     logSuccess "Kubernetes Master Initialized"
 }
 
-isLatestKubernetes() {
+shouldReinitK8s() {
     if kubectl version --short 2>/dev/null | grep -q 'Server'; then
         if kubectl version --short 2>/dev/null | grep -q 'Server Version: v1.13.0'; then
             return 0
