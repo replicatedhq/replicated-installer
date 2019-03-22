@@ -209,8 +209,8 @@ initKube() {
         if [ "$HA_CLUSTER" -eq "1" ]; then
             promptForLoadBalancerAddress
 
-            # this will stop all the control plane pods
-            rm -f /etc/kubernetes/manifests/*
+            # this will stop all the control plane pods except etcd
+            rm -f /etc/kubernetes/manifests/kube-*
             # delete files that need to be regenerated in case of load balancer address change
             rm -f /etc/kubernetes/*.conf
             rm -f /etc/kubernetes/pkg/apiserver.crt

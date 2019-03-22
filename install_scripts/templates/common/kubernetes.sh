@@ -1308,3 +1308,4 @@ confHasEndpoint()
     fi
     return 1
 }
+

@@ -154,6 +154,7 @@ runUpgradeScriptOnAllRemoteNodes() {
         return
     fi
 
+    waitReplicatedctlReady
     echo ""
     logStep "Kubernetes control plane endpoint updated, upgrading control plane..."
     echo ""
@@ -545,4 +546,41 @@ getK8sServerVersion() {
 #######################################
 getK8sNodeVersion() {
     echo "$(kubelet --version | cut -d ' ' -f 2 | sed 's/v//')"
+}
+
+updateKubernetesAPIServerCerts()
+{
+    if ! certHasSAN /etc/kubernetes/pki/apiserver.crt "$1"; then
+        logStep "Regenerate api server certs"
+        rm -f /etc/kubernetes/pki/apiserver.*
+        kubeadm init phase certs apiserver --config /opt/replicated/kubeadm.conf
+
+        logSuccess "API server certs regenerated"
+        logStep "Restart kubernetes api server"
+        # admin.conf may not have been updated yet so kubectl may not work
+        docker ps | grep k8s_kube-apiserver | awk '{print $1}' | xargs docker rm -f
+        while ! curl -skf "https://$1:$2/healthz" ; do
+            sleep 1
+        done
+        logSuccess "Kubernetes api server restarted"
+    fi
+}
+
+updateKubeconfigs()
+{
+    if ! confHasEndpoint /etc/kubernetes/admin.conf "$1"; then
+        sed -i "s/server: https.*/server: https:\/\/$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/" /etc/kubernetes/admin.conf
+    fi
+
+    if ! confHasEndpoint /etc/kubernetes/kubelet.conf "$1"; then
+        sed -i "s/server: https.*/server: https:\/\/$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/" /etc/kubernetes/kubelet.conf
+    fi
+
+    if ! confHasEndpoint /etc/kubernetes/scheduler.conf "$1"; then
+        sed -i "s/server: https.*/server: https:\/\/$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/" /etc/kubernetes/scheduler.conf
+    fi
+
+    if ! confHasEndpoint /etc/kubernetes/controller-manager.conf "$1"; then
+        sed -i "s/server: https.*/server: https:\/\/$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/" /etc/kubernetes/controller-manager.conf
+    fi
 }
