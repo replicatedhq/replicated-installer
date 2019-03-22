@@ -85,10 +85,20 @@ set -e
 {% include 'common/kubernetes-upgrade.sh' %}
 {% include 'common/firewall.sh' %}
 
+LOAD_BALANCER_ADDRESS_CHANGED=0
 promptForLoadBalancerAddress() {
-    # Check if we already have the load balancer address set in the kubeadm config
-    if [ -z "$LOAD_BALANCER_ADDRESS" ] && kubeadm config view >/dev/null 2>&1; then
-        LOAD_BALANCER_ADDRESS="$(kubeadm config view | grep 'controlPlaneEndpoint:' | sed 's/controlPlaneEndpoint: \|"//g')"
+    local lastLoadBalancerAddress=""
+
+    if kubeadm config view >/dev/null 2>&1; then
+        lastLoadBalancerAddress="$(kubeadm config view | grep 'controlPlaneEndpoint:' | sed 's/controlPlaneEndpoint: \|"//g')"
+    fi
+
+    if [ -n "$LOAD_BALANCER_ADDRESS" ] && [ -n "$lastLoadBalancerAddress" ] && [ "$LOAD_BALANCER_ADDRESS" != "$lastLoadBalancerAddress" ]; then
+        LOAD_BALANCER_ADDRESS_CHANGED=1
+    fi
+
+    if [ -z "$LOAD_BALANCER_ADDRESS" ] && [ -n "$lastLoadBalancerAddress" ]; then
+        LOAD_BALANCER_ADDRESS="$lastLoadBalancerAddress"
     fi
 
     if [ -z "$LOAD_BALANCER_ADDRESS" ]; then
@@ -198,8 +208,12 @@ initKube() {
 
         if [ "$HA_CLUSTER" -eq "1" ]; then
             promptForLoadBalancerAddress
-            isLoadBalancerAddressChanging "$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
-            maybeUpgradeKubernetesLoadBalancer "$kubeV"
+
+            # this will stop all the control plane pods
+            rm -f /etc/kubernetes/manifests/*
+            # delete files that need to be regenerated in case of load balancer address change
+            rm -f /etc/kubernetes/*.conf
+            rm -f /etc/kubernetes/pkg/apiserver.crt
         fi
 
         initKubeadmConfig
@@ -258,6 +272,10 @@ initKube() {
     exportKubeconfig
 
     logSuccess "Kubernetes Master Initialized"
+
+    if [ "$LOAD_BALANCER_ADDRESS_CHANGED" = "1" ]; then
+        runUpgradeScriptOnAllRemoteNodes
+    fi
 }
 
 shouldReinitK8s() {

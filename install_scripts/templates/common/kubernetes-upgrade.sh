@@ -137,78 +137,20 @@ maybeUpgradeKubernetes() {
 }
 
 #######################################
-# Returns 0 if load balancer address is changing
-# Globals:
-#   None
-# Arguments:
-#   Load balancer address
-# Returns:
-#   LOAD_BALANCER_ADDRESS_CHANGED
-#######################################
-LOAD_BALANCER_ADDRESS_CHANGED=0
-isLoadBalancerAddressChanging() {
-    local loadBalancerAddress="$1"
-    if [ ! -f "/opt/replicated/kubeadm.conf" ]; then
-        # new installs aren't a change
-        return
-    fi
-    if [ -z "$loadBalancerAddress" ] || ! kubeadm config view >/dev/null 2>&1; then
-        LOAD_BALANCER_ADDRESS_CHANGED=1
-        return
-    fi
-    local previous_address="$(kubeadm config view | grep 'controlPlaneEndpoint:' | sed 's/controlPlaneEndpoint: \|"//g')"
-    if [ -z "$previous_address" ]; then
-        LOAD_BALANCER_ADDRESS_CHANGED=1
-        return
-    fi
-    splitHostPort "$previous_address"
-    local previous_address="$HOST"
-    local previous_port="$PORT"
-    if [ -z "$previous_port" ]; then
-        previous_port=6443
-    fi
-    splitHostPort "$loadBalancerAddress"
-    local next_address="$HOST"
-    local next_port="$PORT"
-    if [ -z "$next_port" ]; then
-        next_port=6443
-    fi
-    if [ "$previous_address" = "$next_address" ] && [ "$previous_port" = "$next_port" ]; then
-        return 0
-    else
-        LOAD_BALANCER_ADDRESS_CHANGED=1
-        return
-    fi
-}
-
-#######################################
-# TODO
+# prompt user to run scripts to change load balancer address on remote masters and workers
 # Globals:
 #   LOAD_BALANCER_ADDRESS
 #   LOAD_BALANCER_PORT
 # Arguments:
-#   k8sTargetVersion - e.g. 1.10.6
+#   None
 # Returns:
-#   DID_UPGRADE_KUBERNETES
+#   None
 #######################################
-DID_UPGRADE_KUBERNETES=0
-maybeUpgradeKubernetesLoadBalancer() {
-    if [ -z "$LOAD_BALANCER_ADDRESS" ] || [ -z "$LOAD_BALANCER_PORT" ]; then
-        return
-    fi
-    if [ "$LOAD_BALANCER_ADDRESS_CHANGED" = "0" ]; then
-        updateKubernetesAPIServerCerts "$LOAD_BALANCER_ADDRESS" "$LOAD_BALANCER_PORT"
-        updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
-        return
-    fi
+runUpgradeScriptOnAllRemoteNodes() {
+    local numMasters="$(kubectl get nodes --selector='node-role.kubernetes.io/master' | sed '1d' | wc -l)"
+    local numWorkers="$(kubectl get nodes --selector='!node-role.kubernetes.io/master' | sed '1d' | wc -l)"
 
-    local k8sTargetVersion="$1"
-    semverParse "$k8sTargetVersion"
-    local k8sTargetMajor="$major"
-    local k8sTargetMinor="$minor"
-    local k8sTargetPatch="$patch"
-
-    if [ "$k8sTargetMinor" -lt 13 ]; then
+    if [ "$numMasters" -eq "0" ] && [ "$numWorkers" -eq "0" ]; then
         return
     fi
 
@@ -216,24 +158,6 @@ maybeUpgradeKubernetesLoadBalancer() {
     logStep "Kubernetes control plane endpoint updated, upgrading control plane..."
     echo ""
 
-    # this will use the new load balancer address to the kubeadm.conf
-    : > /opt/replicated/kubeadm.conf
-    makeKubeadmConfig
-
-    updateKubernetesAPIServerCerts "$LOAD_BALANCER_ADDRESS" "$LOAD_BALANCER_PORT"
-    updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
-
-    logStep "Upgrading kubernetes control plane"
-    (
-        set -x
-        kubeadm upgrade apply -yf --ignore-preflight-errors=all \
-            --config /opt/replicated/kubeadm.conf
-    )
-    logSuccess "Kubernetes control plane upgraded"
-
-    spinnerNodesReady
-
-    local numMasters="$(kubectl get nodes --selector='node-role.kubernetes.io/master' | sed '1d' | wc -l)"
     if [ "$numMasters" -gt "1" ]; then
         echo ""
         printf "Run the upgrade script on remote master nodes before proceeding:\n\n${GREEN}"
@@ -288,10 +212,13 @@ maybeUpgradeKubernetesLoadBalancer() {
 # Arguments:
 #   ip or domain, port
 # Returns:
-#   K8S_API_SERVER_CERTS_RENEWED
+#   None
 #######################################
 updateKubernetesAPIServerCerts()
 {
+    if [ ! -e /etc/kubernetes/pkg/apiserver.crt ]; then
+        return
+    fi
     if ! certHasSAN /etc/kubernetes/pki/apiserver.crt "$1"; then
         logStep "Regenerate api server certs"
         rm -f /etc/kubernetes/pki/apiserver.*
