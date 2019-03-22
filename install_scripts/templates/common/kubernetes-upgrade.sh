@@ -189,19 +189,10 @@ isLoadBalancerAddressChanging() {
 # Arguments:
 #   k8sTargetVersion - e.g. 1.10.6
 # Returns:
-#   DID_UPGRADE_KUBERNETES
+#   DID_UPGRADE_KUBERNETES_LOAD_BALANCER
 #######################################
-DID_UPGRADE_KUBERNETES=0
-maybeUpgradeKubernetesLoadBalancer() {
-    if [ -z "$LOAD_BALANCER_ADDRESS" ] || [ -z "$LOAD_BALANCER_PORT" ]; then
-        return
-    fi
-    if [ "$LOAD_BALANCER_ADDRESS_CHANGED" = "0" ]; then
-        updateKubernetesAPIServerCerts "$LOAD_BALANCER_ADDRESS" "$LOAD_BALANCER_PORT"
-        updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
-        return
-    fi
-
+DID_UPGRADE_KUBERNETES_LOAD_BALANCER=0
+upgradeKubernetesLoadBalancer() {
     local k8sTargetVersion="$1"
     semverParse "$k8sTargetVersion"
     local k8sTargetMajor="$major"
@@ -212,10 +203,6 @@ maybeUpgradeKubernetesLoadBalancer() {
         return
     fi
 
-    echo ""
-    logStep "Kubernetes control plane endpoint updated, upgrading control plane..."
-    echo ""
-
     # this will use the new load balancer address to the kubeadm.conf
     : > /opt/replicated/kubeadm.conf
     makeKubeadmConfig
@@ -223,17 +210,21 @@ maybeUpgradeKubernetesLoadBalancer() {
     updateKubernetesAPIServerCerts "$LOAD_BALANCER_ADDRESS" "$LOAD_BALANCER_PORT"
     updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
 
-    logStep "Upgrading kubernetes control plane"
-    (
-        set -x
-        kubeadm upgrade apply -yf --ignore-preflight-errors=all \
-            --config /opt/replicated/kubeadm.conf
-    )
-    logSuccess "Kubernetes control plane upgraded"
+    DID_UPGRADE_KUBERNETES_LOAD_BALANCER=1
+}
 
-    spinnerNodesReady
-
+runUpgradeScriptOnAllRemoteNodes() {
     local numMasters="$(kubectl get nodes --selector='node-role.kubernetes.io/master' | sed '1d' | wc -l)"
+    local numWorkers="$(kubectl get nodes --selector='!node-role.kubernetes.io/master' | sed '1d' | wc -l)"
+
+    if [ "$numMasters" -eq "0" ] && [ "$numWorkers" -eq "0" ]; then
+        return
+    fi
+
+    echo ""
+    logStep "Kubernetes control plane endpoint updated, upgrading control plane..."
+    echo ""
+
     if [ "$numMasters" -gt "1" ]; then
         echo ""
         printf "Run the upgrade script on remote master nodes before proceeding:\n\n${GREEN}"
@@ -254,7 +245,6 @@ maybeUpgradeKubernetesLoadBalancer() {
         spinnerNodesReady
     fi
 
-    local numWorkers="$(kubectl get nodes --selector='!node-role.kubernetes.io/master' | sed '1d' | wc -l)"
     if [ "$numWorkers" -gt "0" ]; then
         echo ""
         printf "Run the upgrade script on remote worker nodes before proceeding:\n\n${GREEN}"
@@ -277,8 +267,6 @@ maybeUpgradeKubernetesLoadBalancer() {
     echo ""
     logSuccess "Kubernetes control plane endpoint updated"
     echo ""
-
-    DID_UPGRADE_KUBERNETES=1
 }
 
 #######################################
@@ -322,31 +310,27 @@ updateKubeconfigs()
     local regenerate=0
 
     if ! confHasEndpoint /etc/kubernetes/admin.conf "$1"; then
-        rm -f /etc/kubernetes/admin.conf
         regenerate=1
     fi
-
     if ! confHasEndpoint /etc/kubernetes/kubelet.conf "$1"; then
-        rm -f /etc/kubernetes/kubelet.conf
         regenerate=1
     fi
-
     if ! confHasEndpoint /etc/kubernetes/scheduler.conf "$1"; then
-        rm -f /etc/kubernetes/scheduler.conf
         regenerate=1
     fi
-
     if ! confHasEndpoint /etc/kubernetes/controller-manager.conf "$1"; then
-        rm -f /etc/kubernetes/controller-manager.conf
         regenerate=1
     fi
 
-    if [ "$regenerate" = "1" ]; then
-        logStep "Regenerating control plane kubeconfig"
-        kubeadm init phase kubeconfig all --config /opt/replicated/kubeadm.conf
-        chmod 444 /etc/kubernetes/*.conf
-        logSuccess "Kubernetes control plane kubeconfigs regenerated"
+    if [ "$regenerate" != "1" ]; then
+        return
     fi
+
+    logStep "Regenerating control plane kubeconfig"
+    rm -rf /etc/kubernetes/admin.conf /etc/kubernetes/kubelet.conf /etc/kubernetes/scheduler.conf /etc/kubernetes/controller-manager.conf
+    kubeadm init phase kubeconfig all --config /opt/replicated/kubeadm.conf
+    chmod 444 /etc/kubernetes/*.conf
+    logSuccess "Kubernetes control plane kubeconfigs regenerated"
 }
 
 #######################################

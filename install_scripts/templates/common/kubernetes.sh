@@ -790,9 +790,9 @@ waitForNodes()
 #######################################
 spinnerMasterNodeReady()
 {
-    logStep "Await node ready"
+    logStep "Await nodes ready"
     spinnerNodesReady
-    logSuccess "Master Node Ready!"
+    logSuccess "Master nodes ready!"
 }
 
 #######################################

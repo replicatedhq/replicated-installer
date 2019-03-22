@@ -198,8 +198,17 @@ initKube() {
 
         if [ "$HA_CLUSTER" -eq "1" ]; then
             promptForLoadBalancerAddress
-            isLoadBalancerAddressChanging "$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
-            maybeUpgradeKubernetesLoadBalancer "$kubeV"
+            if [ -e "/etc/kubernetes/manifests/kube-apiserver.yaml" ]; then
+                isLoadBalancerAddressChanging "$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
+                if [ -n "$LOAD_BALANCER_ADDRESS" ] && [ -n "$LOAD_BALANCER_PORT" ]; then
+                    if [ "$LOAD_BALANCER_ADDRESS_CHANGED" != "1" ]; then
+                        updateKubernetesAPIServerCerts "$LOAD_BALANCER_ADDRESS" "$LOAD_BALANCER_PORT"
+                        updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
+                    else
+                        upgradeKubernetesLoadBalancer "$kubeV"
+                    fi
+                fi
+            fi
         fi
 
         initKubeadmConfig
@@ -258,6 +267,10 @@ initKube() {
     exportKubeconfig
 
     logSuccess "Kubernetes Master Initialized"
+
+    if [ -n "$LOAD_BALANCER_ADDRESS" ] && [ -n "$LOAD_BALANCER_PORT" ] && [ "$LOAD_BALANCER_ADDRESS_CHANGED" = "1" ]; then
+        runUpgradeScriptOnAllRemoteNodes
+    fi
 }
 
 shouldReinitK8s() {
@@ -916,7 +929,7 @@ if [ "$HA_CLUSTER" != "1" ]; then
     labelMasterNode
 fi
 
-if [ "$DID_INIT_KUBERNETES" = "0" ]; then
+if [ "$DID_INIT_KUBERNETES" != "1" ]; then
     maybeUpgradeKubernetes "$KUBERNETES_VERSION"
 fi
 
