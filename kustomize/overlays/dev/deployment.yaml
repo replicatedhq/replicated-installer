@@ -10,9 +10,9 @@ spec:
         - name: install-scripts
           env:
             - name: ENVIRONMENT
-              value: dev
+              value: staging
             - name: REPLICATED_INSTALL_URL
-              value: http://localhost:8090
+              value: http://0f3112c9.ngrok.io
             - name: GRAPHQL_PREM_ENDPOINT
               value: http://docker.for.mac.host.internal:8033/graphql
             - name: REGISTRY_ENDPOINT

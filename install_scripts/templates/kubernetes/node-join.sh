@@ -71,6 +71,12 @@ downloadPkiBundle() {
 joinKubernetes() {
     if [ "$MASTER" -eq "1" ]; then
         logStep "Join Kubernetes master node"
+
+        # this will stop all the control plane pods
+        rm -f /etc/kubernetes/manifests/*
+        # delete files that need to be regenerated in case of load balancer address change
+        rm -f /etc/kubernetes/*.conf
+        rm -f /etc/kubernetes/pkg/apiserver.crt
     else
         logStep "Join Kubernetes node"
     fi
