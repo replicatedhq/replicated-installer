@@ -214,6 +214,14 @@ initKube() {
             while docker ps | grep -q kube-apiserver ; do
                 sleep 2
             done
+            if [ "$LOAD_BALANCER_ADDRESS_CHANGED" = "1" ]; then
+                # kubectl must communicate with the local API server until all servers are upgraded to
+                # serve certs with the new load balancer address in their SANs
+                if [ -f /etc/kubernetes/admin.conf ]; then
+                    mv /etc/kubernetes/admin.conf /tmp/kube.conf
+                    export KUBECONFIG=/tmp/kube.conf
+                fi
+            fi
             # delete files that need to be regenerated in case of load balancer address change
             rm -f /etc/kubernetes/*.conf
             rm -f /etc/kubernetes/pki/apiserver.crt /etc/kubernetes/pki/apiserver.key
@@ -278,6 +286,7 @@ initKube() {
 
     if [ "$LOAD_BALANCER_ADDRESS_CHANGED" = "1" ]; then
         runUpgradeScriptOnAllRemoteNodes
+        export KUBECONFIG=/etc/kubernetes/admin.conf
     fi
 }
 
