@@ -232,7 +232,7 @@ initKube() {
         loadIPVSKubeProxyModules
 
         local skipPhases=
-        local numMasters="$(kubectl get nodes --selector='node-role.kubernetes.io/master' | sed '1d' | wc -l)"
+        local numMasters="$(kubectl get nodes --selector='node-role.kubernetes.io/master' 2>/dev/null | sed '1d' | wc -l)"
         if [ "$numMasters" -gt "0" ]; then
             skipPhases="preflight,mark-control-plane"
         fi
