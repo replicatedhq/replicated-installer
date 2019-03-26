@@ -87,14 +87,26 @@ set -e
 
 LOAD_BALANCER_ADDRESS_CHANGED=0
 promptForLoadBalancerAddress() {
-    local lastLoadBalancerAddress=""
+    local lastLoadBalancerAddress=
 
     if kubeadm config view >/dev/null 2>&1; then
         lastLoadBalancerAddress="$(kubeadm config view | grep 'controlPlaneEndpoint:' | sed 's/controlPlaneEndpoint: \|"//g')"
+        if [ -n "$lastLoadBalancerAddress" ]; then
+            splitHostPort "$lastLoadBalancerAddress"
+            if [ "$HOST" = "$lastLoadBalancerAddress" ]; then
+                lastLoadBalancerAddress="$lastLoadBalancerAddress:6443"
+            fi
+        fi
     fi
 
-    if [ -n "$LOAD_BALANCER_ADDRESS" ] && [ -n "$lastLoadBalancerAddress" ] && [ "$LOAD_BALANCER_ADDRESS" != "$lastLoadBalancerAddress" ]; then
-        LOAD_BALANCER_ADDRESS_CHANGED=1
+    if [ -n "$LOAD_BALANCER_ADDRESS" ] && [ -n "$lastLoadBalancerAddress" ]; then
+        splitHostPort "$LOAD_BALANCER_ADDRESS"
+        if [ "$HOST" = "$LOAD_BALANCER_ADDRESS" ]; then
+            LOAD_BALANCER_ADDRESS="$LOAD_BALANCER_ADDRESS:6443"
+        fi
+        if [ "$LOAD_BALANCER_ADDRESS" != "$lastLoadBalancerAddress" ]; then
+            LOAD_BALANCER_ADDRESS_CHANGED=1
+        fi
     fi
 
     if [ -z "$LOAD_BALANCER_ADDRESS" ] && [ -n "$lastLoadBalancerAddress" ]; then
@@ -219,6 +231,7 @@ initKube() {
                 # serve certs with the new load balancer address in their SANs
                 if [ -f /etc/kubernetes/admin.conf ]; then
                     mv /etc/kubernetes/admin.conf /tmp/kube.conf
+                    sed -i "s/server: https.*/server: https:\/\/$PRIVATE_ADDRESS:6443/" /tmp/kube.conf
                     export KUBECONFIG=/tmp/kube.conf
                 fi
             fi
@@ -281,6 +294,8 @@ initKube() {
     chown $SUDO_USER:$SUDO_GID $HOME/admin.conf
 
     exportKubeconfig
+
+    waitForNodes
 
     logSuccess "Kubernetes Master Initialized"
 
