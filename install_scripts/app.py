@@ -485,7 +485,7 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
     proxy_address = helpers.get_arg('http_proxy', '')
     # 10.96.0.0/12 is the default service cidr
     no_proxy_addresses = helpers.get_arg('no_proxy_addresses', '10.96.0.0/12')
-    api_service_address = helpers.get_arg('api_service_address')
+    api_service_address = helpers.get_arg('api_service_address', '')
     ha_cluster = '1' if helpers.get_arg('ha_cluster') == 'true' else '0'
 
     return helpers.template_args(
