@@ -41,7 +41,9 @@ startNativeScheduler() {
         installCliFile "sudo docker exec" "replicated"
     fi
 
-    waitReplicatedctlReady
+    if ! waitReplicatedctlReady; then
+        bail "Replicated failed to report ready"
+    fi
     checkVersion
     /usr/local/bin/replicatedctl app stop &>/dev/null
 
@@ -265,7 +267,9 @@ restoreSecrets() {
 startAppOnK8s() {
     logStep "Restoring app state"
 
-    waitReplicatedctlReady
+    if ! waitReplicatedctlReady; then
+        bail "Replicated failed to report ready"
+    fi
 
     logSubstep "restore audit log"
     restoreRetraced

@@ -870,7 +870,9 @@ spinnerReplicatedReady()
     logStep "Await replicated ready"
     sleep 2
     kubectl rollout status deployment/replicated
-    waitReplicatedctlReady
+    if ! waitReplicatedctlReady; then
+        bail "Replicated failed to report ready"
+    fi
     logSuccess "Replicated Ready!"
 }
 

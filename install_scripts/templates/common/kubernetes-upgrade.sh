@@ -154,7 +154,9 @@ runUpgradeScriptOnAllRemoteNodes() {
         return
     fi
 
-    waitReplicatedctlReady
+    if ! waitReplicatedctlReady; then
+        bail "Replicated failed to report ready"
+    fi
     echo ""
     logStep "Kubernetes control plane endpoint updated, upgrading control plane..."
     echo ""
