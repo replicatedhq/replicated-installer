@@ -63,7 +63,7 @@ downloadPkiBundle() {
         echo "$CA" | base64 -d > /tmp/replicated-ca.crt
         _opt="--cacert /tmp/replicated-ca.crt"
     fi
-    (set -x; curl --noproxy "*" --max-time 30 --connect-timeout 2 $_opt -qSsf "$MASTER_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
+    (set -x; curl --noproxy "*" --max-time 120 --connect-timeout 5 $_opt -qSsf "$MASTER_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
     (set -x; tar -C /etc/kubernetes/ -xvf /tmp/etc-kubernetes.tar)
     logSuccess "Kubernetes PKI downloaded successfully"
 }
