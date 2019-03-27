@@ -278,18 +278,9 @@ startAppOnK8s() {
     restoreSecrets
 
     logSubstep "restore console settings"
-    set +e
-    local needsActivation=0
-    /usr/local/bin/replicatedctl migration import < "${TMP_DIR}/migration.json" 2>"${TMP_DIR}/import.txt"
-    if [ "$?" -ne 0 ] ; then
-        if grep -q 'Activation code invalid' "${TMP_DIR}/import.txt" ; then
-            needsActivation=1
-        else
-            cat "${TMP_DIR}/import.txt"
-            exit 1
-        fi
+    if cat "${TMP_DIR}/migration.json" | kubectl exec -i $(kubectl get pods -o=jsonpath="{.items[0].metadata.name}" -l tier=master) -- /bin/sh -c 'replicatedctl migration import || true' | grep 'Activation' ; then
+        needsActivation=1
     fi
-    set -e
 
     # restart ui container to pick up new TLS certs from daemon
     local replPod=$(kubectl get pods --selector='app=replicated,tier=master' | tail -1 | awk '{ print $1 }')
@@ -312,6 +303,8 @@ startAppOnK8s() {
 
     logSubstep "restore app config"
     /usr/local/bin/replicatedctl app-config import --skip-validation < "${TMP_DIR}/app-config.json"
+
+    purgeNativeScheduler
 }
 
 validate() {
@@ -404,5 +397,3 @@ if [ "$HAS_APP" != "1" ]; then
     startAppOnK8s
 fi
 logSuccess "App is installed on Kubernetes"
-
-purgeNativeScheduler
