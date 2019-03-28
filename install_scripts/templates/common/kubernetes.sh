@@ -861,7 +861,7 @@ spinnerPodRunning()
 # Globals:
 #   None
 # Arguments:
-#   None
+#   Replicated version
 # Returns:
 #   None
 #######################################
