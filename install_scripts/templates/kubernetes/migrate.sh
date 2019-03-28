@@ -279,7 +279,7 @@ startAppOnK8s() {
 
     logSubstep "restore console settings"
     local needsActivation=0
-    if cat "${TMP_DIR}/migration.json" | kubectl exec -i $(kubectl get pods -o=jsonpath="{.items[0].metadata.name}" -l tier=master) -- /bin/sh -c 'replicatedctl migration import || true' 2>&1 | grep 'Activation code invalid' ; then
+    if cat "${TMP_DIR}/migration.json" | kubectl exec -i $(kubectl get pods -o=jsonpath="{.items[0].metadata.name}" -l tier=master) -- /bin/sh -c 'replicatedctl migration import || true' 2>&1 | grep -q 'Activation code invalid' ; then
 
         needsActivation=1
     fi
