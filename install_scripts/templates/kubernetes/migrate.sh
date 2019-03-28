@@ -1,5 +1,4 @@
 #!/bin/sh
-:cc1
 set -e
 
 TMP_DIR=/tmp/migrate-k8s
