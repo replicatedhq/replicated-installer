@@ -669,6 +669,7 @@ def get_kubernetes_migrate(replicated_channel=None,
     response = render_template(
         'kubernetes/migrate.sh',
         **helpers.template_args(
+            replicated_version=replicated_version,
             kubernetes_init_path=init_path,
             kubernetes_init_query=query,
         ))

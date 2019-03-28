@@ -16,12 +16,12 @@
 #   None
 #######################################
 installCliFile() {
-  _installCliFile "/usr/local/bin" "$1" "$2"
+    _installCliFile "/usr/local/bin" "$1" "$2"
 }
 
 _installCliFile() {
-  set +e
-  read -r -d '' _flags <<EOF
+    set +e
+    read -r -d '' _flags <<EOF
 interactive=
 tty=
 push=
@@ -105,9 +105,9 @@ for i in "\$@"; do
 done
 
 EOF
-  set -e
+    set -e
 
-  cat > "${1}/replicated" <<-EOF
+    cat > "${1}/replicated" <<-EOF
 #!/bin/bash
 
 set -eo pipefail
@@ -118,8 +118,8 @@ sh -c "${2} \$flags \\
   ${3} \\
   replicated\$push \$(printf "%s" "\$opts")"
 EOF
-  chmod a+x "${1}/replicated"
-  cat > "${1}/replicatedctl" <<-EOF
+    chmod a+x "${1}/replicated"
+    cat > "${1}/replicatedctl" <<-EOF
 #!/bin/bash
 
 set -eo pipefail
@@ -130,38 +130,5 @@ sh -c "${2} \$flags \\
   ${3} \\
   replicatedctl\$push \$(printf "%s" "\$opts")"
 EOF
-  chmod a+x "${1}/replicatedctl"
-}
-
-#######################################
-# Blocks until `replicatedctl system status` succeeds
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-waitReplicatedctlReady() {
-    logSubstep "wait for replicated to report ready"
-    for i in {1..60}; do
-        if isReplicatedctlReady; then
-            return 0
-        fi
-        sleep 2
-    done
-    return 1
-}
-
-#######################################
-# Return code 0 unless `replicatedctl system status` succeeds
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-isReplicatedctlReady() {
-    /usr/local/bin/replicatedctl system status 2>/dev/null | grep -q '"ready"'
+    chmod a+x "${1}/replicatedctl"
 }

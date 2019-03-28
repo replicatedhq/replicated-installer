@@ -25,6 +25,7 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 ADDITIONAL_NO_PROXY=
+REPLICATED_VERSION="{{ replicated_version }}"
 REPLICATED_USERNAME="{{ replicated_username }}"
 
 CHANNEL_CSS={% if channel_css %}
@@ -179,7 +180,7 @@ stackDeploy() {
             > /tmp/replicated-docker-compose.yml
     fi
 
-    semverCompare "{{ replicated_version }}" "2.29.0"
+    semverCompare "$REPLICATED_VERSION" "2.29.0"
     if [ "$SEMVER_COMPARE_RESULT" -ge "0" ]; then
         # The restart policy used to be on-failure which caused replicated to stop running on upgrades due to an exit code 0.
         # This will force the service to start after upgrading to ensure that the service did not complete.

@@ -13,6 +13,7 @@ HAS_APP=0
 AIRGAP_LICENSE_PATH=
 AIRGAP_PACKAGE_PATH=
 INIT_FLAGS="no-clear"
+REPLICATED_VERSION="{{ replicated_version }}"
 
 {% include 'common/cli-script.sh' %}
 {% include 'common/common.sh' %}
@@ -41,7 +42,7 @@ startNativeScheduler() {
         installCliFile "sudo docker exec" "replicated"
     fi
 
-    if ! waitReplicatedctlReady; then
+    if ! waitReplicatedReady "$REPLICATED_VERSION"; then
         bail "Replicated failed to report ready"
     fi
     checkVersion
@@ -210,7 +211,7 @@ checkKubernetes() {
     if ! grep -q "kubectl exec" "/usr/local/bin/replicatedctl" 2>/dev/null ; then
         return
     fi
-    if ! isReplicatedctlReady ; then
+    if ! isReplicatedctlReady "$REPLICATED_VERSION" ; then
         return
     fi
     HAS_KUBERNETES=1
@@ -267,7 +268,7 @@ restoreSecrets() {
 startAppOnK8s() {
     logStep "Restoring app state"
 
-    if ! waitReplicatedctlReady; then
+    if ! waitReplicatedReady "$REPLICATED_VERSION"; then
         bail "Replicated failed to report ready"
     fi
 

@@ -142,7 +142,7 @@ maybeUpgradeKubernetes() {
 #   LOAD_BALANCER_ADDRESS
 #   LOAD_BALANCER_PORT
 # Arguments:
-#   None
+#   Replicated version
 # Returns:
 #   None
 #######################################
@@ -154,7 +154,7 @@ runUpgradeScriptOnAllRemoteNodes() {
         return
     fi
 
-    if ! waitReplicatedctlReady; then
+    if ! waitReplicatedReady "$1"; then
         bail "Replicated failed to report ready"
     fi
     echo ""
