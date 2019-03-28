@@ -870,8 +870,13 @@ spinnerReplicatedReady()
     logStep "Await replicated ready"
     sleep 2
     kubectl rollout status deployment/replicated
-    if ! waitReplicatedctlReady; then
-        bail "Replicated failed to report ready"
+    semverCompare "$1" "2.26.0"
+    if [ "$SEMVER_COMPARE_RESULT" -ge "0" ]; then
+        spinnerPodRunning "default" "replicated-"
+    else
+        if ! waitReplicatedctlReady; then
+            bail "Replicated failed to report ready"
+        fi
     fi
     logSuccess "Replicated Ready!"
 }

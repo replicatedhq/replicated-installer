@@ -1029,7 +1029,7 @@ logSuccess "Installed replicated cli executable"
 installAliasFile
 logSuccess "Installed replicated command alias"
 
-spinnerReplicatedReady
+spinnerReplicatedReady "{{ replicated_version }}"
 
 includeBranding
 
