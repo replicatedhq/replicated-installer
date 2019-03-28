@@ -211,7 +211,7 @@ checkKubernetes() {
     if ! grep -q "kubectl exec" "/usr/local/bin/replicatedctl" 2>/dev/null ; then
         return
     fi
-    if ! isReplicatedctlReady ; then
+    if ! isReplicatedctlReady "$REPLICATED_VERSION" ; then
         return
     fi
     HAS_KUBERNETES=1
