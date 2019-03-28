@@ -410,6 +410,9 @@ getYAMLOpts() {
     if kubectl get pvc | grep replicated-pv-claim > /dev/null ; then
         opts=$opts" replicated-pvc=0"
     fi
+    if [ -n "$PRIVATE_ADDRESS" ]; then
+        opts=$opts" app-registry-advertise-host=$PRIVATE_ADDRESS"
+    fi
     YAML_GENERATE_OPTS="$opts"
 }
 
