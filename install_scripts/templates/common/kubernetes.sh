@@ -857,6 +857,32 @@ spinnerPodRunning()
 }
 
 #######################################
+# Blocks until Replicated is ready
+# Globals:
+#   None
+# Arguments:
+#   Replicated version
+# Returns:
+#   None
+#######################################
+waitReplicatedReady() {
+    semverCompare "$1" "2.26.0"
+    if [ "$SEMVER_COMPARE_RESULT" -ge "0" ]; then
+        # TODO: spinner
+        logSubstep "wait for replicated to report ready"
+        for i in {1..60}; do
+            if isReplicatedctlReady; then
+                return 0
+            fi
+            sleep 2
+        done
+    else
+        spinnerPodRunning "default" "replicated-"
+    fi
+    return 1
+}
+
+#######################################
 # Spinner Replicated Ready
 # Globals:
 #   None
@@ -870,15 +896,23 @@ spinnerReplicatedReady()
     logStep "Await replicated ready"
     sleep 2
     kubectl rollout status deployment/replicated
-    semverCompare "$1" "2.26.0"
-    if [ "$SEMVER_COMPARE_RESULT" -ge "0" ]; then
-        spinnerPodRunning "default" "replicated-"
-    else
-        if ! waitReplicatedctlReady; then
-            bail "Replicated failed to report ready"
-        fi
+    if ! waitReplicatedReady "$1"; then
+        bail "Replicated failed to report ready"
     fi
     logSuccess "Replicated Ready!"
+}
+
+#######################################
+# Return code 0 unless `replicatedctl system status` succeeds
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+isReplicatedctlReady() {
+    /usr/local/bin/replicatedctl system status 2>/dev/null | grep -q '"ready"'
 }
 
 #######################################

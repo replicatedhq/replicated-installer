@@ -8,6 +8,7 @@ GROUP_ID=
 LOG_LEVEL=
 MIN_DOCKER_VERSION="1.10.3" # k8s min
 NO_PROXY=0
+REPLICATED_VERSION="{{ replicated_version }}"
 PINNED_DOCKER_VERSION="{{ pinned_docker_version }}"
 YAML_GENERATE_OPTS=
 
@@ -300,7 +301,7 @@ initKube() {
     logSuccess "Kubernetes Master Initialized"
 
     if [ "$LOAD_BALANCER_ADDRESS_CHANGED" = "1" ]; then
-        runUpgradeScriptOnAllRemoteNodes
+        runUpgradeScriptOnAllRemoteNodes "$REPLICATED_VERSION"
         export KUBECONFIG=/etc/kubernetes/admin.conf
 
         logStep "Restarting kube-proxy"
@@ -841,7 +842,7 @@ setK8sPatchVersion
 checkFirewalld
 
 if [ "$HA_CLUSTER" = "1" ]; then
-    semverCompare "{{ replicated_version }}" "2.34.0"
+    semverCompare "$REPLICATED_VERSION" "2.34.0"
     if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
         bail "HA installs require Replicated >= 2.34.0"
     fi
@@ -1012,7 +1013,7 @@ if [ "$AIRGAP" = "1" ]; then
 
     # If this is an airgap installation we need to deploy a registry and push all Replicated images
     # to it so that Replicated components can get rescheduled to additional nodes.
-    semverCompare "{{ replicated_version }}" "2.34.0"
+    semverCompare "$REPLICATED_VERSION" "2.34.0"
     if [ "$SEMVER_COMPARE_RESULT" -ge "0" ]; then
         registryDeploy
         airgapPushReplicatedImagesToRegistry "$REGISTRY_ADDRESS_OVERRIDE"
@@ -1029,7 +1030,7 @@ logSuccess "Installed replicated cli executable"
 installAliasFile
 logSuccess "Installed replicated command alias"
 
-spinnerReplicatedReady "{{ replicated_version }}"
+spinnerReplicatedReady "$REPLICATED_VERSION"
 
 includeBranding
 
