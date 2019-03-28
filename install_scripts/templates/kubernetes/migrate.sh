@@ -1,5 +1,5 @@
 #!/bin/sh
-
+:cc1
 set -e
 
 TMP_DIR=/tmp/migrate-k8s
@@ -278,30 +278,21 @@ startAppOnK8s() {
     restoreSecrets
 
     logSubstep "restore console settings"
-    set +e
     local needsActivation=0
-    /usr/local/bin/replicatedctl migration import < "${TMP_DIR}/migration.json" 2>"${TMP_DIR}/import.txt"
-    if [ "$?" -ne 0 ] ; then
-        if grep -q 'Activation code invalid' "${TMP_DIR}/import.txt" ; then
-            needsActivation=1
-        else
-            cat "${TMP_DIR}/import.txt"
-            exit 1
-        fi
+    if cat "${TMP_DIR}/migration.json" | kubectl exec -i $(kubectl get pods -o=jsonpath="{.items[0].metadata.name}" -l tier=master) -- /bin/sh -c 'replicatedctl migration import || true' 2>&1 | grep 'Activation code invalid' ; then
+
+        needsActivation=1
     fi
-    set -e
 
     # restart ui container to pick up new TLS certs from daemon
     local replPod=$(kubectl get pods --selector='app=replicated,tier=master' | tail -1 | awk '{ print $1 }')
     if [ -n "$replPod" ]; then
         logSubstep "waiting for replicated-ui to restart"
         kubectl exec "$replPod" -c replicated-ui -- kill 1 &>/dev/null || true
-        sleep 30
     fi
 
     if [ "$needsActivation" = "1" ]; then
         read -p "Activation code has been emailed. Enter it here to proceed: " code < /dev/tty
-        echo $code
         /usr/local/bin/replicatedctl license activate "$code"
     fi
 
