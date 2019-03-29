@@ -44,6 +44,7 @@ while [ "$1" != "" ]; do
     case $_param in
         airgap)
             AIRGAP=1
+            BIND_DAEMON_NODE=1
             ;;
         bind-daemon-node|bind_daemon_node)
             BIND_DAEMON_NODE=1
