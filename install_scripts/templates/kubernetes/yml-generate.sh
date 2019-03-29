@@ -13,7 +13,9 @@ SERVICE_TYPE="{{ service_type }}"
 PROXY_ADDRESS="{{ proxy_address }}"
 NO_PROXY_ADDRESSES="{{ no_proxy_addresses }}"
 REPLICATED_DOCKER_HOST="{{ replicated_docker_host }}"
+# replicated components registry
 REGISTRY_ADDRESS_OVERRIDE="{{ registry_address_override }}"
+APP_REGISTRY_ADVERTISE_HOST="{{ app_registry_advertise_host }}"
 IP_ALLOC_RANGE=10.32.0.0/12  # default for weave
 CEPH_DASHBOARD_URL=
 # booleans
@@ -42,6 +44,7 @@ while [ "$1" != "" ]; do
     case $_param in
         airgap)
             AIRGAP=1
+            BIND_DAEMON_NODE=1
             ;;
         bind-daemon-node|bind_daemon_node)
             BIND_DAEMON_NODE=1
@@ -135,6 +138,9 @@ while [ "$1" != "" ]; do
         registry-address-override|registry_address_override)
             REGISTRY_ADDRESS_OVERRIDE="$_value"
             ;;
+        app-registry-advertise-host|app_registry_advertise_host)
+            APP_REGISTRY_ADVERTISE_HOST="$_value"
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -216,7 +222,7 @@ $AFFINITY
           value: "$RELEASE_SEQUENCE"
 {%- endif %}
         - name: REGISTRY_ADVERTISE_ADDRESS
-          value: localhost:9874
+          value: "$APP_REGISTRY_ADVERTISE_HOST:9874"
         - name: COMPONENT_IMAGES_REGISTRY_ADDRESS_OVERRIDE
           value: "$REGISTRY_ADDRESS_OVERRIDE"{% if customer_base_url_override %}
         - name: MARKET_BASE_URL

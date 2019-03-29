@@ -487,6 +487,7 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
     no_proxy_addresses = helpers.get_arg('no_proxy_addresses', '10.96.0.0/12')
     api_service_address = helpers.get_arg('api_service_address', '')
     ha_cluster = '1' if helpers.get_arg('ha_cluster') == 'true' else '0'
+    app_registry_advertise_host = helpers.get_arg('app_registry_advertise_host', '')
 
     return helpers.template_args(
         channel_name=replicated_channel,
@@ -506,6 +507,7 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
         no_proxy_addresses=no_proxy_addresses,
         api_service_address=api_service_address,
         ha_cluster=ha_cluster,
+        app_registry_advertise_host=app_registry_advertise_host,
     )
 
 

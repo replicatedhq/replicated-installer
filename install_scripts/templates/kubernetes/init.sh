@@ -410,6 +410,9 @@ getYAMLOpts() {
     if kubectl get pvc | grep replicated-pv-claim > /dev/null ; then
         opts=$opts" replicated-pvc=0"
     fi
+    if [ -n "$PRIVATE_ADDRESS" ]; then
+        opts=$opts" app-registry-advertise-host=$PRIVATE_ADDRESS"
+    fi
     YAML_GENERATE_OPTS="$opts"
 }
 
@@ -960,9 +963,10 @@ weavenetDeploy
 untaintMaster
 
 spinnerMasterNodeReady
-if [ "$HA_CLUSTER" != "1" ]; then
+if [ "$HA_CLUSTER" != "1" ] || [ "$AIRGAP" == "1" ]; then
     # This label is not used in latest version of replicated with support for
-    # multi-master.
+    # multi-master except for airgap since the daemon must be on the same host
+    # as the app bundle and license file
     labelMasterNode
 fi
 
