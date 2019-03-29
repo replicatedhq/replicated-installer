@@ -1775,6 +1775,7 @@ if [ "$REPLICATED_YAML" = "1" ]; then
     render_replicated_specs
     render_replicated_deployment
     render_replicated_services
+    render_service_account
 
     render_replicated_api_service
 
