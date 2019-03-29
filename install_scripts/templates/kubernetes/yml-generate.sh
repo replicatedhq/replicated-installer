@@ -259,21 +259,21 @@ $AFFINITY
               fieldPath: metadata.namespace
 EOF
     if [ -n "$APP_REGISTRY_ADVERTISE_HOST" ]; then
-      cat <<EOF
-        - name: REGISTRY_ADVERTISE_ADDRESS
-          value: "$APP_REGISTRY_ADVERTISE_HOST:9874"
+        cat <<EOF
+            - name: REGISTRY_ADVERTISE_ADDRESS
+            value: "$APP_REGISTRY_ADVERTISE_HOST:9874"
 EOF
     fi
     if [ -n "$API_SERVICE_ADDRESS" ]; then
-      cat <<EOF
-        - name: K8S_SERVICE_ADDRESS
-          value: "$API_SERVICE_ADDRESS"
+        cat <<EOF
+            - name: K8S_SERVICE_ADDRESS
+            value: "$API_SERVICE_ADDRESS"
 EOF
     fi
     if [ "$HA_CLUSTER" -eq "1" ]; then
-      cat <<EOF
-        - name: HA_CLUSTER
-          value: "true"
+        cat <<EOF
+            - name: HA_CLUSTER
+            value: "true"
 EOF
     fi
     cat <<EOF
@@ -437,6 +437,8 @@ EOF
 }
 
 render_replicated_api_service() {
+    # TODO: we may want to change this to a clusterip service if we add any more routes other than
+    # the pki bundle route which is unnecessary on installs other than HA.
     cat <<EOF
 ---
 apiVersion: v1
@@ -506,7 +508,7 @@ EOF
 }
 
 render_service_account() {
-  cat <<EOF
+    cat <<EOF
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -1781,7 +1783,9 @@ if [ "$REPLICATED_YAML" = "1" ]; then
     render_replicated_services
     render_service_account
 
-    render_replicated_api_service
+    if [ "$HA_CLUSTER" -eq "1" ]; then
+        render_replicated_api_service
+    fi
 
     if [ "$SERVICE_TYPE" = "NodePort" ]; then
         render_replicated_ui_node_port_service
