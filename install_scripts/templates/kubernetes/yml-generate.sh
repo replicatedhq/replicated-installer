@@ -221,8 +221,6 @@ $AFFINITY
         - name: RELEASE_SEQUENCE
           value: "$RELEASE_SEQUENCE"
 {%- endif %}
-        - name: REGISTRY_ADVERTISE_ADDRESS
-          value: "$APP_REGISTRY_ADVERTISE_HOST:9874"
         - name: COMPONENT_IMAGES_REGISTRY_ADDRESS_OVERRIDE
           value: "$REGISTRY_ADDRESS_OVERRIDE"{% if customer_base_url_override %}
         - name: MARKET_BASE_URL
@@ -260,6 +258,12 @@ $AFFINITY
             fieldRef:
               fieldPath: metadata.namespace
 EOF
+    if [ -n "$APP_REGISTRY_ADVERTISE_HOST" ]; then
+      cat <<EOF
+        - name: REGISTRY_ADVERTISE_ADDRESS
+          value: "$APP_REGISTRY_ADVERTISE_HOST:9874"
+EOF
+    fi
     if [ -n "$API_SERVICE_ADDRESS" ]; then
       cat <<EOF
         - name: K8S_SERVICE_ADDRESS
