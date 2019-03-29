@@ -270,7 +270,7 @@ EOF
           value: "$API_SERVICE_ADDRESS"
 EOF
     fi
-    if [ "$HA_CLUSTER" -eq "1" ]; then
+    if [ "$HA_CLUSTER" = "1" ]; then
         cat <<EOF
         - name: HA_CLUSTER
           value: "true"
@@ -1783,7 +1783,7 @@ if [ "$REPLICATED_YAML" = "1" ]; then
     render_replicated_services
     render_service_account
 
-    if [ "$HA_CLUSTER" -eq "1" ]; then
+    if [ "$HA_CLUSTER" = "1" ]; then
         render_replicated_api_service
     fi
 
