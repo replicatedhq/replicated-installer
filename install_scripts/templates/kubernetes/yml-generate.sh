@@ -391,7 +391,7 @@ spec:
 EOF
 }
 
-render_replicated_services() {
+render_replicated_service() {
     cat <<EOF
 ---
 apiVersion: v1
@@ -415,6 +415,11 @@ spec:
   - name: replicated-support
     port: 9881
     protocol: TCP
+EOF
+}
+
+render_replicated_registry_service() {
+    cat <<EOF
 ---
 apiVersion: v1
 kind: Service
@@ -1780,7 +1785,10 @@ if [ "$REPLICATED_YAML" = "1" ]; then
     fi
     render_replicated_specs
     render_replicated_deployment
-    render_replicated_services
+    render_replicated_service
+    if [ "$AIRGAP" = "1" ]; then
+        render_replicated_registry_service
+    fi
     render_service_account
 
     if [ "$HA_CLUSTER" = "1" ]; then

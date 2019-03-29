@@ -554,10 +554,10 @@ Configure Docker on all worker nodes to use http when pulling from the in-cluste
 
 Example /etc/docker/daemon.json:
 {
-    "insecure-registries" ["$SERVICE_CIDR"]
+    "insecure-registries": ["$SERVICE_CIDR"]
 }
 
-Continue after updating nodes: $workers
+Continue after updating and restarting docker on nodes: $workers
 EOF
     prompt
     fi
