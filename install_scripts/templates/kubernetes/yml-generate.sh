@@ -260,20 +260,20 @@ $AFFINITY
 EOF
     if [ -n "$APP_REGISTRY_ADVERTISE_HOST" ]; then
         cat <<EOF
-            - name: REGISTRY_ADVERTISE_ADDRESS
-            value: "$APP_REGISTRY_ADVERTISE_HOST:9874"
+        - name: REGISTRY_ADVERTISE_ADDRESS
+          value: "$APP_REGISTRY_ADVERTISE_HOST:9874"
 EOF
     fi
     if [ -n "$API_SERVICE_ADDRESS" ]; then
         cat <<EOF
-            - name: K8S_SERVICE_ADDRESS
-            value: "$API_SERVICE_ADDRESS"
+        - name: K8S_SERVICE_ADDRESS
+          value: "$API_SERVICE_ADDRESS"
 EOF
     fi
     if [ "$HA_CLUSTER" -eq "1" ]; then
         cat <<EOF
-            - name: HA_CLUSTER
-            value: "true"
+        - name: HA_CLUSTER
+          value: "true"
 EOF
     fi
     cat <<EOF
