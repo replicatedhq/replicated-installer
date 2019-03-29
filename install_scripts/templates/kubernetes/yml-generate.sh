@@ -1780,7 +1780,7 @@ if [ "$REPLICATED_YAML" = "1" ]; then
     render_replicated_specs
     render_replicated_deployment
     render_replicated_service
-    if [ "$AIRGAP" != "1" ]; then
+    if [ "$AIRGAP" = "1" ]; then
         render_replicated_registry_service
     fi
     render_service_account
