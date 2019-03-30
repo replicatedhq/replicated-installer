@@ -1,5 +1,4 @@
-#!/biin/sh
-
+#!/bin/sh
 set -e
 
 TMP_DIR=/tmp/migrate-k8s
@@ -297,12 +296,10 @@ startAppOnK8s() {
     if [ -n "$replPod" ]; then
         logSubstep "waiting for replicated-ui to restart"
         kubectl exec "$replPod" -c replicated-ui -- kill 1 &>/dev/null || true
-        sleep 30
     fi
 
     if [ "$needsActivation" = "1" ]; then
         read -p "Activation code has been emailed. Enter it here to proceed: " code < /dev/tty
-        echo $code
         /usr/local/bin/replicatedctl license activate "$code"
     fi
 
@@ -313,6 +310,8 @@ startAppOnK8s() {
 
     logSubstep "restore app config"
     /usr/local/bin/replicatedctl app-config import --skip-validation < "${TMP_DIR}/app-config.json"
+
+    purgeNativeScheduler
 }
 
 validate() {
@@ -405,5 +404,3 @@ if [ "$HAS_APP" != "1" ]; then
     startAppOnK8s
 fi
 logSuccess "App is installed on Kubernetes"
-
-purgeNativeScheduler
