@@ -866,7 +866,9 @@ spinnerPodRunning()
 #   None
 #######################################
 waitReplicatedReady() {
-    kubectl rollout status deployment/replicated
+    if commandExists "kubectl" ; then
+        kubectl rollout status deployment/replicated
+    fi
 
     # TODO: spinner
     logSubstep "wait for replicated to report ready"
