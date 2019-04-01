@@ -868,6 +868,19 @@ spinnerPodRunning()
 waitReplicatedReady() {
     kubectl rollout status deployment/replicated
 
+    waitReplicatedctlReady "$REPLICATED_VERSION"
+}
+
+#######################################
+# Blocks until replicatedctl is ready
+# Globals:
+#   None
+# Arguments:
+#   Replicated version
+# Returns:
+#   None
+#######################################
+waitReplicatedctlReady() {
     # TODO: spinner
     logSubstep "wait for replicated to report ready"
     for i in {1..60}; do
