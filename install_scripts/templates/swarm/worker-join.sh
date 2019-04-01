@@ -109,6 +109,9 @@ while [ "$1" != "" ]; do
         hard-fail-on-loopback|hard_fail_on_loopback)
             HARD_FAIL_ON_LOOPBACK=1
             ;;
+        bypass-firewalld-warning|bypass_firewalld_warning)
+            BYPASS_FIREWALLD_WARNING=1
+            ;;
         hard-fail-on-firewalld|hard_fail_on_firewalld)
             HARD_FAIL_ON_FIREWALLD=1
             ;;
