@@ -356,7 +356,7 @@ spec:
 EOF
 }
 
-render_replicated_specs() {
+render_premkit_statsd_pvcs() {
     cat <<EOF
 ---
 apiVersion: v1
@@ -1781,13 +1781,13 @@ if [ "$REPLICATED_YAML" = "1" ]; then
     if [ "$REPLICATED_PVC" != "0" ]; then
         render_replicated_pvc
     fi
-    render_replicated_specs
+    render_premkit_statsd_pvcs
+    render_cluster_role_binding
     render_replicated_deployment
     render_replicated_service
     if [ "$AIRGAP" = "1" ]; then
         render_replicated_registry_service
     fi
-    render_cluster_role_binding
 
     if [ "$HA_CLUSTER" = "1" ]; then
         render_replicated_api_service
