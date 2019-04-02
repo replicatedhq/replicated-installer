@@ -488,6 +488,8 @@ rookDeploy() {
 }
 
 maybeDefaultRookStorageClass() {
+    storageClassDeploy
+
     if ! defaultStorageClassExists ; then
         logSubstep "making existing rook storage class default"
         kubectl patch storageclass "$STORAGE_CLASS" -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
@@ -502,6 +504,10 @@ hostpathProvisionerDeploy() {
     kubectl apply -f /tmp/hostpath-provisioner.yml
     spinnerHostpathProvisionerReady
     logSuccess "Hostpath provisioner deployed"
+}
+
+storageClassDeploy() {
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS storage_class_yaml=1 > /tmp/storage-class.yml
 }
 
 contourDeploy() {
@@ -985,9 +991,11 @@ echo
 case "$STORAGE_PROVISIONER" in
     rook|1)
         rookDeploy
+        storageClassDeploy
         ;;
     hostpath)
         hostpathProvisionerDeploy
+        storageClassDeploy
         ;;
     0|"")
         ;;
