@@ -395,10 +395,7 @@ getYAMLOpts() {
     if [ "$ENCRYPT_NETWORK" = "0" ]; then
         opts=$opts" encrypt-network=0"
     fi
-    # Do not change rook storage class
-    if kubectl get storageclass | grep rook.io > /dev/null ; then
-        opts=$opts" storage-provisioner=0"
-    elif [ -n "$STORAGE_PROVISIONER" ]; then
+    if [ -n "$STORAGE_PROVISIONER" ]; then
         opts=$opts" storage-provisioner=$STORAGE_PROVISIONER"
     fi
     if [ -n "$CEPH_DASHBOARD_URL" ]; then
@@ -484,11 +481,16 @@ rookDeploy() {
     # during tests it was required occasionally on 1.11.
     sudo systemctl restart kubelet
     kubectl apply -f /tmp/rook-ceph.yml
+    storageClassDeploy
     logSuccess "Rook deployed"
 }
 
 maybeDefaultRookStorageClass() {
-    storageClassDeploy
+    # different versions of Rook have different storage class specs so never re-apply
+    if ! kubectl get storageclass | grep rook.io > /dev/null ; then
+        storageClassDeploy
+        return
+    fi
 
     if ! defaultStorageClassExists ; then
         logSubstep "making existing rook storage class default"
@@ -503,11 +505,13 @@ hostpathProvisionerDeploy() {
 
     kubectl apply -f /tmp/hostpath-provisioner.yml
     spinnerHostpathProvisionerReady
+    storageClassDeploy
     logSuccess "Hostpath provisioner deployed"
 }
 
 storageClassDeploy() {
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS storage_class_yaml=1 > /tmp/storage-class.yml
+    kubectl apply -f /tmp/storage-class.yml
 }
 
 contourDeploy() {
@@ -523,15 +527,6 @@ contourDeploy() {
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS contour_yaml=1 > /tmp/contour.yml
     kubectl apply -f /tmp/contour.yml
     logSuccess "Contour deployed"
-}
-
-clusteradminDeploy() {
-    logStep "Deploying cluster admin resources"
-
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS clusteradmin_yaml=1 > /tmp/clusteradmin.yml
-    kubectl apply -f /tmp/clusteradmin.yml
-
-    logSuccess "Cluster admin resources deployed"
 }
 
 registryDeploy() {
@@ -991,11 +986,9 @@ echo
 case "$STORAGE_PROVISIONER" in
     rook|1)
         rookDeploy
-        storageClassDeploy
         ;;
     hostpath)
         hostpathProvisionerDeploy
-        storageClassDeploy
         ;;
     0|"")
         ;;
@@ -1011,8 +1004,6 @@ if [ "$KUBERNETES_ONLY" -eq "1" ]; then
     outroKubeadm "$NO_CLEAR"
     exit 0
 fi
-
-clusteradminDeploy
 
 if [ "$AIRGAP" = "1" ]; then
     logStep "Loading replicated, replicated-ui and replicated-operator images from package\n"
