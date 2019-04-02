@@ -26,11 +26,11 @@ REPLICATED_YAML=1
 REPLICATED_PVC=1
 ROOK_SYSTEM_YAML=0
 ROOK_CLUSTER_YAML=0
+STORAGE_CLASS_YAML=0
 HOSTPATH_PROVISIONER_YAML=0
 WEAVE_YAML=0
 CONTOUR_YAML=0
 DEPLOYMENT_YAML=0
-CLUSTERADMIN_YAML=0
 REGISTRY_YAML=0
 BIND_DAEMON_NODE=0
 API_SERVICE_ADDRESS="{{ api_service_address }}"
@@ -94,16 +94,16 @@ while [ "$1" != "" ]; do
             HOSTPATH_PROVISIONER_YAML="$_value"
             REPLICATED_YAML=0
             ;;
+        storage-class-yaml|storage_class_yaml)
+            STORAGE_CLASS_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
         weave-yaml|weave_yaml)
             WEAVE_YAML="$_value"
             REPLICATED_YAML=0
             ;;
         contour-yaml|contour_yaml)
             CONTOUR_YAML="$_value"
-            REPLICATED_YAML=0
-            ;;
-        clusteradmin-yaml|clusteradmin_yaml)
-            CLUSTERADMIN_YAML="$_value"
             REPLICATED_YAML=0
             ;;
         registry-yaml|registry_yaml)
@@ -356,7 +356,7 @@ spec:
 EOF
 }
 
-render_replicated_specs() {
+render_premkit_statsd_pvcs() {
     cat <<EOF
 ---
 apiVersion: v1
@@ -512,7 +512,7 @@ spec:
 EOF
 }
 
-render_service_account() {
+render_cluster_role_binding() {
     cat <<EOF
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -1757,9 +1757,7 @@ if [ "$HOSTPATH_PROVISIONER_YAML" = "1" ]; then
     render_hostpath_provisioner_yaml
 fi
 
-if [ "$CLUSTERADMIN_YAML" = "1" ]; then
-    render_service_account
-
+if [ "$STORAGE_CLASS_YAML" = "1" ]; then
     case "$STORAGE_PROVISIONER" in
         rook|1)
             render_rook_storage_class
@@ -1783,13 +1781,13 @@ if [ "$REPLICATED_YAML" = "1" ]; then
     if [ "$REPLICATED_PVC" != "0" ]; then
         render_replicated_pvc
     fi
-    render_replicated_specs
+    render_premkit_statsd_pvcs
+    render_cluster_role_binding
     render_replicated_deployment
     render_replicated_service
     if [ "$AIRGAP" = "1" ]; then
         render_replicated_registry_service
     fi
-    render_service_account
 
     if [ "$HA_CLUSTER" = "1" ]; then
         render_replicated_api_service
