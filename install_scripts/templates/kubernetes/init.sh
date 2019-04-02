@@ -487,7 +487,7 @@ rookDeploy() {
 
 maybeDefaultRookStorageClass() {
     # different versions of Rook have different storage class specs so never re-apply
-    if ! kubectl get storageclass | grep rook.io > /dev/null ; then
+    if ! kubectl get storageclass | grep -q rook.io ; then
         storageClassDeploy
         return
     fi
