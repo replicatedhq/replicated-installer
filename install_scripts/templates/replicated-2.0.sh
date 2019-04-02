@@ -466,6 +466,9 @@ install_operator() {
     if [ -n "$NO_CE_ON_EE" ]; then
         opts=$opts" no-ce-on-ee"
     fi
+    if [ "$BYPASS_FIREWALLD_WARNING" = "1" ]; then
+        opts=$opts" bypass-firewalld-warning"
+    fi
     # When this script is piped into bash as stdin, apt-get will eat the remaining parts of this script,
     # preventing it from being executed.  So using /dev/null here to change stdin for the docker script.
     if [ "$AIRGAP" = "1" ]; then
@@ -603,6 +606,9 @@ while [ "$1" != "" ]; do
             ;;
         hard-fail-on-loopback|hard_fail_on_loopback)
             HARD_FAIL_ON_LOOPBACK=1
+            ;;
+        bypass-firewalld-warning|bypass_firewalld_warning)
+            BYPASS_FIREWALLD_WARNING=1
             ;;
         hard-fail-on-firewalld|hard_fail_on_firewalld)
             HARD_FAIL_ON_FIREWALLD=1

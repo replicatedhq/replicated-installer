@@ -10,13 +10,16 @@
 #######################################
 # Warns or terminates if firewalld is active
 # Globals:
-#   HARD_FAIL_ON_FIREWALLD, INIT_SYSTEM
+#   BYPASS_FIREWALLD_WARNING, HARD_FAIL_ON_FIREWALLD, INIT_SYSTEM
 # Arguments:
 #   None
 # Returns:
 #   None
 #######################################
 checkFirewalld() {
+    if [ "$BYPASS_FIREWALLD_WARNING" = "1" ]; then
+        return
+    fi
     # firewalld is only available on RHEL 7+ so other init systems can be ignored
     if [ "$INIT_SYSTEM" != "systemd" ]; then
         return
@@ -32,6 +35,7 @@ checkFirewalld() {
 
     printf "${YELLOW}Continue with firewalld active? ${NC}"
     if confirmY ; then
+        BYPASS_FIREWALLD_WARNING=1
         return
     fi
     exit 1
