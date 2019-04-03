@@ -557,66 +557,165 @@ metadata:
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: clusters.ceph.rook.io
+  name: cephclusters.ceph.rook.io
 spec:
   group: ceph.rook.io
   names:
-    kind: Cluster
-    listKind: ClusterList
-    plural: clusters
-    singular: cluster
-    shortNames:
-    - rcc
+    kind: CephCluster
+    listKind: CephClusterList
+    plural: cephclusters
+    singular: cephcluster
   scope: Namespaced
-  version: v1beta1
+  version: v1
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            cephVersion:
+              properties:
+                allowUnsupported:
+                  type: boolean
+                image:
+                  type: string
+                name:
+                  pattern: ^(luminous|mimic|nautilus)$
+                  type: string
+            dashboard:
+              properties:
+                enabled:
+                  type: boolean
+                urlPrefix:
+                  type: string
+                port:
+                  type: integer
+            dataDirHostPath:
+              pattern: ^/(\S+)
+              type: string
+            mon:
+              properties:
+                allowMultiplePerNode:
+                  type: boolean
+                count:
+                  maximum: 9
+                  minimum: 1
+                  type: integer
+                preferredCount:
+                  maximum: 9
+                  minimum: 0
+                  type: integer
+              required:
+              - count
+            network:
+              properties:
+                hostNetwork:
+                  type: boolean
+            storage:
+              properties:
+                nodes:
+                  items: {}
+                  type: array
+                useAllDevices: {}
+                useAllNodes:
+                  type: boolean
+          required:
+          - mon
+  additionalPrinterColumns:
+    - name: DataDirHostPath
+      type: string
+      description: Directory used on the K8s nodes
+      JSONPath: .spec.dataDirHostPath
+    - name: MonCount
+      type: string
+      description: Number of MONs
+      JSONPath: .spec.mon.count
+    - name: Age
+      type: date
+      JSONPath: .metadata.creationTimestamp
+    - name: State
+      type: string
+      description: Current State
+      JSONPath: .status.state
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: filesystems.ceph.rook.io
+  name: cephfilesystems.ceph.rook.io
 spec:
   group: ceph.rook.io
   names:
-    kind: Filesystem
-    listKind: FilesystemList
-    plural: filesystems
-    singular: filesystem
-    shortNames:
-    - rcfs
+    kind: CephFilesystem
+    listKind: CephFilesystemList
+    plural: cephfilesystems
+    singular: cephfilesystem
   scope: Namespaced
-  version: v1beta1
+  version: v1
+  additionalPrinterColumns:
+    - name: MdsCount
+      type: string
+      description: Number of MDSs
+      JSONPath: .spec.metadataServer.activeCount
+    - name: Age
+      type: date
+      JSONPath: .metadata.creationTimestamp
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: objectstores.ceph.rook.io
+  name: cephnfses.ceph.rook.io
 spec:
   group: ceph.rook.io
   names:
-    kind: ObjectStore
-    listKind: ObjectStoreList
-    plural: objectstores
-    singular: objectstore
+    kind: CephNFS
+    listKind: CephNFSList
+    plural: cephnfses
+    singular: cephnfs
     shortNames:
-    - rco
+    - nfs
   scope: Namespaced
-  version: v1beta1
+  version: v1
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: pools.ceph.rook.io
+  name: cephobjectstores.ceph.rook.io
 spec:
   group: ceph.rook.io
   names:
-    kind: Pool
-    listKind: PoolList
-    plural: pools
-    singular: pool
-    shortNames:
-    - rcp
+    kind: CephObjectStore
+    listKind: CephObjectStoreList
+    plural: cephobjectstores
+    singular: cephobjectstore
   scope: Namespaced
-  version: v1beta1
+  version: v1
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: cephobjectstoreusers.ceph.rook.io
+spec:
+  group: ceph.rook.io
+  names:
+    kind: CephObjectStoreUser
+    listKind: CephObjectStoreUserList
+    plural: cephobjectstoreusers
+    singular: cephobjectstoreuser
+  scope: Namespaced
+  version: v1
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: cephblockpools.ceph.rook.io
+spec:
+  group: ceph.rook.io
+  names:
+    kind: CephBlockPool
+    listKind: CephBlockPoolList
+    plural: cephblockpools
+    singular: cephblockpool
+  scope: Namespaced
+  version: v1
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
@@ -648,6 +747,7 @@ rules:
   resources:
   - secrets
   - pods
+  - pods/log
   - services
   - configmaps
   verbs:
@@ -659,7 +759,7 @@ rules:
   - update
   - delete
 - apiGroups:
-  - extensions
+  - apps
   resources:
   - deployments
   - daemonsets
@@ -696,7 +796,7 @@ rules:
   - update
   - delete
 - apiGroups:
-  - extensions
+  - apps
   resources:
   - daemonsets
   verbs:
@@ -735,6 +835,7 @@ rules:
     # PVs and PVCs are managed by the Rook provisioner
   - persistentvolumes
   - persistentvolumeclaims
+  - endpoints
   verbs:
   - get
   - list
@@ -774,6 +875,26 @@ rules:
   - "*"
   verbs:
   - "*"
+---
+# Aspects of ceph-mgr that require cluster-wide access
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: rook-ceph-mgr-cluster
+  labels:
+    operator: rook
+    storage-backend: ceph
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - nodes
+  - nodes/proxy
+  verbs:
+  - get
+  - list
+  - watch
 ---
 # The rook system service account used by the operator, agent, and discovery pods
 apiVersion: v1
@@ -840,7 +961,7 @@ spec:
       serviceAccountName: rook-ceph-system
       containers:
       - name: rook-ceph-operator
-        image: rook/ceph:v0.8.1
+        image: rook/ceph:master
         args: ["ceph", "operator"]
         volumeMounts:
         - mountPath: /var/lib/rook
@@ -848,26 +969,6 @@ spec:
         - mountPath: /etc/ceph
           name: default-config-dir
         env:
-        # To disable RBAC, uncomment the following:
-        # - name: RBAC_ENABLED
-        #  value: "false"
-        # Rook Agent toleration. Will tolerate all taints with all keys.
-        # Choose between NoSchedule, PreferNoSchedule and NoExecute:
-        # - name: AGENT_TOLERATION
-        #  value: "NoSchedule"
-        # (Optional) Rook Agent toleration key. Set this to the key of the taint you want to tolerate
-        # - name: AGENT_TOLERATION_KEY
-        #  value: "<KeyOfTheTaintToTolerate>"
-        # Set the path where the Rook agent can find the flex volumes
-        # - name: FLEXVOLUME_DIR_PATH
-        #  value: "<PathToFlexVolumes>"
-        # Rook Discover toleration. Will tolerate all taints with all keys.
-        # Choose between NoSchedule, PreferNoSchedule and NoExecute:
-        # - name: DISCOVER_TOLERATION
-        #  value: "NoSchedule"
-        # (Optional) Rook Discover toleration key. Set this to the key of the taint you want to tolerate
-        # - name: DISCOVER_TOLERATION_KEY
-        #  value: "<KeyOfTheTaintToTolerate>"
         # Allow rook to create multiple file systems. Note: This is considered
         # an experimental feature in Ceph as described at
         # http://docs.ceph.com/docs/master/cephfs/experimental-features/#multiple-filesystems-within-a-ceph-cluster
@@ -883,12 +984,24 @@ spec:
         # The duration to wait before trying to failover or remove/replace the
         # current mon with a new mon (useful for compensating flapping network).
         - name: ROOK_MON_OUT_TIMEOUT
-          value: "300s"
+          value: "600s"
+        # The duration between discovering devices in the rook-discover daemonset.
+        - name: ROOK_DISCOVER_DEVICES_INTERVAL
+          value: "60m"
         # Whether to start pods as privileged that mount a host path, which includes the Ceph mon and osd pods.
         # This is necessary to workaround the anyuid issues when running on OpenShift.
         # For more details see https://github.com/rook/rook/issues/1314#issuecomment-355799641
         - name: ROOK_HOSTPATH_REQUIRES_PRIVILEGED
           value: "false"
+        # In some situations SELinux relabelling breaks (times out) on large filesystems, and doesn't work with cephfs ReadWriteMany volumes (last relabel wins).
+        # Disable it here if you have similar issues.
+        # For more details see https://github.com/rook/rook/issues/2417
+        - name: ROOK_ENABLE_SELINUX_RELABELING
+          value: "true"
+        # In large volumes it will take some time to chown all the files. Disable it here if you have performance issues.
+        # For more details see https://github.com/rook/rook/issues/2254
+        - name: ROOK_ENABLE_FSGROUP
+          value: "true"
         # The name of the node to pass with the downward API
         - name: NODE_NAME
           valueFrom:
@@ -924,18 +1037,74 @@ metadata:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: rook-ceph-cluster
+  name: rook-ceph-osd
+  namespace: rook-ceph
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rook-ceph-mgr
   namespace: rook-ceph
 ---
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: rook-ceph-cluster
+  name: rook-ceph-osd
   namespace: rook-ceph
 rules:
 - apiGroups: [""]
   resources: ["configmaps"]
   verbs: [ "get", "list", "watch", "create", "update", "delete" ]
+---
+# Aspects of ceph-mgr that require access to the system namespace
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: rook-ceph-mgr-system
+  namespace: rook-ceph
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+---
+# Aspects of ceph-mgr that operate within the cluster's namespace
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: rook-ceph-mgr
+  namespace: rook-ceph
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - delete
+- apiGroups:
+  - ceph.rook.io
+  resources:
+  - "*"
+  verbs:
+  - "*"
 ---
 # Allow the operator to create resources in this cluster's namespace
 kind: RoleBinding
@@ -952,30 +1121,85 @@ subjects:
   name: rook-ceph-system
   namespace: rook-ceph-system
 ---
-# Allow the pods in this namespace to work with configmaps
+# Allow the osd pods in this namespace to work with configmaps
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: rook-ceph-cluster
+  name: rook-ceph-osd
   namespace: rook-ceph
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: rook-ceph-cluster
+  name: rook-ceph-osd
 subjects:
 - kind: ServiceAccount
-  name: rook-ceph-cluster
+  name: rook-ceph-osd
   namespace: rook-ceph
 ---
-apiVersion: ceph.rook.io/v1beta1
-kind: Cluster
+# Allow the ceph mgr to access the cluster-specific resources necessary for the mgr modules
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: rook-ceph-mgr
+  namespace: rook-ceph
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rook-ceph-mgr
+subjects:
+- kind: ServiceAccount
+  name: rook-ceph-mgr
+  namespace: rook-ceph
+---
+# Allow the ceph mgr to access the rook system resources necessary for the mgr modules
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: rook-ceph-mgr-system
+  namespace: rook-ceph-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rook-ceph-mgr-system
+subjects:
+- kind: ServiceAccount
+  name: rook-ceph-mgr
+  namespace: rook-ceph
+---
+# Allow the ceph mgr to access cluster-wide resources necessary for the mgr modules
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: rook-ceph-mgr-cluster
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rook-ceph-mgr-cluster
+subjects:
+- kind: ServiceAccount
+  name: rook-ceph-mgr
+  namespace: rook-ceph
+---
+apiVersion: ceph.rook.io/v1
+kind: CephCluster
 metadata:
   name: rook-ceph
   namespace: rook-ceph
 spec:
+  cephVersion:
+    # The container image used to launch the Ceph daemon pods (mon, mgr, osd, mds, rgw).
+    # v12 is luminous, v13 is mimic, and v14 is nautilus.
+    # RECOMMENDATION: In production, use a specific version tag instead of the general v13 flag, which pulls the latest release and could result in different
+    # versions running within the cluster. See tags available at https://hub.docker.com/r/ceph/ceph/tags/.
+    image: ceph/ceph:v13.2
+    # Whether to allow unsupported versions of Ceph. Currently only luminous and mimic are supported.
+    # After nautilus is released, Rook will be updated to support nautilus.
+    # Do not set to true in production.
+    allowUnsupported: false
+  # The path on the host where configuration files will be persisted. Must be specified.
+  # Important: if you reinstall the cluster, make sure you delete this directory from each host or else the mons will fail to start on the new cluster.
+  # In Minikube, the '/data' directory is configured to persist across reboots. Use "/data/rook" in Minikube environment.
   dataDirHostPath: /var/lib/rook
-  # The service account under which to run the daemon pods in this cluster if the default account is not sufficient (OSDs)
-  serviceAccount: rook-ceph-cluster
   # set the amount of mons to be started
   mon:
     count: 3
@@ -983,9 +1207,19 @@ spec:
   # enable the ceph dashboard for viewing cluster status
   dashboard:
     enabled: true
+    # serve the dashboard under a subpath (useful when you are accessing the dashboard via a reverse proxy)
+    urlPrefix: /ceph
+    # serve the dashboard at the given port.
+    port: 8800
+    # serve the dashboard using SSL
+    ssl: false
   network:
     # toggle to use hostNetwork
     hostNetwork: false
+  rbdMirroring:
+    # The number of daemons that will perform the rbd mirroring.
+    # rbd mirroring must be configured with "rbd mirror" from the rook toolbox.
+    workers: 0
   resources:
   storage: # cluster level storage configuration and selection
     useAllNodes: true
@@ -993,24 +1227,17 @@ spec:
     deviceFilter:
     location:
     config:
+      # The default and recommended storeType is dynamically set to bluestore for devices and filestore for directories.
+      # Set the storeType explicitly only if it is required not to use the default.
+      # storeType: bluestore
       databaseSizeMB: "1024" # this value can be removed for environments with normal sized disks (100 GB or larger)
       journalSizeMB: "1024"  # this value can be removed for environments with normal sized disks (20 GB or larger)
+      osdsPerDevice: "1" # this value can be overridden at the node or device level
+      # encryptedDevice: "false" # the default value for this option is "false"
     directories:
+    # By default create a osd in the dataDirHostPath directory. This should be removed for
+    # environments where nodes have disks available for Rook to use.
     - path: "$PV_BASE_PATH"
----
-apiVersion: ceph.rook.io/v1beta1
-kind: Pool
-metadata:
-  name: replicapool
-  namespace: rook-ceph
-spec:
-  # The failure domain will spread the replicas of the data across different failure zones
-  failureDomain: osd
-  # The root of the crush hierarchy that will be used for the pool. If not set, will use "default".
-  crushRoot: default
-  # For a pool based on raw copies, specify the number of copies. A size of 1 indicates no redundancy.
-  replicated:
-    size: 1
 EOF
 }
 
