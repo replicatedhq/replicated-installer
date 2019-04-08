@@ -20,6 +20,8 @@ SWARM_STACK_NAMESPACE="{{ swarm_stack_namespace }}"
 TLS_CERT_PATH="{{ tls_cert_path }}"
 UI_BIND_PORT="{{ ui_bind_port|default('8800', true) }}"
 USER_ID="{{ user_id }}"
+HTTP_PROXY="{{ http_proxy }}"
+NO_PROXY_ADDRESSES="{{ no_proxy_addresses }}"
 
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"
