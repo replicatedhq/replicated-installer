@@ -366,6 +366,8 @@ def get_replicated_compose_v3_template_args(replicated_channel=None,
     tls_cert_path = helpers.get_arg('tls_cert_path', '')
     ui_bind_port = helpers.get_arg('ui_bind_port', '')
     user_id = helpers.get_arg('user_id', '')
+    http_proxy = helpers.get_arg('http_proxy', '')
+    no_proxy_addresses = helpers.get_arg('no_proxy_addresses', '')
 
     customer_base_url = helpers.get_arg('customer_base_url')
 
@@ -393,6 +395,8 @@ def get_replicated_compose_v3_template_args(replicated_channel=None,
         tls_cert_path=tls_cert_path,
         ui_bind_port=ui_bind_port,
         user_id=user_id,
+        http_proxy=http_proxy,
+        no_proxy_addresses=no_proxy_addresses,
         customer_base_url_override=customer_base_url,
         snapshots_use_overlay=snapshots_use_overlay,
     )
