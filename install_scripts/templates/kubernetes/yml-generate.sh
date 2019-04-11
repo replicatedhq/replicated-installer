@@ -1223,7 +1223,6 @@ spec:
     workers: 0
   resources:
   storage: # cluster level storage configuration and selection
-    nodes:
     useAllNodes: true
     useAllDevices: false
     deviceFilter:
@@ -1249,7 +1248,7 @@ metadata:
 spec:
   failureDomain: host
   replicated:
-    size: 3
+    size: 1
 EOF
 }
 
