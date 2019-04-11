@@ -1202,8 +1202,9 @@ spec:
   dataDirHostPath: /var/lib/rook
   # set the amount of mons to be started
   mon:
-    count: 3
-    allowMultiplePerNode: true
+    count: 1
+    preferredCount: 3
+    allowMultiplePerNode: false
   # enable the ceph dashboard for viewing cluster status
   dashboard:
     enabled: true
@@ -1222,6 +1223,7 @@ spec:
     workers: 0
   resources:
   storage: # cluster level storage configuration and selection
+    nodes:
     useAllNodes: true
     useAllDevices: false
     deviceFilter:
@@ -1238,6 +1240,16 @@ spec:
     # By default create a osd in the dataDirHostPath directory. This should be removed for
     # environments where nodes have disks available for Rook to use.
     - path: "$PV_BASE_PATH"
+---
+apiVersion: ceph.rook.io/v1
+kind: CephBlockPool
+metadata:
+  name: replicapool
+  namespace: rook-ceph
+spec:
+  failureDomain: host
+  replicated:
+    size: 3
 EOF
 }
 
