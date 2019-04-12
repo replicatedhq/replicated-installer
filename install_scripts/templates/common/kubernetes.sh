@@ -10,14 +10,14 @@ UBUNTU_1604_K8S_9=ubuntu-1604-v1.9.3-20181112
 UBUNTU_1604_K8S_10=ubuntu-1604-v1.10.6-20181112
 UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.5-20181204
 UBUNTU_1604_K8S_12=ubuntu-1604-v1.12.3-20181211
-# the ubuntu-1604 packages also install on Ubuntu 18.04
-UBUNTU_1604_K8S_13=ubuntu-1604-v1.13.0-20181211
+UBUNTU_1604_K8S_13=ubuntu-1604-v1.13.5-20190411
+UBUNTU_1804_K8S_13=ubuntu-1804-v1.13.5-20190411
 
 RHEL7_K8S_9=rhel7-v1.9.3-20180806
 RHEL7_K8S_10=rhel7-v1.10.6-20180806
 RHEL7_K8S_11=rhel7-v1.11.5-20181204
 RHEL7_K8S_12=rhel7-v1.12.3-20181211
-RHEL7_K8S_13=rhel7-v1.13.0-20181211
+RHEL7_K8S_13=rhel7-v1.13.5-20190411
 
 DAEMON_NODE_KEY=replicated.com/daemon
 
@@ -46,8 +46,8 @@ setK8sPatchVersion() {
             k8sPatch="5"
             ;;
         13)
-            # 1.13.0
-            k8sPatch="0"
+            # 1.13.5
+            k8sPatch="5"
     esac
     KUBERNETES_VERSION="$k8sMajor.$k8sMinor.$k8sPatch"
 }
@@ -109,7 +109,7 @@ k8sPackageTag() {
     k8sVersion=$1
 
     case "$LSB_DIST$DIST_VERSION" in
-        ubuntu16.04|ubuntu18.04)
+        ubuntu16.04)
             case "$k8sVersion" in
                 1.9.3)
                     echo "$UBUNTU_1604_K8S_9"
@@ -123,8 +123,18 @@ k8sPackageTag() {
                 1.12.3)
                     echo "$UBUNTU_1604_K8S_12"
                     ;;
-                1.13.0)
+                1.13.5)
                     echo "$UBUNTU_1604_K8S_13"
+                    ;;
+                *)
+                    bail "Unsupported Kubernetes version $k8sVersion"
+                    ;;
+            esac
+            ;;
+        ubuntu18.04)
+            case "$k8sVersion" in
+                1.13.5)
+                    echo "$UBUNTU_1804_K8S_13"
                     ;;
                 *)
                     bail "Unsupported Kubernetes version $k8sVersion"
@@ -145,7 +155,7 @@ k8sPackageTag() {
                 1.12.3)
                     echo "$RHEL7_K8S_12"
                     ;;
-                1.13.0)
+                1.13.5)
                     echo "$RHEL7_K8S_13"
                     ;;
                 *)
@@ -301,8 +311,8 @@ airgapLoadKubernetesCommonImages() {
         1.12.3)
             airgapLoadKubernetesCommonImages1123
             ;;
-        1.13.0)
-            airgapLoadKubernetesCommonImages1130
+        1.13.5)
+            airgapLoadKubernetesCommonImages1135
             ;;
         *)
             bail "Unsupported Kubernetes version $k8sVersion"
@@ -385,22 +395,22 @@ airgapLoadKubernetesCommonImages1123() {
     docker tag 367cdc8433a4 k8s.gcr.io/coredns:1.2.2
 }
 
-airgapLoadKubernetesCommonImages1130() {
+airgapLoadKubernetesCommonImages1135() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.13.0-20181226"
+        "quay.io/replicated/k8s-images-common:v1.13.5-20190411"
 
     (
         set -x
-        docker tag 8fa56d18961f k8s.gcr.io/kube-proxy:v1.13.0
+        docker tag 2ee69cad74bf k8s.gcr.io/kube-proxy:v1.13.5
         docker tag da86e6ba6ca1 k8s.gcr.io/pause:3.1
         docker tag f59dcacceff4 k8s.gcr.io/coredns:1.2.6
-        docker tag a5103f96993a docker.io/weaveworks/weave-kube:2.5.0
-        docker tag d499500e93d3 docker.io/weaveworks/weave-npc:2.5.0
-        docker tag 6568ae41694a docker.io/weaveworks/weaveexec:2.5.0
+        docker tag 1f394ae9e226 docker.io/weaveworks/weave-kube:2.5.1
+        docker tag 789b7f496034 docker.io/weaveworks/weave-npc:2.5.1
+        docker tag 4cccd7ef6421 docker.io/weaveworks/weaveexec:2.5.1
         docker tag 9c1f09fe9a86 docker.io/library/registry:2
-        docker tag d7b5da521177 docker.io/envoyproxy/envoy-alpine:v1.7.0
-        docker tag d3309c525d48 gcr.io/heptio-images/contour:v0.8.0
+        docker tag 1186b980992e docker.io/envoyproxy/envoy-alpine:v1.9.1
+        docker tag 0a0aad7cff75 gcr.io/heptio-images/contour:v0.11.0
         docker tag b5c343f1a3a6 docker.io/rook/ceph:v0.8.1
         docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
     )
@@ -435,8 +445,8 @@ airgapLoadKubernetesControlImages() {
         1.12.3)
             airgapLoadKubernetesControlImages1123
             ;;
-        1.13.0)
-            airgapLoadKubernetesControlImages1130
+        1.13.5)
+            airgapLoadKubernetesControlImages1135
             ;;
         *)
             bail "Unsupported Kubernetes version $k8sVersion"
@@ -518,16 +528,16 @@ airgapLoadKubernetesControlImages1123() {
     )
 }
 
-airgapLoadKubernetesControlImages1130() {
+airgapLoadKubernetesControlImages1135() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-control:v1.13.0-20181210"
+        "quay.io/replicated/k8s-images-control:v1.13.5-20190411"
 
     (
         set -x
-        docker tag f1ff9b7e3d6e k8s.gcr.io/kube-apiserver:v1.13.0
-        docker tag d82530ead066 k8s.gcr.io/kube-controller-manager:v1.13.0
-        docker tag 9508b7d8008d k8s.gcr.io/kube-scheduler:v1.13.0
+        docker tag 90332c1b9a4b k8s.gcr.io/kube-apiserver:v1.13.5
+        docker tag b6b315f4f34a k8s.gcr.io/kube-controller-manager:v1.13.5
+        docker tag c629ac1dae38 k8s.gcr.io/kube-scheduler:v1.13.5
         docker tag 3cab8e1b9802 k8s.gcr.io/etcd:3.2.24
     )
 }
@@ -1016,7 +1026,7 @@ weave_reset()
     DATAPATH=datapath
     CONTAINER_IFNAME=ethwe
 
-    WEAVE_TAG=2.5.0
+    WEAVE_TAG=2.5.1
     DOCKER_BRIDGE=docker0
 
     # if we never unpacked/pulled the weave image, its unlikely we need to do any of this
@@ -1135,6 +1145,7 @@ k8s_reset() {
     rm -rf /opt/cni
     rm -rf /etc/kubernetes
     rm -rf /var/lib/replicated
+    rm -rf /var/lib/rook
     rm -rf /var/lib/etcd
     rm -f /usr/bin/kubeadm /usr/bin/kubelet /usr/bin/kubectl
     kill $(ps aux | grep '[k]ubelet' | awk '{print $2}') 2> /dev/null
