@@ -133,18 +133,6 @@ k8sPackageTag() {
             ;;
         ubuntu18.04)
             case "$k8sVersion" in
-                1.9.3)
-                    echo "$UBUNTU_1604_K8S_9"
-                    ;;
-                1.10.6)
-                    echo "$UBUNTU_1604_K8S_10"
-                    ;;
-                1.11.5)
-                    echo "$UBUNTU_1604_K8S_11"
-                    ;;
-                1.12.3)
-                    echo "$UBUNTU_1604_K8S_12"
-                    ;;
                 1.13.5)
                     echo "$UBUNTU_1804_K8S_13"
                     ;;
