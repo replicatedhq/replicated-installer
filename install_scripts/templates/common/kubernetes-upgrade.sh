@@ -118,22 +118,21 @@ maybeUpgradeKubernetes() {
     kubeletMinor="$minor"
     kubeletPatch="$patch"
 
-    # no patch versions of 1.13 yet.
-    if [ "$kubeletMinor" -eq "12" ]; then
-        logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.13.0"
+    if [ "$kubeletMinor" -eq "12" ] || ([ "$kubeletMinor" -eq "13" ] && [ "$k8sTargetMinor" -eq "13" ] && [ "$kubeletPatch" -lt "$k8sTargetPatch" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
+        logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.13.5"
         if [ "$AIRGAP" = "1" ]; then
-            airgapLoadKubernetesCommonImages 1.13.0
-            airgapLoadKubernetesControlImages 1.13.0
+            airgapLoadKubernetesCommonImages 1.13.5
+            airgapLoadKubernetesControlImages 1.13.5
             airgapLoadReplicatedAddonImagesWorker
         fi
         : > /opt/replicated/kubeadm.conf
         makeKubeadmConfig
-        upgradeK8sMaster "1.13.0"
-        logSuccess "Kubernetes upgraded to version v1.13.0"
+        upgradeK8sMaster "1.13.5"
+        logSuccess "Kubernetes upgraded to version v1.13.5"
         DID_UPGRADE_KUBERNETES=1
     fi
 
-    upgradeK8sWorkers "1.13.0" "$K8S_UPGRADE_PATCH_VERSION"
+    upgradeK8sWorkers "1.13.5" "$K8S_UPGRADE_PATCH_VERSION"
 }
 
 #######################################
@@ -270,7 +269,7 @@ maybeUpgradeKubernetesNode() {
             updateKubernetesAPIServerCerts "$LOAD_BALANCER_ADDRESS" "$LOAD_BALANCER_PORT"
             updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
         else
-            (set -x; kubeadm upgrade node config --kubelet-version v1.13.0)
+            (set -x; kubeadm upgrade node config --kubelet-version v1.13.5)
             if [ -n "$LOAD_BALANCER_ADDRESS" ] && [ -n "$LOAD_BALANCER_PORT" ]; then
                 sudo sed -i "s/server: https.*/server: https:\/\/$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/" /etc/kubernetes/kubelet.conf
             fi
@@ -282,7 +281,7 @@ maybeUpgradeKubernetesNode() {
 #######################################
 # Run `kubectl get nodes` until it succeeds or up to 1 minute
 # Globals:
-#   K8S_UPGRADE_PATCH_VERSION
+#   None
 # Arguments:
 #   k8sVersion - e.g. 1.10.6
 # Returns:
@@ -305,7 +304,7 @@ listNodes() {
 #######################################
 # Upgrade Kubernetes on remote workers to version. Never downgrades a worker.
 # Globals:
-#   K8S_UPGRADE_PATCH_VERSION
+#   None
 # Arguments:
 #   k8sVersion - e.g. 1.10.6
 # Returns:

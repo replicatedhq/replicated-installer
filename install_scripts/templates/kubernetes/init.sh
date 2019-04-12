@@ -312,11 +312,11 @@ initKube() {
 
 shouldReinitK8s() {
     if kubectl version --short 2>/dev/null | grep -q 'Server'; then
-        if kubectl version --short 2>/dev/null | grep -q 'Server Version: v1.13.0'; then
+        if kubectl version --short 2>/dev/null | grep -q 'Server Version: v1.13'; then
             return 0
         fi
     elif curl -k https://localhost:6443/version 2>/dev/null | grep -q '"gitVersion": '; then
-        if curl -k https://localhost:6443/version 2>/dev/null | grep -q '"gitVersion": "v1.13.0"'; then
+        if curl -k https://localhost:6443/version 2>/dev/null | grep -q '"gitVersion": "v1.13"'; then
             return 0
         fi
     else
@@ -974,7 +974,7 @@ if [ "$HA_CLUSTER" != "1" ] || [ "$AIRGAP" == "1" ]; then
     labelMasterNode
 fi
 
-if [ "$DID_INIT_KUBERNETES" = "0" ]; then
+if [ "$DID_INIT_KUBERNETES" = "0" ] || [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]; then
     maybeUpgradeKubernetes "$KUBERNETES_VERSION"
 fi
 
