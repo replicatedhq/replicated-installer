@@ -10,8 +10,8 @@ UBUNTU_1604_K8S_9=ubuntu-1604-v1.9.3-20181112
 UBUNTU_1604_K8S_10=ubuntu-1604-v1.10.6-20181112
 UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.5-20181204
 UBUNTU_1604_K8S_12=ubuntu-1604-v1.12.3-20181211
-# the ubuntu-1604 packages also install on Ubuntu 18.04
 UBUNTU_1604_K8S_13=ubuntu-1604-v1.13.5-20190411
+UBUNTU_1804_K8S_13=ubuntu-1804-v1.13.5-20190411
 
 RHEL7_K8S_9=rhel7-v1.9.3-20180806
 RHEL7_K8S_10=rhel7-v1.10.6-20180806
@@ -109,7 +109,7 @@ k8sPackageTag() {
     k8sVersion=$1
 
     case "$LSB_DIST$DIST_VERSION" in
-        ubuntu16.04|ubuntu18.04)
+        ubuntu16.04)
             case "$k8sVersion" in
                 1.9.3)
                     echo "$UBUNTU_1604_K8S_9"
@@ -125,6 +125,28 @@ k8sPackageTag() {
                     ;;
                 1.13.5)
                     echo "$UBUNTU_1604_K8S_13"
+                    ;;
+                *)
+                    bail "Unsupported Kubernetes version $k8sVersion"
+                    ;;
+            esac
+            ;;
+        ubuntu18.04)
+            case "$k8sVersion" in
+                1.9.3)
+                    echo "$UBUNTU_1604_K8S_9"
+                    ;;
+                1.10.6)
+                    echo "$UBUNTU_1604_K8S_10"
+                    ;;
+                1.11.5)
+                    echo "$UBUNTU_1604_K8S_11"
+                    ;;
+                1.12.3)
+                    echo "$UBUNTU_1604_K8S_12"
+                    ;;
+                1.13.5)
+                    echo "$UBUNTU_1804_K8S_13"
                     ;;
                 *)
                     bail "Unsupported Kubernetes version $k8sVersion"
