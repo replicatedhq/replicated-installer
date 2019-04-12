@@ -1184,7 +1184,7 @@ items:
                 - name: IPALLOC_RANGE
                   value: $IP_ALLOC_RANGE
 $weave_passwd_env
-              image: weaveworks/weave-kube:2.5.0
+              image: weaveworks/weave-kube:2.5.1
               livenessProbe:
                 httpGet:
                   host: 127.0.0.1
@@ -1219,7 +1219,7 @@ $weave_passwd_env
                     fieldRef:
                       apiVersion: v1
                       fieldPath: spec.nodeName
-              image: weaveworks/weave-npc:2.5.0
+              image: weaveworks/weave-npc:2.5.1
               resources:
                 requests:
                   cpu: 10m
@@ -1441,12 +1441,12 @@ spec:
         prometheus.io/format: "prometheus"
     spec:
       containers:
-      - image: gcr.io/heptio-images/contour:v0.8.0
+      - image: gcr.io/heptio-images/contour:v0.11.0
         imagePullPolicy: IfNotPresent
         name: contour
         command: ["contour"]
         args: ["serve", "--incluster"]
-      - image: docker.io/envoyproxy/envoy-alpine:v1.7.0
+      - image: docker.io/envoyproxy/envoy-alpine:v1.9.1
         name: envoy
         ports:
         - containerPort: 8080
@@ -1474,7 +1474,7 @@ spec:
             exec:
               command: ["wget", "-qO-", "http://localhost:9001/healthcheck/fail"]
       initContainers:
-      - image: gcr.io/heptio-images/contour:v0.8.0
+      - image: gcr.io/heptio-images/contour:v0.11.0
         imagePullPolicy: IfNotPresent
         name: envoy-initconfig
         command: ["contour"]
