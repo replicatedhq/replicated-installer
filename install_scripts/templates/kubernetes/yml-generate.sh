@@ -1211,7 +1211,7 @@ spec:
     # serve the dashboard under a subpath (useful when you are accessing the dashboard via a reverse proxy)
     urlPrefix: /ceph
     # serve the dashboard at the given port.
-    port: 8800
+    port: 7000
     # serve the dashboard using SSL
     ssl: false
   network:
