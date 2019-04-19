@@ -1201,16 +1201,17 @@ getKubeadmVersion() {
 #   LOAD_BALANCER_ADDRESS
 #   LOAD_BALANCER_PORT
 # Arguments:
-#   None
+#   KUBERNETES_VERSION - e.g. 1.11.5
 # Returns:
 #   version - e.g. 1.11.5
 #######################################
 makeKubeadmConfig() {
+    local k8sVersion="$1"
     cat << EOF >> /opt/replicated/kubeadm.conf
 ---
 kind: ClusterConfiguration
 apiVersion: kubeadm.k8s.io/v1beta1
-kubernetesVersion: v$KUBERNETES_VERSION
+kubernetesVersion: v$k8sVersion
 networking:
   serviceSubnet: $SERVICE_CIDR
 apiServer:

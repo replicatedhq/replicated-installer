@@ -126,7 +126,7 @@ maybeUpgradeKubernetes() {
             airgapLoadReplicatedAddonImagesWorker
         fi
         : > /opt/replicated/kubeadm.conf
-        makeKubeadmConfig
+        makeKubeadmConfig "$KUBERNETES_VERSION"
         upgradeK8sMaster "1.13.5"
         logSuccess "Kubernetes upgraded to version v1.13.5"
         DID_UPGRADE_KUBERNETES=1
@@ -265,7 +265,7 @@ maybeUpgradeKubernetesNode() {
         if isMasterNode; then
             (set -x; kubeadm upgrade node experimental-control-plane)
             : > /opt/replicated/kubeadm.conf
-            makeKubeadmConfig
+            makeKubeadmConfig "$KUBERNETES_VERSION"
             updateKubernetesAPIServerCerts "$LOAD_BALANCER_ADDRESS" "$LOAD_BALANCER_PORT"
             updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
         else

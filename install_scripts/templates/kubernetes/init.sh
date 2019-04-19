@@ -167,7 +167,13 @@ nodeRegistration:
   kubeletExtraArgs:
     node-ip: $PRIVATE_ADDRESS
 EOF
-    makeKubeadmConfig
+    local currentVersion=$(cat /etc/kubernetes/manifests/kube-apiserver.yaml | grep image: | grep -oE '[0-9]+.[0-9]+.[0-9]')
+    if [ -n "$currentVersion" ]; then
+        makeKubeadmConfig "$currentVersion"
+    else
+        makeKubeadmConfig "$KUBERNETES_VERSION"
+    fi
+
 }
 
 initKubeadmConfigAlpha() {
