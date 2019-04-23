@@ -132,6 +132,7 @@ maybeUpgradeKubernetes() {
         DID_UPGRADE_KUBERNETES=1
     fi
 
+    upgradeK8sRemoteMasters "1.13.5" "$K8S_UPGRADE_PATCH_VERSION"
     upgradeK8sWorkers "1.13.5" "$K8S_UPGRADE_PATCH_VERSION"
 }
 
@@ -245,15 +246,28 @@ maybeUpgradeKubernetesNode() {
             local envFile="KUBELET_KUBEADM_ARGS=--cgroup-driver=%s --cni-bin-dir=/opt/cni/bin --cni-conf-dir=/etc/cni/net.d --network-plugin=cni\n"
             printf "$envFile" "$cgroupDriver" > /var/lib/kubelet/kubeadm-flags.env
 
-            local n=0
-            local ver=$(kubelet --version | cut -d ' ' -f 2)
-            while ! kubeadm upgrade node config --kubelet-version "$ver" ; do
-                n="$(( $n + 1 ))"
-                if [ "$n" -ge "10" ]; then
-                    exit 1
-                fi
-                sleep 2
-            done
+            if isMasterNode; then
+                : > /opt/replicated/kubeadm.conf
+                makeKubeadmConfig "$k8sTargetVersion"
+                local n=0
+                while ! kubeadm upgrade node experimental-control-plane ; do
+                    n="$(( $n + 1 ))"
+                    if [ "$n" -ge "10" ]; then
+                        exit 1
+                    fi
+                    sleep 2
+                done
+            else
+                local n=0
+                local ver=$(kubelet --version | cut -d ' ' -f 2)
+                while ! kubeadm upgrade node config --kubelet-version "$ver" ; do
+                    n="$(( $n + 1 ))"
+                    if [ "$n" -ge "10" ]; then
+                        exit 1
+                    fi
+                    sleep 2
+                done
+            fi
         fi
 
         systemctl start kubelet
@@ -424,6 +438,96 @@ upgradeK8sWorkers() {
 }
 
 #######################################
+# Upgrade Kubernetes on remote masters to version. Never downgrades a worker.
+# Globals:
+#   AIRGAP
+# Arguments:
+#   k8sVersion - e.g. 1.10.6
+#   shouldUpgradePatch
+# Returns:
+#   None
+#######################################
+upgradeK8sRemoteMasters() {
+    k8sVersion="$1"
+    shouldUpgradePatch="$2"
+
+    semverParse "$k8sVersion"
+    local upgradeMajor="$major"
+    local upgradeMinor="$minor"
+    local upgradePatch="$patch"
+
+    local nodes=
+    n=0
+    while ! nodes="$(kubectl get nodes --show-labels 2>/dev/null)"; do
+        n="$(( $n + 1 ))"
+        if [ "$n" -ge "30" ]; then
+            # this should exit script on non-zero exit code and print error message
+            nodes="$(kubectl get nodes --show-labels)"
+        fi
+        sleep 2
+    done
+    # not an error if there are no remote masters
+    local masters="$(echo "$nodes" | sed '1d' | grep "node-role.kubernetes.io/master" || :)"
+
+    while read -r node; do
+        if [ -z "$node" ]; then
+            continue
+        fi
+        nodeName=$(echo "$node" | awk '{ print $1 }')
+        if [ "$nodeName" = "$(hostname)" ]; then
+            continue
+        fi
+        nodeVersion="$(echo "$node" | awk '{ print $5 }' | sed 's/v//' )"
+        semverParse "$nodeVersion"
+        nodeMajor="$major"
+        nodeMinor="$minor"
+        nodePatch="$patch"
+        if [ "$nodeMajor" -ne "$upgradeMajor" ]; then
+            printf "Cannot upgrade from %s to %s\n" "$nodeVersion" "$k8sVersion"
+            return 1
+        fi
+        if [ "$nodeMinor" -gt "$upgradeMinor" ]; then
+            continue
+        fi
+        if [ "$nodeMinor" -eq "$upgradeMinor" ] && [ "$nodePatch" -ge "$upgradePatch" ]; then
+            continue
+        fi
+        if [ "$nodeMinor" -eq "$upgradeMinor" ] && [ "$shouldUpgradePatch" != "1" ]; then
+            continue
+        fi
+        kubectl drain "$nodeName" \
+            --delete-local-data \
+            --ignore-daemonsets \
+            --force \
+            --grace-period=30 \
+            --timeout=300s \
+            --pod-selector 'app notin (rook-ceph-mon,rook-ceph-osd,rook-ceph-osd-prepare,rook-ceph-operator,rook-ceph-agent)' || true
+
+
+        printf "\n\n\tRun the upgrade script on remote master node before proceeding: ${GREEN}$nodeName${NC}\n\n"
+        local upgradePatchFlag=""
+        if [ "$shouldUpgradePatch" = "1" ]; then
+            upgradePatchFlag=" kubernetes-upgrade-patch-version"
+        fi
+        if [ "$AIRGAP" = "1" ]; then
+            printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s airgap kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
+        else
+            printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
+        fi
+        while true; do
+            echo ""
+            printf "Has script completed? "
+            if confirmN " "; then
+                break
+            fi
+        done
+        kubectl uncordon "$nodeName"
+    done <<< "$masters"
+
+    spinnerNodesReady
+}
+
+#######################################
 # Upgrade Kubernetes on master node
 # Globals:
 #   LSB_DIST
@@ -435,7 +539,7 @@ upgradeK8sWorkers() {
 #######################################
 upgradeK8sMaster() {
     k8sVersion=$1
-    local node=$(k8sMasterNodeName)
+    local node=$(hostname)
 
     prepareK8sPackageArchives "$k8sVersion"
 
@@ -479,7 +583,7 @@ upgradeK8sMaster() {
     sed -i "s/kubernetesVersion:.*/kubernetesVersion: v$k8sVersion/" /opt/replicated/kubeadm.conf
 
     waitForNodes
-    spinnerNodeVersion "$(k8sMasterNodeName)" "$k8sVersion"
+    spinnerNodeVersion "$node" "$k8sVersion"
     spinnerNodesReady
 }
 

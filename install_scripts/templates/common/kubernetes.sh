@@ -666,7 +666,7 @@ prepareK8sPackageArchives() {
 # Returns:
 #   master
 #######################################
-k8sMasterNodeName() {
+k8sMasterNodeNames() {
     set +e
     _master="$(kubectl get nodes --show-labels 2>/dev/null | grep 'node-role.kubernetes.io/master' | awk '{ print $1 }')"
     until [ -n "$_master" ]; do
@@ -819,7 +819,7 @@ labelMasterNode()
     if kubectl get nodes --show-labels | grep -q "$DAEMON_NODE_KEY" ; then
         return
     fi
-    kubectl label nodes --overwrite "$(k8sMasterNodeName)" "$DAEMON_NODE_KEY"=
+    kubectl label nodes --overwrite "$(k8sMasterNodeNames)" "$DAEMON_NODE_KEY"=
 }
 
 #######################################
