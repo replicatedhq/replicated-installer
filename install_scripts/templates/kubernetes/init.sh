@@ -32,6 +32,7 @@ BOOTSTRAP_TOKEN=
 BOOTSTRAP_TOKEN_TTL="24h"
 KUBERNETES_NAMESPACE="default"
 KUBERNETES_VERSION="{{ kubernetes_version }}"
+CURRENT_KUBERNETES_VERSION=
 K8S_UPGRADE_PATCH_VERSION="{{ k8s_upgrade_patch_version }}"
 STORAGE_CLASS="{{ storage_class }}"
 STORAGE_PROVISIONER="{{ storage_provisioner }}"
@@ -167,7 +168,11 @@ nodeRegistration:
   kubeletExtraArgs:
     node-ip: $PRIVATE_ADDRESS
 EOF
-    makeKubeadmConfig
+    if [ -n "$CURRENT_KUBERNETES_VERSION" ]; then
+        makeKubeadmConfig "$CURRENT_KUBERNETES_VERSION"
+    else
+        makeKubeadmConfig "$KUBERNETES_VERSION"
+    fi
 }
 
 initKubeadmConfigAlpha() {
@@ -215,7 +220,9 @@ initKube() {
     logStep "Verify Kubelet"
     local kubeV=$(kubeadm version --output=short)
 
-    # init is idempotent
+    # init is idempotent for the same version of Kubernetes. If init has already run this file will
+    # exist and have the version that we must re-init with.
+    CURRENT_KUBERNETES_VERSION=$(cat /etc/kubernetes/manifests/kube-apiserver.yaml | grep image: | grep -oE '[0-9]+.[0-9]+.[0-9]')
     if [ ! -e "/etc/kubernetes/manifests/kube-apiserver.yaml" ] || shouldReinitK8s; then
         logStep "Initialize Kubernetes"
 
@@ -428,6 +435,11 @@ getK8sYmlGenerator() {
 weavenetDeploy() {
     logStep "deploy weave network"
 
+    # disabling airgap upgrades of Weave until we solve image distribution
+    if [ "$AIRGAP" = "1" ] && kubectl -n kube-system get ds weave-net &>/dev/null; then
+        return
+    fi
+
     sleeve=0
     local secret=0
     if [ "$ENCRYPT_NETWORK" != "0" ]; then
@@ -517,6 +529,11 @@ storageClassDeploy() {
 contourDeploy() {
     # DISABLE_CONTOUR
     if [ -n "$1" ]; then
+        return
+    fi
+
+    # disabling airgap upgrades of Contour until we solve image distribution
+    if [ "$AIRGAP" = "1" ] && kubectl get ns heptio-contour &>/dev/null; then
         return
     fi
 

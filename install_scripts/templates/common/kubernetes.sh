@@ -666,7 +666,7 @@ prepareK8sPackageArchives() {
 # Returns:
 #   master
 #######################################
-k8sMasterNodeName() {
+k8sMasterNodeNames() {
     set +e
     _master="$(kubectl get nodes --show-labels 2>/dev/null | grep 'node-role.kubernetes.io/master' | awk '{ print $1 }')"
     until [ -n "$_master" ]; do
@@ -819,7 +819,7 @@ labelMasterNode()
     if kubectl get nodes --show-labels | grep -q "$DAEMON_NODE_KEY" ; then
         return
     fi
-    kubectl label nodes --overwrite "$(k8sMasterNodeName)" "$DAEMON_NODE_KEY"=
+    kubectl label nodes --overwrite "$(k8sMasterNodeNames)" "$DAEMON_NODE_KEY"=
 }
 
 #######################################
@@ -1201,16 +1201,17 @@ getKubeadmVersion() {
 #   LOAD_BALANCER_ADDRESS
 #   LOAD_BALANCER_PORT
 # Arguments:
-#   None
+#   KUBERNETES_VERSION - e.g. 1.11.5
 # Returns:
 #   version - e.g. 1.11.5
 #######################################
 makeKubeadmConfig() {
+    local k8sVersion="$1"
     cat << EOF >> /opt/replicated/kubeadm.conf
 ---
 kind: ClusterConfiguration
 apiVersion: kubeadm.k8s.io/v1beta1
-kubernetesVersion: v$KUBERNETES_VERSION
+kubernetesVersion: v$k8sVersion
 networking:
   serviceSubnet: $SERVICE_CIDR
 apiServer:
