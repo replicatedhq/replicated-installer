@@ -220,7 +220,8 @@ initKube() {
     logStep "Verify Kubelet"
     local kubeV=$(kubeadm version --output=short)
 
-    # init is idempotent
+    # init is idempotent for the same version of Kubernetes. If init has already run this file will
+    # exist and have the version that we must re-init with.
     CURRENT_KUBERNETES_VERSION=$(cat /etc/kubernetes/manifests/kube-apiserver.yaml | grep image: | grep -oE '[0-9]+.[0-9]+.[0-9]')
     if [ ! -e "/etc/kubernetes/manifests/kube-apiserver.yaml" ] || shouldReinitK8s; then
         logStep "Initialize Kubernetes"

@@ -438,7 +438,7 @@ upgradeK8sWorkers() {
 }
 
 #######################################
-# Upgrade Kubernetes on remote masters to version. Never downgrades a worker.
+# Upgrade Kubernetes on remote masters to version. Never downgrades.
 # Globals:
 #   AIRGAP
 # Arguments:
