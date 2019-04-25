@@ -295,6 +295,8 @@ EOF
           value: "$LOG_LEVEL"
         - name: AIRGAP
           value: "$AIRGAP"
+        - name: EMBEDDED_REK_OPERATOR
+          value: "true"
 $PROXY_ENVS
         ports:
         - containerPort: 9874
