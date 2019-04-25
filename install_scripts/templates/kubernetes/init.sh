@@ -222,7 +222,9 @@ initKube() {
 
     # init is idempotent for the same version of Kubernetes. If init has already run this file will
     # exist and have the version that we must re-init with.
-    CURRENT_KUBERNETES_VERSION=$(cat /etc/kubernetes/manifests/kube-apiserver.yaml | grep image: | grep -oE '[0-9]+.[0-9]+.[0-9]')
+    set +e
+    CURRENT_KUBERNETES_VERSION=$(cat /etc/kubernetes/manifests/kube-apiserver.yaml 2>/dev/null | grep image: | grep -oE '[0-9]+.[0-9]+.[0-9]')
+    set -e
     if [ ! -e "/etc/kubernetes/manifests/kube-apiserver.yaml" ] || shouldReinitK8s; then
         logStep "Initialize Kubernetes"
 
