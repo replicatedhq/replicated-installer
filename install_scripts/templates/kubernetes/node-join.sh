@@ -409,6 +409,9 @@ if [ "$AIRGAP" = "1" ]; then
         fi
     fi
     airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"
+    if [ "$MASTER" -eq "1" ]; then
+        airgapLoadKubernetesControlImages "$KUBERNETES_VERSION"
+    fi
     addInsecureRegistry "$SERVICE_CIDR"
 else
     docker pull registry:2.6.2
