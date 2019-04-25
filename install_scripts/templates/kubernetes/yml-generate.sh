@@ -18,6 +18,8 @@ REGISTRY_ADDRESS_OVERRIDE="{{ registry_address_override }}"
 APP_REGISTRY_ADVERTISE_HOST="{{ app_registry_advertise_host }}"
 IP_ALLOC_RANGE=10.32.0.0/12  # default for weave
 CEPH_DASHBOARD_URL=
+CEPH_DASHBOARD_USER=
+CEPH_DASHBOARD_PASSWORD=
 # booleans
 AIRGAP="{{ airgap }}"
 ENCRYPT_NETWORK="{{ encrypt_network }}"
@@ -135,6 +137,12 @@ while [ "$1" != "" ]; do
         ceph-dashboard-url|ceph_dashboard_url)
             CEPH_DASHBOARD_URL="$_value"
             ;;
+        ceph-dashboard-user|ceph_dashboard_user)
+            CEPH_DASHBOARD_USER="$_value"
+            ;;
+        ceph-dashboard-password|ceph_dashboard_password)
+            CEPH_DASHBOARD_PASSWORD="$_value"
+            ;;
         registry-address-override|registry_address_override)
             REGISTRY_ADDRESS_OVERRIDE="$_value"
             ;;
@@ -182,6 +190,10 @@ EOF
         CEPH_DASHBOARD_ENV=$(cat <<-EOF
         - name: CEPH_DASHBOARD_URL
           value: $CEPH_DASHBOARD_URL
+        - name: CEPH_DASHBOARD_USER
+          value: "$CEPH_DASHBOARD_USER"
+        - name: CEPH_DASHBOARD_PASSWORD
+          value: "$CEPH_DASHBOARD_PASSWORD"
 EOF
         )
     fi
@@ -1191,7 +1203,7 @@ spec:
     # v12 is luminous, v13 is mimic, and v14 is nautilus.
     # RECOMMENDATION: In production, use a specific version tag instead of the general v13 flag, which pulls the latest release and could result in different
     # versions running within the cluster. See tags available at https://hub.docker.com/r/ceph/ceph/tags/.
-    image: ceph/ceph:v13.2
+    image: ceph/ceph:v14.2
     # Whether to allow unsupported versions of Ceph. Currently only luminous and mimic are supported.
     # After nautilus is released, Rook will be updated to support nautilus.
     # Do not set to true in production.

@@ -50,6 +50,8 @@ ENCRYPT_NETWORK=
 ADDITIONAL_NO_PROXY=
 IPVS=1
 CEPH_DASHBOARD_URL=
+CEPH_DASHBOARD_USER=
+CEPH_DASHBOARD_PASSWORD=
 REGISTRY_ADDRESS_OVERRIDE=
 
 CHANNEL_CSS={% if channel_css %}
@@ -410,6 +412,9 @@ getYAMLOpts() {
     if [ -n "$CEPH_DASHBOARD_URL" ]; then
         opts=$opts" ceph-dashboard-url=$CEPH_DASHBOARD_URL"
     fi
+    if [ -n "$CEPH_DASHBOARD_USER" ]; then
+        opts=$opts" ceph-dashboard-user=$CEPH_DASHBOARD_USER ceph-dashboard-password=$CEPH_DASHBOARD_PASSWORD"
+    fi
     if [ -n "$STORAGE_CLASS" ]; then
         opts=$opts" storage-class=$STORAGE_CLASS"
     fi
@@ -601,13 +606,14 @@ waitForRegistry() {
     done
 }
 
-kubernetesDeploy() {
+replicatedDeploy() {
     logStep "deploy replicated components"
     if [ "$HA_CLUSTER" -eq "1" ]; then
         kubectl patch deployment replicated --type json -p='[{"op": "remove", "path": "/spec/template/spec/affinity"}]' 2>/dev/null || true
     fi
 
     logStep "generate manifests"
+    getK8sYmlGenerator
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS > /tmp/kubernetes.yml
 
     kubectl apply -f /tmp/kubernetes.yml -n $KUBERNETES_NAMESPACE
@@ -880,6 +886,13 @@ fi
 
 if [ "$STORAGE_PROVISIONER" == "rook" ] || [ "$STORAGE_PROVISIONER" == "1" ]; then
     CEPH_DASHBOARD_URL=http://rook-ceph-mgr-dashboard.rook-ceph.svc.cluster.local:7000
+
+    # Ceph v13+ requires login. Rook 1.0+ creates a secret in the rook-ceph namespace.
+    cephDashboardPassword=$(kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath="{['data']['password']}" | base64 --decode && echo)
+    if [ -n "$cephDashboardPassword" ]; then
+        CEPH_DASHBOARD_USER=admin
+        CEPH_DASHBOARD_PASSWORD="$cephDashboardPassword"
+    fi
 fi
 
 if [ "$RESET" == "1" ]; then
@@ -979,7 +992,7 @@ initKube
 kubectl cluster-info
 logSuccess "Cluster Initialized"
 
-getK8sYmlGenerator
+getYAMLOpts
 
 weavenetDeploy
 
@@ -1045,7 +1058,7 @@ if [ "$AIRGAP" = "1" ]; then
     fi
 fi
 
-kubernetesDeploy
+replicatedDeploy
 
 installCliFile \
     "kubectl exec -c replicated" \
