@@ -52,6 +52,9 @@ maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
 
 if [ "$AIRGAP" = "1" ]; then
     airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"
+    if isMasterNode; then
+        airgapLoadKubernetesControlImages "$KUBERNETES_VERSION"
+    fi
 
     # When the master upgrades to 1.11.5 it may try to schedule coreDNS pods on
     # this node and will hang until they start, so we need to preload those
