@@ -501,6 +501,17 @@ rookDeploy() {
     sudo systemctl restart kubelet
     kubectl apply -f /tmp/rook-ceph.yml
     storageClassDeploy
+ 
+    # wait for ceph dashboard password to be generated
+    local delay=0.75
+    local spinstr='|/-\'
+    while ! kubectl -n rook-ceph get secret rook-ceph-dashboard-password &>/dev/null; do
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
     logSuccess "Rook deployed"
 }
 
@@ -613,7 +624,7 @@ replicatedDeploy() {
     fi
 
     logStep "generate manifests"
-    getK8sYmlGenerator
+    getYAMLOpts
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS > /tmp/kubernetes.yml
 
     kubectl apply -f /tmp/kubernetes.yml -n $KUBERNETES_NAMESPACE
@@ -884,17 +895,6 @@ if [ "$KUBERNETES_VERSION" == "1.9.3" ]; then
     IPVS=0
 fi
 
-if [ "$STORAGE_PROVISIONER" == "rook" ] || [ "$STORAGE_PROVISIONER" == "1" ]; then
-    CEPH_DASHBOARD_URL=http://rook-ceph-mgr-dashboard.rook-ceph.svc.cluster.local:7000
-
-    # Ceph v13+ requires login. Rook 1.0+ creates a secret in the rook-ceph namespace.
-    cephDashboardPassword=$(kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath="{['data']['password']}" | base64 --decode && echo)
-    if [ -n "$cephDashboardPassword" ]; then
-        CEPH_DASHBOARD_USER=admin
-        CEPH_DASHBOARD_PASSWORD="$cephDashboardPassword"
-    fi
-fi
-
 if [ "$RESET" == "1" ]; then
     k8s_reset "$FORCE_RESET"
     outroReset "$NO_CLEAR"
@@ -992,7 +992,7 @@ initKube
 kubectl cluster-info
 logSuccess "Cluster Initialized"
 
-getYAMLOpts
+getK8sYmlGenerator
 
 weavenetDeploy
 
@@ -1021,6 +1021,14 @@ echo
 case "$STORAGE_PROVISIONER" in
     rook|1)
         rookDeploy
+        CEPH_DASHBOARD_URL=http://rook-ceph-mgr-dashboard.rook-ceph.svc.cluster.local:7000
+
+        # Ceph v13+ requires login. Rook 1.0+ creates a secret in the rook-ceph namespace.
+        cephDashboardPassword=$(kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath="{['data']['password']}" | base64 --decode)
+        if [ -n "$cephDashboardPassword" ]; then
+            CEPH_DASHBOARD_USER=admin
+            CEPH_DASHBOARD_PASSWORD="$cephDashboardPassword"
+        fi
         ;;
     hostpath)
         hostpathProvisionerDeploy
