@@ -34,6 +34,7 @@ WEAVE_YAML=0
 CONTOUR_YAML=0
 DEPLOYMENT_YAML=0
 REGISTRY_YAML=0
+REK_OPERATOR_YAML=0
 BIND_DAEMON_NODE=0
 API_SERVICE_ADDRESS="{{ api_service_address }}"
 HA_CLUSTER="{{ ha_cluster }}"
@@ -110,6 +111,10 @@ while [ "$1" != "" ]; do
             ;;
         registry-yaml|registry_yaml)
             REGISTRY_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
+        rek-operator-yaml|rek_operator_yaml)
+            REK_OPERATOR_YAML="$_value"
             REPLICATED_YAML=0
             ;;
         deployment-yaml|deployment_yaml)
@@ -1523,6 +1528,57 @@ render_contour_yaml() {
 EOF
 }
 
+render_rek_operator_yaml() {
+    cat <<EOF
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rek-operator
+  labels:
+    app: rek-operator
+spec:
+  selector:
+    matchLabels:
+      app: rek-operator
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: rek-operator
+    spec:
+      containers:
+      - name: rek
+        image: "${REGISTRY_ADDRESS_OVERRIDE:-$REPLICATED_DOCKER_HOST}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
+        imagePullPolicy: IfNotPresent
+        command:
+        - /usr/bin/rek
+        - operator
+        env:
+        - name: NODE_UNREACHABLE_TOLERATION_MINUTES
+          value: "30"
+        - name: PURGE_DEAD_NODES
+          value: "true"
+        - name: MAINTAIN_ROOK_STORAGE_NODES
+          value: "true"
+        - name: CEPH_BLOCK_POOL
+          value: replicapool
+        - name: CEPH_FILESYSTEM
+          value: shared_fs
+        - name: MIN_CEPH_POOL_REPLICATION
+          value: 1
+        - name: MAX_CEPH_POOL_REPLICATION
+          value: 3
+        - name: COMPONENT_IMAGES_REGISTRY_ADDRESS_OVERRIDE
+          value: $REGISTRY_ADDRESS_OVERRIDE
+        - name: NAMESPACE
+          value: default
+        - name: RECONCILE_INTERVAL_MINUTES
+          value: "1"
+EOF
+}
+
 render_registry_yaml() {
     haSharedSecret=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c9)
     cat <<EOF
@@ -1699,6 +1755,10 @@ fi
 
 if [ "$REGISTRY_YAML" = "1" ]; then
     render_registry_yaml
+fi
+
+if [ "$REK_OPERATOR_YAML" = "1" ]; then
+    render_rek_operator_yaml
 fi
 
 if [ "$REPLICATED_YAML" = "1" ]; then
