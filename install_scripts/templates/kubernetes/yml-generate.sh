@@ -27,7 +27,9 @@ WEAVE_SECRET=1
 REPLICATED_YAML=1
 REPLICATED_PVC=1
 ROOK_SYSTEM_YAML=0
+ROOK_08_SYSTEM_YAML=0
 ROOK_CLUSTER_YAML=0
+ROOK_08_CLUSTER_YAML=0
 STORAGE_CLASS_YAML=0
 HOSTPATH_PROVISIONER_YAML=0
 WEAVE_YAML=0
@@ -89,8 +91,16 @@ while [ "$1" != "" ]; do
             ROOK_SYSTEM_YAML="$_value"
             REPLICATED_YAML=0
             ;;
+        rook-08-system-yaml|rook_08_system_yaml)
+            ROOK_08_SYSTEM_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
         rook-cluster-yaml|rook_cluster_yaml)
             ROOK_CLUSTER_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
+        rook-08-cluster-yaml|rook_08_cluster_yaml)
+            ROOK_08_CLUSTER_YAML="$_value"
             REPLICATED_YAML=0
             ;;
         hostpath-provisioner-yaml|hostpath_provisioner_yaml)
@@ -570,11 +580,25 @@ render_rook_system_yaml() {
 EOF
 }
 
+render_rook-0-8_system_yaml() {
+    cat <<EOF
+{% include 'kubernetes/yaml/rook-0-8-system.yml' %}
+EOF
+}
+
 render_rook_cluster_yaml() {
     PV_BASE_PATH="${PV_BASE_PATH:-"/opt/replicated/rook"}"
 
     cat <<EOF
 {% include 'kubernetes/yaml/rook-1-0-cluster.yml' %}
+EOF
+}
+
+render_rook-0-8_cluster_yaml() {
+    PV_BASE_PATH="${PV_BASE_PATH:-"/opt/replicated/rook"}"
+
+    cat <<EOF
+{% include 'kubernetes/yaml/rook-0-8-cluster.yml' %}
 EOF
 }
 
@@ -1036,8 +1060,16 @@ if [ "$ROOK_CLUSTER_YAML" = "1" ]; then
     render_rook_cluster_yaml
 fi
 
+if [ "$ROOK_08_CLUSTER_YAML" = "1" ]; then
+    render_rook-0-8_cluster_yaml
+fi
+
 if [ "$ROOK_SYSTEM_YAML" = "1" ]; then
     render_rook_system_yaml
+fi
+
+if [ "$ROOK_08_SYSTEM_YAML" = "1" ]; then
+    render_rook-0-8_system_yaml
 fi
 
 if [ "$HOSTPATH_PROVISIONER_YAML" = "1" ]; then

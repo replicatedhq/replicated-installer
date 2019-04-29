@@ -491,27 +491,40 @@ rookDeploy() {
         return
     fi
 
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_system_yaml=1 > /tmp/rook-ceph-system.yml
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_cluster_yaml=1 > /tmp/rook-ceph.yml
+    local rook08=0
+    semverCompare "$REPLICATED_VERSION" "2.36.0"
+    if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
+        rook08=1
+        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_system_yaml=1 > /tmp/rook-ceph-system.yml
+        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_cluster_yaml=1 > /tmp/rook-ceph.yml
+    else
+        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_system_yaml=1 > /tmp/rook-ceph-system.yml
+        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_cluster_yaml=1 > /tmp/rook-ceph.yml
+    fi
 
     kubectl apply -f /tmp/rook-ceph-system.yml
+
     spinnerRookReady # creating the cluster before the operator is ready fails
-    # according to docs restarting kubelet here is only needed on K8s 1.7, but
-    # during tests it was required occasionally on 1.11.
-    sudo systemctl restart kubelet
+    if [ "$rook08" = "1" ]; then
+        sudo systemctl restart kubelet
+    fi
+
     kubectl apply -f /tmp/rook-ceph.yml
     storageClassDeploy
  
     # wait for ceph dashboard password to be generated
-    local delay=0.75
-    local spinstr='|/-\'
-    while ! kubectl -n rook-ceph get secret rook-ceph-dashboard-password &>/dev/null; do
-        local temp=${spinstr#?}
-        printf " [%c]  " "$spinstr"
-        local spinstr=$temp${spinstr%"$temp"}
-        sleep $delay
-        printf "\b\b\b\b\b\b"
-    done
+    if [ "$rook08" = "0" ]; then
+        local delay=0.75
+        local spinstr='|/-\'
+        while ! kubectl -n rook-ceph get secret rook-ceph-dashboard-password &>/dev/null; do
+            local temp=${spinstr#?}
+            printf " [%c]  " "$spinstr"
+            local spinstr=$temp${spinstr%"$temp"}
+            sleep $delay
+            printf "\b\b\b\b\b\b"
+        done
+    fi
+
     logSuccess "Rook deployed"
 }
 
