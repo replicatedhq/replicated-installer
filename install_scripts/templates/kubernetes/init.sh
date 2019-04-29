@@ -577,6 +577,14 @@ contourDeploy() {
     logSuccess "Contour deployed"
 }
 
+rekOperatorDeploy() {
+    if [ "$HA_CLUSTER" = "0" ]; then
+        return
+    fi
+
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rek_operator_yaml=1 > /tmp/rek-operator.yml
+}
+
 registryDeploy() {
     logStep "Deploy registry"
 
@@ -1054,6 +1062,8 @@ case "$STORAGE_PROVISIONER" in
 esac
 
 contourDeploy "$DISABLE_CONTOUR"
+
+rekOperatorDeploy
 
 if [ "$KUBERNETES_ONLY" -eq "1" ]; then
     spinnerKubeSystemReady "$KUBERNETES_VERSION"
