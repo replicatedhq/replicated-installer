@@ -578,11 +578,17 @@ contourDeploy() {
 }
 
 rekOperatorDeploy() {
-    if [ "$HA_CLUSTER" = "0" ]; then
+    semverCompare "$REPLICATED_VERSION" "2.36.0"
+    if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
         return
     fi
 
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rek_operator_yaml=1 > /tmp/rek-operator.yml
+    local maintainRook=0
+    if isRook1; then
+        maintainRook=1
+    fi
+
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rek_operator_yaml=1 maintain_rook_storage_nodes="$maintainRook" > /tmp/rek-operator.yml
 }
 
 registryDeploy() {
@@ -650,6 +656,7 @@ replicatedDeploy() {
 
     kubectl apply -f /tmp/kubernetes.yml -n $KUBERNETES_NAMESPACE
     kubectl -n $KUBERNETES_NAMESPACE get pods,svc
+    rekOperatorDeploy
     logSuccess "Replicated Daemon"
 }
 
@@ -1063,10 +1070,9 @@ esac
 
 contourDeploy "$DISABLE_CONTOUR"
 
-rekOperatorDeploy
-
 if [ "$KUBERNETES_ONLY" -eq "1" ]; then
     spinnerKubeSystemReady "$KUBERNETES_VERSION"
+    rekOperatorDeploy
     outroKubeadm "$NO_CLEAR"
     exit 0
 fi

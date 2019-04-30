@@ -40,6 +40,8 @@ REK_OPERATOR_YAML=0
 BIND_DAEMON_NODE=0
 API_SERVICE_ADDRESS="{{ api_service_address }}"
 HA_CLUSTER="{{ ha_cluster }}"
+PURGE_DEAD_NODES="false"
+MAINTAIN_ROOK_STORAGE_NODES="false"
 
 {% include 'common/kubernetes.sh' %}
 
@@ -68,6 +70,10 @@ while [ "$1" != "" ]; do
             ;;
         ha)
             HA_CLUSTER=1
+            PURGE_DEAD_NODES="true"
+            ;;
+        maintain-rook-storage-nodes|maintain_rook_storage_nodes)
+            MAINTAIN_ROOK_STORAGE_NODES="$_value"
             ;;
         api-service-address|api_service_address)
             API_SERVICE_ADDRESS="$_value"
@@ -890,9 +896,9 @@ spec:
         - name: NODE_UNREACHABLE_TOLERATION_MINUTES
           value: "30"
         - name: PURGE_DEAD_NODES
-          value: "true"
+          value: "$PURGE_DEAD_NODES"
         - name: MAINTAIN_ROOK_STORAGE_NODES
-          value: "true"
+          value: "$MAINTAIN_ROOK_STORAGE_NODES"
         - name: CEPH_BLOCK_POOL
           value: replicapool
         - name: CEPH_FILESYSTEM
