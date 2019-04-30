@@ -402,6 +402,9 @@ metadata:
     operator: rook
     storage-backend: ceph
 spec:
+  selector:
+    matchLabels:
+      app: rook-ceph-operator
   replicas: 1
   template:
     metadata:

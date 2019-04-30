@@ -586,7 +586,7 @@ render_rook_system_yaml() {
 EOF
 }
 
-render_rook-0-8_system_yaml() {
+render_rook08_system_yaml() {
     cat <<EOF
 {% include 'kubernetes/yaml/rook-0-8-system.yml' %}
 EOF
@@ -600,7 +600,7 @@ render_rook_cluster_yaml() {
 EOF
 }
 
-render_rook-0-8_cluster_yaml() {
+render_rook08_cluster_yaml() {
     PV_BASE_PATH="${PV_BASE_PATH:-"/opt/replicated/rook"}"
 
     cat <<EOF
@@ -1067,7 +1067,7 @@ if [ "$ROOK_CLUSTER_YAML" = "1" ]; then
 fi
 
 if [ "$ROOK_08_CLUSTER_YAML" = "1" ]; then
-    render_rook-0-8_cluster_yaml
+    render_rook08_cluster_yaml
 fi
 
 if [ "$ROOK_SYSTEM_YAML" = "1" ]; then
@@ -1075,7 +1075,7 @@ if [ "$ROOK_SYSTEM_YAML" = "1" ]; then
 fi
 
 if [ "$ROOK_08_SYSTEM_YAML" = "1" ]; then
-    render_rook-0-8_system_yaml
+    render_rook08_system_yaml
 fi
 
 if [ "$HOSTPATH_PROVISIONER_YAML" = "1" ]; then
@@ -1129,6 +1129,7 @@ if [ "$REPLICATED_YAML" = "1" ]; then
     fi
 fi
 
+# autoupgrades
 if [ "$DEPLOYMENT_YAML" = "1" ]; then
     render_replicated_deployment
 fi
