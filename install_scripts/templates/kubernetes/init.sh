@@ -589,6 +589,7 @@ rekOperatorDeploy() {
     fi
 
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rek_operator_yaml=1 maintain_rook_storage_nodes="$maintainRook" > /tmp/rek-operator.yml
+    kubectl apply -f /tmp/rek-operator.yml -n $KUBERNETES_NAMESPACE
 }
 
 registryDeploy() {

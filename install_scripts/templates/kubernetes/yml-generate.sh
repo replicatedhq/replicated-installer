@@ -904,9 +904,9 @@ spec:
         - name: CEPH_FILESYSTEM
           value: shared_fs
         - name: MIN_CEPH_POOL_REPLICATION
-          value: 1
+          value: "1"
         - name: MAX_CEPH_POOL_REPLICATION
-          value: 3
+          value: "3"
         - name: COMPONENT_IMAGES_REGISTRY_ADDRESS_OVERRIDE
           value: $REGISTRY_ADDRESS_OVERRIDE
         - name: NAMESPACE
