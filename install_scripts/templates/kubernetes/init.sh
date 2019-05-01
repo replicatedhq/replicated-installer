@@ -15,6 +15,7 @@ YAML_GENERATE_OPTS=
 PUBLIC_ADDRESS=
 PRIVATE_ADDRESS=
 HA_CLUSTER=0
+MAINTAIN_ROOK_STORAGE_NODES=0
 LOAD_BALANCER_ADDRESS=
 LOAD_BALANCER_PORT=
 REGISTRY_BIND_PORT=
@@ -424,6 +425,9 @@ getYAMLOpts() {
     if [ -n "$PRIVATE_ADDRESS" ]; then
         opts=$opts" app-registry-advertise-host=$PRIVATE_ADDRESS"
     fi
+    if [ -n "$MAINTAIN_ROOK_STORAGE_NODES" ]; then
+        opts=$opts" maintain-rook-storage-nodes"
+    fi
     YAML_GENERATE_OPTS="$opts"
 }
 
@@ -583,12 +587,8 @@ rekOperatorDeploy() {
         return
     fi
 
-    local maintainRook=0
-    if isRook1; then
-        maintainRook=1
-    fi
-
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rek_operator_yaml=1 maintain_rook_storage_nodes="$maintainRook" > /tmp/rek-operator.yml
+    getYAMLOpts
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rek_operator_yaml=1 > /tmp/rek-operator.yml
     kubectl apply -f /tmp/rek-operator.yml -n $KUBERNETES_NAMESPACE
 }
 
@@ -1057,6 +1057,10 @@ case "$STORAGE_PROVISIONER" in
         if [ -n "$cephDashboardPassword" ]; then
             CEPH_DASHBOARD_USER=admin
             CEPH_DASHBOARD_PASSWORD="$cephDashboardPassword"
+        fi
+
+        if isRook1; then
+            MAINTAIN_ROOK_STORAGE_NODES=1
         fi
         ;;
     hostpath)

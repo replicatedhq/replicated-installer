@@ -73,7 +73,7 @@ while [ "$1" != "" ]; do
             PURGE_DEAD_NODES="true"
             ;;
         maintain-rook-storage-nodes|maintain_rook_storage_nodes)
-            MAINTAIN_ROOK_STORAGE_NODES="$_value"
+            MAINTAIN_ROOK_STORAGE_NODES="true"
             ;;
         api-service-address|api_service_address)
             API_SERVICE_ADDRESS="$_value"
@@ -316,6 +316,8 @@ EOF
           value: "$LOG_LEVEL"
         - name: AIRGAP
           value: "$AIRGAP"
+        - name: MAINTAIN_ROOK_STORAGE_NODES
+          value: "$MAINTAIN_ROOK_STORAGE_NODES"
 $PROXY_ENVS
         ports:
         - containerPort: 9874
