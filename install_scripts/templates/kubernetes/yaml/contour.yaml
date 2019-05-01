@@ -1,6 +1,6 @@
 # adapted from https://github.com/heptio/contour/tree/master/deployment/deployment-grpc-v2
 # imagePullPolicy changed from Always to IfNotPresent
-# service type changed from LoadBalancer to NodePort
+# service type changed from LoadBalancer to NodePort and add nodePorts 80 and 443
 # contour image tag changed from :master to :v0.11.0
 # annotations for AWS, statsd, and prometheus removed
 apiVersion: v1
@@ -256,10 +256,12 @@ spec:
    name: http
    protocol: TCP
    targetPort: 8080
+   nodePort: 80
  - port: 443
    name: https
    protocol: TCP
    targetPort: 8443
+   nodePort: 443
  selector:
    app: contour
  type: NodePort
