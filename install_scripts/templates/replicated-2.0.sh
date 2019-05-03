@@ -64,10 +64,6 @@ set -e
 {% include 'common/selinux.sh' %}
 {% include 'common/firewall.sh' %}
 
-read_replicated_opts() {
-    REPLICATED_OPTS_VALUE="$(echo "$REPLICATED_OPTS" | grep -o "$1=[^ ]*" | cut -d'=' -f2)"
-}
-
 ask_for_registry_name_ipv6() {
   line=
   while [[ "$line" == "" ]]; do
@@ -146,7 +142,7 @@ get_daemon_token() {
         return
     fi
 
-    read_replicated_opts "DAEMON_TOKEN"
+    readReplicatedOpts "DAEMON_TOKEN"
     if [ -n "$REPLICATED_OPTS_VALUE" ]; then
         DAEMON_TOKEN="$REPLICATED_OPTS_VALUE"
         return
@@ -172,7 +168,7 @@ get_selinux_replicated_domain() {
     fi
 
     # if previously set to a custom domain it will be in REPLICATED_OPTS
-    read_replicated_opts "SELINUX_REPLICATED_DOMAIN"
+    readReplicatedOpts "SELINUX_REPLICATED_DOMAIN"
     if [ -n "$REPLICATED_OPTS_VALUE" ]; then
         SELINUX_REPLICATED_DOMAIN="$REPLICATED_OPTS_VALUE"
         CUSTOM_SELINUX_REPLICATED_DOMAIN=1
@@ -645,6 +641,28 @@ discoverPrivateIp
 if [ "$AIRGAP" != "1" ]; then
     printf "Determining service address\n"
     discoverPublicIp
+
+    # check that we will eventually run the operator install script
+    if [ "$SKIP_OPERATOR_INSTALL" != "1" ] && [ "$IS_MIGRATION" != "1" ]; then
+        # Even though this script does not use PUBLIC_ADDRESS, we must prompt prior to replicated
+        # operator installation to minimize the delay between starting replicated and the operator for
+        # automated installs. If the operator takes too long to start then the app start will fail.
+        if [ -z "$PUBLIC_ADDRESS" ]; then
+            readReplicatedOperatorOpts "PUBLIC_ADDRESS"
+            if [ -n "$REPLICATED_OPTS_VALUE" ]; then
+                PUBLIC_ADDRESS="$REPLICATED_OPTS_VALUE"
+                printf "The installer will use service address '%s' (imported from $CONFDIR/replicated-operator 'PUBLIC_ADDRESS')\n" $PUBLIC_ADDRESS
+            fi
+        fi
+
+        if [ -n "$PUBLIC_ADDRESS" ]; then
+            shouldUsePublicIp
+        else
+            printf "The installer was unable to automatically detect the service IP address of this machine.\n"
+            printf "Please enter the address or leave blank for unspecified.\n"
+            promptForPublicIp
+        fi
+    fi
 fi
 
 if [ "$NO_PROXY" != "1" ]; then
