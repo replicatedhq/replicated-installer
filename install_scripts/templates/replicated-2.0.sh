@@ -15,6 +15,7 @@ PINNED_DOCKER_VERSION="{{ pinned_docker_version }}"
 MIN_DOCKER_VERSION="{{ min_docker_version }}"
 SKIP_DOCKER_INSTALL=0
 SKIP_DOCKER_PULL=0
+NO_PUBLIC_ADDRESS=0
 SKIP_OPERATOR_INSTALL=0
 IS_MIGRATION=0
 NO_PROXY=0
@@ -435,6 +436,8 @@ install_operator() {
     opts="no-docker daemon-endpoint=$_private_address_with_brackets:9879 daemon-token=$DAEMON_TOKEN private-address=$PRIVATE_ADDRESS tags=$OPERATOR_TAGS"
     if [ -n "$PUBLIC_ADDRESS" ]; then
         opts=$opts" public-address=$PUBLIC_ADDRESS"
+    elif [ "$NO_PUBLIC_ADDRESS" = "1" ]; then
+        opts=$opts" no-public-address"
     fi
     if [ -n "$PROXY_ADDRESS" ]; then
         opts=$opts" http-proxy=$PROXY_ADDRESS additional-no-proxy=$NO_PROXY_ADDRESSES"
@@ -540,6 +543,9 @@ while [ "$1" != "" ]; do
         public-address|public_address)
             PUBLIC_ADDRESS="$_value"
             ;;
+        no-public-address|no_public_address)
+            NO_PUBLIC_ADDRESS=1
+            ;;
         no-operator|no_operator)
             SKIP_OPERATOR_INSTALL=1
             ;;
@@ -638,7 +644,7 @@ fi
 printf "Determining local address\n"
 discoverPrivateIp
 
-if [ "$AIRGAP" != "1" ]; then
+if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" != "1" ] && [ "$NO_PUBLIC_ADDRESS" != "1" ]; then
     printf "Determining service address\n"
     discoverPublicIp
 
@@ -661,6 +667,9 @@ if [ "$AIRGAP" != "1" ]; then
             printf "The installer was unable to automatically detect the service IP address of this machine.\n"
             printf "Please enter the address or leave blank for unspecified.\n"
             promptForPublicIp
+            if [ -z "$PUBLIC_ADDRESS" ]; then
+                NO_PUBLIC_ADDRESS=1
+            fi
         fi
     fi
 fi

@@ -15,6 +15,7 @@ PINNED_DOCKER_VERSION="{{ pinned_docker_version }}"
 MIN_DOCKER_VERSION="{{ min_docker_version }}"
 SKIP_DOCKER_INSTALL=0
 SKIP_DOCKER_PULL=0
+NO_PUBLIC_ADDRESS=0
 NO_PROXY=0
 AIRGAP=0
 ONLY_INSTALL_DOCKER=0
@@ -297,6 +298,9 @@ while [ "$1" != "" ]; do
         public-address|public_address)
             PUBLIC_ADDRESS="$_value"
             ;;
+        no-public-address|no_public_address)
+            NO_PUBLIC_ADDRESS=1
+            ;;
         no-docker|no_docker)
             SKIP_DOCKER_INSTALL=1
             ;;
@@ -375,7 +379,7 @@ if [ -z "$PRIVATE_ADDRESS" ]; then
     discoverPrivateIp
 fi
 
-if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" -ne "1" ]; then
+if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" != "1" ] && [ "$NO_PUBLIC_ADDRESS" != "1" ]; then
     printf "Determining service address\n"
     discoverPublicIp
 
@@ -393,6 +397,9 @@ if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" -ne "1" ]; then
         printf "The installer was unable to automatically detect the service IP address of this machine.\n"
         printf "Please enter the address or leave blank for unspecified.\n"
         promptForPublicIp
+        if [ -z "$PUBLIC_ADDRESS" ]; then
+            NO_PUBLIC_ADDRESS=1
+        fi
     fi
 fi
 
