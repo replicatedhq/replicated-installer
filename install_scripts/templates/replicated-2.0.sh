@@ -644,7 +644,7 @@ if [ "$AIRGAP" != "1" ]; then
 
     # check that we will eventually run the operator install script
     if [ "$SKIP_OPERATOR_INSTALL" != "1" ] && [ "$IS_MIGRATION" != "1" ]; then
-        # Even thought this script does not use PUBLIC_ADDRESS, we must prompt prior to replicated
+        # Even though this script does not use PUBLIC_ADDRESS, we must prompt prior to replicated
         # operator installation to minimize the delay between starting replicated and the operator for
         # automated installs. If the operator takes too long to start then the app start will fail.
         if [ -z "$PUBLIC_ADDRESS" ]; then
