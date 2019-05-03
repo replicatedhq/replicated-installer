@@ -42,10 +42,6 @@ ADDITIONAL_NO_PROXY=
 {% include 'common/selinux.sh' %}
 {% include 'common/firewall.sh' %}
 
-read_replicated_operator_opts() {
-    REPLICATED_OPTS_VALUE="$(echo "$REPLICATED_OPERATOR_OPTS" | grep -o "$1=[^ ]*" | cut -d'=' -f2)"
-}
-
 discoverPrivateIp() {
     if [ -n "$PRIVATE_ADDRESS" ]; then
         printf "The installer will use local address '%s' (from parameter)\n" "$PRIVATE_ADDRESS"
@@ -108,7 +104,7 @@ get_selinux_replicated_domain() {
     fi
 
     # if previously set to a custom domain it will be in REPLICATED_OPERATOR_OPTS
-    read_replicated_operator_opts "SELINUX_REPLICATED_DOMAIN"
+    readReplicatedOperatorOpts "SELINUX_REPLICATED_DOMAIN"
     if [ -n "$REPLICATED_OPTS_VALUE" ]; then
         SELINUX_REPLICATED_DOMAIN="$REPLICATED_OPTS_VALUE"
         CUSTOM_SELINUX_REPLICATED_DOMAIN=1
@@ -384,7 +380,7 @@ if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" -ne "1" ]; then
     discoverPublicIp
 
     if [ -z "$PUBLIC_ADDRESS" ]; then
-        read_replicated_operator_opts "PUBLIC_ADDRESS"
+        readReplicatedOperatorOpts "PUBLIC_ADDRESS"
         if [ -n "$REPLICATED_OPTS_VALUE" ]; then
             PUBLIC_ADDRESS="$REPLICATED_OPTS_VALUE"
             printf "The installer will use service address '%s' (imported from $CONFDIR/replicated-operator 'PUBLIC_ADDRESS')\n" $PUBLIC_ADDRESS

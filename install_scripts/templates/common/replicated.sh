@@ -24,6 +24,34 @@ readReplicatedConf() {
 }
 
 #######################################
+# Reads a value from REPLICATED_OPTS variable in the /etc/default/replicated file
+# Globals:
+#   REPLICATED_OPTS
+# Arguments:
+#   Variable to read
+# Returns:
+#   REPLICATED_OPTS_VALUE
+#######################################
+readReplicatedOpts() {
+    unset REPLICATED_OPTS_VALUE
+    REPLICATED_OPTS_VALUE="$(echo "$REPLICATED_OPTS" | grep -o "$1=[^ ]*" | cut -d'=' -f2)"
+}
+
+#######################################
+# Reads a value from REPLICATED_OPERATOR_OPTS variable in the /etc/default/replicated-operator file
+# Globals:
+#   REPLICATED_OPTS
+# Arguments:
+#   Variable to read
+# Returns:
+#   REPLICATED_OPTS_VALUE
+#######################################
+readReplicatedOperatorOpts() {
+    unset REPLICATED_OPTS_VALUE
+    REPLICATED_OPTS_VALUE="$(echo "$REPLICATED_OPERATOR_OPTS" | grep -o "$1=[^ ]*" | cut -d'=' -f2)"
+}
+
+#######################################
 # Prompts for daemon endpoint if not already set.
 # Globals:
 #   None
