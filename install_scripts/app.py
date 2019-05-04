@@ -315,6 +315,31 @@ def get_replicated_kubernetes_yml(replicated_channel=None,
     return Response(response, mimetype='application/x-yaml')
 
 
+@app.route('/kubernetes/operator.yml')
+@app.route('/<replicated_channel>/kubernetes/operator.yml')
+@app.route('/<app_slug>/<app_channel>/kubernetes/operator.yml')
+def get_kubernetes_operator_yml(replicated_channel=None,
+                                  app_slug=None,
+                                  app_channel=None):
+    kwargs = get_kubernetes_yaml_template_args(replicated_channel, app_slug,
+                                               app_channel)
+    script = render_template(
+        'kubernetes/yml-generate.sh', suppress_runtime=1, **kwargs)
+    p = subprocess.Popen(
+        ['bash -s rek-operator-yaml=1', '-'],
+        shell=True,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE)
+    p.stdin.write(script)
+    p.stdin.close()
+    p.wait()
+    response = p.stdout.read()
+    p.stdout.close()
+    if helpers.get_arg('accept', None) == 'text':
+        return Response(response, mimetype='text/plain')
+    return Response(response, mimetype='application/x-yaml')
+
+
 def get_replicated_compose_v3_template_args(replicated_channel=None,
                                             app_slug=None,
                                             app_channel=None):
@@ -491,6 +516,8 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
     no_proxy_addresses = helpers.get_arg('no_proxy_addresses', '10.96.0.0/12')
     api_service_address = helpers.get_arg('api_service_address', '')
     ha_cluster = '1' if helpers.get_arg('ha_cluster') == 'true' else '0'
+    purge_dead_nodes = '1' if helpers.get_arg('purge_dead_nodes') == 'true' else '0'
+    maintain_rook_storage_nodes = '1' if helpers.get_arg('maintain_rook_storage_nodes') == 'true' else '0'
     app_registry_advertise_host = helpers.get_arg('app_registry_advertise_host', '')
 
     return helpers.template_args(
@@ -511,6 +538,8 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
         no_proxy_addresses=no_proxy_addresses,
         api_service_address=api_service_address,
         ha_cluster=ha_cluster,
+        purge_dead_nodes=purge_dead_nodes,
+        maintain_rook_storage_nodes=maintain_rook_storage_nodes,
         app_registry_advertise_host=app_registry_advertise_host,
     )
 

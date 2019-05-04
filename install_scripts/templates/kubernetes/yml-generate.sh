@@ -40,8 +40,8 @@ REK_OPERATOR_YAML=0
 BIND_DAEMON_NODE=0
 API_SERVICE_ADDRESS="{{ api_service_address }}"
 HA_CLUSTER="{{ ha_cluster }}"
-PURGE_DEAD_NODES="false"
-MAINTAIN_ROOK_STORAGE_NODES="false"
+PURGE_DEAD_NODES="{{ purge_dead_nodes }}"
+MAINTAIN_ROOK_STORAGE_NODES="{{ maintain_rook_storage_nodes }}"
 
 {% include 'common/kubernetes.sh' %}
 
@@ -70,10 +70,12 @@ while [ "$1" != "" ]; do
             ;;
         ha)
             HA_CLUSTER=1
-            PURGE_DEAD_NODES="true"
+            ;;
+        purge-dead-nodes|purge_dead_nodes)
+            PURGE_DEAD_NODES=1
             ;;
         maintain-rook-storage-nodes|maintain_rook_storage_nodes)
-            MAINTAIN_ROOK_STORAGE_NODES="true"
+            MAINTAIN_ROOK_STORAGE_NODES=1
             ;;
         api-service-address|api_service_address)
             API_SERVICE_ADDRESS="$_value"
@@ -211,6 +213,12 @@ EOF
         CEPH_DASHBOARD_ENV=$(cat <<-EOF
         - name: CEPH_DASHBOARD_URL
           value: $CEPH_DASHBOARD_URL
+EOF
+        )
+    fi
+    CEPH_DASHBOARD_CREDS_ENV=
+    if [ -n "$CEPH_DASHBOARD_USER" ] && [ -n "$CEPH_DASHBOARD_PASSWORD" ]; then
+        CEPH_DASHBOARD_CREDS_ENV=$(cat <<-EOF
         - name: CEPH_DASHBOARD_USER
           value: "$CEPH_DASHBOARD_USER"
         - name: CEPH_DASHBOARD_PASSWORD
@@ -345,6 +353,7 @@ $PROXY_ENVS
         - name: LOG_LEVEL
           value: "$LOG_LEVEL"
 $CEPH_DASHBOARD_ENV
+$CEPH_DASHBOARD_CREDS_ENV
         ports:
         - containerPort: 8800
         volumeMounts:
@@ -895,8 +904,8 @@ spec:
         - /usr/bin/rek
         - operator
         env:
-        - name: NODE_UNREACHABLE_TOLERATION_MINUTES
-          value: "30"
+        - name: NODE_UNREACHABLE_TOLERATION
+          value: 1h
         - name: PURGE_DEAD_NODES
           value: "$PURGE_DEAD_NODES"
         - name: MAINTAIN_ROOK_STORAGE_NODES
@@ -913,8 +922,8 @@ spec:
           value: $REGISTRY_ADDRESS_OVERRIDE
         - name: NAMESPACE
           value: default
-        - name: RECONCILE_INTERVAL_MINUTES
-          value: "1"
+        - name: RECONCILE_INTERVAL
+          value: 1m
 EOF
 }
 

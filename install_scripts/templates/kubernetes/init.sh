@@ -16,6 +16,7 @@ PUBLIC_ADDRESS=
 PRIVATE_ADDRESS=
 HA_CLUSTER=0
 MAINTAIN_ROOK_STORAGE_NODES=0
+PURGE_DEAD_NODES=0
 LOAD_BALANCER_ADDRESS=
 LOAD_BALANCER_PORT=
 REGISTRY_BIND_PORT=
@@ -425,8 +426,11 @@ getYAMLOpts() {
     if [ -n "$PRIVATE_ADDRESS" ]; then
         opts=$opts" app-registry-advertise-host=$PRIVATE_ADDRESS"
     fi
-    if [ -n "$MAINTAIN_ROOK_STORAGE_NODES" ]; then
+    if [ "$MAINTAIN_ROOK_STORAGE_NODES" = "1" ]; then
         opts=$opts" maintain-rook-storage-nodes"
+    fi
+    if [ "$PURGE_DEAD_NODES" = "1" ]; then
+        opts=$opts" purge-dead-nodes"
     fi
     YAML_GENERATE_OPTS="$opts"
 }
@@ -586,8 +590,15 @@ rekOperatorDeploy() {
     if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
         return
     fi
+    if [ "$MAINTAIN_ROOK_STORAGE_NODES" = "0" ]; then
+        return
+    fi
 
+    if [ "$HA_CLUSTER" = "1" ]; then
+        PURGE_DEAD_NODES=1
+    fi
     getYAMLOpts
+
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rek_operator_yaml=1 > /tmp/rek-operator.yml
     kubectl apply -f /tmp/rek-operator.yml -n $KUBERNETES_NAMESPACE
 }
