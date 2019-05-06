@@ -15,6 +15,8 @@ YAML_GENERATE_OPTS=
 PUBLIC_ADDRESS=
 PRIVATE_ADDRESS=
 HA_CLUSTER=0
+MAINTAIN_ROOK_STORAGE_NODES=0
+PURGE_DEAD_NODES=0
 LOAD_BALANCER_ADDRESS=
 LOAD_BALANCER_PORT=
 REGISTRY_BIND_PORT=
@@ -50,6 +52,8 @@ ENCRYPT_NETWORK=
 ADDITIONAL_NO_PROXY=
 IPVS=1
 CEPH_DASHBOARD_URL=
+CEPH_DASHBOARD_USER=
+CEPH_DASHBOARD_PASSWORD=
 REGISTRY_ADDRESS_OVERRIDE=
 
 CHANNEL_CSS={% if channel_css %}
@@ -410,6 +414,9 @@ getYAMLOpts() {
     if [ -n "$CEPH_DASHBOARD_URL" ]; then
         opts=$opts" ceph-dashboard-url=$CEPH_DASHBOARD_URL"
     fi
+    if [ -n "$CEPH_DASHBOARD_USER" ]; then
+        opts=$opts" ceph-dashboard-user=$CEPH_DASHBOARD_USER ceph-dashboard-password=$CEPH_DASHBOARD_PASSWORD"
+    fi
     if [ -n "$STORAGE_CLASS" ]; then
         opts=$opts" storage-class=$STORAGE_CLASS"
     fi
@@ -418,6 +425,12 @@ getYAMLOpts() {
     fi
     if [ -n "$PRIVATE_ADDRESS" ]; then
         opts=$opts" app-registry-advertise-host=$PRIVATE_ADDRESS"
+    fi
+    if [ "$MAINTAIN_ROOK_STORAGE_NODES" = "1" ]; then
+        opts=$opts" maintain-rook-storage-nodes"
+    fi
+    if [ "$PURGE_DEAD_NODES" = "1" ]; then
+        opts=$opts" purge-dead-nodes"
     fi
     YAML_GENERATE_OPTS="$opts"
 }
@@ -486,16 +499,40 @@ rookDeploy() {
         return
     fi
 
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_system_yaml=1 > /tmp/rook-ceph-system.yml
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_cluster_yaml=1 > /tmp/rook-ceph.yml
+    local rook08=0
+    semverCompare "$REPLICATED_VERSION" "2.36.0"
+    if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
+        rook08=1
+        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_system_yaml=1 > /tmp/rook-ceph-system.yml
+        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_cluster_yaml=1 > /tmp/rook-ceph.yml
+    else
+        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_system_yaml=1 > /tmp/rook-ceph-system.yml
+        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_cluster_yaml=1 > /tmp/rook-ceph.yml
+    fi
 
     kubectl apply -f /tmp/rook-ceph-system.yml
+
     spinnerRookReady # creating the cluster before the operator is ready fails
-    # according to docs restarting kubelet here is only needed on K8s 1.7, but
-    # during tests it was required occasionally on 1.11.
-    sudo systemctl restart kubelet
+    if [ "$rook08" = "1" ]; then
+        sudo systemctl restart kubelet
+    fi
+
     kubectl apply -f /tmp/rook-ceph.yml
     storageClassDeploy
+ 
+    # wait for ceph dashboard password to be generated
+    if [ "$rook08" = "0" ]; then
+        local delay=0.75
+        local spinstr='|/-\'
+        while ! kubectl -n rook-ceph get secret rook-ceph-dashboard-password &>/dev/null; do
+            local temp=${spinstr#?}
+            printf " [%c]  " "$spinstr"
+            local spinstr=$temp${spinstr%"$temp"}
+            sleep $delay
+            printf "\b\b\b\b\b\b"
+        done
+    fi
+
     logSuccess "Rook deployed"
 }
 
@@ -546,6 +583,24 @@ contourDeploy() {
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS contour_yaml=1 > /tmp/contour.yml
     kubectl apply -f /tmp/contour.yml
     logSuccess "Contour deployed"
+}
+
+rekOperatorDeploy() {
+    semverCompare "$REPLICATED_VERSION" "2.36.0"
+    if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
+        return
+    fi
+    if [ "$MAINTAIN_ROOK_STORAGE_NODES" = "0" ]; then
+        return
+    fi
+
+    if [ "$HA_CLUSTER" = "1" ]; then
+        PURGE_DEAD_NODES=1
+    fi
+    getYAMLOpts
+
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rek_operator_yaml=1 > /tmp/rek-operator.yml
+    kubectl apply -f /tmp/rek-operator.yml -n $KUBERNETES_NAMESPACE
 }
 
 registryDeploy() {
@@ -601,17 +656,19 @@ waitForRegistry() {
     done
 }
 
-kubernetesDeploy() {
+replicatedDeploy() {
     logStep "deploy replicated components"
     if [ "$HA_CLUSTER" -eq "1" ]; then
         kubectl patch deployment replicated --type json -p='[{"op": "remove", "path": "/spec/template/spec/affinity"}]' 2>/dev/null || true
     fi
 
     logStep "generate manifests"
+    getYAMLOpts
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS > /tmp/kubernetes.yml
 
     kubectl apply -f /tmp/kubernetes.yml -n $KUBERNETES_NAMESPACE
     kubectl -n $KUBERNETES_NAMESPACE get pods,svc
+    rekOperatorDeploy
     logSuccess "Replicated Daemon"
 }
 
@@ -878,10 +935,6 @@ if [ "$KUBERNETES_VERSION" == "1.9.3" ]; then
     IPVS=0
 fi
 
-if [ "$STORAGE_PROVISIONER" == "rook" ] || [ "$STORAGE_PROVISIONER" == "1" ]; then
-    CEPH_DASHBOARD_URL=http://rook-ceph-mgr-dashboard.rook-ceph.svc.cluster.local:7000
-fi
-
 if [ "$RESET" == "1" ]; then
     k8s_reset "$FORCE_RESET"
     outroReset "$NO_CLEAR"
@@ -1008,6 +1061,18 @@ echo
 case "$STORAGE_PROVISIONER" in
     rook|1)
         rookDeploy
+        CEPH_DASHBOARD_URL=http://rook-ceph-mgr-dashboard.rook-ceph.svc.cluster.local:7000
+
+        # Ceph v13+ requires login. Rook 1.0+ creates a secret in the rook-ceph namespace.
+        cephDashboardPassword=$(kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath="{['data']['password']}" | base64 --decode)
+        if [ -n "$cephDashboardPassword" ]; then
+            CEPH_DASHBOARD_USER=admin
+            CEPH_DASHBOARD_PASSWORD="$cephDashboardPassword"
+        fi
+
+        if isRook1; then
+            MAINTAIN_ROOK_STORAGE_NODES=1
+        fi
         ;;
     hostpath)
         hostpathProvisionerDeploy
@@ -1023,6 +1088,7 @@ contourDeploy "$DISABLE_CONTOUR"
 
 if [ "$KUBERNETES_ONLY" -eq "1" ]; then
     spinnerKubeSystemReady "$KUBERNETES_VERSION"
+    rekOperatorDeploy
     outroKubeadm "$NO_CLEAR"
     exit 0
 fi
@@ -1045,7 +1111,7 @@ if [ "$AIRGAP" = "1" ]; then
     fi
 fi
 
-kubernetesDeploy
+replicatedDeploy
 
 installCliFile \
     "kubectl exec -c replicated" \

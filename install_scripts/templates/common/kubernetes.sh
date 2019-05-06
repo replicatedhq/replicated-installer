@@ -1376,3 +1376,17 @@ confHasEndpoint()
     return 1
 }
 
+
+#######################################
+# Check if Rook 1.0+ is installed
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None, exits 0 if Rook 1.0+ is detected
+#######################################
+isRook1()
+{
+    kubectl -n rook-ceph get cephblockpools replicapool &>/dev/null
+}

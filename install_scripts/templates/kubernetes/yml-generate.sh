@@ -18,6 +18,8 @@ REGISTRY_ADDRESS_OVERRIDE="{{ registry_address_override }}"
 APP_REGISTRY_ADVERTISE_HOST="{{ app_registry_advertise_host }}"
 IP_ALLOC_RANGE=10.32.0.0/12  # default for weave
 CEPH_DASHBOARD_URL=
+CEPH_DASHBOARD_USER=
+CEPH_DASHBOARD_PASSWORD=
 # booleans
 AIRGAP="{{ airgap }}"
 ENCRYPT_NETWORK="{{ encrypt_network }}"
@@ -25,16 +27,21 @@ WEAVE_SECRET=1
 REPLICATED_YAML=1
 REPLICATED_PVC=1
 ROOK_SYSTEM_YAML=0
+ROOK_08_SYSTEM_YAML=0
 ROOK_CLUSTER_YAML=0
+ROOK_08_CLUSTER_YAML=0
 STORAGE_CLASS_YAML=0
 HOSTPATH_PROVISIONER_YAML=0
 WEAVE_YAML=0
 CONTOUR_YAML=0
 DEPLOYMENT_YAML=0
 REGISTRY_YAML=0
+REK_OPERATOR_YAML=0
 BIND_DAEMON_NODE=0
 API_SERVICE_ADDRESS="{{ api_service_address }}"
 HA_CLUSTER="{{ ha_cluster }}"
+PURGE_DEAD_NODES="{{ purge_dead_nodes }}"
+MAINTAIN_ROOK_STORAGE_NODES="{{ maintain_rook_storage_nodes }}"
 
 {% include 'common/kubernetes.sh' %}
 
@@ -64,6 +71,12 @@ while [ "$1" != "" ]; do
         ha)
             HA_CLUSTER=1
             ;;
+        purge-dead-nodes|purge_dead_nodes)
+            PURGE_DEAD_NODES=1
+            ;;
+        maintain-rook-storage-nodes|maintain_rook_storage_nodes)
+            MAINTAIN_ROOK_STORAGE_NODES=1
+            ;;
         api-service-address|api_service_address)
             API_SERVICE_ADDRESS="$_value"
             ;;
@@ -86,8 +99,16 @@ while [ "$1" != "" ]; do
             ROOK_SYSTEM_YAML="$_value"
             REPLICATED_YAML=0
             ;;
+        rook-08-system-yaml|rook_08_system_yaml)
+            ROOK_08_SYSTEM_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
         rook-cluster-yaml|rook_cluster_yaml)
             ROOK_CLUSTER_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
+        rook-08-cluster-yaml|rook_08_cluster_yaml)
+            ROOK_08_CLUSTER_YAML="$_value"
             REPLICATED_YAML=0
             ;;
         hostpath-provisioner-yaml|hostpath_provisioner_yaml)
@@ -108,6 +129,10 @@ while [ "$1" != "" ]; do
             ;;
         registry-yaml|registry_yaml)
             REGISTRY_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
+        rek-operator-yaml|rek_operator_yaml)
+            REK_OPERATOR_YAML="$_value"
             REPLICATED_YAML=0
             ;;
         deployment-yaml|deployment_yaml)
@@ -134,6 +159,12 @@ while [ "$1" != "" ]; do
             ;;
         ceph-dashboard-url|ceph_dashboard_url)
             CEPH_DASHBOARD_URL="$_value"
+            ;;
+        ceph-dashboard-user|ceph_dashboard_user)
+            CEPH_DASHBOARD_USER="$_value"
+            ;;
+        ceph-dashboard-password|ceph_dashboard_password)
+            CEPH_DASHBOARD_PASSWORD="$_value"
             ;;
         registry-address-override|registry_address_override)
             REGISTRY_ADDRESS_OVERRIDE="$_value"
@@ -182,6 +213,16 @@ EOF
         CEPH_DASHBOARD_ENV=$(cat <<-EOF
         - name: CEPH_DASHBOARD_URL
           value: $CEPH_DASHBOARD_URL
+EOF
+        )
+    fi
+    CEPH_DASHBOARD_CREDS_ENV=
+    if [ -n "$CEPH_DASHBOARD_USER" ] && [ -n "$CEPH_DASHBOARD_PASSWORD" ]; then
+        CEPH_DASHBOARD_CREDS_ENV=$(cat <<-EOF
+        - name: CEPH_DASHBOARD_USER
+          value: "$CEPH_DASHBOARD_USER"
+        - name: CEPH_DASHBOARD_PASSWORD
+          value: "$CEPH_DASHBOARD_PASSWORD"
 EOF
         )
     fi
@@ -283,6 +324,8 @@ EOF
           value: "$LOG_LEVEL"
         - name: AIRGAP
           value: "$AIRGAP"
+        - name: MAINTAIN_ROOK_STORAGE_NODES
+          value: "$MAINTAIN_ROOK_STORAGE_NODES"
 $PROXY_ENVS
         ports:
         - containerPort: 9874
@@ -310,6 +353,7 @@ $PROXY_ENVS
         - name: LOG_LEVEL
           value: "$LOG_LEVEL"
 $CEPH_DASHBOARD_ENV
+$CEPH_DASHBOARD_CREDS_ENV
         ports:
         - containerPort: 8800
         volumeMounts:
@@ -549,366 +593,13 @@ EOF
 
 render_rook_system_yaml() {
     cat <<EOF
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: rook-ceph-system
----
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  name: clusters.ceph.rook.io
-spec:
-  group: ceph.rook.io
-  names:
-    kind: Cluster
-    listKind: ClusterList
-    plural: clusters
-    singular: cluster
-    shortNames:
-    - rcc
-  scope: Namespaced
-  version: v1beta1
----
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  name: filesystems.ceph.rook.io
-spec:
-  group: ceph.rook.io
-  names:
-    kind: Filesystem
-    listKind: FilesystemList
-    plural: filesystems
-    singular: filesystem
-    shortNames:
-    - rcfs
-  scope: Namespaced
-  version: v1beta1
----
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  name: objectstores.ceph.rook.io
-spec:
-  group: ceph.rook.io
-  names:
-    kind: ObjectStore
-    listKind: ObjectStoreList
-    plural: objectstores
-    singular: objectstore
-    shortNames:
-    - rco
-  scope: Namespaced
-  version: v1beta1
----
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  name: pools.ceph.rook.io
-spec:
-  group: ceph.rook.io
-  names:
-    kind: Pool
-    listKind: PoolList
-    plural: pools
-    singular: pool
-    shortNames:
-    - rcp
-  scope: Namespaced
-  version: v1beta1
----
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  name: volumes.rook.io
-spec:
-  group: rook.io
-  names:
-    kind: Volume
-    listKind: VolumeList
-    plural: volumes
-    singular: volume
-    shortNames:
-    - rv
-  scope: Namespaced
-  version: v1alpha2
----
-# The cluster role for managing all the cluster-specific resources in a namespace
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRole
-metadata:
-  name: rook-ceph-cluster-mgmt
-  labels:
-    operator: rook
-    storage-backend: ceph
-rules:
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  - pods
-  - services
-  - configmaps
-  verbs:
-  - get
-  - list
-  - watch
-  - patch
-  - create
-  - update
-  - delete
-- apiGroups:
-  - extensions
-  resources:
-  - deployments
-  - daemonsets
-  - replicasets
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - delete
----
-# The role for the operator to manage resources in the system namespace
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: Role
-metadata:
-  name: rook-ceph-system
-  namespace: rook-ceph-system
-  labels:
-    operator: rook
-    storage-backend: ceph
-rules:
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  - configmaps
-  verbs:
-  - get
-  - list
-  - watch
-  - patch
-  - create
-  - update
-  - delete
-- apiGroups:
-  - extensions
-  resources:
-  - daemonsets
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - delete
----
-# The cluster role for managing the Rook CRDs
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRole
-metadata:
-  name: rook-ceph-global
-  labels:
-    operator: rook
-    storage-backend: ceph
-rules:
-- apiGroups:
-  - ""
-  resources:
-  # Pod access is needed for fencing
-  - pods
-  # Node access is needed for determining nodes where mons should run
-  - nodes
-  - nodes/proxy
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - events
-    # PVs and PVCs are managed by the Rook provisioner
-  - persistentvolumes
-  - persistentvolumeclaims
-  verbs:
-  - get
-  - list
-  - watch
-  - patch
-  - create
-  - update
-  - delete
-- apiGroups:
-  - storage.k8s.io
-  resources:
-  - storageclasses
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - batch
-  resources:
-  - jobs
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - delete
-- apiGroups:
-  - ceph.rook.io
-  resources:
-  - "*"
-  verbs:
-  - "*"
-- apiGroups:
-  - rook.io
-  resources:
-  - "*"
-  verbs:
-  - "*"
----
-# The rook system service account used by the operator, agent, and discovery pods
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: rook-ceph-system
-  namespace: rook-ceph-system
-  labels:
-    operator: rook
-    storage-backend: ceph
----
-# Grant the operator, agent, and discovery agents access to resources in the rook-ceph-system namespace
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: rook-ceph-system
-  namespace: rook-ceph-system
-  labels:
-    operator: rook
-    storage-backend: ceph
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: rook-ceph-system
-subjects:
-- kind: ServiceAccount
-  name: rook-ceph-system
-  namespace: rook-ceph-system
----
-# Grant the rook system daemons cluster-wide access to manage the Rook CRDs, PVCs, and storage classes
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: rook-ceph-global
-  namespace: rook-ceph-system
-  labels:
-    operator: rook
-    storage-backend: ceph
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: rook-ceph-global
-subjects:
-- kind: ServiceAccount
-  name: rook-ceph-system
-  namespace: rook-ceph-system
----
-# The deployment for the rook operator
-apiVersion: apps/v1beta1
-kind: Deployment
-metadata:
-  name: rook-ceph-operator
-  namespace: rook-ceph-system
-  labels:
-    operator: rook
-    storage-backend: ceph
-spec:
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: rook-ceph-operator
-    spec:
-      serviceAccountName: rook-ceph-system
-      containers:
-      - name: rook-ceph-operator
-        image: rook/ceph:v0.8.1
-        args: ["ceph", "operator"]
-        volumeMounts:
-        - mountPath: /var/lib/rook
-          name: rook-config
-        - mountPath: /etc/ceph
-          name: default-config-dir
-        env:
-        # To disable RBAC, uncomment the following:
-        # - name: RBAC_ENABLED
-        #  value: "false"
-        # Rook Agent toleration. Will tolerate all taints with all keys.
-        # Choose between NoSchedule, PreferNoSchedule and NoExecute:
-        # - name: AGENT_TOLERATION
-        #  value: "NoSchedule"
-        # (Optional) Rook Agent toleration key. Set this to the key of the taint you want to tolerate
-        # - name: AGENT_TOLERATION_KEY
-        #  value: "<KeyOfTheTaintToTolerate>"
-        # Set the path where the Rook agent can find the flex volumes
-        # - name: FLEXVOLUME_DIR_PATH
-        #  value: "<PathToFlexVolumes>"
-        # Rook Discover toleration. Will tolerate all taints with all keys.
-        # Choose between NoSchedule, PreferNoSchedule and NoExecute:
-        # - name: DISCOVER_TOLERATION
-        #  value: "NoSchedule"
-        # (Optional) Rook Discover toleration key. Set this to the key of the taint you want to tolerate
-        # - name: DISCOVER_TOLERATION_KEY
-        #  value: "<KeyOfTheTaintToTolerate>"
-        # Allow rook to create multiple file systems. Note: This is considered
-        # an experimental feature in Ceph as described at
-        # http://docs.ceph.com/docs/master/cephfs/experimental-features/#multiple-filesystems-within-a-ceph-cluster
-        # which might cause mons to crash as seen in https://github.com/rook/rook/issues/1027
-        - name: ROOK_ALLOW_MULTIPLE_FILESYSTEMS
-          value: "false"
-        # The logging level for the operator: INFO | DEBUG
-        - name: ROOK_LOG_LEVEL
-          value: "INFO"
-        # The interval to check if every mon is in the quorum.
-        - name: ROOK_MON_HEALTHCHECK_INTERVAL
-          value: "45s"
-        # The duration to wait before trying to failover or remove/replace the
-        # current mon with a new mon (useful for compensating flapping network).
-        - name: ROOK_MON_OUT_TIMEOUT
-          value: "300s"
-        # Whether to start pods as privileged that mount a host path, which includes the Ceph mon and osd pods.
-        # This is necessary to workaround the anyuid issues when running on OpenShift.
-        # For more details see https://github.com/rook/rook/issues/1314#issuecomment-355799641
-        - name: ROOK_HOSTPATH_REQUIRES_PRIVILEGED
-          value: "false"
-        # The name of the node to pass with the downward API
-        - name: NODE_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        # The pod name to pass with the downward API
-        - name: POD_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        # The pod namespace to pass with the downward API
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-      volumes:
-      - name: rook-config
-        emptyDir: {}
-      - name: default-config-dir
-        emptyDir: {}
+{% include 'kubernetes/yaml/rook-1-0-system.yml' %}
+EOF
+}
+
+render_rook08_system_yaml() {
+    cat <<EOF
+{% include 'kubernetes/yaml/rook-0-8-system.yml' %}
 EOF
 }
 
@@ -916,101 +607,15 @@ render_rook_cluster_yaml() {
     PV_BASE_PATH="${PV_BASE_PATH:-"/opt/replicated/rook"}"
 
     cat <<EOF
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: rook-ceph
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: rook-ceph-cluster
-  namespace: rook-ceph
----
-kind: Role
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: rook-ceph-cluster
-  namespace: rook-ceph
-rules:
-- apiGroups: [""]
-  resources: ["configmaps"]
-  verbs: [ "get", "list", "watch", "create", "update", "delete" ]
----
-# Allow the operator to create resources in this cluster's namespace
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: rook-ceph-cluster-mgmt
-  namespace: rook-ceph
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: rook-ceph-cluster-mgmt
-subjects:
-- kind: ServiceAccount
-  name: rook-ceph-system
-  namespace: rook-ceph-system
----
-# Allow the pods in this namespace to work with configmaps
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: rook-ceph-cluster
-  namespace: rook-ceph
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: rook-ceph-cluster
-subjects:
-- kind: ServiceAccount
-  name: rook-ceph-cluster
-  namespace: rook-ceph
----
-apiVersion: ceph.rook.io/v1beta1
-kind: Cluster
-metadata:
-  name: rook-ceph
-  namespace: rook-ceph
-spec:
-  dataDirHostPath: /var/lib/rook
-  # The service account under which to run the daemon pods in this cluster if the default account is not sufficient (OSDs)
-  serviceAccount: rook-ceph-cluster
-  # set the amount of mons to be started
-  mon:
-    count: 3
-    allowMultiplePerNode: true
-  # enable the ceph dashboard for viewing cluster status
-  dashboard:
-    enabled: true
-  network:
-    # toggle to use hostNetwork
-    hostNetwork: false
-  resources:
-  storage: # cluster level storage configuration and selection
-    useAllNodes: true
-    useAllDevices: false
-    deviceFilter:
-    location:
-    config:
-      databaseSizeMB: "1024" # this value can be removed for environments with normal sized disks (100 GB or larger)
-      journalSizeMB: "1024"  # this value can be removed for environments with normal sized disks (20 GB or larger)
-    directories:
-    - path: "$PV_BASE_PATH"
----
-apiVersion: ceph.rook.io/v1beta1
-kind: Pool
-metadata:
-  name: replicapool
-  namespace: rook-ceph
-spec:
-  # The failure domain will spread the replicas of the data across different failure zones
-  failureDomain: osd
-  # The root of the crush hierarchy that will be used for the pool. If not set, will use "default".
-  crushRoot: default
-  # For a pool based on raw copies, specify the number of copies. A size of 1 indicates no redundancy.
-  replicated:
-    size: 1
+{% include 'kubernetes/yaml/rook-1-0-cluster.yml' %}
+EOF
+}
+
+render_rook08_cluster_yaml() {
+    PV_BASE_PATH="${PV_BASE_PATH:-"/opt/replicated/rook"}"
+
+    cat <<EOF
+{% include 'kubernetes/yaml/rook-0-8-cluster.yml' %}
 EOF
 }
 
@@ -1271,6 +876,57 @@ render_contour_yaml() {
 EOF
 }
 
+render_rek_operator_yaml() {
+    cat <<EOF
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rek-operator
+  labels:
+    app: rek-operator
+spec:
+  selector:
+    matchLabels:
+      app: rek-operator
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: rek-operator
+    spec:
+      containers:
+      - name: rek
+        image: "${REGISTRY_ADDRESS_OVERRIDE:-$REPLICATED_DOCKER_HOST}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
+        imagePullPolicy: IfNotPresent
+        command:
+        - /usr/bin/rek
+        - operator
+        env:
+        - name: NODE_UNREACHABLE_TOLERATION
+          value: 1h
+        - name: PURGE_DEAD_NODES
+          value: "$PURGE_DEAD_NODES"
+        - name: MAINTAIN_ROOK_STORAGE_NODES
+          value: "$MAINTAIN_ROOK_STORAGE_NODES"
+        - name: CEPH_BLOCK_POOL
+          value: replicapool
+        - name: CEPH_FILESYSTEM
+          value: shared_fs
+        - name: MIN_CEPH_POOL_REPLICATION
+          value: "1"
+        - name: MAX_CEPH_POOL_REPLICATION
+          value: "3"
+        - name: COMPONENT_IMAGES_REGISTRY_ADDRESS_OVERRIDE
+          value: $REGISTRY_ADDRESS_OVERRIDE
+        - name: NAMESPACE
+          value: default
+        - name: RECONCILE_INTERVAL
+          value: 1m
+EOF
+}
+
 render_registry_yaml() {
     haSharedSecret=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c9)
     cat <<EOF
@@ -1421,8 +1077,16 @@ if [ "$ROOK_CLUSTER_YAML" = "1" ]; then
     render_rook_cluster_yaml
 fi
 
+if [ "$ROOK_08_CLUSTER_YAML" = "1" ]; then
+    render_rook08_cluster_yaml
+fi
+
 if [ "$ROOK_SYSTEM_YAML" = "1" ]; then
     render_rook_system_yaml
+fi
+
+if [ "$ROOK_08_SYSTEM_YAML" = "1" ]; then
+    render_rook08_system_yaml
 fi
 
 if [ "$HOSTPATH_PROVISIONER_YAML" = "1" ]; then
@@ -1449,6 +1113,10 @@ if [ "$REGISTRY_YAML" = "1" ]; then
     render_registry_yaml
 fi
 
+if [ "$REK_OPERATOR_YAML" = "1" ]; then
+    render_rek_operator_yaml
+fi
+
 if [ "$REPLICATED_YAML" = "1" ]; then
     if [ "$REPLICATED_PVC" != "0" ]; then
         render_replicated_pvc
@@ -1472,6 +1140,7 @@ if [ "$REPLICATED_YAML" = "1" ]; then
     fi
 fi
 
+# autoupgrades
 if [ "$DEPLOYMENT_YAML" = "1" ]; then
     render_replicated_deployment
 fi
