@@ -432,6 +432,12 @@ getYAMLOpts() {
     if [ "$PURGE_DEAD_NODES" = "1" ]; then
         opts=$opts" purge-dead-nodes"
     fi
+    if [ -n "$REGISTRY_ADDRESS_OVERRIDE" ]; then
+        opts=$opts" registry-address-override=$REGISTRY_ADDRESS_OVERRIDE"
+    fi
+    if [ -n "$APP_REGISTRY_ADVERTISE_HOST" ]; then
+        opts=$opts" app-registry-advertise-host=$APP_REGISTRY_ADVERTISE_HOST"
+    fi
     YAML_GENERATE_OPTS="$opts"
 }
 
@@ -601,6 +607,22 @@ rekOperatorDeploy() {
 
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rek_operator_yaml=1 > /tmp/rek-operator.yml
     kubectl apply -f /tmp/rek-operator.yml -n $KUBERNETES_NAMESPACE
+}
+
+appRegistryServiceDeploy() {
+    logStep "Deploy app registry service"
+
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS replicated_registry_yaml=1 > /tmp/replicated-registry.yml
+    kubectl apply -f /tmp/replicated-registry.yml
+
+    local replicatedRegistryIP=$(kubectl get service replicated-registry -o jsonpath='{.spec.clusterIP}')
+    while [ -z "$replicatedRegistryIP" ]; do
+        sleep 1
+        replicatedRegistryIP=$(kubectl get service replicated-registry -o jsonpath='{.spec.clusterIP}')
+    done
+    APP_REGISTRY_ADVERTISE_HOST="$replicatedRegistryIP"
+
+    logSuccess "App registry service deployed"
 }
 
 registryDeploy() {
@@ -1109,6 +1131,10 @@ if [ "$AIRGAP" = "1" ]; then
         registryDeploy
         airgapPushReplicatedImagesToRegistry "$REGISTRY_ADDRESS_OVERRIDE"
     fi
+
+    # deploy the app registry service before the Replicated deployment so the cluster IP can be
+    # passed in as the registry advertise host
+    appRegistryServiceDeploy
 fi
 
 replicatedDeploy

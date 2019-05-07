@@ -37,6 +37,7 @@ CONTOUR_YAML=0
 DEPLOYMENT_YAML=0
 REGISTRY_YAML=0
 REK_OPERATOR_YAML=0
+REPLICATED_REGISTRY_YAML=0
 BIND_DAEMON_NODE=0
 API_SERVICE_ADDRESS="{{ api_service_address }}"
 HA_CLUSTER="{{ ha_cluster }}"
@@ -137,6 +138,10 @@ while [ "$1" != "" ]; do
             ;;
         deployment-yaml|deployment_yaml)
             DEPLOYMENT_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
+        replicated-registry-yaml|replicated_registry_yaml)
+            REPLICATED_REGISTRY_YAML="$_value"
             REPLICATED_YAML=0
             ;;
         ip-alloc-range|ip_alloc_range)
@@ -1115,6 +1120,10 @@ fi
 
 if [ "$REK_OPERATOR_YAML" = "1" ]; then
     render_rek_operator_yaml
+fi
+
+if [ "$REPLICATED_REGISTRY_YAML" ]; then
+    render_replicated_registry_service
 fi
 
 if [ "$REPLICATED_YAML" = "1" ]; then
