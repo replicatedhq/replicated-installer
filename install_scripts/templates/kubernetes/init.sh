@@ -26,6 +26,7 @@ SKIP_DOCKER_PULL=0
 KUBERNETES_ONLY=0
 RESET=0
 FORCE_RESET=0
+BIND_DAEMON_NODE=1
 TLS_CERT_PATH=
 UI_BIND_PORT=8800
 USER_ID=
@@ -55,6 +56,7 @@ CEPH_DASHBOARD_URL=
 CEPH_DASHBOARD_USER=
 CEPH_DASHBOARD_PASSWORD=
 REGISTRY_ADDRESS_OVERRIDE=
+APP_REGISTRY_ADVERTISE_HOST=
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -378,9 +380,6 @@ getYAMLOpts() {
     if [ "$AIRGAP" = "1" ]; then
         opts=$opts" airgap"
     fi
-    if [ "$HA_CLUSTER" != "1" ]; then
-        opts=$opts" bind-daemon-node"
-    fi
     if [ -n "$LOG_LEVEL" ]; then
         opts=$opts" log-level=$LOG_LEVEL"
     fi
@@ -431,6 +430,15 @@ getYAMLOpts() {
     fi
     if [ "$PURGE_DEAD_NODES" = "1" ]; then
         opts=$opts" purge-dead-nodes"
+    fi
+    if [ -n "$REGISTRY_ADDRESS_OVERRIDE" ]; then
+        opts=$opts" registry-address-override=$REGISTRY_ADDRESS_OVERRIDE"
+    fi
+    if [ -n "$APP_REGISTRY_ADVERTISE_HOST" ]; then
+        opts=$opts" app-registry-advertise-host=$APP_REGISTRY_ADVERTISE_HOST"
+    fi
+    if [ "$BIND_DAEMON_NODE" = "1" ]; then
+        opts=$opts" bind-daemon-node"
     fi
     YAML_GENERATE_OPTS="$opts"
 }
@@ -603,6 +611,22 @@ rekOperatorDeploy() {
     kubectl apply -f /tmp/rek-operator.yml -n $KUBERNETES_NAMESPACE
 }
 
+appRegistryServiceDeploy() {
+    logStep "Deploy app registry service"
+
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS replicated_registry_yaml=1 > /tmp/replicated-registry.yml
+    kubectl apply -f /tmp/replicated-registry.yml
+
+    local replicatedRegistryIP=$(kubectl get service replicated-registry -o jsonpath='{.spec.clusterIP}')
+    while [ -z "$replicatedRegistryIP" ]; do
+        sleep 1
+        replicatedRegistryIP=$(kubectl get service replicated-registry -o jsonpath='{.spec.clusterIP}')
+    done
+    APP_REGISTRY_ADVERTISE_HOST="$replicatedRegistryIP"
+
+    logSuccess "App registry service deployed"
+}
+
 registryDeploy() {
     logStep "Deploy registry"
 
@@ -658,7 +682,16 @@ waitForRegistry() {
 
 replicatedDeploy() {
     logStep "deploy replicated components"
-    if [ "$HA_CLUSTER" -eq "1" ]; then
+
+    # daemon pod can roam in online ha clusters and in airgap ha clusters >= 2.36.0
+    if [ "$HA_CLUSTER" = "1" ] && [ "$AIRGAP" = "0" ]; then
+        BIND_DAEMON_NODE=0
+    fi
+    semverCompare "$REPLICATED_VERSION" "2.36.0"
+    if [ "$HA_CLUSTER" = "1" ] && [ "$AIRGAP" = "1" ] && [ "$SEMVER_COMPARE_RESULT" -ge 0 ]; then
+        BIND_DAEMON_NODE=0
+    fi
+    if [ "$BIND_DAEMON_NODE" = 0 ]; then
         kubectl patch deployment replicated --type json -p='[{"op": "remove", "path": "/spec/template/spec/affinity"}]' 2>/dev/null || true
     fi
 
@@ -716,6 +749,11 @@ outro() {
     printf "\t\t${GREEN}Installation${NC}\n"
     printf "\t\t${GREEN}  Complete ✔${NC}\n"
     printf "\n"
+    if [ -n "$APP_REGISTRY_ADVERTISE_HOST" ]; then
+        printf "\nIf uploading a custom certificate, include the registry IP as a Subject Alternative Name: ${GREEN}${APP_REGISTRY_ADVERTISE_HOST}${NC}"
+        printf "\n"
+        printf "\n"
+    fi
     printf "\nTo access the cluster with kubectl, reload your shell:\n\n"
     printf "\n"
     printf "${GREEN}    bash -l${NC}"
@@ -1109,6 +1147,10 @@ if [ "$AIRGAP" = "1" ]; then
         registryDeploy
         airgapPushReplicatedImagesToRegistry "$REGISTRY_ADDRESS_OVERRIDE"
     fi
+
+    # deploy the app registry service before the Replicated deployment so the cluster IP can be
+    # passed in as the registry advertise host
+    appRegistryServiceDeploy
 fi
 
 replicatedDeploy
