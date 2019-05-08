@@ -52,7 +52,6 @@ while [ "$1" != "" ]; do
     case $_param in
         airgap)
             AIRGAP=1
-            BIND_DAEMON_NODE=1
             ;;
         bind-daemon-node|bind_daemon_node)
             BIND_DAEMON_NODE=1
@@ -254,6 +253,8 @@ spec:
         app: replicated
         tier: master
     spec:
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
 $AFFINITY
       containers:
       - name: replicated
@@ -478,14 +479,13 @@ metadata:
     app: replicated
     tier: master
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: replicated
     tier: master
   ports:
   - name: replicated-registry
     port: 9874
-    nodePort: 9874
     protocol: TCP
 EOF
 }
@@ -1122,7 +1122,7 @@ if [ "$REK_OPERATOR_YAML" = "1" ]; then
     render_rek_operator_yaml
 fi
 
-if [ "$REPLICATED_REGISTRY_YAML" ]; then
+if [ "$REPLICATED_REGISTRY_YAML" = "1" ]; then
     render_replicated_registry_service
 fi
 
@@ -1134,9 +1134,6 @@ if [ "$REPLICATED_YAML" = "1" ]; then
     render_cluster_role_binding
     render_replicated_deployment
     render_replicated_service
-    if [ "$AIRGAP" = "1" ]; then
-        render_replicated_registry_service
-    fi
 
     if [ "$HA_CLUSTER" = "1" ]; then
         render_replicated_api_service
