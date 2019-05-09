@@ -909,16 +909,22 @@ spec:
         - /usr/bin/rek
         - operator
         env:
+        - name: LOG_LEVEL
+          value: "$LOG_LEVEL"
         - name: NODE_UNREACHABLE_TOLERATION
           value: 1h
         - name: PURGE_DEAD_NODES
           value: "$PURGE_DEAD_NODES"
+        - name: MIN_READY_MASTER_NODES
+          value: "2"
+        - name: MIN_READY_WORKER_NODES
+          value: "0"
         - name: MAINTAIN_ROOK_STORAGE_NODES
           value: "$MAINTAIN_ROOK_STORAGE_NODES"
         - name: CEPH_BLOCK_POOL
           value: replicapool
         - name: CEPH_FILESYSTEM
-          value: shared_fs
+          value: rook-shared-fs
         - name: MIN_CEPH_POOL_REPLICATION
           value: "1"
         - name: MAX_CEPH_POOL_REPLICATION
