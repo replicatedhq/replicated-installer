@@ -26,7 +26,8 @@ SKIP_DOCKER_PULL=0
 KUBERNETES_ONLY=0
 RESET=0
 FORCE_RESET=0
-BIND_DAEMON_NODE=1
+BIND_DAEMON_TO_MASTERS=1
+BIND_DAEMON_HOSTNAME=
 TLS_CERT_PATH=
 UI_BIND_PORT=8800
 USER_ID=
@@ -437,8 +438,11 @@ getYAMLOpts() {
     if [ -n "$APP_REGISTRY_ADVERTISE_HOST" ]; then
         opts=$opts" app-registry-advertise-host=$APP_REGISTRY_ADVERTISE_HOST"
     fi
-    if [ "$BIND_DAEMON_NODE" = "1" ]; then
-        opts=$opts" bind-daemon-node"
+    if [ "$BIND_DAEMON_TO_MASTERS" = "1" ]; then
+        opts=$opts" bind-daemon-to-masters"
+    fi
+    if [ -n "$BIND_DAEMON_HOSTNAME" ]; then
+        opts=$opts" bind-daemon-hostname=$BIND_DAEMON_HOSTNAME"
     fi
     YAML_GENERATE_OPTS="$opts"
 }
@@ -683,16 +687,15 @@ waitForRegistry() {
 replicatedDeploy() {
     logStep "deploy replicated components"
 
-    # daemon pod can roam in online ha clusters and in airgap ha clusters >= 2.36.0
-    if [ "$HA_CLUSTER" = "1" ] && [ "$AIRGAP" = "0" ]; then
-        BIND_DAEMON_NODE=0
-    fi
-    semverCompare "$REPLICATED_VERSION" "2.36.0"
-    if [ "$HA_CLUSTER" = "1" ] && [ "$AIRGAP" = "1" ] && [ "$SEMVER_COMPARE_RESULT" -ge 0 ]; then
-        BIND_DAEMON_NODE=0
-    fi
-    if [ "$BIND_DAEMON_NODE" = 0 ]; then
-        kubectl patch deployment replicated --type json -p='[{"op": "remove", "path": "/spec/template/spec/affinity"}]' 2>/dev/null || true
+    # Multi-master airgap binds to the single master expected to have the canonical airgap bundle
+    # and license. Replicated >= 2.36.0 copies the airgap files to all masters, but binding to a
+    # single master prevents rescheduling before the copy has completed and also provides a fixed
+    # destination to upload new release bundles when upgrading. In the event of loss of the bound
+    # master, the REK operator will replace this single-master affinity with an any-master affinity.
+    # Re-running this script will restore the single-master affinity.
+    if [ "$HA_CLUSTER" = "1"] && [ "$AIRGAP" = "1" ]; then
+        BIND_DAEMON_HOSTNAME=$(hostname)
+        BIND_DAEMON_TO_MASTERS=0
     fi
 
     logStep "generate manifests"
@@ -1077,12 +1080,7 @@ weavenetDeploy
 untaintMaster
 
 spinnerMasterNodeReady
-if [ "$HA_CLUSTER" != "1" ] || [ "$AIRGAP" == "1" ]; then
-    # This label is not used in latest version of replicated with support for
-    # multi-master except for airgap since the daemon must be on the same host
-    # as the app bundle and license file
-    labelMasterNode
-fi
+labelMasterNodeDeprecated
 
 if [ "$DID_INIT_KUBERNETES" = "0" ] || [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]; then
     maybeUpgradeKubernetes "$KUBERNETES_VERSION"

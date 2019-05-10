@@ -38,7 +38,8 @@ DEPLOYMENT_YAML=0
 REGISTRY_YAML=0
 REK_OPERATOR_YAML=0
 REPLICATED_REGISTRY_YAML=0
-BIND_DAEMON_NODE=0
+BIND_DAEMON_TO_MASTERS=0
+BIND_DAEMON_HOSTNAME=
 API_SERVICE_ADDRESS="{{ api_service_address }}"
 HA_CLUSTER="{{ ha_cluster }}"
 PURGE_DEAD_NODES="{{ purge_dead_nodes }}"
@@ -53,8 +54,11 @@ while [ "$1" != "" ]; do
         airgap)
             AIRGAP=1
             ;;
-        bind-daemon-node|bind_daemon_node)
-            BIND_DAEMON_NODE=1
+        bind-daemon-to-masters|bind_daemon_to_masters)
+            BIND_DAEMON_TO_MASTERS=1
+            ;;
+        bind-daemon-hostname|bind_daemon_hostname)
+            BIND_DAEMON_HOSTNAME="$_value"
             ;;
         log-level|log_level)
             LOG_LEVEL="$_value"
@@ -185,17 +189,28 @@ while [ "$1" != "" ]; do
 done
 
 render_replicated_deployment() {
-    # On non-ha installs the daemon cannot change nodes because the join script uses the host IP
-    # for the Kubernetes API server IP
     AFFINITY=
-    if [ "$BIND_DAEMON_NODE" = "1" ]; then
+    if [ -n "$BIND_DAEMON_HOSTNAME" ]; then
         AFFINITY=$(cat <<-EOF
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: "$DAEMON_NODE_KEY"
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - "$BIND_DAEMON_HOSTNAME"
+EOF
+        )
+    elif [ "$BIND_DAEMON_TO_MASTERS" = "1" ]; then
+        AFFINITY=$(cat <<-EOF
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/master
                 operator: Exists
 EOF
         )

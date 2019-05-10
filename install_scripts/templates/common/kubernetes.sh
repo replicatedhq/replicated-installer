@@ -807,16 +807,21 @@ spinnerMasterNodeReady()
 }
 
 #######################################
-# Label master node
+# Replicated < 2.26 uses the replicated.com/daemon label to generate the node join script.
+#
 # Globals:
-#   AIRGAP
+#   DAEMON_NODE_KEY, REPLICATED_VERSION
 # Arguments:
-#   Namespace, Pod prefix
+#   None
 # Returns:
 #   None
 #######################################
-labelMasterNode()
+labelMasterNodeDeprecated()
 {
+    semverCompare "$REPLICATED_VERSION" "2.26.0"
+    if [ "$SEMVER_COMPARE_RESULT" -ge 0 ]; then
+        return
+    fi
     if kubectl get nodes --show-labels | grep -q "$DAEMON_NODE_KEY" ; then
         return
     fi
