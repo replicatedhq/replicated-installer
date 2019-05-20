@@ -189,29 +189,17 @@ while [ "$1" != "" ]; do
 done
 
 render_replicated_deployment() {
-    AFFINITY=
+    NODE_SELECTOR=
     if [ -n "$BIND_DAEMON_HOSTNAME" ]; then
-        AFFINITY=$(cat <<-EOF
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - "$BIND_DAEMON_HOSTNAME"
+        NODE_SELECTOR=$(cat <<-EOF
+      nodeSelector:
+        kubernetes.io/hostname: "$BIND_DAEMON_HOSTNAME"
 EOF
         )
     elif [ "$BIND_DAEMON_TO_MASTERS" = "1" ]; then
-        AFFINITY=$(cat <<-EOF
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: node-role.kubernetes.io/master
-                operator: Exists
+        NODE_SELECTOR=$(cat <<-EOF
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
 EOF
         )
     fi
@@ -268,9 +256,7 @@ spec:
         app: replicated
         tier: master
     spec:
-      nodeSelector:
-        node-role.kubernetes.io/master: ""
-$AFFINITY
+$NODE_SELECTOR
       containers:
       - name: replicated
         image: "${REGISTRY_ADDRESS_OVERRIDE:-$REPLICATED_DOCKER_HOST}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"

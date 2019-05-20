@@ -691,11 +691,10 @@ replicatedDeploy() {
     # and license. Replicated >= 2.36.0 copies the airgap files to all masters, but binding to a
     # single master prevents rescheduling before the copy has completed and also provides a fixed
     # destination to upload new release bundles when upgrading. In the event of loss of the bound
-    # master, the REK operator will replace this single-master affinity with an any-master affinity.
-    # Re-running this script will restore the single-master affinity.
-    if [ "$HA_CLUSTER" = "1"] && [ "$AIRGAP" = "1" ]; then
+    # master, the REK operator will remove the bind to the single-master and leave it bound to any
+    # master. Re-running this script will restore the single-master affinity.
+    if [ "$HA_CLUSTER" = "1" ] && [ "$AIRGAP" = "1" ]; then
         BIND_DAEMON_HOSTNAME=$(hostname)
-        BIND_DAEMON_TO_MASTERS=0
     fi
 
     logStep "generate manifests"
