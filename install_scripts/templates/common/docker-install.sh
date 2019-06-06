@@ -187,7 +187,7 @@ _installDocker() {
     fi
 
     _docker_install_url="{{ replicated_install_url }}/docker-install.sh"
-    printf "${GREEN}Installing docker from ${_docker_install_url}${NC}\n"
+    printf "${GREEN}Installing docker version ${1} from ${_docker_install_url}${NC}\n"
     getUrlCmd
     $URLGET_CMD "$_docker_install_url?docker_version=${1}&lsb_dist=${LSB_DIST}&dist_version=${DIST_VERSION_MAJOR}" > /tmp/docker_install.sh
     # When this script is piped into bash as stdin, apt-get will eat the remaining parts of this script,
