@@ -30,6 +30,7 @@ ROOK_SYSTEM_YAML=0
 ROOK_08_SYSTEM_YAML=0
 ROOK_CLUSTER_YAML=0
 ROOK_08_CLUSTER_YAML=0
+ROOK_OBJECT_STORE_YAML=0
 STORAGE_CLASS_YAML=0
 HOSTPATH_PROVISIONER_YAML=0
 WEAVE_YAML=0
@@ -113,6 +114,10 @@ while [ "$1" != "" ]; do
             ;;
         rook-08-cluster-yaml|rook_08_cluster_yaml)
             ROOK_08_CLUSTER_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
+        rook-object-store-yaml|rook_object_store_yaml)
+            ROOK_OBJECT_STORE_YAML="$_value"
             REPLICATED_YAML=0
             ;;
         hostpath-provisioner-yaml|hostpath_provisioner_yaml)
@@ -625,6 +630,12 @@ render_rook08_cluster_yaml() {
 EOF
 }
 
+render_rook_object_store_yaml() {
+    cat <<EOF
+{% include 'kubernetes/yaml/rook-object-store.yml' %}
+EOF
+}
+
 render_hostpath_storage_class() {
     cat <<EOF
 ---
@@ -967,6 +978,10 @@ data:
     storage:
       cache:
         blobdescriptor: inmemory
+      s3:
+        region: ""
+        regionendpoint: http://rook-ceph-rgw-replicated.rook-ceph
+        bucket: docker-registry
     version: 0.1
 ---
 apiVersion: v1
@@ -1017,8 +1032,16 @@ spec:
             secretKeyRef:
               key: haSharedSecret
               name: docker-registry-secret
-        - name: REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY
-          value: /var/lib/registry
+        - name: STORAGE_S3_ACCESSKEY
+          valueFrom:
+            secretKeyRef:
+              key: AccessKey
+              name: rook-ceph-object-user-replicated-replicated
+        - name: STORAGE_S3_SECRETKEY
+          valueFrom:
+            secretKeyRef:
+              key: SecretKey
+              name: rook-ceph-object-user-replicated-replicated
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -1038,22 +1061,9 @@ spec:
           successThreshold: 1
           timeoutSeconds: 1
       volumes:
-      - name: registry-data
-        persistentVolumeClaim:
-          claimName: docker-registry
       - name: docker-registry-config
         configMap:
           name: docker-registry-config
-  volumeClaimTemplates:
-  - metadata:
-      name: registry-data
-    spec:
-      accessModes:
-      - ReadWriteOnce
-      resources:
-        requests:
-          storage: 20Gi
-      storageClassName: "$STORAGE_CLASS"
 ---
 apiVersion: v1
 kind: Service
@@ -1091,6 +1101,10 @@ fi
 
 if [ "$ROOK_08_CLUSTER_YAML" = "1" ]; then
     render_rook08_cluster_yaml
+fi
+
+if [ "$ROOK_OBJECT_STORE_YAML" = "1" ]; then
+    render_rook_object_store_yaml
 fi
 
 if [ "$ROOK_SYSTEM_YAML" = "1" ]; then
