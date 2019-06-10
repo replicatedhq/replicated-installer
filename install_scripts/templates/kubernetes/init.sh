@@ -634,7 +634,9 @@ appRegistryServiceDeploy() {
 registryDeploy() {
     logStep "Deploy registry"
 
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_object_store_yaml=1 > /tmp/rook-object-store.yml
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS registry_yaml=1 > /tmp/registry.yml
+    kubectl apply -f /tmp/rook-object-store.yml
     kubectl apply -f /tmp/registry.yml
 
     logStep "Waiting for registry..."
