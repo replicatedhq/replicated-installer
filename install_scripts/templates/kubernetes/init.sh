@@ -658,27 +658,33 @@ objectStoreDeploy() {
         sleep 2
     done
 
-	# create the docker-registry bucket through the S3 API
+    # create the docker-registry bucket through the S3 API
     OBJECT_STORE_ACCESS_KEY=$(kubectl -n rook-ceph get secret rook-ceph-object-user-replicated-replicated -o yaml | grep AccessKey | awk '{print $2}' | base64 --decode)
     OBJECT_STORE_SECRET_KEY=$(kubectl -n rook-ceph get secret rook-ceph-object-user-replicated-replicated -o yaml | grep SecretKey | awk '{print $2}' | base64 --decode)
     OBJECT_STORE_CLUSTER_IP=$(kubectl -n rook-ceph get service rook-ceph-rgw-replicated | tail -n1 | awk '{ print $3}')
-	local acl="x-amz-acl:private"
-	local d=$(date +"%a, %d %b %Y %T %z")
-	local string="PUT\n\n\n${d}\n${acl}\n/docker-registry"
-	local sig=$(echo -en "${string}" | openssl sha1 -hmac "${OBJECT_STORE_SECRET_KEY}" -binary | base64)
+    local acl="x-amz-acl:private"
+    local d=$(date +"%a, %d %b %Y %T %z")
+    local string="PUT\n\n\n${d}\n${acl}\n/docker-registry"
+    local sig=$(echo -en "${string}" | openssl sha1 -hmac "${OBJECT_STORE_SECRET_KEY}" -binary | base64)
 
-	curl -X PUT  \
-		-H "Host: $OBJECT_STORE_CLUSTER_IP" \
-		-H "Date: $d" \
-		-H "$acl" \
-		-H "Authorization: AWS $OBJECT_STORE_ACCESS_KEY:$sig" \
-		"http://$OBJECT_STORE_CLUSTER_IP/docker-registry" >/dev/null
+    curl -X PUT  \
+        -H "Host: $OBJECT_STORE_CLUSTER_IP" \
+        -H "Date: $d" \
+        -H "$acl" \
+        -H "Authorization: AWS $OBJECT_STORE_ACCESS_KEY:$sig" \
+        "http://$OBJECT_STORE_CLUSTER_IP/docker-registry" >/dev/null
 }
 
 registryDeploy() {
     logStep "Deploy registry"
 
     if isRook1; then
+        # cleanup pvc-backed registry if it exists; all images are re-pushed after this step
+        if kubectl get pvc registry-data-docker-registry-0 &>/dev/null; then
+            kubectl delete statefulset docker-registry
+            kubectl delete pvc registry-data-docker-registry-0
+        fi
+
         objectStoreDeploy
         getYAMLOpts
     fi
