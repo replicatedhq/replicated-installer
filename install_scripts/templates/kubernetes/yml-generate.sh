@@ -960,6 +960,8 @@ spec:
           value: replicapool
         - name: CEPH_FILESYSTEM
           value: rook-shared-fs
+        - name: CEPH_OBJECT_STORE
+          value: replicated
         - name: MIN_CEPH_POOL_REPLICATION
           value: "1"
         - name: MAX_CEPH_POOL_REPLICATION
