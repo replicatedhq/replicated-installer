@@ -6,11 +6,11 @@ metadata:
   namespace: rook-ceph
 spec:
   metadataPool:
-    failureDomain: osd
+    failureDomain: host
     replicated:
       size: 1
   dataPool:
-    failureDomain: osd
+    failureDomain: host
     replicated:
       size: 1
   gateway:
@@ -20,12 +20,3 @@ spec:
     securePort:
     instances: 1
     allNodes: false
----
-apiVersion: ceph.rook.io/v1
-kind: CephObjectStoreUser
-metadata:
-  name: replicated
-  namespace: rook-ceph
-spec:
-  store: replicated
-  displayName: "Replicated"

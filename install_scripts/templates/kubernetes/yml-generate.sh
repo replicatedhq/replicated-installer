@@ -20,6 +20,9 @@ IP_ALLOC_RANGE=10.32.0.0/12  # default for weave
 CEPH_DASHBOARD_URL=
 CEPH_DASHBOARD_USER=
 CEPH_DASHBOARD_PASSWORD=
+OBJECT_STORE_ACCESS_KEY=
+OBJECT_STORE_SECRET_KEY=
+OBJECT_STORE_CLUSTER_IP=
 # booleans
 AIRGAP="{{ airgap }}"
 ENCRYPT_NETWORK="{{ encrypt_network }}"
@@ -31,6 +34,7 @@ ROOK_08_SYSTEM_YAML=0
 ROOK_CLUSTER_YAML=0
 ROOK_08_CLUSTER_YAML=0
 ROOK_OBJECT_STORE_YAML=0
+ROOK_OBJECT_STORE_USER_YAML=0
 STORAGE_CLASS_YAML=0
 HOSTPATH_PROVISIONER_YAML=0
 WEAVE_YAML=0
@@ -120,6 +124,10 @@ while [ "$1" != "" ]; do
             ROOK_OBJECT_STORE_YAML="$_value"
             REPLICATED_YAML=0
             ;;
+        rook-object-store-user-yaml|rook_object_store_user_yaml)
+            ROOK_OBJECT_STORE_USER_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
         hostpath-provisioner-yaml|hostpath_provisioner_yaml)
             HOSTPATH_PROVISIONER_YAML="$_value"
             REPLICATED_YAML=0
@@ -184,6 +192,15 @@ while [ "$1" != "" ]; do
             ;;
         app-registry-advertise-host|app_registry_advertise_host)
             APP_REGISTRY_ADVERTISE_HOST="$_value"
+            ;;
+        object-store-access-key|object_store_access_key)
+            OBJECT_STORE_ACCESS_KEY="$_value"
+            ;;
+        object-store-secret-key|object_store_secret_key)
+            OBJECT_STORE_SECRET_KEY="$_value"
+            ;;
+        object-store-cluster-ip|object_store_cluster_ip)
+            OBJECT_STORE_CLUSTER_IP="$_value"
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
@@ -632,7 +649,13 @@ EOF
 
 render_rook_object_store_yaml() {
     cat <<EOF
-{% include 'kubernetes/yaml/rook-object-store.yml' %}
+{% include 'kubernetes/yaml/rook-1-0-object-store.yml' %}
+EOF
+}
+
+render_rook_object_store_user_yaml() {
+    cat <<EOF
+{% include 'kubernetes/yaml/rook-1-0-object-store-user.yml' %}
 EOF
 }
 
@@ -962,11 +985,6 @@ metadata:
     app: docker-registry
 data:
   config.yml: |-
-    health:
-      storagedriver:
-        enabled: true
-        interval: 10s
-        threshold: 3
     http:
       addr: :5000
       headers:
@@ -975,13 +993,17 @@ data:
     log:
       fields:
         service: registry
+    redirect:
+      disable: true
     storage:
       cache:
         blobdescriptor: inmemory
       s3:
-        region: ""
-        regionendpoint: http://rook-ceph-rgw-replicated.rook-ceph
+        region: "us-east-1"
+        regionendpoint: http://$OBJECT_STORE_CLUSTER_IP
         bucket: docker-registry
+        accesskey: $OBJECT_STORE_ACCESS_KEY
+        secretkey: $OBJECT_STORE_SECRET_KEY
     version: 0.1
 ---
 apiVersion: v1
@@ -1022,8 +1044,6 @@ spec:
         - containerPort: 5000
           protocol: TCP
         volumeMounts:
-        - name: registry-data
-          mountPath: /var/lib/registry/
         - name: docker-registry-config
           mountPath: /etc/docker/registry
         env:
@@ -1032,16 +1052,6 @@ spec:
             secretKeyRef:
               key: haSharedSecret
               name: docker-registry-secret
-        - name: STORAGE_S3_ACCESSKEY
-          valueFrom:
-            secretKeyRef:
-              key: AccessKey
-              name: rook-ceph-object-user-replicated-replicated
-        - name: STORAGE_S3_SECRETKEY
-          valueFrom:
-            secretKeyRef:
-              key: SecretKey
-              name: rook-ceph-object-user-replicated-replicated
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -1105,6 +1115,10 @@ fi
 
 if [ "$ROOK_OBJECT_STORE_YAML" = "1" ]; then
     render_rook_object_store_yaml
+fi
+
+if [ "$ROOK_OBJECT_STORE_USER_YAML" = "1" ]; then
+    render_rook_object_store_user_yaml
 fi
 
 if [ "$ROOK_SYSTEM_YAML" = "1" ]; then
