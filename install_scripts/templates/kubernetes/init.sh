@@ -648,9 +648,7 @@ objectStoreDeploy() {
     kubectl apply -f /tmp/rook-object-store.yml
 
     # wait for the object store gateway before creating the user
-    while ! kubectl -n rook-ceph get pod -l app=rook-ceph-rgw 2>/dev/null | grep -q rook-ceph-rgw-replicated; do
-        sleep 2
-    done
+    spinnerPodRunning rook-ceph rook-ceph-rgw-replicated
 
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_object_store_user_yaml=1 > /tmp/rook-object-store-user.yml
     kubectl apply -f /tmp/rook-object-store-user.yml
@@ -680,8 +678,10 @@ objectStoreDeploy() {
 registryDeploy() {
     logStep "Deploy registry"
 
-    objectStoreDeploy
-    getYAMLOpts
+    if isRook1; then
+        objectStoreDeploy
+        getYAMLOpts
+    fi
 
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS registry_yaml=1 > /tmp/registry.yml
     kubectl apply -f /tmp/registry.yml
@@ -1198,9 +1198,6 @@ if [ "$AIRGAP" = "1" ]; then
     # passed in as the registry advertise host
     appRegistryServiceDeploy
 fi
-
-# TODO remove dev only
-registryDeploy
 
 replicatedDeploy
 

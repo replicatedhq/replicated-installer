@@ -973,8 +973,7 @@ spec:
 EOF
 }
 
-render_registry_yaml() {
-    haSharedSecret=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c9)
+render_registry_object_store() {
     cat <<EOF
 ---
 apiVersion: v1
@@ -993,8 +992,6 @@ data:
     log:
       fields:
         service: registry
-    redirect:
-      disable: true
     storage:
       cache:
         blobdescriptor: inmemory
@@ -1005,16 +1002,6 @@ data:
         accesskey: $OBJECT_STORE_ACCESS_KEY
         secretkey: $OBJECT_STORE_SECRET_KEY
     version: 0.1
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: docker-registry-secret
-  labels:
-    app: docker-registry
-type: Opaque
-stringData:
-  haSharedSecret: $haSharedSecret
 ---
 apiVersion: apps/v1beta1
 kind: StatefulSet
@@ -1074,6 +1061,136 @@ spec:
       - name: docker-registry-config
         configMap:
           name: docker-registry-config
+EOF
+}
+
+render_registry_pvc() {
+    cat <<EOF
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: docker-registry-config
+  labels:
+    app: docker-registry
+data:
+  config.yml: |-
+    health:
+      storagedriver:
+        enabled: true
+        interval: 10s
+        threshold: 3
+    http:
+      addr: :5000
+      headers:
+        X-Content-Type-Options:
+        - nosniff
+    log:
+      fields:
+        service: registry
+    storage:
+      cache:
+        blobdescriptor: inmemory
+    version: 0.1
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: docker-registry
+spec:
+  selector:
+    matchLabels:
+      app: docker-registry
+  serviceName: "registry"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: docker-registry
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: docker-registry
+        image: registry:2
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/registry
+        - serve
+        - /etc/docker/registry/config.yml
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+        volumeMounts:
+        - name: registry-data
+          mountPath: /var/lib/registry
+        - name: docker-registry-config
+          mountPath: /etc/docker/registry
+        env:
+        - name: REGISTRY_HTTP_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: haSharedSecret
+              name: docker-registry-secret
+        - name: REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY
+          value: /var/lib/registry
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 5000
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 5000
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+      volumes:
+      - name: registry-data
+        persistentVolumeClaim:
+          claimName: docker-registry
+      - name: docker-registry-config
+        configMap:
+          name: docker-registry-config
+  volumeClaimTemplates:
+  - metadata:
+      name: registry-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 20Gi
+      storageClassName: "$STORAGE_CLASS"
+EOF
+}
+
+render_registry_yaml() {
+    haSharedSecret=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c9)
+
+    if [ -n "$OBJECT_STORE_CLUSTER_IP" ]; then
+        render_registry_object_store
+    else
+        render_registry_pvc
+    fi
+
+    cat <<EOF
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: docker-registry-secret
+  labels:
+    app: docker-registry
+type: Opaque
+stringData:
+  haSharedSecret: $haSharedSecret
 ---
 apiVersion: v1
 kind: Service
