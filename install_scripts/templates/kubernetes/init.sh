@@ -58,6 +58,9 @@ CEPH_DASHBOARD_USER=
 CEPH_DASHBOARD_PASSWORD=
 REGISTRY_ADDRESS_OVERRIDE=
 APP_REGISTRY_ADVERTISE_HOST=
+OBJECT_STORE_ACCESS_KEY=
+OBJECT_STORE_SECRET_KEY=
+OBJECT_STORE_CLUSTER_IP=
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -444,6 +447,15 @@ getYAMLOpts() {
     if [ -n "$BIND_DAEMON_HOSTNAME" ]; then
         opts=$opts" bind-daemon-hostname=$BIND_DAEMON_HOSTNAME"
     fi
+    if [ -n "$OBJECT_STORE_ACCESS_KEY" ]; then
+        opts=$opts" object-store-access-key=$OBJECT_STORE_ACCESS_KEY" 
+    fi
+    if [ -n "$OBJECT_STORE_SECRET_KEY" ]; then
+        opts=$opts" object-store-secret-key=$OBJECT_STORE_SECRET_KEY"
+    fi
+    if [ -n "$OBJECT_STORE_CLUSTER_IP" ]; then
+        opts=$opts" object-store-cluster-ip=$OBJECT_STORE_CLUSTER_IP"
+    fi
     YAML_GENERATE_OPTS="$opts"
 }
 
@@ -631,8 +643,51 @@ appRegistryServiceDeploy() {
     logSuccess "App registry service deployed"
 }
 
+objectStoreDeploy() {
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_object_store_yaml=1 > /tmp/rook-object-store.yml
+    kubectl apply -f /tmp/rook-object-store.yml
+
+    # wait for the object store gateway before creating the user
+    spinnerPodRunning rook-ceph rook-ceph-rgw-replicated
+
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_object_store_user_yaml=1 > /tmp/rook-object-store-user.yml
+    kubectl apply -f /tmp/rook-object-store-user.yml
+
+    # Rook operator creates this secret from the user CRD just applied 
+    while ! kubectl -n rook-ceph get secret rook-ceph-object-user-replicated-replicated 2>/dev/null; do
+        sleep 2
+    done
+
+    # create the docker-registry bucket through the S3 API
+    OBJECT_STORE_ACCESS_KEY=$(kubectl -n rook-ceph get secret rook-ceph-object-user-replicated-replicated -o yaml | grep AccessKey | awk '{print $2}' | base64 --decode)
+    OBJECT_STORE_SECRET_KEY=$(kubectl -n rook-ceph get secret rook-ceph-object-user-replicated-replicated -o yaml | grep SecretKey | awk '{print $2}' | base64 --decode)
+    OBJECT_STORE_CLUSTER_IP=$(kubectl -n rook-ceph get service rook-ceph-rgw-replicated | tail -n1 | awk '{ print $3}')
+    local acl="x-amz-acl:private"
+    local d=$(date +"%a, %d %b %Y %T %z")
+    local string="PUT\n\n\n${d}\n${acl}\n/docker-registry"
+    local sig=$(echo -en "${string}" | openssl sha1 -hmac "${OBJECT_STORE_SECRET_KEY}" -binary | base64)
+
+    curl -X PUT  \
+        -H "Host: $OBJECT_STORE_CLUSTER_IP" \
+        -H "Date: $d" \
+        -H "$acl" \
+        -H "Authorization: AWS $OBJECT_STORE_ACCESS_KEY:$sig" \
+        "http://$OBJECT_STORE_CLUSTER_IP/docker-registry" >/dev/null
+}
+
 registryDeploy() {
     logStep "Deploy registry"
+
+    if isRook1; then
+        # cleanup pvc-backed registry if it exists; all images are re-pushed after this step
+        if kubectl get pvc registry-data-docker-registry-0 &>/dev/null; then
+            kubectl delete statefulset docker-registry
+            kubectl delete pvc registry-data-docker-registry-0
+        fi
+
+        objectStoreDeploy
+        getYAMLOpts
+    fi
 
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS registry_yaml=1 > /tmp/registry.yml
     kubectl apply -f /tmp/registry.yml

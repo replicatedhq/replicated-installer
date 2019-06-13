@@ -20,6 +20,9 @@ IP_ALLOC_RANGE=10.32.0.0/12  # default for weave
 CEPH_DASHBOARD_URL=
 CEPH_DASHBOARD_USER=
 CEPH_DASHBOARD_PASSWORD=
+OBJECT_STORE_ACCESS_KEY=
+OBJECT_STORE_SECRET_KEY=
+OBJECT_STORE_CLUSTER_IP=
 # booleans
 AIRGAP="{{ airgap }}"
 ENCRYPT_NETWORK="{{ encrypt_network }}"
@@ -30,6 +33,8 @@ ROOK_SYSTEM_YAML=0
 ROOK_08_SYSTEM_YAML=0
 ROOK_CLUSTER_YAML=0
 ROOK_08_CLUSTER_YAML=0
+ROOK_OBJECT_STORE_YAML=0
+ROOK_OBJECT_STORE_USER_YAML=0
 STORAGE_CLASS_YAML=0
 HOSTPATH_PROVISIONER_YAML=0
 WEAVE_YAML=0
@@ -115,6 +120,14 @@ while [ "$1" != "" ]; do
             ROOK_08_CLUSTER_YAML="$_value"
             REPLICATED_YAML=0
             ;;
+        rook-object-store-yaml|rook_object_store_yaml)
+            ROOK_OBJECT_STORE_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
+        rook-object-store-user-yaml|rook_object_store_user_yaml)
+            ROOK_OBJECT_STORE_USER_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
         hostpath-provisioner-yaml|hostpath_provisioner_yaml)
             HOSTPATH_PROVISIONER_YAML="$_value"
             REPLICATED_YAML=0
@@ -179,6 +192,15 @@ while [ "$1" != "" ]; do
             ;;
         app-registry-advertise-host|app_registry_advertise_host)
             APP_REGISTRY_ADVERTISE_HOST="$_value"
+            ;;
+        object-store-access-key|object_store_access_key)
+            OBJECT_STORE_ACCESS_KEY="$_value"
+            ;;
+        object-store-secret-key|object_store_secret_key)
+            OBJECT_STORE_SECRET_KEY="$_value"
+            ;;
+        object-store-cluster-ip|object_store_cluster_ip)
+            OBJECT_STORE_CLUSTER_IP="$_value"
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
@@ -625,6 +647,18 @@ render_rook08_cluster_yaml() {
 EOF
 }
 
+render_rook_object_store_yaml() {
+    cat <<EOF
+{% include 'kubernetes/yaml/rook-1-0-object-store.yml' %}
+EOF
+}
+
+render_rook_object_store_user_yaml() {
+    cat <<EOF
+{% include 'kubernetes/yaml/rook-1-0-object-store-user.yml' %}
+EOF
+}
+
 render_hostpath_storage_class() {
     cat <<EOF
 ---
@@ -926,6 +960,8 @@ spec:
           value: replicapool
         - name: CEPH_FILESYSTEM
           value: rook-shared-fs
+        - name: CEPH_OBJECT_STORE
+          value: replicated
         - name: MIN_CEPH_POOL_REPLICATION
           value: "1"
         - name: MAX_CEPH_POOL_REPLICATION
@@ -939,8 +975,98 @@ spec:
 EOF
 }
 
-render_registry_yaml() {
-    haSharedSecret=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c9)
+render_registry_object_store() {
+    cat <<EOF
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: docker-registry-config
+  labels:
+    app: docker-registry
+data:
+  config.yml: |-
+    http:
+      addr: :5000
+      headers:
+        X-Content-Type-Options:
+        - nosniff
+    log:
+      fields:
+        service: registry
+    storage:
+      cache:
+        blobdescriptor: inmemory
+      s3:
+        region: "us-east-1"
+        regionendpoint: http://$OBJECT_STORE_CLUSTER_IP
+        bucket: docker-registry
+        accesskey: $OBJECT_STORE_ACCESS_KEY
+        secretkey: $OBJECT_STORE_SECRET_KEY
+    version: 0.1
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: docker-registry
+spec:
+  selector:
+    matchLabels:
+      app: docker-registry
+  serviceName: "registry"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: docker-registry
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: docker-registry
+        image: registry:2
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/registry
+        - serve
+        - /etc/docker/registry/config.yml
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+        volumeMounts:
+        - name: docker-registry-config
+          mountPath: /etc/docker/registry
+        env:
+        - name: REGISTRY_HTTP_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: haSharedSecret
+              name: docker-registry-secret
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 5000
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 5000
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+      volumes:
+      - name: docker-registry-config
+        configMap:
+          name: docker-registry-config
+EOF
+}
+
+render_registry_pvc() {
     cat <<EOF
 ---
 apiVersion: v1
@@ -968,16 +1094,6 @@ data:
       cache:
         blobdescriptor: inmemory
     version: 0.1
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: docker-registry-secret
-  labels:
-    app: docker-registry
-type: Opaque
-stringData:
-  haSharedSecret: $haSharedSecret
 ---
 apiVersion: apps/v1beta1
 kind: StatefulSet
@@ -1008,7 +1124,7 @@ spec:
           protocol: TCP
         volumeMounts:
         - name: registry-data
-          mountPath: /var/lib/registry/
+          mountPath: /var/lib/registry
         - name: docker-registry-config
           mountPath: /etc/docker/registry
         env:
@@ -1054,6 +1170,29 @@ spec:
         requests:
           storage: 20Gi
       storageClassName: "$STORAGE_CLASS"
+EOF
+}
+
+render_registry_yaml() {
+    haSharedSecret=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c9)
+
+    if [ -n "$OBJECT_STORE_CLUSTER_IP" ]; then
+        render_registry_object_store
+    else
+        render_registry_pvc
+    fi
+
+    cat <<EOF
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: docker-registry-secret
+  labels:
+    app: docker-registry
+type: Opaque
+stringData:
+  haSharedSecret: $haSharedSecret
 ---
 apiVersion: v1
 kind: Service
@@ -1091,6 +1230,14 @@ fi
 
 if [ "$ROOK_08_CLUSTER_YAML" = "1" ]; then
     render_rook08_cluster_yaml
+fi
+
+if [ "$ROOK_OBJECT_STORE_YAML" = "1" ]; then
+    render_rook_object_store_yaml
+fi
+
+if [ "$ROOK_OBJECT_STORE_USER_YAML" = "1" ]; then
+    render_rook_object_store_user_yaml
 fi
 
 if [ "$ROOK_SYSTEM_YAML" = "1" ]; then

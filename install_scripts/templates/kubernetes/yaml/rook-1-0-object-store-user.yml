@@ -1,0 +1,9 @@
+---
+apiVersion: ceph.rook.io/v1
+kind: CephObjectStoreUser
+metadata:
+  name: replicated
+  namespace: rook-ceph
+spec:
+  store: replicated
+  displayName: "Replicated"
