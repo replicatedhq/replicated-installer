@@ -430,6 +430,11 @@ fi
 
 if [ "$MASTER" -eq "1" ]; then
     untaintMaster
+    if [ "$AIRGAP" = "1" ]; then
+        # delete the rek operator so that its anti-affinity with the docker-registry applies
+        kubectl scale deployment rek-operator --replicas=0
+        kubectl scale deployment rek-operator --replicas=1
+    fi
 fi
 
 purgeNative
