@@ -678,7 +678,9 @@ objectStoreDeploy() {
 registryDeploy() {
     logStep "Deploy registry"
 
-    if isRook1; then
+    # https://github.com/rook/rook/issues/3245
+    # disabling object store backed registry until the object store is reliable
+    if isRook1 && false; then
         # cleanup pvc-backed registry if it exists; all images are re-pushed after this step
         if kubectl get pvc registry-data-docker-registry-0 &>/dev/null; then
             kubectl delete statefulset docker-registry
