@@ -1322,7 +1322,8 @@ EOF
         return
     fi
     mkdir -p /etc/systemd/system/docker.service.d
-    local execStart=$(cat /etc/systemd/system/multi-user.target.wants/docker.service | grep ExecStart)
+    local execStart=$(cat /etc/systemd/system/multi-user.target.wants/docker.service | sed -n '/ExecStart/,$p' | sed -E '/[^\\]$/q')
+
     cat <<EOF > /etc/systemd/system/docker.service.d/replicated-registry.conf
 [Service]
 ExecStart=
