@@ -736,6 +736,39 @@ spinnerNodesReady()
 }
 
 #######################################
+# Display a spinner until the Kubernetes API /healthz endpoint returns ok.
+# Kubeadm preflight checks fail unless healthz returns ok.
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+spinnerK8sAPIHealthy()
+{
+    local addr="${PRIVATE_ADDRESS}:6443"
+    if [ -n "$LOAD_BALANCER_ADDRESS" ]; then
+        addr="${LOAD_BALANCER_ADDRESS}:${LOAD_BALANCER_PORT}"
+    fi
+
+    local delay=1
+    local elapsed=0
+    local spinstr='|/-\'
+    while [ "$(curl --noproxy "*" -sk https://$addr/healthz)" != "ok" ]; do
+        elapsed=$(($elapsed + $delay))
+        if [ "$elapsed" -gt 120 ]; then
+            bail "Kubernetes API failed to report healthy"
+        fi
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
+}
+
+#######################################
 # Display a spinner until a node reaches a version
 # Globals:
 #   None

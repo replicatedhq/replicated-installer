@@ -548,6 +548,7 @@ upgradeK8sMaster() {
     cp archives/kubeadm /usr/bin/kubeadm
     chmod a+rx /usr/bin/kubeadm
 
+    spinnerK8sAPIHealthy
     kubeadm upgrade apply "v$k8sVersion" --yes --config /opt/replicated/kubeadm.conf --force
     waitForNodes
 
