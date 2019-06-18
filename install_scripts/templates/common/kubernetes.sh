@@ -753,8 +753,13 @@ spinnerK8sAPIHealthy()
     fi
 
     local delay=1
+    local elapsed=0
     local spinstr='|/-\'
-    while [ "$(curl -sk https://$addr/healthz)" != "ok" ]; do
+    while [ "$(curl --noproxy "*" -sk https://$addr/healthz)" != "ok" ]; do
+        elapsed=$(($elapsed + $delay))
+        if [ "$elapsed" -gt 120 ]; then
+            bail "Kubernetes API failed to report healthy"
+        fi
         local temp=${spinstr#?}
         printf " [%c]  " "$spinstr"
         local spinstr=$temp${spinstr%"$temp"}
