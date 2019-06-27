@@ -11,13 +11,17 @@ UBUNTU_1604_K8S_10=ubuntu-1604-v1.10.6-20181112
 UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.5-20181204
 UBUNTU_1604_K8S_12=ubuntu-1604-v1.12.3-20181211
 UBUNTU_1604_K8S_13=ubuntu-1604-v1.13.5-20190411
+UBUNTU_1604_K8S_15=ubuntu-1604-v1.15.0-20190627
+
 UBUNTU_1804_K8S_13=ubuntu-1804-v1.13.5-20190411
+UBUNTU_1804_K8S_15=ubuntu-1604-v1.15.0-20190627
 
 RHEL7_K8S_9=rhel7-v1.9.3-20180806
 RHEL7_K8S_10=rhel7-v1.10.6-20180806
 RHEL7_K8S_11=rhel7-v1.11.5-20181204
 RHEL7_K8S_12=rhel7-v1.12.3-20181211
 RHEL7_K8S_13=rhel7-v1.13.5-20190411
+RHEL7_K8S_15=rhel7-v1.15.0-20190627
 
 DAEMON_NODE_KEY=replicated.com/daemon
 
@@ -130,6 +134,9 @@ k8sPackageTag() {
                 1.13.5)
                     echo "$UBUNTU_1604_K8S_13"
                     ;;
+                1.15.0)
+                    echo "$UBUNTU_1604_K8S_15"
+                    ;;
                 *)
                     bail "Unsupported Kubernetes version $k8sVersion"
                     ;;
@@ -139,6 +146,9 @@ k8sPackageTag() {
             case "$k8sVersion" in
                 1.13.5)
                     echo "$UBUNTU_1804_K8S_13"
+                    ;;
+                1.15.0)
+                    echo "$UBUNTU_1804_K8S_15"
                     ;;
                 *)
                     bail "Unsupported Kubernetes version $k8sVersion"
@@ -161,6 +171,9 @@ k8sPackageTag() {
                     ;;
                 1.13.5)
                     echo "$RHEL7_K8S_13"
+                    ;;
+                1.15.0)
+                    echo "$RHEL7_K8S_15"
                     ;;
                 *)
                     bail "Unsupported Kubernetes version $k8sVersion"
@@ -241,15 +254,15 @@ installKubernetesComponents() {
 #######################################
 kubernetesHostCommandsOK() {
     if ! commandExists kubelet; then
-        printf "kubelet command missing - host components installation is required\n"
+        printf "kubelet command missing - will install host components\n"
         return 1
     fi
     if ! commandExists kubeadm; then
-        printf "kubeadm command missing - host components installation is required\n"
+        printf "kubeadm command missing - will install host components\n"
         return 1
     fi
     if ! commandExists kubectl; then
-        printf "kubectl command missing - host components installation is required\n"
+        printf "kubectl command missing - will install host components\n"
         return 1
     fi
 
