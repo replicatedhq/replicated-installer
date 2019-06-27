@@ -48,6 +48,10 @@ setK8sPatchVersion() {
         13)
             # 1.13.5
             k8sPatch="5"
+            ;;
+        15)
+            # 1.15.0
+            k8sPatch="0"
     esac
     KUBERNETES_VERSION="$k8sMajor.$k8sMinor.$k8sPatch"
 }
