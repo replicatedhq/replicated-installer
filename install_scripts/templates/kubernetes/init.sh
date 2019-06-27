@@ -159,6 +159,26 @@ initKubeadmConfig() {
     fi
 }
 
+initKubeadmConfigV1Beta2() {
+    mkdir -p /opt/replicated
+    cat <<EOF > /opt/replicated/kubeadm.conf
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: InitConfiguration
+bootstrapTokens:
+- groups:
+  - system:bootstrappers:kubeadm:default-node-token
+  token: $BOOTSTRAP_TOKEN
+  ttl: $BOOTSTRAP_TOKEN_TTL
+  usages:
+  - signing
+  - authentication
+localAPIEndpoint:
+  advertiseAddress: $PRIVATE_ADDRESS
+nodeRegistration:
+  taints: {} # prevent the default master taint
+EOF
+}
+
 initKubeadmConfigBeta() {
     mkdir -p /opt/replicated
     cat <<EOF > /opt/replicated/kubeadm.conf
@@ -225,8 +245,20 @@ EOF
     fi
 }
 
+initKube15() {
+    logStep "Initialize Kubernetes"
+
+    initKubeadmConfigV1Beta2
+    appendKubeadmClusterConfigV1Beta2
+}
+
 DID_INIT_KUBERNETES=0
 initKube() {
+    case "$KUBERNETES_TARGET_VERSION_MINOR" in
+        15)
+            initKube15
+            ;;
+    esac
     local kubeV=$(kubeadm version --output=short)
 
     # init is idempotent for the same version of Kubernetes. If init has already run this file will

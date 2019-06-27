@@ -1319,6 +1319,40 @@ EOF
     fi
 }
 
+appendKubeadmClusterConfigV1Beta2() {
+    cat <<EOF >> /opt/replicated/kubeadm.conf
+---
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+kubernetesVersion: v$KUBERNETES_VERSION
+certificatesDir: /etc/kubernetes/pki
+clusterName: kubernetes
+controllerManager: {}
+dns:
+  type: CoreDNS
+etcd:
+  local:
+    dataDir: /var/lib/etcd
+networking:
+  serviceSubnet: $SERVICE_CIDR
+apiServer:
+  extraArgs:
+    service-node-port-range: "80-60000"
+  certSANs:
+  - $PUBLIC_ADDRESS
+  - $PRIVATE_ADDRESS
+EOF
+}
+
+appendKubeProxyConfigV1Alpha1() {
+    cat <<EOF >> /opt/replicated/kubeadm.conf
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: ipvs
+EOF
+}
+
 #######################################
 # Generate kubeadm JoinConfiguration
 # Globals:
