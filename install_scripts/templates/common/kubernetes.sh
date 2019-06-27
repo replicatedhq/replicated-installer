@@ -1388,9 +1388,12 @@ EOF
 }
 
 exportKubeconfig() {
+    cp /etc/kubernetes/admin.conf $HOME/admin.conf
+    chown $SUDO_USER:$SUDO_GID $HOME/admin.conf
     chmod 444 /etc/kubernetes/admin.conf
-    echo 'export KUBECONFIG=/etc/kubernetes/admin.conf' >> /etc/profile
-    echo "source <(kubectl completion bash)" >> /etc/profile
+    if ! grep -q "kubectl completion bash" /etc/profile; then
+        echo "source <(kubectl completion bash)" >> /etc/profile
+    fi
 }
 
 #######################################

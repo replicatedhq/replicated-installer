@@ -61,6 +61,7 @@ APP_REGISTRY_ADVERTISE_HOST=
 OBJECT_STORE_ACCESS_KEY=
 OBJECT_STORE_SECRET_KEY=
 OBJECT_STORE_CLUSTER_IP=
+DID_INIT_KUBERNETES=0
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -250,13 +251,26 @@ initKube15() {
 
     initKubeadmConfigV1Beta2
     appendKubeadmClusterConfigV1Beta2
+
+    loadIPVSKubeProxyModules
+
+    kubeadm init \
+        --config /opt/replicated/kubeadm.conf \
+        | tee /tmp/kubeadm-init
+
+    exportKubeconfig
+
+    waitForNodes
+
+    DID_INIT_KUBERNETES=1
+    logSuccess "Kubernetes Master Initialized"
 }
 
-DID_INIT_KUBERNETES=0
 initKube() {
     case "$KUBERNETES_TARGET_VERSION_MINOR" in
         15)
             initKube15
+            return
             ;;
     esac
     local kubeV=$(kubeadm version --output=short)
@@ -347,6 +361,8 @@ initKube() {
     exportKubeconfig
 
     waitForNodes
+
+    untaintMaster
 
     logSuccess "Kubernetes Master Initialized"
 
@@ -1164,8 +1180,6 @@ logSuccess "Cluster Initialized"
 getK8sYmlGenerator
 
 weavenetDeploy
-
-untaintMaster
 
 spinnerMasterNodeReady
 labelMasterNodeDeprecated
