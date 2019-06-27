@@ -227,7 +227,6 @@ EOF
 
 DID_INIT_KUBERNETES=0
 initKube() {
-    logStep "Verify Kubelet"
     local kubeV=$(kubeadm version --output=short)
 
     # init is idempotent for the same version of Kubernetes. If init has already run this file will
@@ -1017,6 +1016,7 @@ done
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
 
+parseKubernetesTargetVersion
 setK8sPatchVersion
 
 checkFirewalld

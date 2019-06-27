@@ -61,6 +61,24 @@ setK8sPatchVersion() {
 }
 
 #######################################
+# Parse Kubernetes version that should be installed after the script completes
+# Globals:
+#   KUBERNETES_VERSION
+# Arguments:
+#   None
+# Returns:
+#   KUBERNETES_TARGET_VERSION_MAJOR
+#   KUBERNETES_TARGET_VERSION_MINOR
+#   KUBERNETES_TARGET_VERSION_PATCH
+#######################################
+parseKubernetesTargetVersion() {
+    semverParse "$KUBERNETES_VERSION"
+    KUBERNETES_TARGET_VERSION_MAJOR="$major"
+    KUBERNETES_TARGET_VERSION_MINOR="$minor"
+    KUBERNETES_TARGET_VERSION_PATCH="$patch"
+}
+
+#######################################
 # Print an unsupported OS message and exit 1
 # Globals:
 #   LSB_DIST

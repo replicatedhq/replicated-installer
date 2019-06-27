@@ -320,6 +320,7 @@ fi
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
 
+parseKubernetesTargetVersion
 setK8sPatchVersion
 
 checkFirewalld

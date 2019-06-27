@@ -46,6 +46,7 @@ fi
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
 
+parseKubernetesTargetVersion
 setK8sPatchVersion
 loadIPVSKubeProxyModules
 maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
