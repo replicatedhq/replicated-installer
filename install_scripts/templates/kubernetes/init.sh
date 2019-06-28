@@ -177,8 +177,6 @@ localAPIEndpoint:
   advertiseAddress: $PRIVATE_ADDRESS
 nodeRegistration:
   taints: [] # prevent the default master taint
-  ignorePreflightErrors:
-  - all
 EOF
 }
 
@@ -251,6 +249,10 @@ EOF
 initKube15() {
     logStep "Initialize Kubernetes"
 
+    if [ "$HA_CLUSTER" -eq "1" ]; then
+        promptForLoadBalancerAddress
+    fi
+
     initKubeadmConfigV1Beta2
     appendKubeadmClusterConfigV1Beta2
     appendKubeProxyConfigV1Alpha1
@@ -258,6 +260,7 @@ initKube15() {
     loadIPVSKubeProxyModules
 
     kubeadm init \
+        --ignore-preflight-errors=all \
         --config /opt/replicated/kubeadm.conf \
         | tee /tmp/kubeadm-init
 
@@ -276,6 +279,7 @@ initKube() {
             return
             ;;
     esac
+
     local kubeV=$(kubeadm version --output=short)
 
     # init is idempotent for the same version of Kubernetes. If init has already run this file will
