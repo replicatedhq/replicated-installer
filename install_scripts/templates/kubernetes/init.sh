@@ -1159,10 +1159,6 @@ fi
 
 must_disable_selinux
 installKubernetesComponents "$KUBERNETES_VERSION"
-if [ "$CLUSTER_DNS" != "$DEFAULT_CLUSTER_DNS" ]; then
-    sed -i "s/$DEFAULT_CLUSTER_DNS/$CLUSTER_DNS/g" /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-fi
-systemctl enable kubelet && systemctl start kubelet
 
 if [ "$AIRGAP" = "1" ]; then
     airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"

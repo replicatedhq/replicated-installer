@@ -258,6 +258,11 @@ installKubernetesComponents() {
 
     rm -rf archives
 
+    if [ "$CLUSTER_DNS" != "$DEFAULT_CLUSTER_DNS" ]; then
+        sed -i "s/$DEFAULT_CLUSTER_DNS/$CLUSTER_DNS/g" /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+    fi
+    systemctl enable kubelet && systemctl start kubelet
+
     logSuccess "Kubernetes components installed"
 }
 

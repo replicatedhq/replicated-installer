@@ -396,7 +396,6 @@ fi
 
 must_disable_selinux
 installKubernetesComponents "$KUBERNETES_VERSION"
-systemctl enable kubelet && systemctl start kubelet
 
 if [ "$AIRGAP" = "1" ]; then
     if [ "$KUBERNETES_ONLY" != "1" ]; then
