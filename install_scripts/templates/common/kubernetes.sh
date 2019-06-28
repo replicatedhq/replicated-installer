@@ -1345,6 +1345,9 @@ EOF
 }
 
 appendKubeProxyConfigV1Alpha1() {
+    if [ "$IPVS" = "0" ]; then
+        return
+    fi
     cat <<EOF >> /opt/replicated/kubeadm.conf
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1

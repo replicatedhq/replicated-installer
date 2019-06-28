@@ -253,6 +253,7 @@ initKube15() {
 
     initKubeadmConfigV1Beta2
     appendKubeadmClusterConfigV1Beta2
+    appendKubeProxyConfigV1Alpha1
 
     loadIPVSKubeProxyModules
 
