@@ -1344,9 +1344,13 @@ apiServer:
   extraArgs:
     service-node-port-range: "80-60000"
   certSANs:
-  - $PUBLIC_ADDRESS
   - $PRIVATE_ADDRESS
 EOF
+    if [ -n "$PUBLIC_ADDRESS" ]; then
+        cat <<EOF >> /opt/replicated/kubeadm.conf
+  - $PUBLIC_ADDRESS
+EOF
+    fi
 }
 
 appendKubeProxyConfigV1Alpha1() {
@@ -1393,6 +1397,36 @@ EOF
 controlPlane: {}
 EOF
     fi
+}
+
+#######################################
+# Generate kubeadm JoinConfiguration v1beta2
+# Globals:
+#   PRIVATE_ADDRESS
+#   KUBEADM_TOKEN
+#   KUBEADM_TOKEN_CA_HASH
+#   API_SERVICE_ADDRESS
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+makeKubeadmJoinConfigV1Beta2() {
+    cat << EOF > /opt/replicated/kubeadm.conf
+---
+kind: JoinConfiguration
+apiVersion: kubeadm.k8s.io/v1beta2
+nodeRegistration:
+  taints: []
+  kubeletExtraArgs:
+    node-ip: $PRIVATE_ADDRESS
+discovery:
+  bootstrapToken:
+    token: $KUBEADM_TOKEN
+    apiServerEndpoint: $API_SERVICE_ADDRESS
+    caCertHashes:
+    - $KUBEADM_TOKEN_CA_HASH
+EOF
 }
 
 exportKubeconfig() {

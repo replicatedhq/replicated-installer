@@ -85,7 +85,11 @@ joinKubernetes() {
     fi
     semverParse "$KUBERNETES_VERSION"
     set +e
-    if [ "$minor" -ge 13 ]; then
+    if [ "$minor" -ge 15 ]; then
+        mkdir -p /opt/replicated
+        makeKubeadmJoinConfigV1Beta2
+        (set -x; kubeadm join --config /opt/replicated/kubeadm.conf)
+    elif [ "$minor" -ge 13 ]; then
         mkdir -p /opt/replicated
         makeKubeadmJoinConfig
         (set -x; kubeadm join --config /opt/replicated/kubeadm.conf)
