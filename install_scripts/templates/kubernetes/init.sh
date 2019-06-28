@@ -176,7 +176,9 @@ bootstrapTokens:
 localAPIEndpoint:
   advertiseAddress: $PRIVATE_ADDRESS
 nodeRegistration:
-  taints: {} # prevent the default master taint
+  taints: [] # prevent the default master taint
+  ignorePreflightErrors:
+  - all
 EOF
 }
 

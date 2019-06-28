@@ -14,7 +14,7 @@ UBUNTU_1604_K8S_13=ubuntu-1604-v1.13.5-20190411
 UBUNTU_1604_K8S_15=ubuntu-1604-v1.15.0-20190627
 
 UBUNTU_1804_K8S_13=ubuntu-1804-v1.13.5-20190411
-UBUNTU_1804_K8S_15=ubuntu-1604-v1.15.0-20190627
+UBUNTU_1804_K8S_15=ubuntu-1804-v1.15.0-20190627
 
 RHEL7_K8S_9=rhel7-v1.9.3-20180806
 RHEL7_K8S_10=rhel7-v1.10.6-20180806
@@ -1392,6 +1392,7 @@ exportKubeconfig() {
     chown $SUDO_USER:$SUDO_GID $HOME/admin.conf
     chmod 444 /etc/kubernetes/admin.conf
     if ! grep -q "kubectl completion bash" /etc/profile; then
+        echo 'export KUBECONFIG=/etc/kubernetes/admin.conf' >> /etc/profile
         echo "source <(kubectl completion bash)" >> /etc/profile
     fi
 }
