@@ -301,6 +301,8 @@ maybeUpgradeKubernetesNode() {
                 certArgs="$certArgs --apiserver-cert-extra-sans=$PUBLIC_ADDRESS"
             fi
             kubeadm init phase certs apiserver $certArgs
+            restartK8sAPIServerContainer
+
             updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
         else
             sed -i "s/server: https.*/server: https:\/\/$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/" /etc/kubernetes/kubelet.conf
@@ -679,16 +681,21 @@ updateKubernetesAPIServerCerts()
         logStep "Regenerate api server certs"
         rm -f /etc/kubernetes/pki/apiserver.*
         kubeadm init phase certs apiserver --config /opt/replicated/kubeadm.conf
-
         logSuccess "API server certs regenerated"
-        logStep "Restart kubernetes api server"
-        # admin.conf may not have been updated yet so kubectl may not work
-        docker ps | grep k8s_kube-apiserver | awk '{print $1}' | xargs docker rm -f
-        while ! curl -skf "https://$1:$2/healthz" ; do
-            sleep 1
-        done
-        logSuccess "Kubernetes api server restarted"
+
+        restartK8sAPIServerContainer
     fi
+}
+
+restartK8sAPIServerContainer()
+{
+    logStep "Restart kubernetes api server"
+    # admin.conf may not have been updated yet so kubectl may not work
+    docker ps | grep k8s_kube-apiserver | awk '{print $1}' | xargs docker rm -f
+    while ! curl -skf "https://$1:$2/healthz" ; do
+        sleep 1
+    done
+    logSuccess "Kubernetes api server restarted"
 }
 
 updateKubeconfigs()
