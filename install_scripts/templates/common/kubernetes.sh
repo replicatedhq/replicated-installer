@@ -1351,6 +1351,12 @@ EOF
   - $PUBLIC_ADDRESS
 EOF
     fi
+    if [ -n "$LOAD_BALANCER_ADDRESS" ] && [ -n "$LOAD_BALANCER_PORT" ]; then
+        cat <<EOF >> /opt/replicated/kubeadm.conf
+  - $LOAD_BALANCER_ADDRESS
+controlPlaneEndpoint: "$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
+EOF
+    fi
 }
 
 appendKubeProxyConfigV1Alpha1() {
@@ -1427,6 +1433,11 @@ discovery:
     caCertHashes:
     - $KUBEADM_TOKEN_CA_HASH
 EOF
+    if [ "$MASTER" -eq "1" ]; then
+        cat << EOF >> /opt/replicated/kubeadm.conf
+controlPlane: {}
+EOF
+    fi
 }
 
 exportKubeconfig() {

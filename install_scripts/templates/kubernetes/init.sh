@@ -251,6 +251,10 @@ initKube15() {
 
     if [ "$HA_CLUSTER" -eq "1" ]; then
         promptForLoadBalancerAddress
+
+        if [ "$LOAD_BALANCER_ADDRESS_CHANGED" = "1" ]; then
+            handleLoadBalancerAddressChangedPreInit
+        fi
     fi
 
     initKubeadmConfigV1Beta2
@@ -270,6 +274,39 @@ initKube15() {
 
     DID_INIT_KUBERNETES=1
     logSuccess "Kubernetes Master Initialized"
+
+    if [ "$LOAD_BALANCER_ADDRESS_CHANGED" = "1" ]; then
+        handleLoadBalancerAddressChangedPostInit
+    fi
+}
+
+handleLoadBalancerAddressChangedPreInit() {
+    # this will stop all the control plane pods except etcd
+    rm -f /etc/kubernetes/manifests/kube-*
+    while docker ps | grep -q kube-apiserver ; do
+        sleep 2
+    done
+
+    # kubectl must communicate with the local API server until all servers are upgraded to
+    # serve certs with the new load balancer address in their SANs
+    if [ -f /etc/kubernetes/admin.conf ]; then
+        mv /etc/kubernetes/admin.conf /tmp/kube.conf
+        sed -i "s/server: https.*/server: https:\/\/$PRIVATE_ADDRESS:6443/" /tmp/kube.conf
+        export KUBECONFIG=/tmp/kube.conf
+    fi
+
+    # delete files that need to be regenerated
+    rm -f /etc/kubernetes/*.conf
+    rm -f /etc/kubernetes/pki/apiserver.crt /etc/kubernetes/pki/apiserver.key
+}
+
+handleLoadBalancerAddressChangedPostInit() {
+    runUpgradeScriptOnAllRemoteNodes "$REPLICATED_VERSION"
+    export KUBECONFIG=/etc/kubernetes/admin.conf
+
+    logStep "Restarting kube-proxy"
+    kubectl -n kube-system get pods | grep kube-proxy | awk '{print $1}' | xargs kubectl -n kube-system delete pod
+    logSuccess "Kube-proxy restarted"
 }
 
 initKube() {

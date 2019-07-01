@@ -273,7 +273,7 @@ maybeUpgradeKubernetesNode() {
         systemctl start kubelet
 
         logSuccess "Kubernetes node upgraded to version v$k8sTargetVersion"
-    elif [ "$k8sTargetMinor" -ge 13 ]; then
+    elif [ "$k8sTargetMinor" -eq 13 ]; then
         # Sync the config in case it changed.
         logStep "Sync Kubernetes node config"
         if isMasterNode; then
@@ -285,10 +285,29 @@ maybeUpgradeKubernetesNode() {
         else
             (set -x; kubeadm upgrade node config --kubelet-version v1.13.5)
             if [ -n "$LOAD_BALANCER_ADDRESS" ] && [ -n "$LOAD_BALANCER_PORT" ]; then
-                sudo sed -i "s/server: https.*/server: https:\/\/$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/" /etc/kubernetes/kubelet.conf
+                sed -i "s/server: https.*/server: https:\/\/$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/" /etc/kubernetes/kubelet.conf
             fi
         fi
         logSuccess "Kubernetes node config upgraded"
+    elif [ "$k8sTargetMinor" -eq 15 ]; then
+        logStep "Sync Kubernetes node config"
+
+        rm -f /opt/replicated/kubeadm.conf
+        makeKubeadmJoinConfigV1Beta2
+
+        if isMasterNode; then
+            local certArgs="--apiserver-advertise-address=$LOAD_BALANCER_ADDRESS --apiserver-cert-extra-sans=$PRIVATE_ADDRESS"
+            if [ -n "$PUBLIC_ADDRESS" ]; then
+                certArgs="$certArgs --apiserver-cert-extra-sans=$PUBLIC_ADDRESS"
+            fi
+            kubeadm init phase certs apiserver $certArgs
+            updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
+        else
+            sed -i "s/server: https.*/server: https:\/\/$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/" /etc/kubernetes/kubelet.conf
+        fi
+
+
+        kubeadm upgrade node
     fi
 }
 
@@ -659,6 +678,25 @@ updateKubernetesAPIServerCerts()
     if ! certHasSAN /etc/kubernetes/pki/apiserver.crt "$1"; then
         logStep "Regenerate api server certs"
         rm -f /etc/kubernetes/pki/apiserver.*
+        kubeadm init phase certs apiserver --config /opt/replicated/kubeadm.conf
+
+        logSuccess "API server certs regenerated"
+        logStep "Restart kubernetes api server"
+        # admin.conf may not have been updated yet so kubectl may not work
+        docker ps | grep k8s_kube-apiserver | awk '{print $1}' | xargs docker rm -f
+        while ! curl -skf "https://$1:$2/healthz" ; do
+            sleep 1
+        done
+        logSuccess "Kubernetes api server restarted"
+    fi
+}
+
+updateKubernetesAPIServerCerts2()
+{
+    if ! certHasSAN /etc/kubernetes/pki/apiserver.crt "$1"; then
+        logStep "Regenerate api server certs"
+        rm -f /etc/kubernetes/pki/apiserver.*
+        sudo kubeadm init phase certs apiserver --apiserver-advertise-address=10.128.0.91 --apiserver-cert-extra-sans=10.128.0.98
         kubeadm init phase certs apiserver --config /opt/replicated/kubeadm.conf
 
         logSuccess "API server certs regenerated"

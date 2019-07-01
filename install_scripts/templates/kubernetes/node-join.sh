@@ -86,15 +86,19 @@ joinKubernetes() {
     semverParse "$KUBERNETES_VERSION"
     set +e
     if [ "$minor" -ge 15 ]; then
+        echo "15"
         mkdir -p /opt/replicated
         makeKubeadmJoinConfigV1Beta2
-        (set -x; kubeadm join --config /opt/replicated/kubeadm.conf)
+        (set -x; kubeadm join --config /opt/replicated/kubeadm.conf --ignore-preflight-errors=all)
     elif [ "$minor" -ge 13 ]; then
+        echo "13"
         mkdir -p /opt/replicated
         makeKubeadmJoinConfig
         (set -x; kubeadm join --config /opt/replicated/kubeadm.conf)
+        untaintMaster
     else
         (set -x; kubeadm join --discovery-token-ca-cert-hash "${KUBEADM_TOKEN_CA_HASH}" --token "${KUBEADM_TOKEN}" "${API_SERVICE_ADDRESS}")
+        untaintMaster
     fi
     _status=$?
     set -e
@@ -433,7 +437,6 @@ else
 fi
 
 if [ "$MASTER" -eq "1" ]; then
-    untaintMaster
     if [ "$AIRGAP" = "1" ]; then
         # delete the rek operator so that its anti-affinity with the docker-registry applies
         kubectl scale deployment rek-operator --replicas=0
