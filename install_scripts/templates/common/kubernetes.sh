@@ -11,13 +11,17 @@ UBUNTU_1604_K8S_10=ubuntu-1604-v1.10.6-20181112
 UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.5-20181204
 UBUNTU_1604_K8S_12=ubuntu-1604-v1.12.3-20181211
 UBUNTU_1604_K8S_13=ubuntu-1604-v1.13.5-20190411
+UBUNTU_1604_K8S_15=ubuntu-1604-v1.15.0-20190627
+
 UBUNTU_1804_K8S_13=ubuntu-1804-v1.13.5-20190411
+UBUNTU_1804_K8S_15=ubuntu-1804-v1.15.0-20190627
 
 RHEL7_K8S_9=rhel7-v1.9.3-20180806
 RHEL7_K8S_10=rhel7-v1.10.6-20180806
 RHEL7_K8S_11=rhel7-v1.11.5-20181204
 RHEL7_K8S_12=rhel7-v1.12.3-20181211
 RHEL7_K8S_13=rhel7-v1.13.5-20190411
+RHEL7_K8S_15=rhel7-v1.15.0-20190627
 
 DAEMON_NODE_KEY=replicated.com/daemon
 
@@ -48,8 +52,30 @@ setK8sPatchVersion() {
         13)
             # 1.13.5
             k8sPatch="5"
+            ;;
+        15)
+            # 1.15.0
+            k8sPatch="0"
     esac
     KUBERNETES_VERSION="$k8sMajor.$k8sMinor.$k8sPatch"
+}
+
+#######################################
+# Parse Kubernetes version that should be installed after the script completes
+# Globals:
+#   KUBERNETES_VERSION
+# Arguments:
+#   None
+# Returns:
+#   KUBERNETES_TARGET_VERSION_MAJOR
+#   KUBERNETES_TARGET_VERSION_MINOR
+#   KUBERNETES_TARGET_VERSION_PATCH
+#######################################
+parseKubernetesTargetVersion() {
+    semverParse "$KUBERNETES_VERSION"
+    KUBERNETES_TARGET_VERSION_MAJOR="$major"
+    KUBERNETES_TARGET_VERSION_MINOR="$minor"
+    KUBERNETES_TARGET_VERSION_PATCH="$patch"
 }
 
 #######################################
@@ -126,6 +152,9 @@ k8sPackageTag() {
                 1.13.5)
                     echo "$UBUNTU_1604_K8S_13"
                     ;;
+                1.15.0)
+                    echo "$UBUNTU_1604_K8S_15"
+                    ;;
                 *)
                     bail "Unsupported Kubernetes version $k8sVersion"
                     ;;
@@ -135,6 +164,9 @@ k8sPackageTag() {
             case "$k8sVersion" in
                 1.13.5)
                     echo "$UBUNTU_1804_K8S_13"
+                    ;;
+                1.15.0)
+                    echo "$UBUNTU_1804_K8S_15"
                     ;;
                 *)
                     bail "Unsupported Kubernetes version $k8sVersion"
@@ -157,6 +189,9 @@ k8sPackageTag() {
                     ;;
                 1.13.5)
                     echo "$RHEL7_K8S_13"
+                    ;;
+                1.15.0)
+                    echo "$RHEL7_K8S_15"
                     ;;
                 *)
                     bail "Unsupported Kubernetes version $k8sVersion"
@@ -223,6 +258,11 @@ installKubernetesComponents() {
 
     rm -rf archives
 
+    if [ "$CLUSTER_DNS" != "$DEFAULT_CLUSTER_DNS" ]; then
+        sed -i "s/$DEFAULT_CLUSTER_DNS/$CLUSTER_DNS/g" /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+    fi
+    systemctl enable kubelet && systemctl start kubelet
+
     logSuccess "Kubernetes components installed"
 }
 
@@ -237,15 +277,15 @@ installKubernetesComponents() {
 #######################################
 kubernetesHostCommandsOK() {
     if ! commandExists kubelet; then
-        printf "kubelet command missing - host components installation is required\n"
+        printf "kubelet command missing - will install host components\n"
         return 1
     fi
     if ! commandExists kubeadm; then
-        printf "kubeadm command missing - host components installation is required\n"
+        printf "kubeadm command missing - will install host components\n"
         return 1
     fi
     if ! commandExists kubectl; then
-        printf "kubectl command missing - host components installation is required\n"
+        printf "kubectl command missing - will install host components\n"
         return 1
     fi
 
@@ -1284,6 +1324,53 @@ EOF
     fi
 }
 
+appendKubeadmClusterConfigV1Beta2() {
+    cat <<EOF >> /opt/replicated/kubeadm.conf
+---
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+kubernetesVersion: v$KUBERNETES_VERSION
+certificatesDir: /etc/kubernetes/pki
+clusterName: kubernetes
+controllerManager: {}
+dns:
+  type: CoreDNS
+etcd:
+  local:
+    dataDir: /var/lib/etcd
+networking:
+  serviceSubnet: $SERVICE_CIDR
+apiServer:
+  extraArgs:
+    service-node-port-range: "80-60000"
+  certSANs:
+  - $PRIVATE_ADDRESS
+EOF
+    if [ -n "$PUBLIC_ADDRESS" ]; then
+        cat <<EOF >> /opt/replicated/kubeadm.conf
+  - $PUBLIC_ADDRESS
+EOF
+    fi
+    if [ -n "$LOAD_BALANCER_ADDRESS" ] && [ -n "$LOAD_BALANCER_PORT" ]; then
+        cat <<EOF >> /opt/replicated/kubeadm.conf
+  - $LOAD_BALANCER_ADDRESS
+controlPlaneEndpoint: "$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
+EOF
+    fi
+}
+
+appendKubeProxyConfigV1Alpha1() {
+    if [ "$IPVS" = "0" ]; then
+        return
+    fi
+    cat <<EOF >> /opt/replicated/kubeadm.conf
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: ipvs
+EOF
+}
+
 #######################################
 # Generate kubeadm JoinConfiguration
 # Globals:
@@ -1318,10 +1405,49 @@ EOF
     fi
 }
 
+#######################################
+# Generate kubeadm JoinConfiguration v1beta2
+# Globals:
+#   PRIVATE_ADDRESS
+#   KUBEADM_TOKEN
+#   KUBEADM_TOKEN_CA_HASH
+#   API_SERVICE_ADDRESS
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+makeKubeadmJoinConfigV1Beta2() {
+    cat << EOF > /opt/replicated/kubeadm.conf
+---
+kind: JoinConfiguration
+apiVersion: kubeadm.k8s.io/v1beta2
+nodeRegistration:
+  taints: []
+  kubeletExtraArgs:
+    node-ip: $PRIVATE_ADDRESS
+discovery:
+  bootstrapToken:
+    token: $KUBEADM_TOKEN
+    apiServerEndpoint: $API_SERVICE_ADDRESS
+    caCertHashes:
+    - $KUBEADM_TOKEN_CA_HASH
+EOF
+    if [ "$MASTER" -eq "1" ]; then
+        cat << EOF >> /opt/replicated/kubeadm.conf
+controlPlane: {}
+EOF
+    fi
+}
+
 exportKubeconfig() {
+    cp /etc/kubernetes/admin.conf $HOME/admin.conf
+    chown $SUDO_USER:$SUDO_GID $HOME/admin.conf
     chmod 444 /etc/kubernetes/admin.conf
-    echo 'export KUBECONFIG=/etc/kubernetes/admin.conf' >> /etc/profile
-    echo "source <(kubectl completion bash)" >> /etc/profile
+    if ! grep -q "kubectl completion bash" /etc/profile; then
+        echo 'export KUBECONFIG=/etc/kubernetes/admin.conf' >> /etc/profile
+        echo "source <(kubectl completion bash)" >> /etc/profile
+    fi
 }
 
 #######################################

@@ -61,6 +61,7 @@ APP_REGISTRY_ADVERTISE_HOST=
 OBJECT_STORE_ACCESS_KEY=
 OBJECT_STORE_SECRET_KEY=
 OBJECT_STORE_CLUSTER_IP=
+DID_INIT_KUBERNETES=0
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -159,6 +160,26 @@ initKubeadmConfig() {
     fi
 }
 
+initKubeadmConfigV1Beta2() {
+    mkdir -p /opt/replicated
+    cat <<EOF > /opt/replicated/kubeadm.conf
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: InitConfiguration
+bootstrapTokens:
+- groups:
+  - system:bootstrappers:kubeadm:default-node-token
+  token: $BOOTSTRAP_TOKEN
+  ttl: $BOOTSTRAP_TOKEN_TTL
+  usages:
+  - signing
+  - authentication
+localAPIEndpoint:
+  advertiseAddress: $PRIVATE_ADDRESS
+nodeRegistration:
+  taints: [] # prevent the default master taint
+EOF
+}
+
 initKubeadmConfigBeta() {
     mkdir -p /opt/replicated
     cat <<EOF > /opt/replicated/kubeadm.conf
@@ -225,9 +246,77 @@ EOF
     fi
 }
 
-DID_INIT_KUBERNETES=0
+initKube15() {
+    logStep "Initialize Kubernetes"
+
+    if [ "$HA_CLUSTER" -eq "1" ]; then
+        promptForLoadBalancerAddress
+
+        if [ "$LOAD_BALANCER_ADDRESS_CHANGED" = "1" ]; then
+            handleLoadBalancerAddressChangedPreInit
+        fi
+    fi
+
+    initKubeadmConfigV1Beta2
+    appendKubeadmClusterConfigV1Beta2
+    appendKubeProxyConfigV1Alpha1
+
+    loadIPVSKubeProxyModules
+
+    kubeadm init \
+        --ignore-preflight-errors=all \
+        --config /opt/replicated/kubeadm.conf \
+        | tee /tmp/kubeadm-init
+
+    exportKubeconfig
+
+    waitForNodes
+
+    DID_INIT_KUBERNETES=1
+    logSuccess "Kubernetes Master Initialized"
+
+    if [ "$LOAD_BALANCER_ADDRESS_CHANGED" = "1" ]; then
+        handleLoadBalancerAddressChangedPostInit
+    fi
+}
+
+handleLoadBalancerAddressChangedPreInit() {
+    # this will stop all the control plane pods except etcd
+    rm -f /etc/kubernetes/manifests/kube-*
+    while docker ps | grep -q kube-apiserver ; do
+        sleep 2
+    done
+
+    # kubectl must communicate with the local API server until all servers are upgraded to
+    # serve certs with the new load balancer address in their SANs
+    if [ -f /etc/kubernetes/admin.conf ]; then
+        mv /etc/kubernetes/admin.conf /tmp/kube.conf
+        sed -i "s/server: https.*/server: https:\/\/$PRIVATE_ADDRESS:6443/" /tmp/kube.conf
+        export KUBECONFIG=/tmp/kube.conf
+    fi
+
+    # delete files that need to be regenerated
+    rm -f /etc/kubernetes/*.conf
+    rm -f /etc/kubernetes/pki/apiserver.crt /etc/kubernetes/pki/apiserver.key
+}
+
+handleLoadBalancerAddressChangedPostInit() {
+    runUpgradeScriptOnAllRemoteNodes "$REPLICATED_VERSION"
+    export KUBECONFIG=/etc/kubernetes/admin.conf
+
+    logStep "Restarting kube-proxy"
+    kubectl -n kube-system get pods | grep kube-proxy | awk '{print $1}' | xargs kubectl -n kube-system delete pod
+    logSuccess "Kube-proxy restarted"
+}
+
 initKube() {
-    logStep "Verify Kubelet"
+    case "$KUBERNETES_TARGET_VERSION_MINOR" in
+        15)
+            initKube15
+            return
+            ;;
+    esac
+
     local kubeV=$(kubeadm version --output=short)
 
     # init is idempotent for the same version of Kubernetes. If init has already run this file will
@@ -317,15 +406,12 @@ initKube() {
 
     waitForNodes
 
+    untaintMaster
+
     logSuccess "Kubernetes Master Initialized"
 
     if [ "$LOAD_BALANCER_ADDRESS_CHANGED" = "1" ]; then
-        runUpgradeScriptOnAllRemoteNodes "$REPLICATED_VERSION"
-        export KUBECONFIG=/etc/kubernetes/admin.conf
-
-        logStep "Restarting kube-proxy"
-        kubectl -n kube-system get pods | grep kube-proxy | awk '{print $1}' | xargs kubectl -n kube-system delete pod
-        logSuccess "Kube-proxy restarted"
+        handleLoadBalancerAddressChangedPostInit
     fi
 }
 
@@ -1017,6 +1103,7 @@ done
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
 
+parseKubernetesTargetVersion
 setK8sPatchVersion
 
 checkFirewalld
@@ -1108,10 +1195,6 @@ fi
 
 must_disable_selinux
 installKubernetesComponents "$KUBERNETES_VERSION"
-if [ "$CLUSTER_DNS" != "$DEFAULT_CLUSTER_DNS" ]; then
-    sed -i "s/$DEFAULT_CLUSTER_DNS/$CLUSTER_DNS/g" /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-fi
-systemctl enable kubelet && systemctl start kubelet
 
 if [ "$AIRGAP" = "1" ]; then
     airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"
@@ -1132,8 +1215,6 @@ logSuccess "Cluster Initialized"
 getK8sYmlGenerator
 
 weavenetDeploy
-
-untaintMaster
 
 spinnerMasterNodeReady
 labelMasterNodeDeprecated
