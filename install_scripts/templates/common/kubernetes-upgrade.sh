@@ -691,25 +691,6 @@ updateKubernetesAPIServerCerts()
     fi
 }
 
-updateKubernetesAPIServerCerts2()
-{
-    if ! certHasSAN /etc/kubernetes/pki/apiserver.crt "$1"; then
-        logStep "Regenerate api server certs"
-        rm -f /etc/kubernetes/pki/apiserver.*
-        sudo kubeadm init phase certs apiserver --apiserver-advertise-address=10.128.0.91 --apiserver-cert-extra-sans=10.128.0.98
-        kubeadm init phase certs apiserver --config /opt/replicated/kubeadm.conf
-
-        logSuccess "API server certs regenerated"
-        logStep "Restart kubernetes api server"
-        # admin.conf may not have been updated yet so kubectl may not work
-        docker ps | grep k8s_kube-apiserver | awk '{print $1}' | xargs docker rm -f
-        while ! curl -skf "https://$1:$2/healthz" ; do
-            sleep 1
-        done
-        logSuccess "Kubernetes api server restarted"
-    fi
-}
-
 updateKubeconfigs()
 {
     if ! confHasEndpoint /etc/kubernetes/admin.conf "$1"; then

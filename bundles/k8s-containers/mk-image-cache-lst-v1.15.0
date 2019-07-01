@@ -34,7 +34,7 @@ common="
 	docker.io/envoyproxy/envoy-alpine:$envoy_version
 	gcr.io/heptio-images/contour:$contour_version
 	rook/ceph:$rook_version
-    ceph/ceph:$ceph_version
+	ceph/ceph:$ceph_version
 	quay.io/replicated/replicated-hostpath-provisioner:$replicated_hostpath_provisioner_version"
 
 control="

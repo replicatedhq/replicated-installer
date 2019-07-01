@@ -411,12 +411,7 @@ initKube() {
     logSuccess "Kubernetes Master Initialized"
 
     if [ "$LOAD_BALANCER_ADDRESS_CHANGED" = "1" ]; then
-        runUpgradeScriptOnAllRemoteNodes "$REPLICATED_VERSION"
-        export KUBECONFIG=/etc/kubernetes/admin.conf
-
-        logStep "Restarting kube-proxy"
-        kubectl -n kube-system get pods | grep kube-proxy | awk '{print $1}' | xargs kubectl -n kube-system delete pod
-        logSuccess "Kube-proxy restarted"
+        handleLoadBalancerAddressChangedPostInit
     fi
 }
 
