@@ -272,8 +272,11 @@ maybeUpgradeKubernetesNode() {
         upgradeK8sNodeHostPackages "$KUBERNETES_VERSION"
 
         case "$KUBERNETES_TARGET_VERSION_MINOR" in
-            14|15)
+            15)
                 kubeadm upgrade node
+                # correctly sets the --resolv-conf flag when systemd-resolver is running (Ubuntu 18)
+                # https://github.com/kubernetes/kubeadm/issues/273
+                kubeadm init phase kubelet-start
                 return
                 ;;
         esac

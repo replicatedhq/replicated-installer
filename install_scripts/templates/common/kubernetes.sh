@@ -1568,3 +1568,31 @@ isRook1()
 {
     kubectl -n rook-ceph get cephblockpools replicapool &>/dev/null
 }
+
+#######################################
+# Wait until Ceph status is healthy
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+waitCephHealthy()
+{
+    if !isRook1; then
+        return
+    fi
+
+    logSubstep "waiting for Rook/Ceph to become healthy"
+
+    while true; do
+        spinnerPodRunning "rook-ceph-system" "rook-ceph-operator"
+        local rookOperatorPod=$(kubectl -n rook-ceph-system get pods | grep rook-ceph-operator | awk '{ print $1 }')
+        local status=$(kubectl -n rook-ceph-system exec "$rookOperatorPod" -- ceph health | awk '{ print $1 }')
+        if [ "$status" = "HEALTH_OK" ]; then
+            logSubstep "Rook/Ceph health OK"
+            return
+        fi
+    done
+}
