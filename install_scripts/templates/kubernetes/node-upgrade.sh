@@ -3,6 +3,7 @@
 set -e
 AIRGAP=0
 K8S_UPGRADE_PATCH_VERSION="{{ k8s_upgrade_patch_version }}"
+HOSTNAME_CHECK=
 
 {% include 'common/common.sh' %}
 {% include 'common/kubernetes.sh' %}
@@ -32,6 +33,9 @@ while [ "$1" != "" ]; do
         kubernetes-upgrade-patch-version|kubernetes_upgrade_patch_version)
             K8S_UPGRADE_PATCH_VERSION=1
             ;;
+        hostname-check)
+            HOSTNAME_CHECK="$_value"
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -42,6 +46,12 @@ done
 
 if [ -z "$KUBERNETES_VERSION" ]; then
     bail "kubernetes-version is required"
+fi
+
+if [ -n "$HOSTNAME_CHECK" ]; then
+    if [ "$HOSTNAME_CHECK" != "$(hostname)" ]; then
+        bail "this script should be executed on host $HOSTNAME_CHECK"
+    fi
 fi
 
 export KUBECONFIG=/etc/kubernetes/admin.conf

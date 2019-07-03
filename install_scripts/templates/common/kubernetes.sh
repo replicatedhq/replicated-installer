@@ -1410,7 +1410,7 @@ discovery:
     caCertHashes:
     - $KUBEADM_TOKEN_CA_HASH
 EOF
-    if [ "$MASTER" -eq "1" ]; then
+    if [ "$MASTER" = "1" ]; then
         cat << EOF >> /opt/replicated/kubeadm.conf
 controlPlane: {}
 EOF
@@ -1445,7 +1445,7 @@ discovery:
     caCertHashes:
     - $KUBEADM_TOKEN_CA_HASH
 EOF
-    if [ "$MASTER" -eq "1" ]; then
+    if [ "$MASTER" = "1" ]; then
         cat << EOF >> /opt/replicated/kubeadm.conf
 controlPlane: {}
 EOF
@@ -1580,19 +1580,64 @@ isRook1()
 #######################################
 waitCephHealthy()
 {
-    if !isRook1; then
+    if ! isRook1; then
         return
     fi
 
-    logSubstep "waiting for Rook/Ceph to become healthy"
-
+    # log output of `ceph health` once, but only if a wait is needed
+    local logged=0
     while true; do
+        set +e
         spinnerPodRunning "rook-ceph-system" "rook-ceph-operator"
         local rookOperatorPod=$(kubectl -n rook-ceph-system get pods | grep rook-ceph-operator | awk '{ print $1 }')
-        local status=$(kubectl -n rook-ceph-system exec "$rookOperatorPod" -- ceph health | awk '{ print $1 }')
+        local status=$(kubectl -n rook-ceph-system exec -i 2>/dev/null "$rookOperatorPod" -- ceph health | awk '{ print $1 }')
         if [ "$status" = "HEALTH_OK" ]; then
-            logSubstep "Rook/Ceph health OK"
+            set -e
             return
         fi
+        if [ "$logged" = "0" ]; then
+            local health=$(kubectl -n rook-ceph-system exec -i 2>/dev/null "$rookOperatorPod" -- ceph health)
+            if [ -n "$health" ]; then
+                logStep "Waiting for Rook/Ceph to report health OK, got: $health"
+                logged=1
+            fi
+        fi
+        sleep 2
     done
+}
+
+#######################################
+# disable rook operator
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+disableRookCephOperator()
+{
+    if ! isRook1; then
+        return
+    fi
+
+    kubectl -n rook-ceph-system scale deployment rook-ceph-operator --replicas=0
+}
+
+#######################################
+# enable rook operator
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+enableRookCephOperator()
+{
+    if ! isRook1; then
+        return
+    fi
+
+    kubectl -n rook-ceph-system scale deployment rook-ceph-operator --replicas=1
 }

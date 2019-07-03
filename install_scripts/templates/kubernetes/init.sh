@@ -1230,7 +1230,9 @@ fi
 ensureCNIPlugins
 
 maybeGenerateBootstrapToken
-initKube
+if ! upgradeInProgress; then
+    initKube
+fi
 
 kubectl cluster-info
 logSuccess "Cluster Initialized"

@@ -29,10 +29,14 @@
 DID_UPGRADE_KUBERNETES=0
 maybeUpgradeKubernetes() {
     if allNodesUpgraded "$KUBERNETES_VERSION"; then
-        return
+        enableRookCephOperator
+        rm /opt/replicated/upgrade
+        return 0
     fi
 
     logStep "Preparing to upgrade Kubernetes"
+    # indicates an incomplete upgrade
+    touch /opt/replicated/upgrade
 
     # attempt to stop Replicated to reduce Docker load during upgrade
     if [ "$KUBERNETES_ONLY" != "1" ]; then
@@ -137,6 +141,12 @@ maybeUpgradeKubernetes() {
         return 0
     fi
 
+    enableRookCephOperator
+    waitCephHealthy
+    # the Rook operator moves mons off any nodes marked unschedulable. This can cause OSDs to become
+    # disconnected and be marked down since upgrading requires draining.
+    disableRookCephOperator
+
     kubeletVersion="$(getK8sNodeVersion)"
     semverParse "$kubeletVersion"
     kubeletMajor="$major"
@@ -152,6 +162,10 @@ maybeUpgradeKubernetes() {
 
     upgradeK8sRemoteMasters "1.14.3" "0"
     upgradeK8sWorkers "1.14.3"
+
+    enableRookCephOperator
+    waitCephHealthy
+    disableRookCephOperator
 
     kubeletVersion="$(getK8sNodeVersion)"
     semverParse "$kubeletVersion"
@@ -169,6 +183,10 @@ maybeUpgradeKubernetes() {
 
     upgradeK8sRemoteMasters "1.15.0" "$K8S_UPGRADE_PATCH_VERSION"
     upgradeK8sWorkers "1.15.0" "$K8S_UPGRADE_PATCH_VERSION"
+
+    enableRookCephOperator
+    waitCephHealthy
+    rm /opt/replicated/upgrade
 }
 
 #######################################
@@ -268,15 +286,21 @@ maybeUpgradeKubernetesNode() {
     if [ "$kubeletMinor" -lt "$KUBERNETES_TARGET_VERSION_MINOR" ] || ([ "$kubeletMinor" -eq "$KUBERNETES_TARGET_VERSION_MINOR" ] && [ "$kubeletPatch" -lt "$KUBERNETES_TARGET_VERSION_PATCH" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
         logStep "Kubernetes version v$kubeletVersion detected, upgrading node to version v$KUBERNETES_VERSION"
 
-        systemctl stop kubelet
-        upgradeK8sNodeHostPackages "$KUBERNETES_VERSION"
+        upgradeKubeadmCmd "$KUBERNETES_VERSION"
 
         case "$KUBERNETES_TARGET_VERSION_MINOR" in
             15)
                 kubeadm upgrade node
+
                 # correctly sets the --resolv-conf flag when systemd-resolver is running (Ubuntu 18)
                 # https://github.com/kubernetes/kubeadm/issues/273
-                kubeadm init phase kubelet-start
+                if isMasterNode; then
+                    kubeadm init phase kubelet-start
+                fi
+
+                upgradeK8sNodeHostPackages "$KUBERNETES_VERSION"
+
+                logSuccess "Kubernetes node upgraded to version v1.15.0"
                 return
                 ;;
         esac
@@ -312,7 +336,7 @@ maybeUpgradeKubernetesNode() {
             fi
         fi
 
-        systemctl start kubelet
+        upgradeK8sNodeHostPackages "$KUBERNETES_VERSION"
 
         logSuccess "Kubernetes node upgraded to version v$KUBERNETES_VERSION"
     elif [ "$KUBERNETES_TARGET_VERSION_MINOR" -eq 13 ]; then
@@ -479,9 +503,9 @@ upgradeK8sWorkers() {
             upgradePatchFlag=" kubernetes-upgrade-patch-version"
         fi
         if [ "$AIRGAP" = "1" ]; then
-            printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s airgap kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
+            printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s airgap hostname-check=${nodeName} kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
         else
-            printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
+            printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s hostname-check=${nodeName} kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
         fi
         while true; do
             echo ""
@@ -569,9 +593,9 @@ upgradeK8sRemoteMasters() {
             upgradePatchFlag=" kubernetes-upgrade-patch-version"
         fi
         if [ "$AIRGAP" = "1" ]; then
-            printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s airgap kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
+            printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s airgap hostname-check=${nodeName} kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
         else
-            printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
+            printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s hostname-check=${nodeName} kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
         fi
         while true; do
             echo ""
@@ -648,7 +672,7 @@ upgradeK8sMaster() {
 }
 
 #######################################
-# Upgrade Kubernetes on worker node
+# Upgrade Kubernetes packages on node
 # Globals:
 #   LSB_DIST
 #   DIST_VERSION
@@ -659,6 +683,8 @@ upgradeK8sMaster() {
 #######################################
 upgradeK8sNodeHostPackages() {
     k8sVersion=$1
+
+    systemctl stop kubelet
 
     prepareK8sPackageArchives "$k8sVersion"
 
@@ -678,6 +704,23 @@ upgradeK8sNodeHostPackages() {
     rm -rf archives
 
     systemctl daemon-reload
+    systemctl start kubelet
+}
+
+#######################################
+# Upgrade kubeadm binary, which is used to upgrade nodes before upgrading host packages.
+# Globals:
+#   None
+# Arguments:
+#   k8sVersion - e.g. 1.10.6
+# Returns:
+#   None
+#######################################
+upgradeKubeadmCmd() {
+    local k8sVersion="$1"
+    prepareK8sPackageArchives "$k8sVersion"
+    cp archives/kubeadm /usr/bin/kubeadm
+    chmod a+rx /usr/bin/kubeadm
 }
 
 #######################################
@@ -753,4 +796,9 @@ updateKubeconfigs()
     if ! confHasEndpoint /etc/kubernetes/controller-manager.conf "$1"; then
         sed -i "s/server: https.*/server: https:\/\/$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/" /etc/kubernetes/controller-manager.conf
     fi
+}
+
+upgradeInProgress()
+{
+    test -e /opt/replicated/upgrade
 }
