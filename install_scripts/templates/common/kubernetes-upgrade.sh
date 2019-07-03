@@ -311,7 +311,6 @@ maybeUpgradeKubernetesNode() {
             local envFile="KUBELET_KUBEADM_ARGS=--cgroup-driver=%s --cni-bin-dir=/opt/cni/bin --cni-conf-dir=/etc/cni/net.d --network-plugin=cni\n"
             printf "$envFile" "$cgroupDriver" > /var/lib/kubelet/kubeadm-flags.env
 
-            # TODO here
             if isMasterNode; then
                 : > /opt/replicated/kubeadm.conf
                 makeKubeadmConfig "$KUBERNETES_VERSION"
