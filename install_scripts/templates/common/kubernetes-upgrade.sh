@@ -13,20 +13,13 @@
 
 #######################################
 # If kubernetes is installed and version is less than specified, upgrade.
-# Kubeadm requires installing every minor version between current and target.
-# kubeadm < 1.11 uses v1alpha1 config file format
-# kubeadm 1.11 writes v1alpha2 configs and can also read v1alpha1
-# kubeadm 1.12 writes v1alpha3 configs and can also read v1alpha2
-# kubeadm 1.13 writes v1beta1 configs and can also read v1alpha3
 # Globals:
-#   KUBERNETES_ONLY
 #   KUBERNETES_VERSION
 # Arguments:
 #   None
 # Returns:
-#   DID_UPGRADE_KUBERNETES
+#   None
 #######################################
-DID_UPGRADE_KUBERNETES=0
 maybeUpgradeKubernetes() {
     if allNodesUpgraded "$KUBERNETES_VERSION"; then
         enableRookCephOperator
@@ -37,7 +30,29 @@ maybeUpgradeKubernetes() {
     logStep "Preparing to upgrade Kubernetes"
     # indicates an incomplete upgrade
     touch /opt/replicated/upgrade
+    upgradeKubernetes
+    rm /opt/replicated/upgrade
+}
 
+#######################################
+# Kubeadm requires installing every minor version between current and target.
+# kubeadm < 1.11 uses v1alpha1 config file format
+# kubeadm 1.11 writes v1alpha2 configs and can also read v1alpha1
+# kubeadm 1.12 writes v1alpha3 configs and can also read v1alpha2
+# kubeadm 1.13 writes v1beta1 configs and can also read v1alpha3
+# Globals:
+#   KUBERNETES_ONLY
+#   KUBERNETES_VERSION
+#   KUBERNETES_TARGET_VERSION_MAJOR
+#   KUBERNETES_TARGET_VERSION_MINOR
+#   KUBERNETES_TARGET_VERSION_PATCH
+# Arguments:
+#   None
+# Returns:
+#   DID_UPGRADE_KUBERNETES
+#######################################
+DID_UPGRADE_KUBERNETES=0
+upgradeKubernetes() {
     # attempt to stop Replicated to reduce Docker load during upgrade
     if [ "$KUBERNETES_ONLY" != "1" ]; then
         kubectl delete all --all --grace-period=30 --timeout=60s || true
@@ -186,7 +201,6 @@ maybeUpgradeKubernetes() {
 
     enableRookCephOperator
     waitCephHealthy
-    rm /opt/replicated/upgrade
 }
 
 #######################################
