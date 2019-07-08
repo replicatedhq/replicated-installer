@@ -1587,13 +1587,11 @@ waitCephHealthy()
     # log output of `ceph health` once, but only if a wait is needed
     local logged=0
     while true; do
-        set +e
         spinnerPodRunning "rook-ceph-system" "rook-ceph-operator"
         local rookOperatorPod=$(kubectl -n rook-ceph-system get pods | grep rook-ceph-operator | awk '{ print $1 }')
         local status=$(kubectl -n rook-ceph-system exec -i 2>/dev/null "$rookOperatorPod" -- ceph health | awk '{ print $1 }')
         if [ "$status" = "HEALTH_OK" ]; then
-            set -e
-            return
+            return 0
         fi
         if [ "$logged" = "0" ]; then
             local health=$(kubectl -n rook-ceph-system exec -i 2>/dev/null "$rookOperatorPod" -- ceph health)
@@ -1618,7 +1616,7 @@ waitCephHealthy()
 disableRookCephOperator()
 {
     if ! isRook1; then
-        return
+        return 0
     fi
 
     kubectl -n rook-ceph-system scale deployment rook-ceph-operator --replicas=0
@@ -1636,7 +1634,7 @@ disableRookCephOperator()
 enableRookCephOperator()
 {
     if ! isRook1; then
-        return
+        return 0
     fi
 
     kubectl -n rook-ceph-system scale deployment rook-ceph-operator --replicas=1
