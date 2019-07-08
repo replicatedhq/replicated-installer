@@ -30,8 +30,12 @@ maybeUpgradeKubernetes() {
     logStep "Preparing to upgrade Kubernetes"
     # indicates an incomplete upgrade
     touch /opt/replicated/upgrade
+
     upgradeKubernetes
+
     rm /opt/replicated/upgrade
+    enableRookCephOperator
+    waitCephHealthy
 }
 
 #######################################
@@ -198,9 +202,6 @@ upgradeKubernetes() {
 
     upgradeK8sRemoteMasters "1.15.0" "$K8S_UPGRADE_PATCH_VERSION"
     upgradeK8sWorkers "1.15.0" "$K8S_UPGRADE_PATCH_VERSION"
-
-    enableRookCephOperator
-    waitCephHealthy
 }
 
 #######################################
