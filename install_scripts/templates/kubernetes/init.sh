@@ -480,13 +480,6 @@ maybeGenerateBootstrapToken() {
     echo "This token will expire in 24 hours"
 }
 
-ensureCNIPlugins() {
-    if [ ! -d /tmp/cni-plugins ]; then
-        installCNIPlugins
-    fi
-    logSuccess "CNI configured"
-}
-
 getYAMLOpts() {
     opts=""
     if [ "$AIRGAP" = "1" ]; then
@@ -1227,7 +1220,7 @@ else
     docker tag registry:2.6.2 registry:2
 fi
 
-ensureCNIPlugins
+installCNIPlugins
 
 maybeGenerateBootstrapToken
 if ! upgradeInProgress; then

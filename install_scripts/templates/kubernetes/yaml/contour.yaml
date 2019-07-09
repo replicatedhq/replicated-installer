@@ -3,6 +3,7 @@
 # service type changed from LoadBalancer to NodePort and add nodePorts 80 and 443
 # contour image tag changed from :master to :v0.11.0
 # annotations for AWS, statsd, and prometheus removed
+---
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -57,7 +58,15 @@ spec:
               properties:
                 fqdn:
                   type: string
-                  pattern: ^([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*\.)+[a-z0-9]{2,}$
+                  # This regex handles two cases:
+                  # 1. A reasonably well-formed FQDN, which is allowed
+                  #    a hyphen in the top-level label (not usually
+                  #    the case for TLDs.) This fixes https://github.com/heptio/contour/issues/1117
+                  #    This is the first option in the regex.
+                  # 2. A bareword containing a hyphen, no periods. This fixes 
+                  #    https://github.com/heptio/contour/issues/755 and is the
+                  #    second option in the regex
+                  pattern: ^([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*\.)+[\-a-z0-9]{2,}|[\-a-z0-9]+$
                 tls:
                   properties:
                     secretName:
@@ -75,8 +84,7 @@ spec:
                 - RoundRobin
                 - WeightedLeastRequest
                 - Random
-                - RingHash
-                - Maglev
+                - Cookie
             healthCheck:
               type: object
               required:
@@ -134,8 +142,7 @@ spec:
                             - RoundRobin
                             - WeightedLeastRequest
                             - Random
-                            - RingHash
-                            - Maglev
+                            - Cookie
                         healthCheck:
                           type: object
                           required:
@@ -183,6 +190,97 @@ spec:
                     type: string
                   targetNamespaces:
                     type: array
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: contour
+  name: contour
+  namespace: heptio-contour
+spec:
+  selector:
+    matchLabels:
+      app: contour
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: contour
+    spec:
+      containers:
+      - image: gcr.io/heptio-images/contour:v0.13.0
+        imagePullPolicy: IfNotPresent
+        name: contour
+        command: ["contour"]
+        args: ["serve", "--incluster", "--envoy-service-http-port", "8080", "--envoy-service-https-port", "8443"]
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+      - image: docker.io/envoyproxy/envoy:v1.10.0
+        name: envoy
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8443
+          name: https
+        command: ["envoy"]
+        args:
+        - --config-path /config/contour.json
+        - --service-cluster cluster0
+        - --service-node node0
+        - --log-level info
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8002
+          initialDelaySeconds: 3
+          periodSeconds: 3
+        volumeMounts:
+        - name: contour-config
+          mountPath: /config
+        lifecycle:
+          preStop:
+            exec:
+              command: ["wget", "-qO-", "--post-data=''", "http://localhost:9001/healthcheck/fail"] 
+      initContainers:
+      - image: gcr.io/heptio-images/contour:v0.13.0
+        imagePullPolicy: IfNotPresent
+        name: envoy-initconfig
+        command: ["contour"]
+        args:
+        - bootstrap
+        - /config/contour.json
+        volumeMounts:
+        - name: contour-config
+          mountPath: /config
+        env:
+        - name: CONTOUR_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+      volumes:
+      - name: contour-config
+        emptyDir: {}
+      dnsPolicy: ClusterFirst
+      serviceAccountName: contour
+      terminationGracePeriodSeconds: 30
+      # The affinity stanza below tells Kubernetes to try hard not to place 2 of
+      # these pods on the same node.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: contour
+              topologyKey: kubernetes.io/hostname
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
@@ -265,87 +363,3 @@ spec:
  selector:
    app: contour
  type: NodePort
----
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  labels:
-    app: contour
-  name: contour
-  namespace: heptio-contour
-spec:
-  selector:
-    matchLabels:
-      app: contour
-  replicas: 2
-  template:
-    metadata:
-      labels:
-        app: contour
-    spec:
-      containers:
-      - image: gcr.io/heptio-images/contour:v0.11.0
-        imagePullPolicy: IfNotPresent
-        name: contour
-        command: ["contour"]
-        args: ["serve", "--incluster", "--envoy-service-http-port", "8080", "--envoy-service-https-port", "8443"]
-      - image: docker.io/envoyproxy/envoy-alpine:v1.9.1
-        name: envoy
-        ports:
-        - containerPort: 8080
-          name: http
-        - containerPort: 8443
-          name: https
-        command: ["envoy"]
-        args:
-        - --config-path /config/contour.json
-        - --service-cluster cluster0
-        - --service-node node0
-        - --log-level info
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 8002
-          initialDelaySeconds: 3
-          periodSeconds: 3
-        volumeMounts:
-        - name: contour-config
-          mountPath: /config
-        lifecycle:
-          preStop:
-            exec:
-              command: ["wget", "-qO-", "--post-data=''", "http://localhost:9001/healthcheck/fail"] 
-      initContainers:
-      - image: gcr.io/heptio-images/contour:v0.11.0
-        imagePullPolicy: IfNotPresent
-        name: envoy-initconfig
-        command: ["contour"]
-        args:
-        - bootstrap
-        - /config/contour.json
-        volumeMounts:
-        - name: contour-config
-          mountPath: /config
-        env:
-        - name: CONTOUR_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-      volumes:
-      - name: contour-config
-        emptyDir: {}
-      dnsPolicy: ClusterFirst
-      serviceAccountName: contour
-      terminationGracePeriodSeconds: 30
-      # The affinity stanza below tells Kubernetes to try hard not to place 2 of
-      # these pods on the same node.
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app: contour
-              topologyKey: kubernetes.io/hostname
----
