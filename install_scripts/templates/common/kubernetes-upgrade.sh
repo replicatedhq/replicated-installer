@@ -13,6 +13,32 @@
 
 #######################################
 # If kubernetes is installed and version is less than specified, upgrade.
+# Globals:
+#   KUBERNETES_VERSION
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+maybeUpgradeKubernetes() {
+    if allNodesUpgraded "$KUBERNETES_VERSION"; then
+        enableRookCephOperator
+        rm /opt/replicated/upgrade
+        return 0
+    fi
+
+    logStep "Preparing to upgrade Kubernetes"
+    # indicates an incomplete upgrade
+    touch /opt/replicated/upgrade
+
+    upgradeKubernetes
+
+    rm -f /opt/replicated/upgrade
+    enableRookCephOperator
+    waitCephHealthy
+}
+
+#######################################
 # Kubeadm requires installing every minor version between current and target.
 # kubeadm < 1.11 uses v1alpha1 config file format
 # kubeadm 1.11 writes v1alpha2 configs and can also read v1alpha1
@@ -20,22 +46,17 @@
 # kubeadm 1.13 writes v1beta1 configs and can also read v1alpha3
 # Globals:
 #   KUBERNETES_ONLY
+#   KUBERNETES_VERSION
+#   KUBERNETES_TARGET_VERSION_MAJOR
+#   KUBERNETES_TARGET_VERSION_MINOR
+#   KUBERNETES_TARGET_VERSION_PATCH
 # Arguments:
-#   k8sTargetVersion - e.g. 1.10.6
+#   None
 # Returns:
 #   DID_UPGRADE_KUBERNETES
 #######################################
 DID_UPGRADE_KUBERNETES=0
-maybeUpgradeKubernetes() {
-    local k8sTargetVersion="$1"
-    semverParse "$k8sTargetVersion"
-    local k8sTargetMajor="$major"
-    local k8sTargetMinor="$minor"
-    local k8sTargetPatch="$patch"
-
-    if allNodesUpgraded "$k8sTargetVersion"; then
-        return
-    fi
+upgradeKubernetes() {
     # attempt to stop Replicated to reduce Docker load during upgrade
     if [ "$KUBERNETES_ONLY" != "1" ]; then
         kubectl delete all --all --grace-period=30 --timeout=60s || true
@@ -48,16 +69,16 @@ maybeUpgradeKubernetes() {
     local kubeletMinor="$minor"
     local kubeletPatch="$patch"
 
-    if [ "$kubeletMajor" -ne "$k8sTargetMajor" ]; then
-        printf "Cannot upgrade from %s to %s\n" "$kubeletVersion" "$k8sTargetVersion"
+    if [ "$kubeletMajor" -ne "$KUBERNETES_TARGET_VERSION_MAJOR" ]; then
+        printf "Cannot upgrade from %s to %s\n" "$kubeletVersion" "$KUBERNETES_VERSION"
         return 1
     fi
 
-    if [ "$k8sTargetMinor" -eq "9" ]; then
+    if [ "$KUBERNETES_TARGET_VERSION_MINOR" -eq "9" ]; then
         return 0
     fi
 
-    if [ "$kubeletMinor" -eq "9" ] && [ "$k8sTargetMinor" -gt "9" ]; then
+    if [ "$kubeletMinor" -eq "9" ] && [ "$KUBERNETES_TARGET_VERSION_MINOR" -gt "9" ]; then
         logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.10.6"
         if [ "$AIRGAP" = "1" ]; then
             airgapLoadKubernetesCommonImages 1.10.6
@@ -77,7 +98,7 @@ maybeUpgradeKubernetes() {
     kubeletMinor="$minor"
     kubeletPatch="$patch"
 
-    if [ "$kubeletMinor" -eq "10" ] || ([ "$kubeletMinor" -eq "11" ] && [ "$k8sTargetMinor" -eq "11" ] && [ "$kubeletPatch" -lt "$k8sTargetPatch" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
+    if [ "$kubeletMinor" -eq "10" ] || ([ "$kubeletMinor" -eq "11" ] && [ "$KUBERNETES_TARGET_VERSION_MINOR" -eq "11" ] && [ "$kubeletPatch" -lt "$KUBERNETES_TARGET_VERSION_PATCH" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
         logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.11.5"
         upgradeK8sMaster "1.11.5"
         logSuccess "Kubernetes upgraded to version v1.11.5"
@@ -86,17 +107,17 @@ maybeUpgradeKubernetes() {
 
     upgradeK8sWorkers "1.11.5" "$K8S_UPGRADE_PATCH_VERSION"
 
+    if [ "$KUBERNETES_TARGET_VERSION_MINOR" -eq "11" ]; then
+        return 0
+    fi
+
     kubeletVersion="$(getK8sNodeVersion)"
     semverParse "$kubeletVersion"
     kubeletMajor="$major"
     kubeletMinor="$minor"
     kubeletPatch="$patch"
 
-    if [ "$k8sTargetMinor" -eq "11" ]; then
-        return 0
-    fi
-
-    if [ "$kubeletMinor" -eq "11" ] &&  [ "$k8sTargetMinor" -gt "11" ]; then
+    if [ "$kubeletMinor" -eq "11" ] &&  [ "$KUBERNETES_TARGET_VERSION_MINOR" -gt "11" ]; then
         logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.12.3"
         if [ "$AIRGAP" = "1" ]; then
             airgapLoadKubernetesCommonImages 1.12.3
@@ -118,7 +139,7 @@ maybeUpgradeKubernetes() {
     kubeletMinor="$minor"
     kubeletPatch="$patch"
 
-    if [ "$kubeletMinor" -eq "12" ] || ([ "$kubeletMinor" -eq "13" ] && [ "$k8sTargetMinor" -eq "13" ] && [ "$kubeletPatch" -lt "$k8sTargetPatch" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
+    if [ "$kubeletMinor" -eq "12" ] || ([ "$kubeletMinor" -eq "13" ] && [ "$KUBERNETES_TARGET_VERSION_MINOR" -eq "13" ] && [ "$kubeletPatch" -lt "$KUBERNETES_TARGET_VERSION_PATCH" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
         logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.13.5"
         if [ "$AIRGAP" = "1" ]; then
             airgapLoadKubernetesCommonImages 1.13.5
@@ -134,6 +155,53 @@ maybeUpgradeKubernetes() {
 
     upgradeK8sRemoteMasters "1.13.5" "$K8S_UPGRADE_PATCH_VERSION"
     upgradeK8sWorkers "1.13.5" "$K8S_UPGRADE_PATCH_VERSION"
+
+    if [ "$KUBERNETES_TARGET_VERSION_MINOR" -eq "13" ]; then
+        return 0
+    fi
+
+    enableRookCephOperator
+    waitCephHealthy
+    # the Rook operator moves mons off any nodes marked unschedulable. This can cause OSDs to become
+    # disconnected and be marked down since upgrading requires draining.
+    disableRookCephOperator
+
+    kubeletVersion="$(getK8sNodeVersion)"
+    semverParse "$kubeletVersion"
+    kubeletMajor="$major"
+    kubeletMinor="$minor"
+    kubeletPatch="$patch"
+
+    if [ "$kubeletMinor" -eq "13" ] && [ "$KUBERNETES_TARGET_VERSION_MINOR" -gt "13" ]; then
+        logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.14.3"
+        upgradeK8sMaster "1.14.3"
+        logSuccess "Kubernetes upgraded to version 1.14.3"
+        DID_UPGRADE_KUBERNETES=1
+    fi
+
+    upgradeK8sRemoteMasters "1.14.3" "0"
+    upgradeK8sWorkers "1.14.3"
+
+    enableRookCephOperator
+    waitCephHealthy
+    disableRookCephOperator
+
+    kubeletVersion="$(getK8sNodeVersion)"
+    semverParse "$kubeletVersion"
+    kubeletMajor="$major"
+    kubeletMinor="$minor"
+    kubeletPatch="$patch"
+
+    if [ "$kubeletMinor" -eq "14" ] || ([ "$kubeletMinor" -eq "15" ] && [ "$KUBERNETES_TARGET_VERSION_MINOR" -eq "15" ] && [ "$kubeletPatch" -lt "$KUBERNETES_TARGET_VERSION_PATCH" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
+        logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.15.0"
+        kubeadm config migrate --old-config /opt/replicated/kubeadm.conf --new-config /opt/replicated/kubeadm.conf
+        upgradeK8sMaster "1.15.0"
+        logSuccess "Kubernetes upgraded to version v1.15.0"
+        DID_UPGRADE_KUBERNETES=1
+    fi
+
+    upgradeK8sRemoteMasters "1.15.0" "$K8S_UPGRADE_PATCH_VERSION"
+    upgradeK8sWorkers "1.15.0" "$K8S_UPGRADE_PATCH_VERSION"
 }
 
 #######################################
@@ -213,16 +281,12 @@ runUpgradeScriptOnAllRemoteNodes() {
 # Globals:
 #   None
 # Arguments:
-#   k8sTargetVersion - e.g. 1.10.6
+#   KUBERNETES_VERSION - e.g. 1.10.6
 # Returns:
 #   None
 #######################################
 maybeUpgradeKubernetesNode() {
-    local k8sTargetVersion="$1"
-    semverParse "$k8sTargetVersion"
-    local k8sTargetMajor="$major"
-    local k8sTargetMinor="$minor"
-    local k8sTargetPatch="$patch"
+    local KUBERNETES_VERSION="$1"
 
     local kubeletVersion="$(getK8sNodeVersion)"
     semverParse "$kubeletVersion"
@@ -230,17 +294,33 @@ maybeUpgradeKubernetesNode() {
     local kubeletMinor="$minor"
     local kubeletPatch="$patch"
 
-    if [ "$kubeletMajor" -ne "$k8sTargetMajor" ]; then
-        printf "Cannot upgrade from %s to %s\n" "$kubeletVersion" "$k8sTargetVersion"
+    if [ "$kubeletMajor" -ne "$KUBERNETES_TARGET_VERSION_MAJOR" ]; then
+        printf "Cannot upgrade from %s to %s\n" "$kubeletVersion" "$KUBERNETES_VERSION"
         return 1
     fi
-    if [ "$kubeletMinor" -lt "$k8sTargetMinor" ] || ([ "$kubeletMinor" -eq "$k8sTargetMinor" ] && [ "$kubeletPatch" -lt "$k8sTargetPatch" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
-        logStep "Kubernetes version v$kubeletVersion detected, upgrading node to version v$k8sTargetVersion"
+    if [ "$kubeletMinor" -lt "$KUBERNETES_TARGET_VERSION_MINOR" ] || ([ "$kubeletMinor" -eq "$KUBERNETES_TARGET_VERSION_MINOR" ] && [ "$kubeletPatch" -lt "$KUBERNETES_TARGET_VERSION_PATCH" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
+        logStep "Kubernetes version v$kubeletVersion detected, upgrading node to version v$KUBERNETES_VERSION"
 
-        systemctl stop kubelet
-        upgradeK8sNode "$k8sTargetVersion"
+        upgradeKubeadmCmd "$KUBERNETES_VERSION"
 
-        if [ "$k8sTargetMinor" -gt 10 ]; then
+        case "$KUBERNETES_TARGET_VERSION_MINOR" in
+            15)
+                kubeadm upgrade node
+
+                # correctly sets the --resolv-conf flag when systemd-resolver is running (Ubuntu 18)
+                # https://github.com/kubernetes/kubeadm/issues/273
+                if isMasterNode; then
+                    kubeadm init phase kubelet-start
+                fi
+
+                upgradeK8sNodeHostPackages "$KUBERNETES_VERSION"
+
+                logSuccess "Kubernetes node upgraded to version v1.15.0"
+                return
+                ;;
+        esac
+
+        if [ "$KUBERNETES_TARGET_VERSION_MINOR" -gt 10 ]; then
             # kubeadm alpha phase kubelet write-env-file failed in airgap
             local cgroupDriver=$(docker info 2> /dev/null | grep "Cgroup Driver" | cut -d' ' -f 3)
             local envFile="KUBELET_KUBEADM_ARGS=--cgroup-driver=%s --cni-bin-dir=/opt/cni/bin --cni-conf-dir=/etc/cni/net.d --network-plugin=cni\n"
@@ -248,7 +328,7 @@ maybeUpgradeKubernetesNode() {
 
             if isMasterNode; then
                 : > /opt/replicated/kubeadm.conf
-                makeKubeadmConfig "$k8sTargetVersion"
+                makeKubeadmConfig "$KUBERNETES_VERSION"
                 local n=0
                 while ! kubeadm upgrade node experimental-control-plane ; do
                     n="$(( $n + 1 ))"
@@ -270,10 +350,10 @@ maybeUpgradeKubernetesNode() {
             fi
         fi
 
-        systemctl start kubelet
+        upgradeK8sNodeHostPackages "$KUBERNETES_VERSION"
 
-        logSuccess "Kubernetes node upgraded to version v$k8sTargetVersion"
-    elif [ "$k8sTargetMinor" -eq 13 ]; then
+        logSuccess "Kubernetes node upgraded to version v$KUBERNETES_VERSION"
+    elif [ "$KUBERNETES_TARGET_VERSION_MINOR" -eq 13 ]; then
         # Sync the config in case it changed.
         logStep "Sync Kubernetes node config"
         if isMasterNode; then
@@ -289,7 +369,7 @@ maybeUpgradeKubernetesNode() {
             fi
         fi
         logSuccess "Kubernetes node config upgraded"
-    elif [ "$k8sTargetMinor" -eq 15 ]; then
+    elif [ "$KUBERNETES_TARGET_VERSION_MINOR" -eq 15 ]; then
         logStep "Sync Kubernetes node config"
 
         rm -f /opt/replicated/kubeadm.conf
@@ -301,6 +381,8 @@ maybeUpgradeKubernetesNode() {
                 certArgs="$certArgs --apiserver-cert-extra-sans=$PUBLIC_ADDRESS"
             fi
             kubeadm init phase certs apiserver $certArgs
+            restartK8sAPIServerContainer
+
             updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
         else
             sed -i "s/server: https.*/server: https:\/\/$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/" /etc/kubernetes/kubelet.conf
@@ -337,19 +419,15 @@ listNodes() {
 #######################################
 # Upgrade Kubernetes on remote workers to version. Never downgrades a worker.
 # Globals:
-#   None
+#   KUBERNETES_TARGET_VERSION_MAJOR
+#   KUBERNETES_TARGET_VERSION_MINOR
+#   KUBERNETES_TARGET_VERSION_PATCH
 # Arguments:
-#   k8sVersion - e.g. 1.10.6
+#   None
 # Returns:
 #   None
 #######################################
 allNodesUpgraded() {
-    local k8sTargetVersion="$1"
-    semverParse "$k8sTargetVersion"
-    local k8sTargetMajor="$major"
-    local k8sTargetMinor="$minor"
-    local k8sTargetPatch="$patch"
-
     while read -r node; do
         local nodeVersion="$(echo "$node" | awk '{ print $5 }' | sed 's/v//' )"
         semverParse "$nodeVersion"
@@ -357,10 +435,10 @@ allNodesUpgraded() {
         local nodeMinor="$minor"
         local nodePatch="$patch"
 
-        if [ "$nodeMajor" -eq "$k8sTargetMajor" ] &&  [ "$nodeMinor" -lt "$k8sTargetMinor" ]; then
+        if [ "$nodeMajor" -eq "$KUBERNETES_TARGET_VERSION_MAJOR" ] &&  [ "$nodeMinor" -lt "$KUBERNETES_TARGET_VERSION_MINOR" ]; then
             return 1
         fi
-        if [ "$nodeMajor" -eq "$k8sTargetMajor" ] && [ "$nodeMinor" -eq "$k8sTargetMinor" ] && [ "$nodePatch" -lt "$k8sTargetPatch" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]; then
+        if [ "$nodeMajor" -eq "$KUBERNETES_TARGET_VERSION_MAJOR" ] && [ "$nodeMinor" -eq "$KUBERNETES_TARGET_VERSION_MINOR" ] && [ "$nodePatch" -lt "$KUBERNETES_TARGET_VERSION_PATCH" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]; then
             return 1
         fi
     done <<< "$(listNodes)"
@@ -439,9 +517,9 @@ upgradeK8sWorkers() {
             upgradePatchFlag=" kubernetes-upgrade-patch-version"
         fi
         if [ "$AIRGAP" = "1" ]; then
-            printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s airgap kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
+            printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s airgap hostname-check=${nodeName} kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
         else
-            printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
+            printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s hostname-check=${nodeName} kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
         fi
         while true; do
             echo ""
@@ -529,9 +607,9 @@ upgradeK8sRemoteMasters() {
             upgradePatchFlag=" kubernetes-upgrade-patch-version"
         fi
         if [ "$AIRGAP" = "1" ]; then
-            printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s airgap kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
+            printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s airgap hostname-check=${nodeName} kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
         else
-            printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
+            printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s hostname-check=${nodeName} kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
         fi
         while true; do
             echo ""
@@ -608,7 +686,7 @@ upgradeK8sMaster() {
 }
 
 #######################################
-# Upgrade Kubernetes on worker node
+# Upgrade Kubernetes packages on node
 # Globals:
 #   LSB_DIST
 #   DIST_VERSION
@@ -617,8 +695,10 @@ upgradeK8sMaster() {
 # Returns:
 #   None
 #######################################
-upgradeK8sNode() {
+upgradeK8sNodeHostPackages() {
     k8sVersion=$1
+
+    systemctl stop kubelet
 
     prepareK8sPackageArchives "$k8sVersion"
 
@@ -638,6 +718,23 @@ upgradeK8sNode() {
     rm -rf archives
 
     systemctl daemon-reload
+    systemctl start kubelet
+}
+
+#######################################
+# Upgrade kubeadm binary, which is used to upgrade nodes before upgrading host packages.
+# Globals:
+#   None
+# Arguments:
+#   k8sVersion - e.g. 1.10.6
+# Returns:
+#   None
+#######################################
+upgradeKubeadmCmd() {
+    local k8sVersion="$1"
+    prepareK8sPackageArchives "$k8sVersion"
+    cp archives/kubeadm /usr/bin/kubeadm
+    chmod a+rx /usr/bin/kubeadm
 }
 
 #######################################
@@ -679,16 +776,21 @@ updateKubernetesAPIServerCerts()
         logStep "Regenerate api server certs"
         rm -f /etc/kubernetes/pki/apiserver.*
         kubeadm init phase certs apiserver --config /opt/replicated/kubeadm.conf
-
         logSuccess "API server certs regenerated"
-        logStep "Restart kubernetes api server"
-        # admin.conf may not have been updated yet so kubectl may not work
-        docker ps | grep k8s_kube-apiserver | awk '{print $1}' | xargs docker rm -f
-        while ! curl -skf "https://$1:$2/healthz" ; do
-            sleep 1
-        done
-        logSuccess "Kubernetes api server restarted"
+
+        restartK8sAPIServerContainer
     fi
+}
+
+restartK8sAPIServerContainer()
+{
+    logStep "Restart kubernetes api server"
+    # admin.conf may not have been updated yet so kubectl may not work
+    docker ps | grep k8s_kube-apiserver | awk '{print $1}' | xargs docker rm -f
+    while ! curl -skf "https://$1:$2/healthz" ; do
+        sleep 1
+    done
+    logSuccess "Kubernetes api server restarted"
 }
 
 updateKubeconfigs()
@@ -708,4 +810,9 @@ updateKubeconfigs()
     if ! confHasEndpoint /etc/kubernetes/controller-manager.conf "$1"; then
         sed -i "s/server: https.*/server: https:\/\/$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/" /etc/kubernetes/controller-manager.conf
     fi
+}
+
+upgradeInProgress()
+{
+    test -e /opt/replicated/upgrade
 }

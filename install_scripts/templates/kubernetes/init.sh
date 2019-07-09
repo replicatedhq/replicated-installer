@@ -36,7 +36,6 @@ BOOTSTRAP_TOKEN=
 BOOTSTRAP_TOKEN_TTL="24h"
 KUBERNETES_NAMESPACE="default"
 KUBERNETES_VERSION="{{ kubernetes_version }}"
-CURRENT_KUBERNETES_VERSION=
 K8S_UPGRADE_PATCH_VERSION="{{ k8s_upgrade_patch_version }}"
 STORAGE_CLASS="{{ storage_class }}"
 STORAGE_PROVISIONER="{{ storage_provisioner }}"
@@ -309,9 +308,35 @@ handleLoadBalancerAddressChangedPostInit() {
     logSuccess "Kube-proxy restarted"
 }
 
+discoverCurrentKubernetesVersion() {
+    set +e
+    CURRENT_KUBERNETES_VERSION=$(cat /etc/kubernetes/manifests/kube-apiserver.yaml 2>/dev/null | grep image: | grep -oE '[0-9]+.[0-9]+.[0-9]')
+    set -e
+
+    if [ -n "$CURRENT_KUBERNETES_VERSION" ]; then
+        semverParse $CURRENT_KUBERNETES_VERSION
+        KUBERNETES_CURRENT_VERSION_MAJOR="$major"
+        KUBERNETES_CURRENT_VERSION_MINOR="$minor"
+        KUBERNETES_CURRENT_VERSION_PATCH="$patch"
+    fi
+}
+
+isMinorUpgrade() {
+    if [ -z "$CURRENT_KUBERNETES_VERSION" ]; then
+        return 1
+    fi
+    if [ "$KUBERNETES_CURRENT_VERSION_MINOR" -lt "$KUBERNETES_TARGET_VERSION_MINOR" ]; then
+        return 0
+    fi
+    return 1
+}
+
 initKube() {
     case "$KUBERNETES_TARGET_VERSION_MINOR" in
         15)
+            if isMinorUpgrade; then
+                return
+            fi
             initKube15
             return
             ;;
@@ -321,9 +346,6 @@ initKube() {
 
     # init is idempotent for the same version of Kubernetes. If init has already run this file will
     # exist and have the version that we must re-init with.
-    set +e
-    CURRENT_KUBERNETES_VERSION=$(cat /etc/kubernetes/manifests/kube-apiserver.yaml 2>/dev/null | grep image: | grep -oE '[0-9]+.[0-9]+.[0-9]')
-    set -e
     if [ ! -e "/etc/kubernetes/manifests/kube-apiserver.yaml" ] || shouldReinitK8s; then
         logStep "Initialize Kubernetes"
 
@@ -1103,6 +1125,7 @@ done
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
 
+discoverCurrentKubernetesVersion
 parseKubernetesTargetVersion
 setK8sPatchVersion
 
@@ -1207,7 +1230,9 @@ fi
 ensureCNIPlugins
 
 maybeGenerateBootstrapToken
-initKube
+if ! upgradeInProgress; then
+    initKube
+fi
 
 kubectl cluster-info
 logSuccess "Cluster Initialized"

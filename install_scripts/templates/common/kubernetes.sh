@@ -11,9 +11,11 @@ UBUNTU_1604_K8S_10=ubuntu-1604-v1.10.6-20181112
 UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.5-20181204
 UBUNTU_1604_K8S_12=ubuntu-1604-v1.12.3-20181211
 UBUNTU_1604_K8S_13=ubuntu-1604-v1.13.5-20190411
+UBUNTU_1604_K8S_14=ubuntu-1604-v1.14.3-20190702
 UBUNTU_1604_K8S_15=ubuntu-1604-v1.15.0-20190627
 
 UBUNTU_1804_K8S_13=ubuntu-1804-v1.13.5-20190411
+UBUNTU_1804_K8S_14=ubuntu-1804-v1.14.3-20190702
 UBUNTU_1804_K8S_15=ubuntu-1804-v1.15.0-20190627
 
 RHEL7_K8S_9=rhel7-v1.9.3-20180806
@@ -21,6 +23,7 @@ RHEL7_K8S_10=rhel7-v1.10.6-20180806
 RHEL7_K8S_11=rhel7-v1.11.5-20181204
 RHEL7_K8S_12=rhel7-v1.12.3-20181211
 RHEL7_K8S_13=rhel7-v1.13.5-20190411
+RHEL7_K8S_14=rhel7-v1.14.3-20190702
 RHEL7_K8S_15=rhel7-v1.15.0-20190627
 
 DAEMON_NODE_KEY=replicated.com/daemon
@@ -152,6 +155,9 @@ k8sPackageTag() {
                 1.13.5)
                     echo "$UBUNTU_1604_K8S_13"
                     ;;
+                1.14.3)
+                    echo "$UBUNTU_1604_K8S_14"
+                    ;;
                 1.15.0)
                     echo "$UBUNTU_1604_K8S_15"
                     ;;
@@ -164,6 +170,9 @@ k8sPackageTag() {
             case "$k8sVersion" in
                 1.13.5)
                     echo "$UBUNTU_1804_K8S_13"
+                    ;;
+                1.14.3)
+                    echo "$UBUNTU_1804_K8S_14"
                     ;;
                 1.15.0)
                     echo "$UBUNTU_1804_K8S_15"
@@ -189,6 +198,9 @@ k8sPackageTag() {
                     ;;
                 1.13.5)
                     echo "$RHEL7_K8S_13"
+                    ;;
+                1.14.3)
+                    echo "$RHEL7_K8S_14"
                     ;;
                 1.15.0)
                     echo "$RHEL7_K8S_15"
@@ -1398,7 +1410,7 @@ discovery:
     caCertHashes:
     - $KUBEADM_TOKEN_CA_HASH
 EOF
-    if [ "$MASTER" -eq "1" ]; then
+    if [ "$MASTER" = "1" ]; then
         cat << EOF >> /opt/replicated/kubeadm.conf
 controlPlane: {}
 EOF
@@ -1433,7 +1445,7 @@ discovery:
     caCertHashes:
     - $KUBEADM_TOKEN_CA_HASH
 EOF
-    if [ "$MASTER" -eq "1" ]; then
+    if [ "$MASTER" = "1" ]; then
         cat << EOF >> /opt/replicated/kubeadm.conf
 controlPlane: {}
 EOF
@@ -1555,4 +1567,73 @@ confHasEndpoint()
 isRook1()
 {
     kubectl -n rook-ceph get cephblockpools replicapool &>/dev/null
+}
+
+#######################################
+# Wait until Ceph status is healthy
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+waitCephHealthy()
+{
+    if ! isRook1; then
+        return
+    fi
+
+    # log output of `ceph health` once, but only if a wait is needed
+    local logged=0
+    while true; do
+        spinnerPodRunning "rook-ceph-system" "rook-ceph-operator"
+        local rookOperatorPod=$(kubectl -n rook-ceph-system get pods | grep rook-ceph-operator | awk '{ print $1 }')
+        local health=$(kubectl -n rook-ceph-system exec "$rookOperatorPod" -- /bin/sh -c 'ceph health 2>/dev/null || true')
+        local status=$(echo $health | awk '{ print $1 }')
+        if [ "$status" = "HEALTH_OK" ]; then
+            return 0
+        fi
+        if [ "$logged" = "0" ] && [ -n "$health" ]; then
+            logStep "Waiting for Rook/Ceph to report health OK, got: $health"
+            logged=1
+        fi
+        sleep 2
+    done
+}
+
+#######################################
+# disable rook operator
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+disableRookCephOperator()
+{
+    if ! isRook1; then
+        return 0
+    fi
+
+    kubectl -n rook-ceph-system scale deployment rook-ceph-operator --replicas=0
+}
+
+#######################################
+# enable rook operator
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+enableRookCephOperator()
+{
+    if ! isRook1; then
+        return 0
+    fi
+
+    kubectl -n rook-ceph-system scale deployment rook-ceph-operator --replicas=1
 }
