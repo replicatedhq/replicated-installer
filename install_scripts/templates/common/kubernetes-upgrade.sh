@@ -33,7 +33,7 @@ maybeUpgradeKubernetes() {
 
     upgradeKubernetes
 
-    rm /opt/replicated/upgrade
+    rm -f /opt/replicated/upgrade
     enableRookCephOperator
     waitCephHealthy
 }

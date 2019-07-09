@@ -1589,16 +1589,14 @@ waitCephHealthy()
     while true; do
         spinnerPodRunning "rook-ceph-system" "rook-ceph-operator"
         local rookOperatorPod=$(kubectl -n rook-ceph-system get pods | grep rook-ceph-operator | awk '{ print $1 }')
-        local status=$(kubectl -n rook-ceph-system exec -i 2>/dev/null "$rookOperatorPod" -- ceph health | awk '{ print $1 }')
+        local health=$(kubectl -n rook-ceph-system exec "$rookOperatorPod" -- /bin/sh -c 'ceph health 2>/dev/null || true')
+        local status=$(echo $health | awk '{ print $1 }')
         if [ "$status" = "HEALTH_OK" ]; then
             return 0
         fi
-        if [ "$logged" = "0" ]; then
-            local health=$(kubectl -n rook-ceph-system exec -i 2>/dev/null "$rookOperatorPod" -- ceph health)
-            if [ -n "$health" ]; then
-                logStep "Waiting for Rook/Ceph to report health OK, got: $health"
-                logged=1
-            fi
+        if [ "$logged" = "0" ] && [ -n "$health" ]; then
+            logStep "Waiting for Rook/Ceph to report health OK, got: $health"
+            logged=1
         fi
         sleep 2
     done
