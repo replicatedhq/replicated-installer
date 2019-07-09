@@ -378,6 +378,12 @@ airgapLoadKubernetesCommonImages() {
         1.13.5)
             airgapLoadKubernetesCommonImages1135
             ;;
+        1.14.3)
+            airgapLoadKubernetesCommonImages1143
+            ;;
+        1.15.0)
+            airgapLoadKubernetesCommonImages1150
+            ;;
         *)
             bail "Unsupported Kubernetes version $k8sVersion"
             ;;
@@ -481,6 +487,41 @@ airgapLoadKubernetesCommonImages1135() {
     )
 }
 
+# only the images needed for kubeadm to upgrade from 1.13 to 1.15
+airgapLoadKubernetesCommonImages1143() {
+    docker run \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        "quay.io/replicated/k8s-images-common:v1.14.3-20190702"
+
+    (
+        set -x
+        docker tag 004666307c5b k8s.gcr.io/kube-proxy:v1.14.3
+        docker tag eb516548c180 k8s.gcr.io/coredns:1.3.1
+    )
+}
+
+airgapLoadKubernetesCommonImages1150() {
+    docker run \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        "quay.io/replicated/k8s-images-common:v1.15.0-20190709"
+
+    (
+        set -x
+        docker tag d235b23c3570 k8s.gcr.io/kube-proxy:v1.15.0
+        docker tag da86e6ba6ca1 k8s.gcr.io/pause:3.1
+        docker tag eb516548c180 k8s.gcr.io/coredns:1.3.1
+        docker tag f04a043bb67a docker.io/weaveworks/weave-kube:2.5.2
+        docker tag 5ce48e0d813c docker.io/weaveworks/weave-npc:2.5.2
+        docker tag 8474972641bd docker.io/weaveworks/weaveexec:2.5.2
+        docker tag d5ef411ad932 docker.io/registry:2
+        docker tag 0246380e4b70 docker.io/envoyproxy/envoy-alpine:v1.10.0
+        docker tag 672aff19e6e4 gcr.io/heptio-images/contour:v0.13.0
+        docker tag 3ee0a397fb56 docker.io/rook/ceph:v1.0.3
+        docker tag 243030ce8ef0 docker.io/ceph/ceph:v14.2.0-20190410
+        docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
+    )
+}
+
 #######################################
 # Unpack kubernetes images
 # Globals:
@@ -512,6 +553,12 @@ airgapLoadKubernetesControlImages() {
             ;;
         1.13.5)
             airgapLoadKubernetesControlImages1135
+            ;;
+        1.14.3)
+            airgapLoadKubernetesControlImages1143
+            ;;
+        1.15.0)
+            airgapLoadKubernetesControlImages1150
             ;;
         *)
             bail "Unsupported Kubernetes version $k8sVersion"
@@ -604,6 +651,34 @@ airgapLoadKubernetesControlImages1135() {
         docker tag b6b315f4f34a k8s.gcr.io/kube-controller-manager:v1.13.5
         docker tag c629ac1dae38 k8s.gcr.io/kube-scheduler:v1.13.5
         docker tag 3cab8e1b9802 k8s.gcr.io/etcd:3.2.24
+    )
+}
+
+airgapLoadKubernetesControlImages1143() {
+    docker run \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        "quay.io/replicated/k8s-images-control:v1.14.3-20190702"
+
+    (
+        set -x
+        docker tag 9946f563237c k8s.gcr.io/kube-apiserver:v1.14.3
+        docker tag 953364a3ae7a k8s.gcr.io/kube-scheduler:v1.14.3
+        docker tag ac2ce44462bc k8s.gcr.io/kube-controller-manager:v1.14.3
+        docker tag 2c4adeb21b4f k8s.gcr.io/etcd:3.3.10
+    )
+}
+
+airgapLoadKubernetesControlImages1150() {
+    docker run \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        "quay.io/replicated/k8s-images-control:v1.15.0-20190709"
+
+    (
+        set -x
+        docker tag 201c7a840312 k8s.gcr.io/kube-apiserver:v1.15.0
+        docker tag 8328bb49b652 k8s.gcr.io/kube-controller-manager:v1.15.0
+        docker tag 2d3813851e87 k8s.gcr.io/kube-scheduler:v1.13.5
+        docker tag 2c4adeb21b4f k8s.gcr.io/etcd:3.3.10
     )
 }
 
