@@ -157,7 +157,7 @@ metadata:
   namespace: rook-ceph
 spec:
   cephVersion:
-    # image: ceph/ceph:v14.2
+    # image: ceph/ceph:v14.2.1 has dashboard errors but 14.2.2 should work once released
     image: ceph/ceph:v14.2.0-20190410
     # Whether to allow unsupported versions of Ceph.
     # Do not set to true in production.
