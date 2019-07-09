@@ -115,13 +115,25 @@ installCNIPlugins() {
     mkdir -p /tmp/cni-plugins
     mkdir -p /opt/cni/bin
 
-    if [ "$AIRGAP" = "1" ]; then
-        docker load < k8s-cni.tar
-    fi
 
-    docker run -v /tmp:/out quay.io/replicated/k8s-cni:0.6.0
+    case "$KUBERNETES_TARGET_VERSION_MINOR" in
+        13|14|15)
+            if [ "$AIRGAP" = "1" ]; then
+                docker load < k8s-cni-0-7-5.tar
+            fi
+            docker run -v /tmp:/out quay.io/replicated/k8s-cni:0.7.5
+            ;;
+        default)
+            if [ "$AIRGAP" = "1" ]; then
+                docker load < k8s-cni.tar
+            fi
+            docker run -v /tmp:/out quay.io/replicated/k8s-cni:0.6.0
+            ;;
+    esac
+
     tar zxfv /tmp/cni.tar.gz -C /opt/cni/bin
     mkdir -p /etc/cni/net.d
+    logSuccess "CNI configured"
 }
 
 #######################################
