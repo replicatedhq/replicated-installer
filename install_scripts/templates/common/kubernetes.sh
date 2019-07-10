@@ -965,7 +965,7 @@ waitForNodes()
 #######################################
 # Display a spinner until the master node is ready
 # Globals:
-#   AIRGAP
+#   None
 # Arguments:
 #   None
 # Returns:
