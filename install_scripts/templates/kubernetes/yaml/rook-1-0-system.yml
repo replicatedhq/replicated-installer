@@ -213,7 +213,6 @@ rules:
   resources:
   - deployments
   - daemonsets
-  - replicasets
   verbs:
   - get
   - list
@@ -237,6 +236,7 @@ rules:
   resources:
   - pods
   - configmaps
+  - services
   verbs:
   - get
   - list
@@ -249,6 +249,7 @@ rules:
   - apps
   resources:
   - daemonsets
+  - statefulsets
   verbs:
   - get
   - list
