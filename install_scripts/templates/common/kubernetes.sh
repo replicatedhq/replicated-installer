@@ -677,7 +677,7 @@ airgapLoadKubernetesControlImages1150() {
         set -x
         docker tag 201c7a840312 k8s.gcr.io/kube-apiserver:v1.15.0
         docker tag 8328bb49b652 k8s.gcr.io/kube-controller-manager:v1.15.0
-        docker tag 2d3813851e87 k8s.gcr.io/kube-scheduler:v1.13.5
+        docker tag 2d3813851e87 k8s.gcr.io/kube-scheduler:v1.15.0
         docker tag 2c4adeb21b4f k8s.gcr.io/etcd:3.3.10
     )
 }
