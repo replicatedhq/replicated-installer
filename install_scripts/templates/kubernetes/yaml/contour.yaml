@@ -2,6 +2,7 @@
 # imagePullPolicy changed from Always to IfNotPresent
 # service type changed from LoadBalancer to NodePort and add nodePorts 80 and 443
 # contour image tag changed from :master to :v0.11.0
+# envoy image changed to envoy-alpine
 # annotations for AWS, statsd, and prometheus removed
 ---
 apiVersion: v1
@@ -222,7 +223,7 @@ spec:
           httpGet:
             path: /healthz
             port: 8000
-      - image: docker.io/envoyproxy/envoy:v1.10.0
+      - image: docker.io/envoyproxy/envoy-alpine:v1.10.0
         name: envoy
         ports:
         - containerPort: 8080
