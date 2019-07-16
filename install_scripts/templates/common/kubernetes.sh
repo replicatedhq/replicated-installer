@@ -1682,7 +1682,7 @@ waitCephHealthy()
             return 0
         fi
         if [ "$logged" = "0" ] && [ -n "$health" ]; then
-            logStep "Waiting for Rook/Ceph to report health OK, got: $health"
+            logStep "Waiting for Rook/Ceph to report health OK, got: $status"
             logged=1
         fi
         sleep 2
