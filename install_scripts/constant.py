@@ -1,0 +1,4 @@
+
+SCHEDULER_REPLICATED = 'replicated'
+SCHEDULER_KUBERNETES = 'kubernetes'
+SCHEDULER_SWARM = 'swarm'

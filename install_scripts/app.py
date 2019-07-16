@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import constant
 from flask import Flask, Response, abort, render_template, request, jsonify
 import semver
 import subprocess
@@ -67,8 +68,11 @@ def get_replicated_version(replicated_channel=None,
                            app_slug=None,
                            app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
+
+    scheduler = helpers.get_arg('scheduler', None)
     replicated_version = helpers.get_replicated_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, schedule=scheduler)
+
     return replicated_version
 
 
@@ -111,15 +115,16 @@ def get_replicated_two_point_zero(replicated_channel=None,
     print("Looking up tags for:", replicated_channel,
           app_slug, app_channel, file=sys.stderr)
 
+    scheduler = constant.SCHEDULER_REPLICATED
     replicated_version = helpers.get_replicated_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
     replicated_ui_version = helpers.get_replicated_ui_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
     replicated_operator_version = helpers.get_replicated_operator_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
 
     pinned_docker_version = helpers.get_pinned_docker_version(
-        replicated_version, 'replicated')
+        replicated_version, scheduler)
 
     replicated_tag = '{}-{}'.format(replicated_channel, replicated_version)
     replicated_ui_tag = '{}-{}'.format(replicated_channel,
@@ -187,13 +192,15 @@ def get_replicated_operator(replicated_channel=None,
     print("Looking up tags for:", replicated_channel,
           app_slug, app_channel, file=sys.stderr)
 
+    scheduler = constant.SCHEDULER_REPLICATED
     replicated_operator_version = helpers.get_replicated_operator_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
+
     replicated_operator_tag = '{}-{}'.format(replicated_channel,
                                              replicated_operator_version)
 
     pinned_docker_version = helpers.get_pinned_docker_version(
-        replicated_operator_version, 'replicated')
+        replicated_operator_version, )
 
     # Only Replicated versions prior to 2.1.0 should mount the root file system
     root_volume = helpers.get_root_volume_mount(replicated_operator_version)
@@ -278,8 +285,10 @@ def get_kubernetes_compatibility(replicated_channel=None,
     current_kubernetes_version = helpers.get_pinned_kubernetes_version(
         current_replicated_version)
 
+    scheduler = constant.SCHEDULER_KUBERNETES
     next_replicated_version = helpers.get_replicated_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
+
     next_kubernetes_version = helpers.get_pinned_kubernetes_version(
         next_replicated_version)
 
@@ -319,8 +328,8 @@ def get_replicated_kubernetes_yml(replicated_channel=None,
 @app.route('/<replicated_channel>/kubernetes/operator.yml')
 @app.route('/<app_slug>/<app_channel>/kubernetes/operator.yml')
 def get_kubernetes_operator_yml(replicated_channel=None,
-                                  app_slug=None,
-                                  app_channel=None):
+                                app_slug=None,
+                                app_channel=None):
     kwargs = get_kubernetes_yaml_template_args(replicated_channel, app_slug,
                                                app_channel)
     script = render_template(
@@ -347,12 +356,13 @@ def get_replicated_compose_v3_template_args(replicated_channel=None,
     print("Looking up tags for:", replicated_channel,
           app_slug, app_channel, file=sys.stderr)
 
+    scheduler = constant.SCHEDULER_SWARM
     replicated_version = helpers.get_replicated_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
     replicated_ui_version = helpers.get_replicated_ui_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
     replicated_operator_version = helpers.get_replicated_operator_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
 
     replicated_tag = '{}-{}'.format(replicated_channel, replicated_version)
     replicated_ui_tag = '{}-{}'.format(replicated_channel,
@@ -361,7 +371,7 @@ def get_replicated_compose_v3_template_args(replicated_channel=None,
                                              replicated_operator_version)
 
     pinned_docker_version = helpers.get_pinned_docker_version(
-        replicated_version, 'swarm')
+        replicated_version, scheduler)
 
     # Port mappings narrow after the release of replicated 2.0.1654 with
     # premkit
@@ -440,12 +450,13 @@ def get_replicated_compose_v2(replicated_channel=None,
     print("Looking up tags for:", replicated_channel,
           app_slug, app_channel, file=sys.stderr)
 
+    scheduler = constant.SCHEDULER_SWARM
     replicated_version = helpers.get_replicated_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
     replicated_ui_version = helpers.get_replicated_ui_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
     replicated_operator_version = helpers.get_replicated_operator_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
 
     replicated_tag = '{}-{}'.format(replicated_channel, replicated_version)
     replicated_ui_tag = '{}-{}'.format(replicated_channel,
@@ -489,12 +500,14 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
     replicated_channel = replicated_channel if replicated_channel else 'stable'
     print("Looking up tags for:", replicated_channel,
           app_slug, app_channel, file=sys.stderr)
+
+    scheduler = constant.SCHEDULER_KUBERNETES
     replicated_version = helpers.get_replicated_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
     replicated_ui_version = helpers.get_replicated_ui_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
     replicated_operator_version = helpers.get_replicated_operator_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
 
     replicated_tag = '{}-{}'.format(replicated_channel, replicated_version)
     replicated_ui_tag = '{}-{}'.format(replicated_channel,
@@ -516,9 +529,12 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
     no_proxy_addresses = helpers.get_arg('no_proxy_addresses', '10.96.0.0/12')
     api_service_address = helpers.get_arg('api_service_address', '')
     ha_cluster = '1' if helpers.get_arg('ha_cluster') == 'true' else '0'
-    purge_dead_nodes = '1' if helpers.get_arg('purge_dead_nodes') == 'true' else '0'
-    maintain_rook_storage_nodes = '1' if helpers.get_arg('maintain_rook_storage_nodes') == 'true' else '0'
-    app_registry_advertise_host = helpers.get_arg('app_registry_advertise_host', '')
+    purge_dead_nodes = '1' if helpers.get_arg(
+        'purge_dead_nodes') == 'true' else '0'
+    maintain_rook_storage_nodes = '1' if helpers.get_arg(
+        'maintain_rook_storage_nodes') == 'true' else '0'
+    app_registry_advertise_host = helpers.get_arg(
+        'app_registry_advertise_host', '')
 
     return helpers.template_args(
         channel_name=replicated_channel,
@@ -574,12 +590,13 @@ def get_swarm_init_master(replicated_channel=None,
     print("Looking up tags for:", replicated_channel,
           app_slug, app_channel, file=sys.stderr)
 
+    scheduler = constant.SCHEDULER_SWARM
     replicated_version = helpers.get_replicated_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
     replicated_ui_version = helpers.get_replicated_ui_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
     replicated_operator_version = helpers.get_replicated_operator_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
 
     replicated_tag = '{}-{}'.format(replicated_channel, replicated_version)
     replicated_ui_tag = '{}-{}'.format(replicated_channel,
@@ -588,7 +605,7 @@ def get_swarm_init_master(replicated_channel=None,
                                              replicated_operator_version)
 
     pinned_docker_version = helpers.get_pinned_docker_version(
-        replicated_version, 'swarm')
+        replicated_version, scheduler)
 
     compose_path = 'docker-compose-generate'
     worker_path = 'swarm-worker-join'
@@ -637,10 +654,13 @@ def get_swarm_init_worker(replicated_channel=None,
                           app_slug=None,
                           app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
+
+    scheduler = constant.SCHEDULER_SWARM
     replicated_version = helpers.get_replicated_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
+
     pinned_docker_version = helpers.get_pinned_docker_version(
-        replicated_version, 'swarm')
+        replicated_version, scheduler)
     swarm_master_address = helpers.get_arg('swarm_master_address')
     swarm_token = helpers.get_arg('swarm_token')
     username = helpers.get_replicated_username_swarm(replicated_version)
@@ -660,8 +680,11 @@ def get_swarm_init_worker(replicated_channel=None,
 @app.route('/<replicated_channel>/kubernetes-node-upgrade')
 def get_kubernetes_upgrade_worker(replicated_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
+
+    scheduler = constant.SCHEDULER_KUBERNETES
     replicated_version = helpers.get_replicated_version(
-        replicated_channel, None, None)
+        replicated_channel, None, None, scheduler=scheduler)
+
     pinned_kubernetes_version = helpers.get_pinned_kubernetes_version(
         replicated_version)
     kubernetes_version = helpers.get_arg('kubernetes_version',
@@ -684,8 +707,11 @@ def get_kubernetes_migrate(replicated_channel=None,
     replicated_channel = replicated_channel if replicated_channel else 'stable'
     # use app_channel to lookup replicated version, but don't add to
     # init script because we don't want terms and branding
+
+    scheduler = constant.SCHEDULER_KUBERNETES
     replicated_version = helpers.get_replicated_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
+
     init_path = 'kubernetes-init'
     if replicated_channel != 'stable':
         init_path = replicated_channel + '/' + init_path
@@ -720,15 +746,17 @@ def get_kubernetes_init_master(replicated_channel=None,
                                app_slug=None,
                                app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
+
+    scheduler = constant.SCHEDULER_KUBERNETES
     replicated_version = helpers.get_replicated_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
     replicated_ui_version = helpers.get_replicated_ui_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
     replicated_operator_version = helpers.get_replicated_operator_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
 
     pinned_docker_version = helpers.get_pinned_docker_version(
-        replicated_version, 'kubernetes')
+        replicated_version, scheduler)
 
     pinned_kubernetes_version = helpers.get_pinned_kubernetes_version(
         replicated_version)
@@ -797,10 +825,13 @@ def get_kubernetes_node_join(replicated_channel=None,
                              app_slug=None,
                              app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
+
+    scheduler = constant.SCHEDULER_KUBERNETES
     replicated_version = helpers.get_replicated_version(
-        replicated_channel, app_slug, app_channel)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
+
     pinned_docker_version = helpers.get_pinned_docker_version(
-        replicated_version, 'kubernetes')
+        replicated_version, scheduler)
     pinned_kubernetes_version = helpers.get_pinned_kubernetes_version(
         replicated_version)
     kubernetes_version = helpers.get_arg('kubernetes_version',
@@ -854,8 +885,10 @@ def get_best_docker_tag():
         abort(400)
 
     replicated_channel = helpers.get_arg('channel', 'stable')
+    scheduler = helpers.get_arg('scheduler', None)
     best_version = helpers.get_best_replicated_version(version_range,
-                                                       replicated_channel)
+                                                       replicated_channel,
+                                                       scheduler=scheduler)
     if not best_version:
         abort(404)
 

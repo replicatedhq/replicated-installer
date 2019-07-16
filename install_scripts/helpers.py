@@ -131,29 +131,46 @@ def get_default_docker_version():
         default=_default_docker_version)
 
 
-def get_replicated_version(replicated_channel, app_slug, app_channel):
+def get_replicated_version(replicated_channel, app_slug, app_channel,
+                           scheduler=None):
     return get_best_version('replicated_tag', None, replicated_channel,
-                            app_slug, app_channel)
+                            app_slug, app_channel, scheduler=scheduler)
 
 
-def get_replicated_ui_version(replicated_channel, app_slug, app_channel):
+def get_replicated_ui_version(replicated_channel, app_slug, app_channel,
+                              scheduler=None):
     return get_best_version('replicated_ui_tag', 'replicated_tag',
-                            replicated_channel, app_slug, app_channel)
+                            replicated_channel, app_slug, app_channel,
+                            scheduler=scheduler)
 
 
-def get_replicated_operator_version(replicated_channel, app_slug, app_channel):
+def get_replicated_operator_version(replicated_channel, app_slug, app_channel,
+                                    scheduler=None):
     return get_best_version('replicated_operator_tag', 'replicated_tag',
-                            replicated_channel, app_slug, app_channel)
+                            replicated_channel, app_slug, app_channel,
+                            scheduler=scheduler)
 
 
 def get_best_version(arg_name, default_arg_name, replicated_channel, app_slug,
-                     app_channel):
+                     app_channel, scheduler=None):
+    best_version = _get_best_version(arg_name, default_arg_name,
+                                     replicated_channel, app_slug,
+                                     app_channel, scheduler)
+    if is_valid_replicated_version(best_version, replicated_channel):
+        return best_version
+    return get_current_replicated_version(replicated_channel,
+                                          scheduler=scheduler)
+
+
+def _get_best_version(arg_name, default_arg_name, replicated_channel, app_slug,
+                      app_channel, scheduler=None):
     if app_slug and app_channel:
         app_version = get_version_for_app(app_slug, app_channel,
                                           replicated_channel)
         if app_version:
             return app_version
-    current_version = get_current_replicated_version(replicated_channel)
+    current_version = get_current_replicated_version(
+        replicated_channel, scheduler=scheduler)
     if default_arg_name is not None:
         current_version = get_arg(default_arg_name, current_version)
     return get_arg(arg_name, current_version)
@@ -205,7 +222,8 @@ def get_operator_additional_etc_mounts(version_tag):
     return ''
 
 
-def get_version_for_app(app_slug, app_channel, replicated_channel):
+def get_version_for_app(app_slug, app_channel, replicated_channel,
+                        scheduler=None):
     version_range = None
     for doc in get_app_version_config(app_slug, app_channel):
         if not doc or 'host_requirements' not in doc:
@@ -218,9 +236,11 @@ def get_version_for_app(app_slug, app_channel, replicated_channel):
         break
 
     if version_range:
-        return get_best_replicated_version(version_range, replicated_channel)
+        return get_best_replicated_version(version_range, replicated_channel,
+                                           scheduler=scheduler)
 
-    return get_current_replicated_version(replicated_channel)
+    return get_current_replicated_version(replicated_channel,
+                                          scheduler=scheduler)
 
 
 def get_terms(app_slug, app_channel):
@@ -267,26 +287,37 @@ def get_app_version_config(app_slug, app_channel):
     ]
 
 
-def get_current_replicated_version(replicated_channel):
+def get_current_replicated_version(replicated_channel, scheduler=None):
     cursor = db.get().cursor()
     query = ('SELECT version '
              'FROM product_version_channel_release '
              'WHERE product = %s AND channel = %s')
-    cursor.execute(query, ("replicated_v2", replicated_channel))
-    (version, ) = cursor.fetchone()
+    product = "replicated_v2"
+    if scheduler:
+        product += "-" + scheduler
+    cursor.execute(query, (product, replicated_channel))
+    row = cursor.fetchone()
     cursor.close()
+    if row is None:
+        raise Exception('no releases for product {} and channel {}'.format(
+            product, replicated_channel))
+    (version, ) = row
 
     print('Current Replicated version for {}: {}'.format(
         replicated_channel, version), file=sys.stderr)
     return version
 
 
-def get_best_replicated_version(version_range, replicated_channel):
+def get_best_replicated_version(version_range, replicated_channel,
+                                scheduler=None):
     cursor = db.get().cursor()
     query = ('SELECT version '
              'FROM product_version_channel_release_history '
              'WHERE product = %s AND channel = %s')
-    cursor.execute(query, ("replicated_v2", replicated_channel))
+    product = "replicated_v2"
+    if scheduler:
+        product += "-" + scheduler
+    cursor.execute(query, (product, replicated_channel))
     best_v = semver.max_satisfying(
         version_list_generator(cursor), version_range, loose=False)
     cursor.close()
@@ -294,6 +325,24 @@ def get_best_replicated_version(version_range, replicated_channel):
     print('Best matching Replicated version for {}: {}'.format(
         version_range, best_v), file=sys.stderr)
     return best_v
+
+
+def is_valid_replicated_version(version, replicated_channel,
+                                scheduler=None):
+    cursor = db.get().cursor()
+    query = ('SELECT version '
+             'FROM product_version_channel_release_history '
+             'WHERE product = %s AND channel = %s AND version = %s '
+             'LIMIT 1')
+    product = "replicated_v2"
+    if scheduler:
+        product += "-" + scheduler
+    cursor.execute(query, (product, replicated_channel, version))
+    row = cursor.fetchone()
+    cursor.close()
+    if row is None:
+        return False
+    return True
 
 
 def version_list_generator(cursor):
