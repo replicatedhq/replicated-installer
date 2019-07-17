@@ -289,13 +289,26 @@ def get_app_version_config(app_slug, app_channel):
 
 def get_current_replicated_version(replicated_channel, scheduler=None):
     cursor = db.get().cursor()
-    query = ('SELECT version '
-             'FROM product_version_channel_release '
-             'WHERE product = %s AND channel = %s')
     product = "replicated_v2"
-    if scheduler:
-        product += "-" + scheduler
-    cursor.execute(query, (product, replicated_channel))
+    if not scheduler:
+        query = ('SELECT version '
+                 'FROM product_version_channel_release '
+                 'WHERE product = %s AND channel = %s')
+        cursor.execute(query, (
+            product, replicated_channel,
+        ))
+    else:
+        # select the default if the scheduler row does not exist
+        query = ('SELECT version '
+                 'FROM product_version_channel_release '
+                 'WHERE (product = %s OR product = %s) AND channel = %s'
+                 'ORDER BY FIELD(product, %s, %s)'
+                 'LIMIT 1')
+        cursor.execute(query, (
+            product + "-" + scheduler, product,
+            replicated_channel,
+            product + "-" + scheduler, product,
+        ))
     row = cursor.fetchone()
     cursor.close()
     if row is None:
