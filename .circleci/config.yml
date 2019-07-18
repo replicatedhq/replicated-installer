@@ -12,6 +12,17 @@ defaults: &defaults
     DOCKERFILE: deploy/Dockerfile.prod
 
 jobs:
+  is_upstream:
+    docker:
+      - image: circleci/python:3
+    steps:
+      - run: |
+          set -veuo pipefail
+          if [ "${CIRCLE_PROJECT_USERNAME}" != "replicatedhq" ]; then
+            echo "refusing to build fork \"${CIRCLE_PROJECT_USERNAME}\""
+            exit 1
+          fi
+
   test:
     <<: *defaults
     steps:
@@ -188,35 +199,42 @@ jobs:
 
 workflows:
   version: 2
-  build_accept_deploy:
+
+  pull-request:
     jobs:
-      - test
+      - test:
+          filters:
+            branches:
+              ignore: master
+
+  master:
+    jobs:
+      - is_upstream:
+          filters:
+            branches:
+              only: master
+
+      - test:
+          requires:
+            - is_upstream
       - build_staging_docker_image:
-          filters:
-            branches:
-              only: master
+          requires:
+            - is_upstream
       - build_production_docker_image:
-          filters:
-            branches:
-              only: master
+          requires:
+            - is_upstream
+
       - deploy_staging_eks:
           requires:
             - test
             - build_staging_docker_image
-          filters:
-            branches:
-              only: master
+
       - hold:
           type: approval
           requires:
             - deploy_staging_eks
-          filters:
-            branches:
-              only: master
+
       - deploy_production_eks:
           requires:
             - build_production_docker_image
             - hold
-          filters:
-            branches:
-              only: master
