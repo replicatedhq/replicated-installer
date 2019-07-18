@@ -20,6 +20,9 @@ def test_get_replicated_version_arg(mocker):
     mocker.patch(
         'install_scripts.helpers.get_current_replicated_version',
         return_value='2.6.2')
+    mocker.patch(
+        'install_scripts.helpers.is_valid_replicated_version',
+        return_value=True)
     with app.test_request_context('/?replicated_tag=2.6.0'):
         version = helpers.get_replicated_version('stable', 'test-app',
                                                  'stables')
@@ -56,6 +59,9 @@ def test_get_replicated_ui_version_arg(mocker):
     mocker.patch(
         'install_scripts.helpers.get_current_replicated_version',
         return_value='2.6.2')
+    mocker.patch(
+        'install_scripts.helpers.is_valid_replicated_version',
+        return_value=True)
     with app.test_request_context('/?replicated_ui_tag=2.6.0'):
         version = helpers.get_replicated_ui_version('stable', 'test-app',
                                                     'stables')
@@ -68,6 +74,9 @@ def test_get_replicated_ui_version_replicated_arg(mocker):
     mocker.patch(
         'install_scripts.helpers.get_current_replicated_version',
         return_value='2.6.2')
+    mocker.patch(
+        'install_scripts.helpers.is_valid_replicated_version',
+        return_value=True)
     with app.test_request_context('/?replicated_tag=2.6.1'):
         version = helpers.get_replicated_ui_version('stable', 'test-app',
                                                     'stables')
@@ -104,6 +113,9 @@ def test_get_replicated_operator_version_arg(mocker):
     mocker.patch(
         'install_scripts.helpers.get_current_replicated_version',
         return_value='2.6.2')
+    mocker.patch(
+        'install_scripts.helpers.is_valid_replicated_version',
+        return_value=True)
     with app.test_request_context('/?replicated_operator_tag=2.6.0'):
         version = helpers.get_replicated_operator_version(
             'stable', 'test-app', 'stables')
@@ -116,6 +128,9 @@ def test_get_replicated_operator_version_replicated_arg(mocker):
     mocker.patch(
         'install_scripts.helpers.get_current_replicated_version',
         return_value='2.6.2')
+    mocker.patch(
+        'install_scripts.helpers.is_valid_replicated_version',
+        return_value=True)
     with app.test_request_context('/?replicated_tag=2.6.1'):
         version = helpers.get_replicated_operator_version(
             'stable', 'test-app', 'stables')
