@@ -123,7 +123,7 @@ installCNIPlugins() {
             fi
             docker run -v /tmp:/out quay.io/replicated/k8s-cni:0.7.5
             ;;
-        default)
+        *)
             if [ "$AIRGAP" = "1" ]; then
                 docker load < k8s-cni.tar
             fi
