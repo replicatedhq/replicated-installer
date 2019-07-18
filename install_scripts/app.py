@@ -71,7 +71,7 @@ def get_replicated_version(replicated_channel=None,
 
     scheduler = helpers.get_arg('scheduler', None)
     replicated_version = helpers.get_replicated_version(
-        replicated_channel, app_slug, app_channel, schedule=scheduler)
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
 
     return replicated_version
 
