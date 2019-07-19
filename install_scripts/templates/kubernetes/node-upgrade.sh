@@ -59,7 +59,6 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 parseKubernetesTargetVersion
 setK8sPatchVersion
 loadIPVSKubeProxyModules
-maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
 
 if [ "$AIRGAP" = "1" ]; then
     airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"
@@ -67,11 +66,22 @@ if [ "$AIRGAP" = "1" ]; then
         airgapLoadKubernetesControlImages "$KUBERNETES_VERSION"
     fi
 
-    # When the master upgrades to 1.11.5 it may try to schedule coreDNS pods on
-    # this node and will hang until they start, so we need to preload those
-    # images. Need to figure this out for future upgrades.
-    if [ "$KUBERNETES_VERSION" = "1.10.6" ]; then
-        airgapLoadKubernetesCommonImages 1.11.5
-    fi
+    # Pre-load images for the next version if the current upgrade is an even version.
+    # This prevents CoreDNS and Kube-Proxy from getting into ImagePullBackoff state
+    # on this node when the upgrade to the next version begins on the primary master.
+    case "$KUBERNETES_VERSION" in
+        "1.10.6")
+            airgapLoadKubernetesCommonImages 1.11.5
+            ;;
+        "1.12.3")
+            airgapLoadKubernetesCommonImages 1.13.5
+            ;;
+        "1.14.3")
+            airgapLoadKubernetesCommonImages 1.15.0
+            ;;
+    esac
+
     addInsecureRegistry "$SERVICE_CIDR"
 fi
+
+maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
