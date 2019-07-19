@@ -349,8 +349,7 @@ maybeUpgradeKubernetesNode() {
                 done
             else
                 local n=0
-                local ver=$(kubelet --version | cut -d ' ' -f 2)
-                while ! kubeadm upgrade node config --kubelet-version "$ver" ; do
+                while ! kubeadm upgrade node config --kubelet-version "$KUBERNETES_VERSION" ; do
                     n="$(( $n + 1 ))"
                     if [ "$n" -ge "10" ]; then
                         exit 1
