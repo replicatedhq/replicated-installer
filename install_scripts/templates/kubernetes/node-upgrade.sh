@@ -58,6 +58,7 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 
 parseKubernetesTargetVersion
 setK8sPatchVersion
+checkDockerK8sVersion
 loadIPVSKubeProxyModules
 
 if [ "$AIRGAP" = "1" ]; then
