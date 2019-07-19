@@ -154,3 +154,12 @@ def test_get_premkit_data_dir():
     assert helpers.get_premkit_data_dir('2.13.0') == '/tmp/premkit-data'
     assert helpers.get_premkit_data_dir('2.13.1') == ''
     assert helpers.get_premkit_data_dir('2.14.0') == ''
+
+
+def test_get_best_replicated_version_ltr_237(mocker):
+    mocker.patch(
+        'install_scripts.helpers.get_current_replicated_version',
+        return_value='2.37.4')
+    version = helpers.get_best_replicated_version(
+        '>=2.38.0', 'stable', scheduler=None)
+    assert version == '2.37.4'
