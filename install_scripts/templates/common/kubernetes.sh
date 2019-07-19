@@ -1724,3 +1724,29 @@ enableRookCephOperator()
 
     kubectl -n rook-ceph-system scale deployment rook-ceph-operator --replicas=1
 }
+
+#######################################
+# bail if Docker version is incompatible with K8s version
+# Globals:
+#   KUBERNETES_TARGET_VESION_MINOR
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+checkDockerK8sVersion()
+{
+    getDockerVersion
+    if [ -z "$DOCKER_VERSION" ]; then
+        return
+    fi
+
+    case "$KUBERNETES_TARGET_VERSION_MINOR" in 
+        14|15)
+            compareDockerVersions "$DOCKER_VERSION" 1.13.1
+            if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
+                bail "Minimum Docker version for Kubernetes $KUBERNETES_VERSION is 1.13.1."
+            fi
+            ;;
+    esac
+}

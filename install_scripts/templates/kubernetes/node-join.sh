@@ -329,6 +329,7 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 parseKubernetesTargetVersion
 setK8sPatchVersion
 
+checkDockerK8sVersion
 checkFirewalld
 
 if [ -n "$API_SERVICE_ADDRESS" ]; then

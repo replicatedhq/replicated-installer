@@ -1122,6 +1122,7 @@ discoverCurrentKubernetesVersion
 parseKubernetesTargetVersion
 setK8sPatchVersion
 
+checkDockerK8sVersion
 checkFirewalld
 
 if [ "$HA_CLUSTER" = "1" ]; then
