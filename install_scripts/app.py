@@ -112,7 +112,7 @@ def get_replicated_two_point_zero(replicated_channel=None,
                                   app_slug=None,
                                   app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
-    print("Looking up tags for:", replicated_channel,
+    print('Looking up tags for:', replicated_channel,
           app_slug, app_channel, file=sys.stderr)
 
     scheduler = constant.SCHEDULER_REPLICATED
@@ -189,7 +189,7 @@ def get_replicated_operator(replicated_channel=None,
                             app_slug=None,
                             app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
-    print("Looking up tags for:", replicated_channel,
+    print('Looking up tags for:', replicated_channel,
           app_slug, app_channel, file=sys.stderr)
 
     scheduler = constant.SCHEDULER_REPLICATED
@@ -353,7 +353,7 @@ def get_replicated_compose_v3_template_args(replicated_channel=None,
                                             app_slug=None,
                                             app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
-    print("Looking up tags for:", replicated_channel,
+    print('Looking up tags for:', replicated_channel,
           app_slug, app_channel, file=sys.stderr)
 
     scheduler = constant.SCHEDULER_SWARM
@@ -447,7 +447,7 @@ def get_replicated_compose_v2(replicated_channel=None,
                               app_slug=None,
                               app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
-    print("Looking up tags for:", replicated_channel,
+    print('Looking up tags for:', replicated_channel,
           app_slug, app_channel, file=sys.stderr)
 
     scheduler = constant.SCHEDULER_SWARM
@@ -498,7 +498,7 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
                                       app_slug=None,
                                       app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
-    print("Looking up tags for:", replicated_channel,
+    print('Looking up tags for:', replicated_channel,
           app_slug, app_channel, file=sys.stderr)
 
     scheduler = constant.SCHEDULER_KUBERNETES
@@ -587,7 +587,7 @@ def get_swarm_init_master(replicated_channel=None,
                           app_slug=None,
                           app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
-    print("Looking up tags for:", replicated_channel,
+    print('Looking up tags for:', replicated_channel,
           app_slug, app_channel, file=sys.stderr)
 
     scheduler = constant.SCHEDULER_SWARM
@@ -961,12 +961,12 @@ def get_ship_yaml():
 
         if not customer_id:
             return helpers.compose_400(
-                "Missing or invalid parameters: customer_id")
+                'Missing or invalid parameters: customer_id')
 
         customer_exists = helpers.does_customer_exist(customer_id)
         if not customer_exists:
             return helpers.compose_404(
-                "Missing or invalid parameters: customer_id")
+                'Missing or invalid parameters: customer_id')
 
         response = render_template(
             'ship-install-dynamic.yml',

@@ -165,8 +165,14 @@ def get_best_version(arg_name, default_arg_name, replicated_channel, app_slug,
         if semver.lt(arg_version, '2.1.0', loose=False):
             return arg_version
         # this only checks replicated_v2 product version
-        if is_valid_replicated_version(arg_version, replicated_channel,
-                                       scheduler=scheduler):
+        if (replicated_channel == 'stable' and
+                get_arg('build', '') == 'prestable'):
+            # prestable builds use beta channel version
+            if is_valid_replicated_version(arg_version, 'beta',
+                                           scheduler=scheduler):
+                return arg_version
+        elif is_valid_replicated_version(arg_version, replicated_channel,
+                                         scheduler=scheduler):
             return arg_version
         raise Exception('version {} does not exist'.format(arg_version))
 
@@ -286,7 +292,7 @@ def get_app_version_config(app_slug, app_channel):
 
 def get_current_replicated_version(replicated_channel, scheduler=None):
     cursor = db.get().cursor()
-    product = "replicated_v2"
+    product = 'replicated_v2'
     if not scheduler:
         query = ('SELECT version '
                  'FROM product_version_channel_release '
@@ -302,9 +308,9 @@ def get_current_replicated_version(replicated_channel, scheduler=None):
                  'ORDER BY FIELD(product, %s, %s) '
                  'LIMIT 1')
         cursor.execute(query, (
-            product + "-" + scheduler, product,
+            product + '-' + scheduler, product,
             replicated_channel,
-            product + "-" + scheduler, product,
+            product + '-' + scheduler, product,
         ))
     row = cursor.fetchone()
     cursor.close()
@@ -324,9 +330,9 @@ def get_best_replicated_version(version_range, replicated_channel,
     query = ('SELECT version '
              'FROM product_version_channel_release_history '
              'WHERE product = %s AND channel = %s')
-    product = "replicated_v2"
+    product = 'replicated_v2'
     if scheduler:
-        product += "-" + scheduler
+        product += '-' + scheduler
     cursor.execute(query, (product, replicated_channel))
     best_v = semver.max_satisfying(
         version_list_generator(cursor), version_range, loose=False)
@@ -339,7 +345,7 @@ def get_best_replicated_version(version_range, replicated_channel,
 
 def is_valid_replicated_version(version, replicated_channel, scheduler=None):
     cursor = db.get().cursor()
-    product = "replicated_v2"
+    product = 'replicated_v2'
     if not scheduler:
         query = ('SELECT version '
                  'FROM product_version_channel_release_history '
@@ -354,7 +360,7 @@ def is_valid_replicated_version(version, replicated_channel, scheduler=None):
                  '  channel = %s AND version = %s '
                  'LIMIT 1')
         cursor.execute(query, (
-            product + "-" + scheduler, product,
+            product + '-' + scheduler, product,
             replicated_channel, version,
         ))
     row = cursor.fetchone()
@@ -455,7 +461,7 @@ def get_environment_tag_suffix(env):
     return ''
 
 
-def compose_400(error_message="Bad Request"):
+def compose_400(error_message='Bad Request'):
     response = render_template(
         'error/compose_400.yml',
         **template_args(
@@ -465,7 +471,7 @@ def compose_400(error_message="Bad Request"):
     return Response(response, status=400, mimetype='text/x-docker-compose')
 
 
-def compose_404(error_message="Not Found"):
+def compose_404(error_message='Not Found'):
     response = render_template(
         'error/compose_404.yml',
         **template_args(
