@@ -326,6 +326,12 @@ def get_current_replicated_version(replicated_channel, scheduler=None):
 
 def get_best_replicated_version(version_range, replicated_channel,
                                 scheduler=None):
+
+    # we do not make scheduler-less releases past 2.37
+    if not scheduler and semver.ltr('2.37.99', version_range, loose=False):
+        return get_current_replicated_version(replicated_channel,
+                                              scheduler=None)
+
     cursor = db.get().cursor()
     query = ('SELECT version '
              'FROM product_version_channel_release_history '
