@@ -200,7 +200,7 @@ def get_replicated_operator(replicated_channel=None,
                                              replicated_operator_version)
 
     pinned_docker_version = helpers.get_pinned_docker_version(
-        replicated_operator_version, )
+        replicated_operator_version, scheduler)
 
     # Only Replicated versions prior to 2.1.0 should mount the root file system
     root_volume = helpers.get_root_volume_mount(replicated_operator_version)
