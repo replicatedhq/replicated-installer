@@ -70,14 +70,14 @@ if [ "$AIRGAP" = "1" ]; then
     # This prevents CoreDNS and Kube-Proxy from getting into ImagePullBackoff state
     # on this node when the upgrade to the next version begins on the primary master.
     case "$KUBERNETES_VERSION" in
-        "1.10.5")
+        "1.10.6")
             airgapLoadKubernetesCommonImages 1.11.5
             ;;
         "1.12.3")
-            airgapLoadKubernetesCommonImages 1.12.3
+            airgapLoadKubernetesCommonImages 1.13.5
             ;;
         "1.14.3")
-            airgapLoadKubernetesCommonImages 1.14.3
+            airgapLoadKubernetesCommonImages 1.15.0
             ;;
     esac
 
