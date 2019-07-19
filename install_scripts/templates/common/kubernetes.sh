@@ -1737,6 +1737,9 @@ enableRookCephOperator()
 checkDockerK8sVersion()
 {
     getDockerVersion
+    if [ -z "$DOCKER_VERSION" ]; then
+        return
+    fi
 
     case "$KUBERNETES_TARGET_VERSION_MINOR" in 
         14|15)
