@@ -277,6 +277,7 @@ def get_replicated_compose_v3(replicated_channel=None,
 def get_kubernetes_compatibility(replicated_channel=None,
                                  app_slug=None,
                                  app_channel=None):
+    replicated_channel = replicated_channel if replicated_channel else 'stable'
     current_replicated_version = helpers.get_arg('current_replicated_version',
                                                  '')
     parsed = semver.parse(current_replicated_version, loose=False)
@@ -285,7 +286,10 @@ def get_kubernetes_compatibility(replicated_channel=None,
     current_kubernetes_version = helpers.get_pinned_kubernetes_version(
         current_replicated_version)
 
-    scheduler = constant.SCHEDULER_KUBERNETES
+    scheduler = None
+    # scheduler-less releases prior to 2.38.0
+    if semver.gte(current_replicated_version, '2.38.0', loose=False):
+        scheduler = constant.SCHEDULER_KUBERNETES
     next_replicated_version = helpers.get_replicated_version(
         replicated_channel, app_slug, app_channel, scheduler=scheduler)
 
