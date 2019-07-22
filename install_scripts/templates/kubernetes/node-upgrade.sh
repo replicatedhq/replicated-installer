@@ -6,6 +6,7 @@ K8S_UPGRADE_PATCH_VERSION="{{ k8s_upgrade_patch_version }}"
 HOSTNAME_CHECK=
 
 {% include 'common/common.sh' %}
+{% include 'common/docker-version.sh' %}
 {% include 'common/kubernetes.sh' %}
 {% include 'common/log.sh' %}
 {% include 'common/system.sh' %}
