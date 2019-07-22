@@ -685,6 +685,7 @@ upgradeK8sMaster() {
 
     systemctl daemon-reload
     systemctl start kubelet
+    spinnerK8sAPIHealthy
     kubectl uncordon "$node"
 
     sed -i "s/kubernetesVersion:.*/kubernetesVersion: v$k8sVersion/" /opt/replicated/kubeadm.conf
