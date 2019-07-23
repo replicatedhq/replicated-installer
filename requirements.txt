@@ -4,5 +4,5 @@ mysql-connector==2.1.7
 pytest==3.0.6
 pytest-mock==1.5.0
 PyYAML==4.2b4
--e git://github.com/divolgin/python-semver.git@0b833b5050f6a48bb54cec5625d9f65af261454a#egg=semver
+-e git://github.com/emosbaugh/python-semver.git@f26d956e2ea13a8159e5629d5b7bf225f8ae5a61#egg=semver
 uWSGI==2.0.17
