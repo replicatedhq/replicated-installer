@@ -334,13 +334,22 @@ def get_best_replicated_version(version_range, replicated_channel,
                                               scheduler=None)
 
     cursor = db.get().cursor()
-    query = ('SELECT version '
-             'FROM product_version_channel_release_history '
-             'WHERE product = %s AND channel = %s')
     product = 'replicated_v2'
+    if not scheduler:
+        query = ('SELECT version '
+                 'FROM product_version_channel_release_history '
+                 'WHERE product = %s AND channel = %s')
+        cursor.execute(query, (product, replicated_channel))
     if scheduler:
-        product += '-' + scheduler
-    cursor.execute(query, (product, replicated_channel))
+        # select the default if the scheduler row does not exist
+        query = ('SELECT version '
+                 'FROM product_version_channel_release_history '
+                 'WHERE (product = %s OR product = %s) AND channel = %s')
+        cursor.execute(query, (
+            product + '-' + scheduler, product,
+            replicated_channel,
+        ))
+
     best_v = semver.max_satisfying(
         version_list_generator(cursor), version_range, loose=False)
     cursor.close()
