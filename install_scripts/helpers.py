@@ -155,7 +155,8 @@ def get_best_version(arg_name, default_arg_name, replicated_channel, app_slug,
                      app_channel, scheduler=None):
     if app_slug and app_channel:
         app_version = get_version_for_app(app_slug, app_channel,
-                                          replicated_channel)
+                                          replicated_channel,
+                                          scheduler=scheduler)
         if app_version:
             return app_version
 
