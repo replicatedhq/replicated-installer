@@ -79,7 +79,7 @@ if [ "$AIRGAP" = "1" ]; then
             airgapLoadKubernetesCommonImages 1.13.5
             ;;
         "1.14.3")
-            airgapLoadKubernetesCommonImages 1.15.0
+            airgapLoadKubernetesCommonImages 1.15.2
             ;;
     esac
 
