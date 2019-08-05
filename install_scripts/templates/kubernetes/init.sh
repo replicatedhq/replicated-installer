@@ -256,8 +256,13 @@ initKube15() {
         fi
     fi
 
+    local k8sVersion="$KUBERNETES_VERSION"
+    if [ -n "$CURRENT_KUBERNETES_VERSION" ]; then
+        k8sVersion="$CURRENT_KUBERNETES_VERSION"
+    fi
+
     initKubeadmConfigV1Beta2
-    appendKubeadmClusterConfigV1Beta2
+    appendKubeadmClusterConfigV1Beta2 "$k8sVersion"
     appendKubeProxyConfigV1Alpha1
 
     loadIPVSKubeProxyModules

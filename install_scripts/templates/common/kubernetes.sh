@@ -1424,11 +1424,12 @@ EOF
 }
 
 appendKubeadmClusterConfigV1Beta2() {
+    k8sVersion=$1
     cat <<EOF >> /opt/replicated/kubeadm.conf
 ---
 apiVersion: kubeadm.k8s.io/v1beta2
 kind: ClusterConfiguration
-kubernetesVersion: v$KUBERNETES_VERSION
+kubernetesVersion: v$k8sVersion
 certificatesDir: /etc/kubernetes/pki
 clusterName: kubernetes
 controllerManager: {}
