@@ -507,7 +507,7 @@ airgapLoadKubernetesCommonImages1152() {
 
     (
         set -x
-        docker tag d235b23c3570 k8s.gcr.io/kube-proxy:v1.15.2
+        docker tag 167bbf6c9338 k8s.gcr.io/kube-proxy:v1.15.2
         docker tag da86e6ba6ca1 k8s.gcr.io/pause:3.1
         docker tag eb516548c180 k8s.gcr.io/coredns:1.3.1
         docker tag f04a043bb67a docker.io/weaveworks/weave-kube:2.5.2
@@ -675,9 +675,9 @@ airgapLoadKubernetesControlImages1152() {
 
     (
         set -x
-        docker tag 201c7a840312 k8s.gcr.io/kube-apiserver:v1.15.2
-        docker tag 8328bb49b652 k8s.gcr.io/kube-controller-manager:v1.15.2
-        docker tag 2d3813851e87 k8s.gcr.io/kube-scheduler:v1.15.2
+        docker tag 34a53be6c9a7 k8s.gcr.io/kube-apiserver:v1.15.2
+        docker tag 9f5df470155d k8s.gcr.io/kube-controller-manager:v1.15.2
+        docker tag 88fa9cb27bd2 k8s.gcr.io/kube-scheduler:v1.15.2
         docker tag 2c4adeb21b4f k8s.gcr.io/etcd:3.3.10
     )
 }
