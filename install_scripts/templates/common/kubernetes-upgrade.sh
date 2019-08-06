@@ -59,7 +59,7 @@ DID_UPGRADE_KUBERNETES=0
 upgradeKubernetes() {
     # attempt to stop Replicated to reduce Docker load during upgrade
     if [ "$KUBERNETES_ONLY" != "1" ]; then
-        kubectl delete all --all --grace-period=30 --timeout=60s || true
+        kubectl delete deploy --all --grace-period=30 --timeout=60s || true
     fi
 
 
