@@ -23,7 +23,7 @@
 maybeUpgradeKubernetes() {
     if allNodesUpgraded "$KUBERNETES_VERSION"; then
         enableRookCephOperator
-        rm /opt/replicated/upgrade
+        rm -f /opt/replicated/upgrade
         return 0
     fi
 
