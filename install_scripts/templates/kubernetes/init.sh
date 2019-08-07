@@ -1230,7 +1230,11 @@ installCNIPlugins
 
 maybeGenerateBootstrapToken
 if ! upgradeInProgress; then
+    # If re-initing the node will be temporarily tainted which will trigger orchestration.
+    # If the cluster has exactly two nodes the orchestration will lead to loss of quorum.
+    disableRookCephOperator
     initKube
+    enableRookCephOperator
 fi
 
 kubectl cluster-info
