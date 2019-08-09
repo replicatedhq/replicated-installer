@@ -20,7 +20,11 @@ def teardown_db(exception):
 
 @app.route('/healthz')
 def get_healthz():
-    return ''
+    this_db = db.get()
+    if this_db is not None:
+        return ''
+    else:
+        return Response('db not found', status=500)
 
 
 @app.route('/metricz')
