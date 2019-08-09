@@ -37,7 +37,7 @@ spec:
               scheme: HTTP
             initialDelaySeconds: 5
             periodSeconds: 2
-            successThreshold: 2
+            successThreshold: 1
             timeoutSeconds: 1
           # the readiness probe checks if the container can connect to the database
           readinessProbe:
