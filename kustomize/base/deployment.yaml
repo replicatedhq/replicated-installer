@@ -33,9 +33,9 @@ spec:
             failureThreshold: 10
             httpGet:
               path: /healthz
-              port: 5000
+              port: install-scripts
               scheme: HTTP
-            initialDelaySeconds: 30
+            initialDelaySeconds: 15
             periodSeconds: 5
             successThreshold: 1
             timeoutSeconds: 1
@@ -44,9 +44,9 @@ spec:
             failureThreshold: 1
             httpGet:
               path: /dbz
-              port: 5000
+              port: install-scripts
               scheme: HTTP
-            initialDelaySeconds: 45
+            initialDelaySeconds: 30
             periodSeconds: 10
             successThreshold: 2
             timeoutSeconds: 5
