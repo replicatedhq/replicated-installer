@@ -20,6 +20,10 @@ def teardown_db(exception):
 
 @app.route('/healthz')
 def get_healthz():
+    return ''
+
+@app.route('/dbz')
+def get_dbz():
     this_db = db.get()
     if this_db is not None:
         return ''
