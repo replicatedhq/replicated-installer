@@ -198,20 +198,20 @@ upgradeKubernetes() {
     kubeletPatch="$patch"
 
     if [ "$kubeletMinor" -eq "14" ] || ([ "$kubeletMinor" -eq "15" ] && [ "$KUBERNETES_TARGET_VERSION_MINOR" -eq "15" ] && [ "$kubeletPatch" -lt "$KUBERNETES_TARGET_VERSION_PATCH" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
-        logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.15.2"
+        logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.15.3"
         if [ "$AIRGAP" = "1" ]; then
-            airgapLoadKubernetesCommonImages 1.15.2
-            airgapLoadKubernetesControlImages 1.15.2
+            airgapLoadKubernetesCommonImages 1.15.3
+            airgapLoadKubernetesControlImages 1.15.3
             airgapLoadReplicatedAddonImagesWorker
         fi
         kubeadm config migrate --old-config /opt/replicated/kubeadm.conf --new-config /opt/replicated/kubeadm.conf
-        upgradeK8sMaster "1.15.2"
-        logSuccess "Kubernetes upgraded to version v1.15.2"
+        upgradeK8sMaster "1.15.3"
+        logSuccess "Kubernetes upgraded to version v1.15.3"
         DID_UPGRADE_KUBERNETES=1
     fi
 
-    upgradeK8sRemoteMasters "1.15.2" "$K8S_UPGRADE_PATCH_VERSION"
-    upgradeK8sWorkers "1.15.2" "$K8S_UPGRADE_PATCH_VERSION"
+    upgradeK8sRemoteMasters "1.15.3" "$K8S_UPGRADE_PATCH_VERSION"
+    upgradeK8sWorkers "1.15.3" "$K8S_UPGRADE_PATCH_VERSION"
 }
 
 #######################################
@@ -325,7 +325,7 @@ maybeUpgradeKubernetesNode() {
 
                 upgradeK8sNodeHostPackages "$KUBERNETES_VERSION"
 
-                logSuccess "Kubernetes node upgraded to version v1.15.2"
+                logSuccess "Kubernetes node upgraded to version v1.15.3"
                 return
                 ;;
         esac

@@ -12,11 +12,11 @@ UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.5-20181204
 UBUNTU_1604_K8S_12=ubuntu-1604-v1.12.3-20181211
 UBUNTU_1604_K8S_13=ubuntu-1604-v1.13.5-20190411
 UBUNTU_1604_K8S_14=ubuntu-1604-v1.14.3-20190702
-UBUNTU_1604_K8S_15=ubuntu-1604-v1.15.2-20190805
+UBUNTU_1604_K8S_15=ubuntu-1604-v1.15.3-20190820
 
 UBUNTU_1804_K8S_13=ubuntu-1804-v1.13.5-20190411
 UBUNTU_1804_K8S_14=ubuntu-1804-v1.14.3-20190702
-UBUNTU_1804_K8S_15=ubuntu-1804-v1.15.2-20190805
+UBUNTU_1804_K8S_15=ubuntu-1804-v1.15.3-20190820
 
 RHEL7_K8S_9=rhel7-v1.9.3-20180806
 RHEL7_K8S_10=rhel7-v1.10.6-20180806
@@ -24,7 +24,7 @@ RHEL7_K8S_11=rhel7-v1.11.5-20181204
 RHEL7_K8S_12=rhel7-v1.12.3-20181211
 RHEL7_K8S_13=rhel7-v1.13.5-20190411
 RHEL7_K8S_14=rhel7-v1.14.3-20190702
-RHEL7_K8S_15=rhel7-v1.15.2-20190805
+RHEL7_K8S_15=rhel7-v1.15.3-20190820
 
 DAEMON_NODE_KEY=replicated.com/daemon
 
@@ -57,8 +57,8 @@ setK8sPatchVersion() {
             k8sPatch="5"
             ;;
         15)
-            # 1.15.2
-            k8sPatch="2"
+            # 1.15.3
+            k8sPatch="3"
     esac
     KUBERNETES_VERSION="$k8sMajor.$k8sMinor.$k8sPatch"
 }
@@ -170,7 +170,7 @@ k8sPackageTag() {
                 1.14.3)
                     echo "$UBUNTU_1604_K8S_14"
                     ;;
-                1.15.2)
+                1.15.3)
                     echo "$UBUNTU_1604_K8S_15"
                     ;;
                 *)
@@ -186,7 +186,7 @@ k8sPackageTag() {
                 1.14.3)
                     echo "$UBUNTU_1804_K8S_14"
                     ;;
-                1.15.2)
+                1.15.3)
                     echo "$UBUNTU_1804_K8S_15"
                     ;;
                 *)
@@ -214,7 +214,7 @@ k8sPackageTag() {
                 1.14.3)
                     echo "$RHEL7_K8S_14"
                     ;;
-                1.15.2)
+                1.15.3)
                     echo "$RHEL7_K8S_15"
                     ;;
                 *)
@@ -381,8 +381,8 @@ airgapLoadKubernetesCommonImages() {
         1.14.3)
             airgapLoadKubernetesCommonImages1143
             ;;
-        1.15.2)
-            airgapLoadKubernetesCommonImages1152
+        1.15.3)
+            airgapLoadKubernetesCommonImages1153
             ;;
         *)
             bail "Unsupported Kubernetes version $k8sVersion"
@@ -500,14 +500,14 @@ airgapLoadKubernetesCommonImages1143() {
     )
 }
 
-airgapLoadKubernetesCommonImages1152() {
+airgapLoadKubernetesCommonImages1153() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.15.2-20190805"
+        "quay.io/replicated/k8s-images-common:v1.15.3-20190820"
 
     (
         set -x
-        docker tag 167bbf6c9338 k8s.gcr.io/kube-proxy:v1.15.2
+        docker tag 232b5c793146 k8s.gcr.io/kube-proxy:v1.15.3
         docker tag da86e6ba6ca1 k8s.gcr.io/pause:3.1
         docker tag eb516548c180 k8s.gcr.io/coredns:1.3.1
         docker tag f04a043bb67a docker.io/weaveworks/weave-kube:2.5.2
@@ -557,8 +557,8 @@ airgapLoadKubernetesControlImages() {
         1.14.3)
             airgapLoadKubernetesControlImages1143
             ;;
-        1.15.2)
-            airgapLoadKubernetesControlImages1152
+        1.15.3)
+            airgapLoadKubernetesControlImages1153
             ;;
         *)
             bail "Unsupported Kubernetes version $k8sVersion"
@@ -668,16 +668,16 @@ airgapLoadKubernetesControlImages1143() {
     )
 }
 
-airgapLoadKubernetesControlImages1152() {
+airgapLoadKubernetesControlImages1153() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-control:v1.15.2-20190805"
+        "quay.io/replicated/k8s-images-control:v1.15.3-20190820"
 
     (
         set -x
-        docker tag 34a53be6c9a7 k8s.gcr.io/kube-apiserver:v1.15.2
-        docker tag 9f5df470155d k8s.gcr.io/kube-controller-manager:v1.15.2
-        docker tag 88fa9cb27bd2 k8s.gcr.io/kube-scheduler:v1.15.2
+        docker tag 5eb2d3fc7a44 k8s.gcr.io/kube-apiserver:v1.15.3
+        docker tag e77c31de5547 k8s.gcr.io/kube-controller-manager:v1.15.3
+        docker tag 703f9c69a5d5 k8s.gcr.io/kube-scheduler:v1.15.3
         docker tag 2c4adeb21b4f k8s.gcr.io/etcd:3.3.10
     )
 }
