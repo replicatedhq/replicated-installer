@@ -39,6 +39,59 @@ replicated12Installed() {
 }
 
 #######################################
+# Check if replicated 2.0 is installed
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   0 if replicated 2.0 is installed
+#######################################
+replicated2Installed() {
+    commandExists replicatedctl && replicatedctl version >/dev/null 2>&1
+}
+
+#######################################
+# Returns replicated 2.0 version
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   INSTALLED_REPLICATED_VERSION
+#######################################
+replicated2Version() {
+    if replicated2Installed; then
+        INSTALLED_REPLICATED_VERSION="$(replicatedctl version --quiet)"
+    else
+        INSTALLED_REPLICATED_VERSION=""
+    fi
+}
+
+#######################################
+# Returns 0 if replicated will downgrade
+# Globals:
+#   None
+# Arguments:
+#   Next replicated version
+# Returns:
+#   0 if replicated version is less than current
+#   1 if replicated version is greater than or equal to current
+#######################################
+isReplicatedDowngrade() {
+    if ! replicated2Installed; then
+        return 0
+    fi
+
+    replicated2Version
+    semverCompare "$1" "$INSTALLED_REPLICATED_VERSION"
+    if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
+        return 0
+    fi
+    return 1
+}
+
+#######################################
 # Gets curl or wget depending if cmd exits.
 # Globals:
 #   PROXY_ADDRESS

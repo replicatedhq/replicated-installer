@@ -11,6 +11,7 @@
 
 set -e
 
+REPLICATED_VERSION="{{ replicated_version }}"
 PINNED_DOCKER_VERSION="{{ pinned_docker_version }}"
 MIN_DOCKER_VERSION="{{ min_docker_version }}"
 SKIP_DOCKER_INSTALL=0
@@ -33,6 +34,7 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 ADDITIONAL_NO_PROXY=
+FORCE_REPLICATED_DOWNGRADE=0
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -495,8 +497,8 @@ outro() {
 ################################################################################
 
 if replicated12Installed; then
-    echo >&2 "Existing 1.2 install detected; please back up and run migration script before installing"
-    echo >&2 "Instructions at https://help.replicated.com/docs/native/customer-installations/upgrading/"
+    echo -e >&2 "${RED}Existing 1.2 install detected; please back up and run migration script before installing.${NC}"
+    echo -e >&2 "${RED}Instructions at https://help.replicated.com/docs/native/customer-installations/upgrading/${NC}"
     exit 1
 fi
 
@@ -603,6 +605,9 @@ while [ "$1" != "" ]; do
             READ_TIMEOUT="-t 1"
             FAST_TIMEOUTS=1
             ;;
+        force-replicated-downgrade|force_replicated_downgrade)
+            FORCE_REPLICATED_DOWNGRADE=1
+            ;;
         no-ce-on-ee|no_ce_on_ee)
             NO_CE_ON_EE=1
             ;;
@@ -629,6 +634,13 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
+
+if [ "$FORCE_REPLICATED_DOWNGRADE" != "1" ] && isReplicatedDowngrade "$REPLICATED_VERSION"; then
+    replicated2Version
+    echo -e >&2 "${RED}Current Replicated version $INSTALLED_REPLICATED_VERSION is greater than the proposed version $REPLICATED_VERSION.${NC}"
+    echo -e >&2 "${RED}To downgrade Replicated re-run the script with the force-replicated-downgrade flag.${NC}"
+    exit 1
+fi
 
 checkFirewalld
 

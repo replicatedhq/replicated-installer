@@ -31,6 +31,7 @@ BIND_DAEMON_HOSTNAME=
 TLS_CERT_PATH=
 UI_BIND_PORT=8800
 USER_ID=
+FORCE_REPLICATED_DOWNGRADE=0
 
 BOOTSTRAP_TOKEN=
 BOOTSTRAP_TOKEN_TTL="24h"
@@ -1094,6 +1095,9 @@ while [ "$1" != "" ]; do
         force-reset|force_reset)
             FORCE_RESET=1
             ;;
+        force-replicated-downgrade|force_replicated_downgrade)
+            FORCE_REPLICATED_DOWNGRADE=1
+            ;;
         service-cidr|service_cidr)
             SERVICE_CIDR="$_value"
             ;;
@@ -1122,6 +1126,13 @@ while [ "$1" != "" ]; do
 done
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
+
+if [ "$FORCE_REPLICATED_DOWNGRADE" != "1" ] && isReplicatedDowngrade "$REPLICATED_VERSION"; then
+    replicated2Version
+    echo -e >&2 "${RED}Current Replicated version $INSTALLED_REPLICATED_VERSION is greater than the proposed version $REPLICATED_VERSION.${NC}"
+    echo -e >&2 "${RED}To downgrade Replicated re-run the script with the force-replicated-downgrade flag.${NC}"
+    exit 1
+fi
 
 discoverCurrentKubernetesVersion
 parseKubernetesTargetVersion
