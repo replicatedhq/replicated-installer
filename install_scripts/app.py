@@ -172,6 +172,7 @@ def get_replicated_two_point_zero(replicated_channel=None,
         **helpers.template_args(
             channel_name=replicated_channel,
             pinned_docker_version=pinned_docker_version,
+            replicated_version=replicated_version,
             replicated_tag=replicated_tag,
             replicated_port_range=port_range,
             replicated_ui_tag=replicated_ui_tag,
