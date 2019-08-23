@@ -457,6 +457,9 @@ do_install() {
 						echo
 						exit 1
 					fi
+					search_command="apt-cache madison 'docker-ce-cli' | grep '$pkg_pattern' | head -1 | awk '{\$1=\$1};1' | cut -d' ' -f 3"
+					# Don't insert an = for cli_pkg_version, we'll just include it later
+					cli_pkg_version="$($sh_c "$search_command")"
 					pkg_version="=$pkg_version"
 				fi
 			fi
@@ -465,6 +468,9 @@ do_install() {
 					set -x
 				fi
 				_status=0
+				if [ -n "$cli_pkg_version" ]; then
+					$sh_c "apt-get install -y -qq --no-install-recommends docker-ce-cli=$cli_pkg_version >/dev/null"
+				fi
 				$sh_c "apt-get install -y -qq --no-install-recommends docker-ce$pkg_version >/dev/null" || _status="$?"
 				# NOTE: On debian there is a race condition between docker.service and docker.socket
 				# that causes docker to fail to start the first time, so we will try again...
@@ -532,6 +538,9 @@ do_install() {
 						echo
 						exit 1
 					fi
+					search_command="$pkg_manager list --showduplicates 'docker-ce-cli' | grep '$pkg_pattern' | tail -1 | awk '{print \$2}'"
+					# It's okay for cli_pkg_version to be blank, since older versions don't support a cli package
+					cli_pkg_version="$($sh_c "$search_command" | cut -d':' -f 2)"
 					# Cut out the epoch and prefix with a '-'
 					pkg_version="-$(echo "$pkg_version" | cut -d':' -f 2)"
 				fi
@@ -539,6 +548,10 @@ do_install() {
 			(
 				if ! is_dry_run; then
 					set -x
+				fi
+				# install the correct cli version first
+				if [ -n "$cli_pkg_version" ]; then
+					$sh_c "$pkg_manager install -y -q docker-ce-cli-$cli_pkg_version"
 				fi
 				$sh_c "$pkg_manager install -y -q docker-ce$pkg_version"
 			)
