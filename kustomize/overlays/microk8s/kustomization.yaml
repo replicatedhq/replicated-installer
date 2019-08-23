@@ -1,0 +1,9 @@
+bases:
+  - ../../overlays/dev
+
+resources:
+  - ./nodeport.yaml
+
+patches:
+  - ./deployment.yaml
+  - ./loadbalancer.yaml
