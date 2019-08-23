@@ -80,7 +80,7 @@ replicated2Version() {
 #######################################
 isReplicatedDowngrade() {
     if ! replicated2Installed; then
-        return 0
+        return 1
     fi
 
     replicated2Version
