@@ -27,6 +27,7 @@ HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 ADDITIONAL_NO_PROXY=
 REPLICATED_VERSION="{{ replicated_version }}"
 REPLICATED_USERNAME="{{ replicated_username }}"
+FORCE_REPLICATED_DOWNGRADE=0
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -274,6 +275,9 @@ while [ "$1" != "" ]; do
         docker-version|docker_version)
             PINNED_DOCKER_VERSION="$_value"
             ;;
+        force-replicated-downgrade|force_replicated_downgrade)
+            FORCE_REPLICATED_DOWNGRADE=1
+            ;;
         http-proxy|http_proxy)
             PROXY_ADDRESS="$_value"
             ;;
@@ -343,6 +347,13 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
+
+if [ "$FORCE_REPLICATED_DOWNGRADE" != "1" ] && isReplicatedDowngrade "$REPLICATED_VERSION"; then
+    replicated2Version
+    echo -e >&2 "${RED}Current Replicated version $INSTALLED_REPLICATED_VERSION is greater than the proposed version $REPLICATED_VERSION.${NC}"
+    echo -e >&2 "${RED}To downgrade Replicated re-run the script with the force-replicated-downgrade flag.${NC}"
+    exit 1
+fi
 
 checkFirewalld
 
