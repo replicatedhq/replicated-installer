@@ -1,0 +1,24 @@
+apiVersion: skaffold/v1beta10
+kind: Config
+
+profiles:
+  - name: microk8s
+    activation:
+      - kubeContext: microk8s
+    deploy:
+      kustomize:
+        path: "./kustomize/overlays/microk8s"
+
+build:
+  local:
+    useBuildkit: true
+
+  artifacts:
+    - image: replicated-install-scripts
+      context: "."
+      docker:
+        dockerfile: ./Dockerfile.skaffold
+
+deploy:
+  kustomize:
+    path: "./kustomize/overlays/dev"

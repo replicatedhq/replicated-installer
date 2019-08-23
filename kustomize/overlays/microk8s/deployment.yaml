@@ -1,0 +1,18 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: install-scripts
+spec:
+  template:
+    spec:
+      containers:
+        - name: install-scripts
+          image: replicated-install-scripts
+          env:
+            - name: GRAPHQL_PREM_ENDPOINT
+              value: http://graphql-api-prem:8033/graphql
+            - name: REGISTRY_ENDPOINT
+              value: 'registry.staging.replicated.com' # TODO
+            - name: MYSQL_PASSWORD
+              value: password
+              valueFrom: ~

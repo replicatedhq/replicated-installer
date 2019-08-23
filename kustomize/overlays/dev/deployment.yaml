@@ -30,6 +30,3 @@ spec:
               value: "3306"
             - name: MYSQL_DATABASE
               value: replicated
-          ports:
-            - name: install-scripts
-              containerPort: 5000
