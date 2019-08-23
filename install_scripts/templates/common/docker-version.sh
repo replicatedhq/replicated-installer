@@ -22,7 +22,7 @@ getDockerVersion() {
         return
     fi
 
-    DOCKER_VERSION=$(docker version --format '{{.Server.Version}}' 2>/dev/null || docker -v | awk '{gsub(/,/, "", $3); print $3}')
+    DOCKER_VERSION=$(docker version --format '{{ '{{' }}.Server.Version{{ '}}' }}' 2>/dev/null || docker -v | awk '{gsub(/,/, "", $3); print $3}')
 }
 
 #######################################
