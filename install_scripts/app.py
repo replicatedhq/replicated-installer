@@ -301,6 +301,8 @@ def get_kubernetes_compatibility(replicated_channel=None,
         scheduler = constant.SCHEDULER_KUBERNETES
     next_replicated_version = helpers.get_replicated_version(
         replicated_channel, app_slug, app_channel, scheduler=scheduler)
+    next_replicated_version = helpers.get_arg('next_replicated_version',
+                                              next_replicated_version)
 
     next_kubernetes_version = helpers.get_pinned_kubernetes_version(
         next_replicated_version)
