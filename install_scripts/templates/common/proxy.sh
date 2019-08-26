@@ -76,6 +76,8 @@ discoverProxy() {
 #######################################
 # Requires that docker is set up with an http proxy.
 # Globals:
+#   PROXY_ADDRESS
+#   NO_PROXY_ADDRESSES
 #   DID_INSTALL_DOCKER
 # Arguments:
 #   None
@@ -83,9 +85,9 @@ discoverProxy() {
 #   None
 #######################################
 requireDockerProxy() {
-    # NOTE: this does not take into account if no proxy changed
-    _previous_proxy="$(docker info 2>/dev/null | grep -i 'Http Proxy:' | sed 's/Http Proxy: //I')"
-    if [ "$PROXY_ADDRESS" = "$_previous_proxy" ]; then
+    _previous_proxy="$(docker info 2>/dev/null | grep -i 'Http Proxy:' | sed 's/ *Http Proxy: //I')"
+    _previous_no_proxy="$(docker info 2>/dev/null | grep -i 'No Proxy:' | sed 's/ *No Proxy: //I')"
+    if [ "$PROXY_ADDRESS" = "$_previous_proxy" ] && [ "$NO_PROXY_ADDRESSES" = "$_previous_no_proxy" ]; then
         return
     fi
 
@@ -95,6 +97,9 @@ requireDockerProxy() {
     else
         if [ -n "$_previous_proxy" ]; then
             printf "${YELLOW}It looks like Docker is set up with http proxy address $_previous_proxy.${NC}\n"
+            if [ -n "$_previous_no_proxy" ]; then
+                printf "${YELLOW}and no proxy addresses $_previous_no_proxy.${NC}\n"
+            fi
             printf "${YELLOW}This script will automatically reconfigure it now.${NC}\n"
         else
             printf "${YELLOW}It does not look like Docker is set up with http proxy enabled.${NC}\n"
@@ -120,6 +125,7 @@ requireDockerProxy() {
 # Configures docker to run with an http proxy.
 # Globals:
 #   INIT_SYSTEM
+#   PROXY_ADDRESS
 #   NO_PROXY_ADDRESSES
 # Arguments:
 #   None
