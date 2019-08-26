@@ -1412,6 +1412,9 @@ EOF
   - $PRIVATE_ADDRESS
 EOF
     fi
+    cat <<EOF >> /opt/replicated/kubeadm.conf
+  - "*.default.svc.cluster.local"
+EOF
 
     if [ "$IPVS" = "1" ]; then
         cat <<EOF >> /opt/replicated/kubeadm.conf
@@ -1457,6 +1460,9 @@ EOF
 controlPlaneEndpoint: "$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
 EOF
     fi
+    cat <<EOF >> /opt/replicated/kubeadm.conf
+  - "*.default.svc.cluster.local"
+EOF
 }
 
 appendKubeProxyConfigV1Alpha1() {
