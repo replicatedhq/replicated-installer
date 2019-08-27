@@ -1658,6 +1658,20 @@ isRook1()
 }
 
 #######################################
+# Check if Rook 0.8 is installed
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None, exits 0 if Rook 0.8 is detected
+#######################################
+isRook08()
+{
+    kubectl -n rook-ceph get pool replicapool &>/dev/null
+}
+
+#######################################
 # Wait until Ceph status is healthy
 # Globals:
 #   None
@@ -1701,11 +1715,10 @@ waitCephHealthy()
 #######################################
 disableRookCephOperator()
 {
-    if ! isRook1; then
-        return 0
+    if isRook1 || isRook08; then
+        kubectl -n rook-ceph-system scale deployment rook-ceph-operator --replicas=0
     fi
 
-    kubectl -n rook-ceph-system scale deployment rook-ceph-operator --replicas=0
 }
 
 #######################################
@@ -1719,11 +1732,9 @@ disableRookCephOperator()
 #######################################
 enableRookCephOperator()
 {
-    if ! isRook1; then
-        return 0
+    if isRook1 || isRook08; then
+        kubectl -n rook-ceph-system scale deployment rook-ceph-operator --replicas=1
     fi
-
-    kubectl -n rook-ceph-system scale deployment rook-ceph-operator --replicas=1
 }
 
 #######################################
