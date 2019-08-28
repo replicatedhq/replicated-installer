@@ -123,6 +123,10 @@ build_replicated_operator_opts() {
             REPLICATED_OPERATOR_OPTS=$(echo "$REPLICATED_OPERATOR_OPTS" | sed -e 's/-e[[:blank:]]*PUBLIC_ADDRESS=[^[:blank:]]*//')
             REPLICATED_OPERATOR_OPTS="$REPLICATED_OPERATOR_OPTS -e PUBLIC_ADDRESS=$PUBLIC_ADDRESS"
         fi
+        REPLICATED_OPERATOR_OPTS=$(echo "$REPLICATED_OPERATOR_OPTS" | sed -e 's/-e[[:blank:]]*NO_PROXY=[^[:blank:]]*//')
+        if [ -n "$NO_PROXY_ADDRESSES" ]; then
+           REPLICATED_OPERATOR_OPTS="$REPLICATED_OPERATOR_OPTS -e NO_PROXY=$NO_PROXY_ADDRESSES"
+        fi
         return
     fi
 
