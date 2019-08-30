@@ -1,14 +1,15 @@
 from __future__ import print_function
 
 import constant
-from flask import Flask, Response, abort, render_template, request, jsonify
+from flask import Flask, Response, abort, redirect, render_template, request, \
+    jsonify
 import semver
 import subprocess
 import sys
 import traceback
 import urllib
 
-from . import db, helpers
+from . import db, helpers, param
 
 app = Flask(__name__)
 
@@ -21,6 +22,7 @@ def teardown_db(exception):
 @app.route('/healthz')
 def get_healthz():
     return ''
+
 
 @app.route('/dbz')
 def get_dbz():
@@ -908,6 +910,50 @@ def get_best_docker_tag():
         abort(404)
 
     return best_version
+
+
+@app.route('/airgap')
+@app.route('/<replicated_channel>/airgap')
+@app.route('/<app_slug>/<app_channel>/airgap')
+@app.route(
+    '/<replicated_channel>/<app_slug>/<app_channel>/airgap')
+def get_airgap_bundle(replicated_channel=None,
+                      app_slug=None,
+                      app_channel=None):
+    replicated_channel = replicated_channel if replicated_channel else 'stable'
+
+    scheduler = helpers.get_arg('scheduler', None)
+    replicated_version = helpers.get_replicated_version(
+        replicated_channel, app_slug, app_channel, scheduler=scheduler)
+    current_replicated_version = helpers.get_current_replicated_version(
+        replicated_channel, scheduler=scheduler)
+
+    bucket = 'replicated-airgap-work'
+    env = param.lookup('ENVIRONMENT', '/replicated/environment',
+                       default='production')
+    if env == 'staging':
+        bucket = 'replicated-airgap-work-staging'
+
+    if replicated_version == current_replicated_version:
+        file_suffix = ''
+        if replicated_channel == 'beta':
+            file_suffix = '-beta'
+        elif replicated_channel == 'unstable':
+            file_suffix = '-unstable'
+
+        file = 'replicated{}.tar.gz'.format(file_suffix)
+        if scheduler == 'kubernetes':
+            file = 'replicated{}__docker__kubernetes.tar.gz'.format(
+                file_suffix)
+
+        url = 'https://s3.amazonaws.com/{}/{}'.format(bucket, file)
+        return redirect(url, code=302)
+    else:
+        file_suffix = '-{0}%2B{0}%2B{0}'.format(replicated_version)
+        file = 'replicated{}.tar.gz'.format(file_suffix)
+        url = 'https://s3.amazonaws.com/{}/{}/{}'.format(
+            bucket, replicated_channel, file)
+        return redirect(url, code=302)
 
 
 @app.route('/studio')
