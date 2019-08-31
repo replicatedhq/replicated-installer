@@ -25,6 +25,8 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 ADDITIONAL_NO_PROXY=
+SKIP_PREFLIGHTS=0
+IGNORE_PREFLIGHTS=0
 REPLICATED_VERSION="{{ replicated_version }}"
 REPLICATED_USERNAME="{{ replicated_username }}"
 FORCE_REPLICATED_DOWNGRADE=0
@@ -59,6 +61,7 @@ set -e
 {% include 'common/proxy.sh' %}
 {% include 'common/airgap.sh' %}
 {% include 'common/firewall.sh' %}
+{% include 'preflights/index.sh' %}
 
 initSwarm() {
     # init swarm (need for service command); if not created
@@ -342,6 +345,12 @@ while [ "$1" != "" ]; do
                 ADDITIONAL_NO_PROXY="$ADDITIONAL_NO_PROXY,$_value"
             fi
             ;;
+        skip-preflighs|skip_preflighs)
+            SKIP_PREFLIGHTS=1
+            ;;
+        ignore-preflighs|ignore_preflighs)
+            IGNORE_PREFLIGHTS=1
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -416,6 +425,24 @@ fi
 
 if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
     checkDockerProxyConfig
+fi
+
+if [ "$SKIP_PREFLIGHTS" != "1" ]; then
+    echo ""
+    echo "Running preflight checks..."
+    runPreflights || true
+    if [ "$IGNORE_PREFLIGHTS" != "1" ]; then
+        if [ "$HAS_PREFLIGHT_ERRORS" = "1" ]; then
+            bail "\nPreflights have encountered some errors. Please correct them before proceeding."
+        elif [ "$HAS_PREFLIGHT_WARNINGS" = "1" ]; then
+            logWarn "\nPreflights have encountered some warnings. Please review them before proceeding."
+            logWarn "Would you like to proceed anyway?"
+            if ! confirmN; then
+                exit 1
+                return
+            fi
+        fi
+    fi
 fi
 
 # TODO: consider running replicated as registry mirror

@@ -14,6 +14,8 @@ HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 KUBERNETES_ONLY=0
 WAIT_FOR_ROOK=0
 ADDITIONAL_NO_PROXY=
+SKIP_PREFLIGHTS=0
+IGNORE_PREFLIGHTS=0
 KUBERNETES_VERSION="{{ kubernetes_version }}"
 K8S_UPGRADE_PATCH_VERSION="{{ k8s_upgrade_patch_version }}"
 IPVS=1
@@ -38,6 +40,7 @@ PRIVATE_ADDRESS=
 {% include 'common/swap.sh' %}
 {% include 'common/kubernetes-upgrade.sh' %}
 {% include 'common/firewall.sh' %}
+{% include 'preflights/index.sh' %}
 
 KUBERNETES_MASTER_PORT="6443"
 KUBERNETES_MASTER_ADDR="{{ kubernetes_master_address }}"
@@ -302,6 +305,12 @@ while [ "$1" != "" ]; do
                 ADDITIONAL_NO_PROXY="$ADDITIONAL_NO_PROXY,$_value"
             fi
             ;;
+        skip-preflighs|skip_preflighs)
+            SKIP_PREFLIGHTS=1
+            ;;
+        ignore-preflighs|ignore_preflighs)
+            IGNORE_PREFLIGHTS=1
+            ;;
         kubernetes-upgrade-patch-version|kubernetes_upgrade_patch_version)
             K8S_UPGRADE_PATCH_VERSION=1
             ;;
@@ -392,7 +401,7 @@ else
     requireDocker
 fi
 
-if [ -n "$PROXY_ADDRESS" ]; then
+if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
     getNoProxyAddresses "$KUBERNETES_MASTER_ADDR" "$SERVICE_CIDR"
     # enable kubeadm to reach the K8s API server
     export no_proxy="$NO_PROXY_ADDRESSES"
@@ -401,6 +410,28 @@ fi
 
 if [ "$RESTART_DOCKER" = "1" ]; then
     restartDocker
+fi
+
+if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
+    checkDockerProxyConfig
+fi
+
+if [ "$SKIP_PREFLIGHTS" != "1" ]; then
+    echo ""
+    echo "Running preflight checks..."
+    runPreflights || true
+    if [ "$IGNORE_PREFLIGHTS" != "1" ]; then
+        if [ "$HAS_PREFLIGHT_ERRORS" = "1" ]; then
+            bail "\nPreflights have encountered some errors. Please correct them before proceeding."
+        elif [ "$HAS_PREFLIGHT_WARNINGS" = "1" ]; then
+            logWarn "\nPreflights have encountered some warnings. Please review them before proceeding."
+            logWarn "Would you like to proceed anyway?"
+            if ! confirmN; then
+                exit 1
+                return
+            fi
+        fi
+    fi
 fi
 
 must_disable_selinux

@@ -955,6 +955,14 @@ def get_airgap_bundle(replicated_channel=None,
         return redirect(url, code=302)
 
 
+@app.route('/preflights')
+def preflights():
+    response = render_template(
+        'preflights.sh',
+        **helpers.template_args())
+    return Response(response, mimetype='text/x-shellscript')
+
+
 @app.route('/studio')
 def get_replicated_studio():
     studio_path = helpers.get_arg('studio_base_path', '$HOME')
