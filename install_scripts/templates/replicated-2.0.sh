@@ -55,6 +55,7 @@ set -e
 {%- endif %}
 
 {% include 'common/common.sh' %}
+{% include 'common/log.sh' %}
 {% include 'common/prompt.sh' %}
 {% include 'common/system.sh' %}
 {% include 'common/docker.sh' %}
@@ -715,11 +716,6 @@ fi
 
 configureRegistryProxyAddressOverride
 maybeWriteRegistryProxyConfig
-if [ -n "$ARTIFACTORY_ADDRESS" ] && [ -n "$ARTIFACTORY_AUTH" ]; then
-    parseBasicAuth "$ARTIFACTORY_AUTH"
-    echo "+ docker login $ARTIFACTORY_ADDRESS --username $BASICAUTH_USERNAME"
-    echo "$BASICAUTH_PASSWORD" | docker login "$ARTIFACTORY_ADDRESS" --username "$BASICAUTH_USERNAME" --password-stdin
-fi
 
 if [ "$NO_PROXY" != "1" ]; then
     if [ -z "$PROXY_ADDRESS" ]; then
@@ -762,6 +758,11 @@ if [ -n "$PROXY_ADDRESS" ]; then
     checkDockerProxyConfig
 fi
 
+if [ -n "$ARTIFACTORY_ADDRESS" ] && [ -n "$ARTIFACTORY_AUTH" ]; then
+    parseBasicAuth "$ARTIFACTORY_AUTH"
+    echo "+ docker login $ARTIFACTORY_ADDRESS --username $BASICAUTH_USERNAME"
+    echo "$BASICAUTH_PASSWORD" | docker login "$ARTIFACTORY_ADDRESS" --username "$BASICAUTH_USERNAME" --password-stdin
+fi
 
 detectDockerGroupId
 maybeCreateReplicatedUser

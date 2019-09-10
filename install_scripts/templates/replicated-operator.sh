@@ -33,6 +33,7 @@ REGISTRY_ADDRESS_OVERRIDE=
 REGISTRY_PATH_PREFIX=
 
 {% include 'common/common.sh' %}
+{% include 'common/log.sh' %}
 {% include 'common/prompt.sh' %}
 {% include 'common/system.sh' %}
 {% include 'common/docker.sh' %}
@@ -429,11 +430,6 @@ if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" != "1" ] && [ "$NO_PUBLIC_ADDRESS" !=
 fi
 
 configureRegistryProxyAddressOverride
-if [ -n "$ARTIFACTORY_ADDRESS" ] && [ -n "$ARTIFACTORY_AUTH" ]; then
-    parseBasicAuth "$ARTIFACTORY_AUTH"
-    echo "+ docker login $ARTIFACTORY_ADDRESS --username $BASICAUTH_USERNAME"
-    echo "$BASICAUTH_PASSWORD" | docker login "$ARTIFACTORY_ADDRESS" --username "$BASICAUTH_USERNAME" --password-stdin
-fi
 
 if [ "$NO_PROXY" != "1" ]; then
     if [ -z "$PROXY_ADDRESS" ]; then
@@ -470,6 +466,12 @@ fi
 
 if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
     checkDockerProxyConfig
+fi
+
+if [ -n "$ARTIFACTORY_ADDRESS" ] && [ -n "$ARTIFACTORY_AUTH" ]; then
+    parseBasicAuth "$ARTIFACTORY_AUTH"
+    echo "+ docker login $ARTIFACTORY_ADDRESS --username $BASICAUTH_USERNAME"
+    echo "$BASICAUTH_PASSWORD" | docker login "$ARTIFACTORY_ADDRESS" --username "$BASICAUTH_USERNAME" --password-stdin
 fi
 
 detectDockerGroupId

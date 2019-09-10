@@ -4,6 +4,7 @@
 # registryproxy.sh
 #
 # require common.sh
+# require log.sh
 #
 #######################################
 
@@ -32,8 +33,7 @@ configureRegistryProxyAddressOverride()
     fi
 
     if [ "$AIRGAP" = "1" ]; then
-        printf "${RED}Artifactory regsitry proxy cannot be used with airgap.${NC}\n" 1>&2
-        exit 1
+        bail "Artifactory regsitry proxy cannot be used with airgap."
     fi
 
     case "$ARTIFACTORY_ACCESS_METHOD" in
@@ -61,7 +61,7 @@ _configureRegistryProxyAddressOverride_UrlPrefix()
 
     local quayRepoKey="$ARTIFACTORY_QUAY_REPO_KEY"
     if [ -z "$quayRepoKey" ]; then
-        printf "${YELLOW}Flag \"artifactory-quay-repo-key\" not set, defaulting to \"quay-remote\".${NC}\n"
+        logWarn "Flag \"artifactory-quay-repo-key\" not set, defaulting to \"quay-remote\"."
         quayRepoKey="quay-remote"
     fi
     REGISTRY_ADDRESS_OVERRIDE="$ARTIFACTORY_ADDRESS"
@@ -76,7 +76,7 @@ _configureRegistryProxyAddressOverride_Subdomain()
 
     local quayRepoKey="$ARTIFACTORY_QUAY_REPO_KEY"
     if [ -z "$quayRepoKey" ]; then
-        printf "${YELLOW}Flag \"artifactory-quay-repo-key\" not set, defaulting to \"quay-remote\".${NC}\n"
+        logWarn "Flag \"artifactory-quay-repo-key\" not set, defaulting to \"quay-remote\"."
         quayRepoKey="quay-remote"
     fi
     REGISTRY_ADDRESS_OVERRIDE="${quayRepoKey}.${ARTIFACTORY_ADDRESS}"
@@ -89,8 +89,7 @@ _configureRegistryProxyAddressOverride_Port()
     fi
 
     if [ -z "$ARTIFACTORY_QUAY_REPO_KEY" ]; then
-        printf "${RED}Flag \"artifactory-quay-repo-key\" required for Artifactory access method \"port\".${NC}\n" 1>&2
-        exit 1
+        bail "Flag \"artifactory-quay-repo-key\" required for Artifactory access method \"port\"."
     fi
     splitHostPort "$ARTIFACTORY_ADDRESS"
     REGISTRY_ADDRESS_OVERRIDE="${HOST}:${ARTIFACTORY_QUAY_REPO_KEY}"
