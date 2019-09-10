@@ -31,6 +31,11 @@ configureRegistryProxyAddressOverride()
         return
     fi
 
+    if [ "$AIRGAP" = "1" ]; then
+        printf "${RED}Artifactory regsitry proxy cannot be used with airgap.${NC}\n" 1>&2
+        exit 1
+    fi
+
     case "$ARTIFACTORY_ACCESS_METHOD" in
         url-prefix)
             _configureRegistryProxyAddressOverride_UrlPrefix
@@ -134,4 +139,22 @@ maybeWriteRegistryProxyConfig()
   }
 }
 EOF
+}
+
+#######################################
+# Parses a basic auth string (base64 user:pass)
+# Globals:
+#   None
+# Arguments:
+#   $1 - Auth string
+# Returns:
+#   BASICAUTH_USERNAME
+#   BASICAUTH_PASSWORD
+#######################################
+parseBasicAuth()
+{
+    BASICAUTH_USERNAME=
+    BASICAUTH_PASSWORD=
+    local auth="$(echo "$1" | base64 --decode)"
+    oIFS="$IFS"; IFS=":" read -r BASICAUTH_USERNAME BASICAUTH_PASSWORD <<< "$auth"; IFS="$oIFS"
 }

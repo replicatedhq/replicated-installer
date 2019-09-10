@@ -77,4 +77,11 @@ test_configureRegistryProxyAddressOverride_Port()
     assertEquals "" "$REGISTRY_PATH_PREFIX"
 }
 
+test_parseBasicAuth()
+{
+    parseBasicAuth "YWRtaW46cGFzc3dvcmQ="
+    assertEquals "admin" "$BASICAUTH_USERNAME"
+    assertEquals "password" "$BASICAUTH_PASSWORD"
+}
+
 . shunit2

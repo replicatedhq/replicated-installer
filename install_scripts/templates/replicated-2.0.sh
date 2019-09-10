@@ -715,6 +715,11 @@ fi
 
 configureRegistryProxyAddressOverride
 maybeWriteRegistryProxyConfig
+if [ -n "$ARTIFACTORY_ADDRESS" ] && [ -n "$ARTIFACTORY_AUTH" ]; then
+    parseBasicAuth "$ARTIFACTORY_AUTH"
+    echo "+ docker login $ARTIFACTORY_ADDRESS --username $BASICAUTH_USERNAME"
+    echo "$BASICAUTH_PASSWORD" | docker login "$ARTIFACTORY_ADDRESS" --username "$BASICAUTH_USERNAME" --password-stdin
+fi
 
 if [ "$NO_PROXY" != "1" ]; then
     if [ -z "$PROXY_ADDRESS" ]; then

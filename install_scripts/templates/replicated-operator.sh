@@ -44,6 +44,7 @@ REGISTRY_PATH_PREFIX=
 {% include 'common/airgap.sh' %}
 {% include 'common/selinux.sh' %}
 {% include 'common/firewall.sh' %}
+{% include 'common/registryproxy.sh' %}
 
 discoverPrivateIp() {
     if [ -n "$PRIVATE_ADDRESS" ]; then
@@ -361,6 +362,18 @@ while [ "$1" != "" ]; do
                 ADDITIONAL_NO_PROXY="$ADDITIONAL_NO_PROXY,$_value"
             fi
             ;;
+        artifactory-address|artifactory_address)
+            ARTIFACTORY_ADDRESS="$_value"
+            ;;
+        artifactory-access-method|artifactory_access_method)
+            ARTIFACTORY_ACCESS_METHOD="$_value"
+            ;;
+        artifactory-quay-repo-key|artifactory_quay_repo_key)
+            ARTIFACTORY_QUAY_REPO_KEY="$_value"
+            ;;
+        artifactory-auth)
+            ARTIFACTORY_AUTH="$_value"
+            ;;
         registry-address-override|registry_address_override)
             REGISTRY_ADDRESS_OVERRIDE="$_value"
             ;;
@@ -413,6 +426,13 @@ if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" != "1" ] && [ "$NO_PUBLIC_ADDRESS" !=
             NO_PUBLIC_ADDRESS=1
         fi
     fi
+fi
+
+configureRegistryProxyAddressOverride
+if [ -n "$ARTIFACTORY_ADDRESS" ] && [ -n "$ARTIFACTORY_AUTH" ]; then
+    parseBasicAuth "$ARTIFACTORY_AUTH"
+    echo "+ docker login $ARTIFACTORY_ADDRESS --username $BASICAUTH_USERNAME"
+    echo "$BASICAUTH_PASSWORD" | docker login "$ARTIFACTORY_ADDRESS" --username "$BASICAUTH_USERNAME" --password-stdin
 fi
 
 if [ "$NO_PROXY" != "1" ]; then
