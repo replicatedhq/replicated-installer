@@ -11,6 +11,7 @@ from flask import request, render_template, Response
 from . import db, param
 
 _default_docker_version = '18.09.2'
+_default_kubernetes_version = '1.15.3'
 
 
 def template_args(**kwargs):
@@ -45,11 +46,6 @@ def template_args(**kwargs):
             'REGISTRY_ENDPOINT',
             '/registry_v2/advertise_address',
             default='registry.replicated.com'),
-        'replicated_docker_host':
-        param.lookup(
-            'REPLICATED_DOCKER_HOST',
-            '/replicated/docker_host',
-            default='quay.io'),
     }
     if get_arg('replicated_env') in ('staging', 'production'):
         args['replicated_env'] = get_arg('replicated_env')
@@ -92,8 +88,11 @@ def get_pinned_docker_version(replicated_version, scheduler):
         version_info.major, version_info.minor, version_info.patch,
     ))
 
-    (docker_version, ) = cursor.fetchone()
+    docker_version = 'default'
+    row = cursor.fetchone()
     cursor.close()
+    if row is not None:
+        (docker_version, ) = row
 
     if docker_version == 'default':
         return get_default_docker_version()  # fall back to this if default
@@ -118,9 +117,15 @@ def get_pinned_kubernetes_version(replicated_version):
         version_info.major, version_info.minor,
         version_info.major, version_info.minor, version_info.patch,
     ))
-    (kubernetes_version, ) = cursor.fetchone()
-    cursor.close()
 
+    kubernetes_version = 'default'
+    row = cursor.fetchone()
+    cursor.close()
+    if row is not None:
+        (kubernetes_version, ) = row
+
+    if kubernetes_version == 'default':
+        return get_default_kubernetes_version()  # fall back to this if default
     return kubernetes_version
 
 
@@ -129,6 +134,13 @@ def get_default_docker_version():
         'PINNED_DOCKER_VERSION',
         '/install_scripts/pinned_docker_version',
         default=_default_docker_version)
+
+
+def get_default_kubernetes_version():
+    return param.lookup(
+        'PINNED_KUBERNETES_VERSION',
+        '/install_scripts/pinned_kubernetes_version',
+        default=_default_kubernetes_version)
 
 
 def get_replicated_version(replicated_channel, app_slug, app_channel,

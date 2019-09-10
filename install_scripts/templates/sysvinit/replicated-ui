@@ -31,7 +31,7 @@ run_container() {
         -v /var/run/replicated:/var/run/replicated \\
         --security-opt ${SELINUX_REPLICATED_DOMAIN_LABEL} \\
         \$REPLICATED_UI_OPTS \\
-        {{ replicated_docker_host }}/replicated/replicated-ui:current
+        quay.io/replicated/replicated-ui:current
 }
 
 stop_container() {

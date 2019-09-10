@@ -29,6 +29,8 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 ADDITIONAL_NO_PROXY=
+REGISTRY_ADDRESS_OVERRIDE=
+REGISTRY_PATH_PREFIX=
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -79,8 +81,8 @@ remove_docker_containers() {
 tag_docker_images() {
     printf "Tagging replicated-operator image\n"
     # older docker versions require -f flag to move a tag from one image to another
-    docker tag "{{ replicated_docker_host }}/replicated/replicated-operator:{{ replicated_operator_tag }}{{ environment_tag_suffix }}" "{{ replicated_docker_host }}/replicated/replicated-operator:current" 2>/dev/null \
-        || docker tag -f "{{ replicated_docker_host }}/replicated/replicated-operator:{{ replicated_operator_tag }}{{ environment_tag_suffix }}" "{{ replicated_docker_host }}/replicated/replicated-operator:current"
+    docker tag "quay.io/replicated/replicated-operator:{{ replicated_operator_tag }}{{ environment_tag_suffix }}" "quay.io/replicated/replicated-operator:current" 2>/dev/null \
+        || docker tag -f "quay.io/replicated/replicated-operator:{{ replicated_operator_tag }}{{ environment_tag_suffix }}" "quay.io/replicated/replicated-operator:current"
 }
 
 find_hostname() {
@@ -358,6 +360,12 @@ while [ "$1" != "" ]; do
             else
                 ADDITIONAL_NO_PROXY="$ADDITIONAL_NO_PROXY,$_value"
             fi
+            ;;
+        registry-address-override|registry_address_override)
+            REGISTRY_ADDRESS_OVERRIDE="$_value"
+            ;;
+        registry-path-prefix|registry_path_prefix)
+            REGISTRY_PATH_PREFIX="$_value"
             ;;
         *)
             echo "Error: unknown parameter \"$_param\""

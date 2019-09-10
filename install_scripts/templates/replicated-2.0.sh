@@ -35,6 +35,8 @@ HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 ADDITIONAL_NO_PROXY=
 FORCE_REPLICATED_DOWNGRADE=0
+REGISTRY_ADDRESS_OVERRIDE=
+REGISTRY_PATH_PREFIX=
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -66,6 +68,7 @@ set -e
 {% include 'common/airgap.sh' %}
 {% include 'common/selinux.sh' %}
 {% include 'common/firewall.sh' %}
+{% include 'common/registryproxy.sh' %}
 
 ask_for_registry_name_ipv6() {
   line=
@@ -215,10 +218,10 @@ remove_docker_containers() {
 tag_docker_images() {
     printf "Tagging replicated and replicated-ui images\n"
     # older docker versions require -f flag to move a tag from one image to another
-    docker tag "{{ replicated_docker_host }}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}" "{{ replicated_docker_host }}/replicated/replicated:current" 2>/dev/null \
-        || docker tag -f "{{ replicated_docker_host }}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}" "{{ replicated_docker_host }}/replicated/replicated:current"
-    docker tag "{{ replicated_docker_host }}/replicated/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}" "{{ replicated_docker_host }}/replicated/replicated-ui:current" 2>/dev/null \
-        || docker tag -f "{{ replicated_docker_host }}/replicated/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}" "{{ replicated_docker_host }}/replicated/replicated-ui:current"
+    docker tag "quay.io/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}" "quay.io/replicated/replicated:current" 2>/dev/null \
+        || docker tag -f "quay.io/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}" "quay.io/replicated/replicated:current"
+    docker tag "quay.io/replicated/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}" "quay.io/replicated/replicated-ui:current" 2>/dev/null \
+        || docker tag -f "quay.io/replicated/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}" "quay.io/replicated/replicated-ui:current"
 }
 
 find_hostname() {
@@ -470,6 +473,12 @@ install_operator() {
     if [ "$BYPASS_FIREWALLD_WARNING" = "1" ]; then
         opts=$opts" bypass-firewalld-warning"
     fi
+    if [ -n "$REGISTRY_ADDRESS_OVERRIDE" ]; then
+        opts=$opts" registry-address-override=$REGISTRY_ADDRESS_OVERRIDE"
+    fi
+    if [ -n "$REGISTRY_PATH_PREFIX" ]; then
+        opts=$opts" registry-path-prefix=$REGISTRY_PATH_PREFIX"
+    fi
     # When this script is piped into bash as stdin, apt-get will eat the remaining parts of this script,
     # preventing it from being executed.  So using /dev/null here to change stdin for the docker script.
     if [ "$AIRGAP" = "1" ]; then
@@ -627,6 +636,24 @@ while [ "$1" != "" ]; do
                 ADDITIONAL_NO_PROXY="$ADDITIONAL_NO_PROXY,$_value"
             fi
             ;;
+        artifactory-address|artifactory_address)
+            ARTIFACTORY_ADDRESS="$_value"
+            ;;
+        artifactory-access-method|artifactory_access_method)
+            ARTIFACTORY_ACCESS_METHOD="$_value"
+            ;;
+        artifactory-quay-repo-key|artifactory_quay_repo_key)
+            ARTIFACTORY_QUAY_REPO_KEY="$_value"
+            ;;
+        artifactory-auth)
+            ARTIFACTORY_AUTH="$_value"
+            ;;
+        registry-address-override|registry_address_override)
+            REGISTRY_ADDRESS_OVERRIDE="$_value"
+            ;;
+        registry-path-prefix|registry_path_prefix)
+            REGISTRY_PATH_PREFIX="$_value"
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -685,6 +712,9 @@ if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" != "1" ] && [ "$NO_PUBLIC_ADDRESS" !=
         fi
     fi
 fi
+
+configureRegistryProxyAddressOverride
+maybeWriteRegistryProxyConfig
 
 if [ "$NO_PROXY" != "1" ]; then
     if [ -z "$PROXY_ADDRESS" ]; then
