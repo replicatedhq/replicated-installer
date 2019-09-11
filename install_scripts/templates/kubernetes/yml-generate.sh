@@ -12,7 +12,6 @@ STORAGE_CLASS="{{ storage_class }}"
 SERVICE_TYPE="{{ service_type }}"
 PROXY_ADDRESS="{{ proxy_address }}"
 NO_PROXY_ADDRESSES="{{ no_proxy_addresses }}"
-REPLICATED_DOCKER_HOST="{{ replicated_docker_host }}"
 # replicated components registry
 REGISTRY_ADDRESS_OVERRIDE="{{ registry_address_override }}"
 APP_REGISTRY_ADVERTISE_HOST="{{ app_registry_advertise_host }}"
@@ -281,7 +280,7 @@ spec:
 $NODE_SELECTOR
       containers:
       - name: replicated
-        image: "${REGISTRY_ADDRESS_OVERRIDE:-$REPLICATED_DOCKER_HOST}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
+        image: "${REGISTRY_ADDRESS_OVERRIDE:-quay.io}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
         imagePullPolicy: IfNotPresent
         env:
         - name: SCHEDULER_ENGINE
@@ -374,7 +373,7 @@ $PROXY_ENVS
           mountPath: /host/proc
           readOnly: true
       - name: replicated-ui
-        image: "${REGISTRY_ADDRESS_OVERRIDE:-$REPLICATED_DOCKER_HOST}/replicated/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}"
+        image: "${REGISTRY_ADDRESS_OVERRIDE:-quay.io}/replicated/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}"
         imagePullPolicy: IfNotPresent
         env:
         - name: RELEASE_CHANNEL
@@ -950,7 +949,7 @@ spec:
             weight: 100
       containers:
       - name: rek
-        image: "${REGISTRY_ADDRESS_OVERRIDE:-$REPLICATED_DOCKER_HOST}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
+        image: "${REGISTRY_ADDRESS_OVERRIDE:-quay.io}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
         imagePullPolicy: IfNotPresent
         command:
         - /usr/bin/rek

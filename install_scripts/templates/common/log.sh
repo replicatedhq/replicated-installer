@@ -37,6 +37,19 @@ logSubstep() {
     printf "\t${LIGHT_BLUE}- $1${NC}\n" 1>&2
 }
 
+#######################################
+# Prints the first arg in Yellow
+# Globals:
+#   None
+# Arguments:
+#   Message
+# Returns:
+#   None
+#######################################
+logWarn() {
+    printf "${YELLOW}$1${NC}\n" 1>&2
+}
+
 
 #######################################
 # Prints the first arg in Red

@@ -29,8 +29,11 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 ADDITIONAL_NO_PROXY=
+REGISTRY_ADDRESS_OVERRIDE=
+REGISTRY_PATH_PREFIX=
 
 {% include 'common/common.sh' %}
+{% include 'common/log.sh' %}
 {% include 'common/prompt.sh' %}
 {% include 'common/system.sh' %}
 {% include 'common/docker.sh' %}
@@ -42,6 +45,7 @@ ADDITIONAL_NO_PROXY=
 {% include 'common/airgap.sh' %}
 {% include 'common/selinux.sh' %}
 {% include 'common/firewall.sh' %}
+{% include 'common/registryproxy.sh' %}
 
 discoverPrivateIp() {
     if [ -n "$PRIVATE_ADDRESS" ]; then
@@ -79,8 +83,8 @@ remove_docker_containers() {
 tag_docker_images() {
     printf "Tagging replicated-operator image\n"
     # older docker versions require -f flag to move a tag from one image to another
-    docker tag "{{ replicated_docker_host }}/replicated/replicated-operator:{{ replicated_operator_tag }}{{ environment_tag_suffix }}" "{{ replicated_docker_host }}/replicated/replicated-operator:current" 2>/dev/null \
-        || docker tag -f "{{ replicated_docker_host }}/replicated/replicated-operator:{{ replicated_operator_tag }}{{ environment_tag_suffix }}" "{{ replicated_docker_host }}/replicated/replicated-operator:current"
+    docker tag "quay.io/replicated/replicated-operator:{{ replicated_operator_tag }}{{ environment_tag_suffix }}" "quay.io/replicated/replicated-operator:current" 2>/dev/null \
+        || docker tag -f "quay.io/replicated/replicated-operator:{{ replicated_operator_tag }}{{ environment_tag_suffix }}" "quay.io/replicated/replicated-operator:current"
 }
 
 find_hostname() {
@@ -359,6 +363,24 @@ while [ "$1" != "" ]; do
                 ADDITIONAL_NO_PROXY="$ADDITIONAL_NO_PROXY,$_value"
             fi
             ;;
+        artifactory-address|artifactory_address)
+            ARTIFACTORY_ADDRESS="$_value"
+            ;;
+        artifactory-access-method|artifactory_access_method)
+            ARTIFACTORY_ACCESS_METHOD="$_value"
+            ;;
+        artifactory-quay-repo-key|artifactory_quay_repo_key)
+            ARTIFACTORY_QUAY_REPO_KEY="$_value"
+            ;;
+        artifactory-auth)
+            ARTIFACTORY_AUTH="$_value"
+            ;;
+        registry-address-override|registry_address_override)
+            REGISTRY_ADDRESS_OVERRIDE="$_value"
+            ;;
+        registry-path-prefix|registry_path_prefix)
+            REGISTRY_PATH_PREFIX="$_value"
+            ;;
         *)
             echo "Error: unknown parameter \"$_param\""
             exit 1
@@ -407,6 +429,8 @@ if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" != "1" ] && [ "$NO_PUBLIC_ADDRESS" !=
     fi
 fi
 
+configureRegistryProxyAddressOverride
+
 if [ "$NO_PROXY" != "1" ]; then
     if [ -z "$PROXY_ADDRESS" ]; then
         discoverProxy
@@ -442,6 +466,12 @@ fi
 
 if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
     checkDockerProxyConfig
+fi
+
+if [ -n "$ARTIFACTORY_ADDRESS" ] && [ -n "$ARTIFACTORY_AUTH" ]; then
+    parseBasicAuth "$ARTIFACTORY_AUTH"
+    echo "+ docker login $ARTIFACTORY_ADDRESS --username $BASICAUTH_USERNAME"
+    echo "$BASICAUTH_PASSWORD" | docker login "$ARTIFACTORY_ADDRESS" --username "$BASICAUTH_USERNAME" --password-stdin
 fi
 
 detectDockerGroupId

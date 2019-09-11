@@ -47,7 +47,7 @@ run_container() {
         -e LOCAL_ADDRESS=\${PRIVATE_ADDRESS} \\
         -e RELEASE_CHANNEL=\${RELEASE_CHANNEL} \\
         \$REPLICATED_OPTS \\
-        {{ replicated_docker_host }}/replicated/replicated:current
+        quay.io/replicated/replicated:current
 }
 
 stop_container() {

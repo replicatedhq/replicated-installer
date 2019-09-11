@@ -19,7 +19,7 @@ ExecStart=/usr/bin/docker run --name=replicated-ui \\
     -v /var/run/replicated:/var/run/replicated \\
     --security-opt ${SELINUX_REPLICATED_DOMAIN_LABEL} \\
     \$REPLICATED_UI_OPTS \\
-    {{ replicated_docker_host }}/replicated/replicated-ui:current
+    quay.io/replicated/replicated-ui:current
 ExecStop=/usr/bin/docker stop replicated-ui
 Restart=on-failure
 RestartSec=7

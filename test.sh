@@ -8,3 +8,4 @@ set -e
 ./tests_shell/ip-address-test.sh
 ./tests_shell/proxy-test.sh
 ./tests_shell/semver-test.sh
+./tests_shell/registryproxy-test.sh
