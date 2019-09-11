@@ -5,6 +5,7 @@
 #
 # require common.sh
 # require log.sh
+# require prompt.sh
 #
 #######################################
 
@@ -138,6 +139,45 @@ maybeWriteRegistryProxyConfig()
   }
 }
 EOF
+}
+
+#######################################
+# Prompts for Artifactory auth creds if ARTIFACTORY_AUTH
+# is set to string literal "<ARTIFACTORY_SECRET>".
+# Globals:
+#   ARTIFACTORY_AUTH
+# Arguments:
+#   $1 - username (for testing)
+#   $2 - password (for testing)
+# Returns:
+#   ARTIFACTORY_AUTH
+#######################################
+maybePromptForArtifactoryAuth()
+{
+    if [ "$ARTIFACTORY_AUTH" != "<ARTIFACTORY_SECRET>" ]; then
+        return
+    fi
+
+    artifactoryUsername="$1"
+    artifactoryPassword="$2"
+
+    printf "\nPlease enter your artifactory registry credentials (leave blank to skip)\n"
+    if [ -z "$artifactoryUsername" ]; then
+        printf "Username: "
+        prompt
+        local artifactoryUsername="$PROMPT_RESULT"
+    fi
+    if [ -z "$artifactoryPassword" ]; then
+        printf "Password: "
+        prompt
+        local artifactoryPassword="$PROMPT_RESULT"
+    fi
+    if [ -z "$artifactoryUsername" ] || [ -z "$artifactoryPassword" ]; then
+        logWarn "Artifactory credentials are empty"
+        unset ARTIFACTORY_AUTH
+        return
+    fi
+    ARTIFACTORY_AUTH="$(echo -n $artifactoryUsername:$artifactoryPassword | base64)"
 }
 
 #######################################

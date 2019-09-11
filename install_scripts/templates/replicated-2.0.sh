@@ -714,6 +714,7 @@ if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" != "1" ] && [ "$NO_PUBLIC_ADDRESS" !=
     fi
 fi
 
+maybePromptForArtifactoryAuth
 configureRegistryProxyAddressOverride
 maybeWriteRegistryProxyConfig
 
