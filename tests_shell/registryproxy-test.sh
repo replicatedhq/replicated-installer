@@ -1,6 +1,8 @@
 #!/bin/bash
 
 . ./install_scripts/templates/common/common.sh
+. ./install_scripts/templates/common/log.sh
+. ./install_scripts/templates/common/prompt.sh
 . ./install_scripts/templates/common/registryproxy.sh
 
 test_configureRegistryProxyAddressOverride_UrlPrefix()
@@ -75,6 +77,13 @@ test_configureRegistryProxyAddressOverride_Port()
         configureRegistryProxyAddressOverride
     assertEquals "localhost:8000" "$REGISTRY_ADDRESS_OVERRIDE"
     assertEquals "" "$REGISTRY_PATH_PREFIX"
+}
+
+test_maybePromptForArtifactoryAuth()
+{
+    ARTIFACTORY_AUTH="<ARTIFACTORY_SECRET>"
+    maybePromptForArtifactoryAuth "admin" "password"
+    assertEquals "YWRtaW46cGFzc3dvcmQ=" "$ARTIFACTORY_AUTH"
 }
 
 test_parseBasicAuth()
