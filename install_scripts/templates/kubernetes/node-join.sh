@@ -210,6 +210,8 @@ outro() {
 # Execution starts here
 ################################################################################
 
+export DEBIAN_FRONTEND=noninteractive
+
 require64Bit
 requireRootUser
 detectLsbDist
