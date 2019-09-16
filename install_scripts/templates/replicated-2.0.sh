@@ -512,6 +512,8 @@ if replicated12Installed; then
     exit 1
 fi
 
+export DEBIAN_FRONTEND=noninteractive
+
 require64Bit
 requireRootUser
 detectLsbDist
