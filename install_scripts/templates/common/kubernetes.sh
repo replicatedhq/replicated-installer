@@ -1763,6 +1763,16 @@ checkDockerK8sVersion()
     esac
 }
 
+installAKAService()
+{
+    writeAKAExecStop
+    writeAKAExecStart
+    writeAKAService
+
+    systemctl enable aka.service
+    systemctl start aka.service
+}
+
 writeAKAExecStop()
 {
 echo >/opt/replicated/shutdown.sh <<EOF
@@ -1799,7 +1809,7 @@ replicatedctl app start
 EOF
 }
 
-writeAKASerivce()
+writeAKAService()
 {
 cat >/etc/systemd/system/aka.service <<EOF
 [Unit]
