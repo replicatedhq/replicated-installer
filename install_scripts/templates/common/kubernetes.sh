@@ -1762,3 +1762,54 @@ checkDockerK8sVersion()
             ;;
     esac
 }
+
+writeAKAExecStop()
+{
+echo >/opt/replicated/shutdown.sh <<EOF
+#!/bin/bash
+
+replicatedctl app stop --attach
+
+KUBECONFIG=/etc/kubernetes/admin.conf kubectl scale deployment replicated replicated-premkit retraced-postgres --replicas=0
+KUBECONFIG=/etc/kubernetes/admin.conf kubectl rollout status deployment --watch replicated
+KUBECONFIG=/etc/kubernetes/admin.conf kubectl rollout status deployment --watch replicated-premkit
+KUBECONFIG=/etc/kubernetes/admin.conf kubectl rollout status deployment --watch retraced-postgres
+
+while $(lsblk | grep -q '^rbd[0-9]'); do
+        echo "Waiting for Ceph block devices to unmount"
+        sleep 1
+done
+EOF
+}
+
+writeAKAExecStart()
+{
+cat >/opt/replicated/start.sh <<EOF
+#!/bin/bash
+
+# wait for Kubernets API
+while [ "$(curl --noproxy "*" -sk https://127.0.0.1:6443/healthz)" != "ok" ]; do
+        sleep 1
+done
+
+KUBECONFIG=/etc/kubernetes/admin.conf kubectl scale deployment replicated replicated-premkit retraced-postgres --replicas=1
+KUBECONFIG=/etc/kubernetes/admin.conf kubectl scale deployment replicated-shared-fs-snapshotter --replicas=1
+
+replicatedctl app start
+EOF
+}
+
+writeAKASerivce()
+{
+cat >/etc/systemd/system/aka.service <<EOF
+[Unit]
+After=kubelet.service
+After=docker.service
+
+[Service]
+ExecStart=/opt/replicated/start.sh
+ExecStop=/opt/replicated/shutdown.sh
+Type=oneshot
+RemainAfterExit=yes
+EOF
+}
