@@ -1772,9 +1772,7 @@ KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl cordon \$(hostname)
 
 # delete local pods with PVCs
 while read -r uid; do
-        echo "FOUND POD WITH PVC HAVING UID \$uid"
         podName=\$(KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl get pods --all-namespaces -ojsonpath='{ range .items[*]}{.metadata.name}{"\\t"}{.metadata.uid}{"\\n"}{end}' | grep \$uid | awk '{ print \$1 }')
-        echo "FOUND POD WITH NAME \$podName"
         KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl delete pod \$podName --wait=false
 done < <(lsblk | grep '^rbd[0-9]' | awk '{ print \$7 }' | awk -F '/' '{ print \$6 }')
 
