@@ -1763,33 +1763,28 @@ checkDockerK8sVersion()
     esac
 }
 
-installAKAService()
-{
-    writeAKAExecStop
-    writeAKAExecStart
-    writeAKAService
-
-    systemctl enable aka.service
-    systemctl start aka.service
-}
-
 writeAKAExecStop()
 {
-echo >/opt/replicated/shutdown.sh <<EOF
+cat >/opt/replicated/shutdown.sh <<EOF
 #!/bin/bash
 
-replicatedctl app stop --attach
+KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl cordon \$(hostname)
 
-KUBECONFIG=/etc/kubernetes/admin.conf kubectl scale deployment replicated replicated-premkit retraced-postgres --replicas=0
-KUBECONFIG=/etc/kubernetes/admin.conf kubectl rollout status deployment --watch replicated
-KUBECONFIG=/etc/kubernetes/admin.conf kubectl rollout status deployment --watch replicated-premkit
-KUBECONFIG=/etc/kubernetes/admin.conf kubectl rollout status deployment --watch retraced-postgres
+# delete local pods with PVCs
+while read -r uid; do
+        echo "FOUND POD WITH PVC HAVING UID \$uid"
+        podName=\$(KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl get pods --all-namespaces -ojsonpath='{ range .items[*]}{.metadata.name}{"\\t"}{.metadata.uid}{"\\n"}{end}' | grep \$uid | awk '{ print \$1 }')
+        echo "FOUND POD WITH NAME \$podName"
+        KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl delete pod \$podName --wait=false
+done < <(lsblk | grep '^rbd[0-9]' | awk '{ print \$7 }' | awk -F '/' '{ print \$6 }')
 
-while $(lsblk | grep -q '^rbd[0-9]'); do
+while \$(lsblk | grep -q '^rbd[0-9]'); do
         echo "Waiting for Ceph block devices to unmount"
         sleep 1
 done
 EOF
+
+chmod a+x /opt/replicated/shutdown.sh
 }
 
 writeAKAExecStart()
@@ -1798,15 +1793,15 @@ cat >/opt/replicated/start.sh <<EOF
 #!/bin/bash
 
 # wait for Kubernets API
-while [ "$(curl --noproxy "*" -sk https://127.0.0.1:6443/healthz)" != "ok" ]; do
+master=\$(cat /etc/kubernetes/kubelet.conf | grep server | awk '{ print \$2 }')
+while [ "\$(curl --noproxy "*" -sk \$master/healthz)" != "ok" ]; do
         sleep 1
 done
 
-KUBECONFIG=/etc/kubernetes/admin.conf kubectl scale deployment replicated replicated-premkit retraced-postgres --replicas=1
-KUBECONFIG=/etc/kubernetes/admin.conf kubectl scale deployment replicated-shared-fs-snapshotter --replicas=1
-
-replicatedctl app start
+KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl uncordon \$(hostname)
 EOF
+
+chmod a+x /opt/replicated/start.sh
 }
 
 writeAKAService()
@@ -1821,5 +1816,18 @@ ExecStart=/opt/replicated/start.sh
 ExecStop=/opt/replicated/shutdown.sh
 Type=oneshot
 RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
 EOF
+}
+
+installAKAService()
+{
+    writeAKAExecStop
+    writeAKAExecStart
+    writeAKAService
+    systemctl daemon-reload
+    systemctl enable aka.service
+    systemctl start aka.service
 }
