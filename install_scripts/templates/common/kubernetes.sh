@@ -1798,7 +1798,7 @@ done
 
 EOF
 
-chmod a+x /opt/replicated/shutdown.sh
+chmod u+x /opt/replicated/shutdown.sh
 }
 
 writeAKAExecStart()
@@ -1815,7 +1815,7 @@ done
 KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl uncordon \$(hostname)
 EOF
 
-chmod a+x /opt/replicated/start.sh
+chmod u+x /opt/replicated/start.sh
 }
 
 writeAKAService()
