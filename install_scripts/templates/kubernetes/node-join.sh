@@ -459,6 +459,8 @@ if [ "$MASTER" -eq "1" ]; then
     logSuccess "Installed replicated command alias"
 fi
 
+installAKAService
+
 waitForRook
 
 outro

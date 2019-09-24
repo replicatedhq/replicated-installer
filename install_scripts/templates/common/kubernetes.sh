@@ -1762,3 +1762,86 @@ checkDockerK8sVersion()
             ;;
     esac
 }
+
+writeAKAExecStop()
+{
+cat >/opt/replicated/shutdown.sh <<EOF
+#!/bin/bash
+
+KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl cordon \$(hostname)
+
+# only on masters
+KUBECONFIG=/etc/kubernetes/admin.conf replicatedctl app stop || true
+KUBECONFIG=/etc/kubernetes/admin.conf kubectl scale deploy replicated-shared-fs-snapshotter --replicas=0 || true
+
+# delete local pods with PVCs
+while read -r uid; do
+        pod=\$(KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl get pods --all-namespaces -ojsonpath='{ range .items[*]}{.metadata.name}{"\\t"}{.metadata.uid}{"\\t"}{.metadata.namespace}{"\\n"}{end}' | grep \$uid )
+        KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl delete pod \$(echo \$pod | awk '{ print \$1 }') --namespace=\$(echo \$pod | awk '{ print \$3 }') --wait=false
+done < <(lsblk | grep '^rbd[0-9]' | awk '{ print \$7 }' | awk -F '/' '{ print \$6 }')
+
+# delete local pods using the Ceph filesystem
+while read -r uid; do
+        pod=\$(KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl get pods --all-namespaces -ojsonpath='{ range .items[*]}{.metadata.name}{"\\t"}{.metadata.uid}{"\\t"}{.metadata.namespace}{"\\n"}{end}' | grep \$uid )
+        KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl delete pod \$(echo \$pod | awk '{ print \$1 }') --namespace=\$(echo \$pod | awk '{ print \$3 }') --wait=false
+done < <(cat /proc/mounts | grep ':6789:/' | awk '{ print \$2 }' | awk -F '/' '{ print \$6 }')
+
+while \$(lsblk | grep -q '^rbd[0-9]'); do
+        echo "Waiting for Ceph block devices to unmount"
+        sleep 1
+done
+
+while \$(cat /proc/mounts | grep -q ':6789:/'); do
+        echo "Waiting for Ceph shared filesystems to unmount"
+        sleep 1
+done
+
+EOF
+
+chmod u+x /opt/replicated/shutdown.sh
+}
+
+writeAKAExecStart()
+{
+cat >/opt/replicated/start.sh <<EOF
+#!/bin/bash
+
+# wait for Kubernets API
+master=\$(cat /etc/kubernetes/kubelet.conf | grep server | awk '{ print \$2 }')
+while [ "\$(curl --noproxy "*" -sk \$master/healthz)" != "ok" ]; do
+        sleep 1
+done
+
+KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl uncordon \$(hostname)
+EOF
+
+chmod u+x /opt/replicated/start.sh
+}
+
+writeAKAService()
+{
+cat >/etc/systemd/system/aka-reboot.service <<EOF
+[Unit]
+After=kubelet.service
+After=docker.service
+
+[Service]
+ExecStart=/opt/replicated/start.sh
+ExecStop=/opt/replicated/shutdown.sh
+Type=oneshot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+}
+
+installAKAService()
+{
+    writeAKAExecStop
+    writeAKAExecStart
+    writeAKAService
+    systemctl daemon-reload
+    systemctl enable aka-reboot.service
+    systemctl start aka-reboot.service
+}

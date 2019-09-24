@@ -8,6 +8,7 @@ spec:
     spec:
       containers:
         - name: install-scripts
+          image: replicated-install-scripts
           env:
             - name: ENVIRONMENT
               value: dev

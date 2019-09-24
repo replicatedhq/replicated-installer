@@ -1300,6 +1300,8 @@ esac
 
 contourDeploy "$DISABLE_CONTOUR"
 
+installAKAService
+
 if [ "$KUBERNETES_ONLY" -eq "1" ]; then
     spinnerKubeSystemReady "$KUBERNETES_VERSION"
     rekOperatorDeploy
