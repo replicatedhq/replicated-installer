@@ -126,12 +126,20 @@ maybeWriteRegistryProxyConfig()
         exit 0
     fi
 
+    _writeRegistryProxyConfig "/etc/replicated/registry_proxy.json"
+}
+
+_writeRegistryProxyConfig()
+{
     mkdir -p /etc/replicated
-    cat > /etc/replicated/registry_proxy.json <<-EOF
+    cat > "$1" <<-EOF
 {
   "artifactory": {
     "address": "$ARTIFACTORY_ADDRESS",
     "auth": "$ARTIFACTORY_AUTH",
+EOF
+    if [ -n "$ARTIFACTORY_QUAY_REPO_KEY" ]; then
+        cat >> "$1" <<-EOF
     "access_method": "$ARTIFACTORY_ACCESS_METHOD",
     "repository_key_map": {
       "quay.io": "$ARTIFACTORY_QUAY_REPO_KEY"
@@ -139,6 +147,13 @@ maybeWriteRegistryProxyConfig()
   }
 }
 EOF
+    else
+        cat >> "$1" <<-EOF
+    "access_method": "$ARTIFACTORY_ACCESS_METHOD"
+  }
+}
+EOF
+    fi
 }
 
 #######################################
