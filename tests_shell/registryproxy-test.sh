@@ -93,4 +93,49 @@ test_parseBasicAuth()
     assertEquals "password" "$BASICAUTH_PASSWORD"
 }
 
+test_writeRegistryProxyConfig()
+{
+    tempTestingFile="$(mktemp)"
+    ARTIFACTORY_ADDRESS="localhost:8081"
+    ARTIFACTORY_AUTH="YWRtaW46cGFzc3dvcmQ="
+    ARTIFACTORY_ACCESS_METHOD="url-prefix"
+    ARTIFACTORY_QUAY_REPO_KEY="quayio"
+    _writeRegistryProxyConfig "$tempTestingFile"
+
+    read -r -d '' expected <<EOF
+{
+  "artifactory": {
+    "address": "localhost:8081",
+    "auth": "YWRtaW46cGFzc3dvcmQ=",
+    "access_method": "url-prefix",
+    "repository_key_map": {
+      "quay.io": "quayio"
+    }
+  }
+}
+EOF
+    assertEquals "$expected" "$(cat $tempTestingFile)"
+}
+
+test_writeRegistryProxyConfigQuayRepoKeyEmpty()
+{
+    tempTestingFile="$(mktemp)"
+    ARTIFACTORY_ADDRESS="localhost:8081"
+    ARTIFACTORY_AUTH="YWRtaW46cGFzc3dvcmQ="
+    ARTIFACTORY_ACCESS_METHOD="url-prefix"
+    ARTIFACTORY_QUAY_REPO_KEY=
+    _writeRegistryProxyConfig "$tempTestingFile"
+
+    read -r -d '' expected <<EOF
+{
+  "artifactory": {
+    "address": "localhost:8081",
+    "auth": "YWRtaW46cGFzc3dvcmQ=",
+    "access_method": "url-prefix"
+  }
+}
+EOF
+    assertEquals "$expected" "$(cat $tempTestingFile)"
+}
+
 . shunit2
