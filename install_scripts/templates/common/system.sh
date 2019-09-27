@@ -106,7 +106,7 @@ detectLsbDist() {
                 [ $1 -ge 21 ] && LSB_DIST=$_dist && DIST_VERSION=$_version && DIST_VERSION_MAJOR=$1
                 ;;
             rhel)
-                _error_msg="$_error_msg\nHowever detected version $_version is less than 7."
+                _error_msg="$_error_msg\nHowever detected version $_version is less than 6."
                 oIFS="$IFS"; IFS=.; set -- $_version; IFS="$oIFS";
                 [ $1 -ge 6 ] && LSB_DIST=$_dist && DIST_VERSION=$_version && DIST_VERSION_MAJOR=$1
                 ;;
