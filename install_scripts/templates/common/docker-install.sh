@@ -212,10 +212,10 @@ _installDocker() {
     if [ "$INIT_SYSTEM" = "systemd" ]; then
         systemctl enable docker
         systemctl start docker
-    elif [ "$LSB_DIST" = "centos" ]; then
-        if [ "$(cat /etc/centos-release 2>/dev/null | cut -d" " -f3 | cut -d "." -f1)" = "6" ] || [ "$(cat /etc/redhat-release 2>/dev/null | cut -d" " -f7 | cut -d "." -f1)" = "6" ]; then
-            service docker start
-        fi
+    elif [ "$LSB_DIST" = "centos" ] && [ "$DIST_VERSION_MAJOR" = "6" ]; then
+        service docker start
+    elif [ "$LSB_DIST" = "rhel" ] && [ "$DIST_VERSION_MAJOR" = "6" ]; then
+        service docker start
     fi
 
     # i guess the second arg means to skip this?
