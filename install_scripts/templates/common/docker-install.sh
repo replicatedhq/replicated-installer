@@ -213,7 +213,7 @@ _installDocker() {
         systemctl enable docker
         systemctl start docker
     elif [ "$LSB_DIST" = "centos" ]; then
-        if [ "$(cat /etc/centos-release | cut -d" " -f3 | cut -d "." -f1)" = "6" ]; then
+        if [ "$(cat /etc/centos-release 2>/dev/null | cut -d" " -f3 | cut -d "." -f1)" = "6" ] || [ "$(cat /etc/redhat-release 2>/dev/null | cut -d" " -f7 | cut -d "." -f1)" = "6" ]; then
             service docker start
         fi
     fi
@@ -232,7 +232,7 @@ _installDocker() {
 _maybeRequireRhelDevicemapper() {
     # If the distribution is CentOS or RHEL and the filesystem is XFS, it is possible that docker has installed with overlay as the device driver
     # In that case we should change the storage driver to devicemapper, because while loopback-lvm is slow it is also more likely to work
-    if { [ "$LSB_DIST" = "centos" ] || [ "$LSB_DIST" = "rhel" ] ; } && { df --output='fstype' | grep -q -e '^xfs$' || grep -q -e ' xfs ' /etc/fstab ; } ; then
+    if { [ "$LSB_DIST" = "centos" ] || [ "$LSB_DIST" = "rhel" ] ; } && { df --output='fstype' 2>/dev/null | grep -q -e '^xfs$' || grep -q -e ' xfs ' /etc/fstab ; } ; then
         # If distribution is centos or rhel and filesystem is XFS
 
         # xfs (RHEL 7.2 and higher), but only with d_type=true enabled. Use xfs_info to verify that the ftype option is set to 1.
