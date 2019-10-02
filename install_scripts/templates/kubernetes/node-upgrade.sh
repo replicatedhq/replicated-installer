@@ -50,7 +50,7 @@ if [ -z "$KUBERNETES_VERSION" ]; then
 fi
 
 if [ -n "$HOSTNAME_CHECK" ]; then
-    if [ "$HOSTNAME_CHECK" != "$(hostname)" ]; then
+    if [ "$HOSTNAME_CHECK" != "$(hostname | tr '[:upper:]' '[:lower:]')" ]; then
         bail "this script should be executed on host $HOSTNAME_CHECK"
     fi
 fi

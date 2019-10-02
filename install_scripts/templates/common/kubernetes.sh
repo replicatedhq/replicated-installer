@@ -1768,7 +1768,7 @@ writeAKAExecStop()
 cat >/opt/replicated/shutdown.sh <<EOF
 #!/bin/bash
 
-KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl cordon \$(hostname)
+KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl cordon \$(hostname | tr '[:upper:]' '[:lower:]')
 
 # only on masters
 KUBECONFIG=/etc/kubernetes/admin.conf replicatedctl app stop || true
@@ -1812,7 +1812,7 @@ while [ "\$(curl --noproxy "*" -sk \$master/healthz)" != "ok" ]; do
         sleep 1
 done
 
-KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl uncordon \$(hostname)
+KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl uncordon \$(hostname | tr '[:upper:]' '[:lower:]')
 EOF
 
 chmod u+x /opt/replicated/start.sh

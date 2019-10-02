@@ -580,7 +580,7 @@ upgradeK8sRemoteMasters() {
             continue
         fi
         nodeName=$(echo "$node" | awk '{ print $1 }')
-        if [ "$nodeName" = "$(hostname)" ]; then
+        if [ "$nodeName" = "$(hostname | tr '[:upper:]' '[:lower:]')" ]; then
             continue
         fi
         nodeVersion="$(echo "$node" | awk '{ print $5 }' | sed 's/v//' )"
@@ -645,7 +645,7 @@ upgradeK8sRemoteMasters() {
 #######################################
 upgradeK8sMaster() {
     k8sVersion=$1
-    local node=$(hostname)
+    local node=$(hostname | tr '[:upper:]' '[:lower:]')
 
     prepareK8sPackageArchives "$k8sVersion"
 

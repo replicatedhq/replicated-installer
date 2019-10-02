@@ -858,7 +858,7 @@ replicatedDeploy() {
     # master, the REK operator will remove the bind to the single-master and leave it bound to any
     # master. Re-running this script will restore the single-master affinity.
     if [ "$HA_CLUSTER" = "1" ] && [ "$AIRGAP" = "1" ]; then
-        BIND_DAEMON_HOSTNAME=$(hostname)
+        BIND_DAEMON_HOSTNAME=$(hostname | tr '[:upper:]' '[:lower:]')
     fi
 
     logStep "generate manifests"
