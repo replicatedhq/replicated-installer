@@ -8,6 +8,10 @@ profiles:
     deploy:
       kustomize:
         path: "./kustomize/overlays/microk8s"
+  - name: staging-dev
+    deploy:
+      kustomize:
+        path: "./kustomize/overlays/staging-dev"
 
 build:
   local:
