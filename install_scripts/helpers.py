@@ -15,37 +15,21 @@ _default_kubernetes_version = '1.15.3'
 
 
 def template_args(**kwargs):
+    env = param.lookup('ENVIRONMENT', default='production')
     args = {
-        'pinned_docker_version':
-        get_default_docker_version(),
+        'pinned_docker_version': get_default_docker_version(),
         'min_docker_version':
-        param.lookup(
-            'MIN_DOCKER_VERSION',
-            '/install_scripts/min_docker_version',
-            default='1.7.1'),
-        'replicated_env':
-        param.lookup(
-            'ENVIRONMENT', '/replicated/environment', default='production'),
-        'environment_tag_suffix':
-        get_environment_tag_suffix(
-            param.lookup(
-                'ENVIRONMENT', '/replicated/environment',
-                default='production')),
+        param.lookup('MIN_DOCKER_VERSION', default='1.7.1'),
+        'replicated_env': env,
+        'environment_tag_suffix': get_environment_tag_suffix(env),
         'replicated_install_url':
-        param.lookup(
-            'REPLICATED_INSTALL_URL',
-            '/replicated/installer_url',
-            default='https://get.replicated.com'),
+        param.lookup('REPLICATED_INSTALL_URL',
+                     default='https://get.replicated.com'),
         'replicated_prem_graphql_endpoint':
-        param.lookup(
-            'GRAPHQL_PREM_ENDPOINT',
-            '/graphql/prem_endpoint',
-            default='https://pg.replicated.com/graphql'),
+        param.lookup('GRAPHQL_PREM_ENDPOINT',
+                     default='https://pg.replicated.com/graphql'),
         'replicated_registry_endpoint':
-        param.lookup(
-            'REGISTRY_ENDPOINT',
-            '/registry_v2/advertise_address',
-            default='registry.replicated.com'),
+        param.lookup('REGISTRY_ENDPOINT', default='registry.replicated.com'),
     }
     if get_arg('replicated_env') in ('staging', 'production'):
         args['replicated_env'] = get_arg('replicated_env')
@@ -130,17 +114,13 @@ def get_pinned_kubernetes_version(replicated_version):
 
 
 def get_default_docker_version():
-    return param.lookup(
-        'PINNED_DOCKER_VERSION',
-        '/install_scripts/pinned_docker_version',
-        default=_default_docker_version)
+    return param.lookup('PINNED_DOCKER_VERSION',
+                        default=_default_docker_version)
 
 
 def get_default_kubernetes_version():
-    return param.lookup(
-        'PINNED_KUBERNETES_VERSION',
-        '/install_scripts/pinned_kubernetes_version',
-        default=_default_kubernetes_version)
+    return param.lookup('PINNED_KUBERNETES_VERSION',
+                        default=_default_kubernetes_version)
 
 
 def get_replicated_version(replicated_channel, app_slug, app_channel,

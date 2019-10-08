@@ -929,8 +929,7 @@ def get_airgap_bundle(replicated_channel=None,
         replicated_channel, scheduler=scheduler)
 
     bucket = 'replicated-airgap-work'
-    env = param.lookup('ENVIRONMENT', '/replicated/environment',
-                       default='production')
+    env = param.lookup('ENVIRONMENT', default='production')
     if env == 'staging':
         bucket = 'replicated-airgap-work-staging'
 

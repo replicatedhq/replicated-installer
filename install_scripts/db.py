@@ -15,17 +15,17 @@ def get():
         return db
 
     print("Connecting to db", file=sys.stderr)
-    database = param.lookup('MYSQL_DATABASE', '/mysql/database')
+    database = param.lookup('MYSQL_DATABASE')
     if not database:
-        database = param.lookup('MYSQL_DB', '/mysql/database')
-    password = param.lookup('MYSQL_PASSWORD', '/mysql/password', decrypt=True)
+        database = param.lookup('MYSQL_DB')
+    password = param.lookup('MYSQL_PASSWORD')
     if not password:
-        password = param.lookup('MYSQL_PASS', '/mysql/password', decrypt=True)
+        password = param.lookup('MYSQL_PASS')
     db = g._database = mysql.connector.connect(
-        host=param.lookup('MYSQL_HOST', '/mysql/host'),
-        port=param.lookup('MYSQL_PORT', '/mysql/port'),
+        host=param.lookup('MYSQL_HOST'),
+        port=param.lookup('MYSQL_PORT'),
         database=database,
-        user=param.lookup('MYSQL_USER', '/mysql/user'),
+        user=param.lookup('MYSQL_USER'),
         password=password)
     return db
 
