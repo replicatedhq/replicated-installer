@@ -1,9 +1,12 @@
 
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: install-scripts
 spec:
+  selector:
+    matchLabels:
+      app: install-scripts
   template:
     metadata:
       labels:
