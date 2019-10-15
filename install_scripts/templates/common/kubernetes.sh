@@ -24,7 +24,7 @@ RHEL7_K8S_11=rhel7-v1.11.5-20181204
 RHEL7_K8S_12=rhel7-v1.12.3-20181211
 RHEL7_K8S_13=rhel7-v1.13.5-20190411
 RHEL7_K8S_14=rhel7-v1.14.3-20190702
-RHEL7_K8S_15=rhel7-v1.15.3-20190820
+RHEL7_K8S_15=rhel7-v1.15.3-20191015
 
 DAEMON_NODE_KEY=replicated.com/daemon
 
@@ -93,7 +93,9 @@ parseKubernetesTargetVersion() {
 #######################################
 bailIfUnsupportedOS() {
     case "$LSB_DIST$DIST_VERSION" in
-        ubuntu16.04|ubuntu18.04|rhel7.4|rhel7.5|rhel7.6|centos7.4|centos7.5|centos7.6)
+        ubuntu16.04|ubuntu18.04)
+            ;;
+        centos7.4|centos7.5|centos7.6|centos7.7|rhel7.4|rhel7.5|rhel7.6|rhel7.7)
             ;;
         *)
             bail "Kubernetes install is not supported on ${LSB_DIST} ${DIST_VERSION}"
@@ -194,7 +196,7 @@ k8sPackageTag() {
                     ;;
             esac
             ;;
-        centos7.4|centos7.5|centos7.6|rhel7.4|rhel7.5|rhel7.6)
+        centos7.4|centos7.5|centos7.6|centos7.7|rhel7.4|rhel7.5|rhel7.6|rhel7.7)
             case "$k8sVersion" in
                 1.9.3)
                     echo "$RHEL7_K8S_9"
@@ -257,7 +259,7 @@ installKubernetesComponents() {
             dpkg -i --force-depends-version archives/*.deb
             ;;
 
-        centos7.4|centos7.5|centos7.6|rhel7.4|rhel7.5|rhel7.6)
+        centos7.4|centos7.5|centos7.6|centos7.7|rhel7.4|rhel7.5|rhel7.6|rhel7.7)
             # This needs to be run on Linux 3.x nodes for Rook
             modprobe rbd
             echo 'rbd' > /etc/modules-load.d/replicated-rook.conf
