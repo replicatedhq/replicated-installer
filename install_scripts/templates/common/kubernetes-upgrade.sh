@@ -673,7 +673,7 @@ upgradeK8sMaster() {
             export DEBIAN_FRONTEND=noninteractive
             dpkg -i --force-depends-version archives/*.deb
             ;;
-        centos7.4|centos7.5|centos7.6|rhel7.4|rhel7.5|rhel7.6)
+        centos7.4|centos7.5|centos7.6|centos7.7|rhel7.4|rhel7.5|rhel7.6|rhel7.7)
             rpm --upgrade --force --nodeps archives/*.rpm
             ;;
         *)
@@ -717,7 +717,7 @@ upgradeK8sNodeHostPackages() {
             export DEBIAN_FRONTEND=noninteractive
             dpkg -i --force-depends-version archives/*.deb
             ;;
-        centos7.4|centos7.5|centos7.6|rhel7.4|rhel7.5|rhel7.6)
+        centos7.4|centos7.5|centos7.6|centos7.7|rhel7.4|rhel7.5|rhel7.6|rhel7.7)
             rpm --upgrade --force --nodeps archives/*.rpm
             ;;
         *)
