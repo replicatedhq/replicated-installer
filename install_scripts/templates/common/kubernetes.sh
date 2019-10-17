@@ -1774,7 +1774,7 @@ KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl cordon \$(hostname | tr '[:upper
 
 EOF
 
-    if [ "$HA_CLUSTER" = "0" ]; then
+    if [ "$HA_CLUSTER" != "1" ]; then
         cat >>/opt/replicated/shutdown.sh <<EOF
 # only on masters
 KUBECONFIG=/etc/kubernetes/admin.conf replicatedctl app stop || true
