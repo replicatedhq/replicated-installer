@@ -1767,15 +1767,23 @@ checkDockerK8sVersion()
 
 writeAKAExecStop()
 {
-cat >/opt/replicated/shutdown.sh <<EOF
+    cat >/opt/replicated/shutdown.sh <<EOF
 #!/bin/bash
 
 KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl cordon \$(hostname | tr '[:upper:]' '[:lower:]')
 
+EOF
+
+    if [ "$HA_CLUSTER" != "1" ]; then
+        cat >>/opt/replicated/shutdown.sh <<EOF
 # only on masters
 KUBECONFIG=/etc/kubernetes/admin.conf replicatedctl app stop || true
 KUBECONFIG=/etc/kubernetes/admin.conf kubectl scale deploy replicated-shared-fs-snapshotter --replicas=0 || true
 
+EOF
+    fi
+
+    cat >>/opt/replicated/shutdown.sh <<EOF
 # delete local pods with PVCs
 while read -r uid; do
         pod=\$(KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl get pods --all-namespaces -ojsonpath='{ range .items[*]}{.metadata.name}{"\\t"}{.metadata.uid}{"\\t"}{.metadata.namespace}{"\\n"}{end}' | grep \$uid )
@@ -1798,14 +1806,28 @@ while \$(cat /proc/mounts | grep -q ':6789:/'); do
         sleep 1
 done
 
+# remove ceph-operator and mds pods from this node so they can continue to service the cluster
+thisHost=\$(hostname | tr '[:upper:]' '[:lower:]')
+while read -r row; do
+    podName=\$(echo \$row | awk '{ print \$1 }')
+    ns=\$(echo \$row | awk '{ print \$2 }')
+
+    if echo \$podName | grep -q "rook-ceph-operator"; then
+        KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl -n \$ns delete pod \$podName
+    fi
+    if echo \$podName | grep -q "rook-ceph-mds-rook-shared-fs"; then
+        KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl -n \$ns delete pod \$podName
+    fi
+done < <(KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl get pods --all-namespaces -ojsonpath='{ range .items[*]}{.metadata.name}{"\\t"}{.metadata.namespace}{"\\t"}{.spec.nodeName}{"\\n"}{end}' | grep -E "\${thisHost}\$")
+
 EOF
 
-chmod u+x /opt/replicated/shutdown.sh
+    chmod u+x /opt/replicated/shutdown.sh
 }
 
 writeAKAExecStart()
 {
-cat >/opt/replicated/start.sh <<EOF
+    cat >/opt/replicated/start.sh <<EOF
 #!/bin/bash
 
 # wait for Kubernets API
@@ -1817,12 +1839,12 @@ done
 KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl uncordon \$(hostname | tr '[:upper:]' '[:lower:]')
 EOF
 
-chmod u+x /opt/replicated/start.sh
+    chmod u+x /opt/replicated/start.sh
 }
 
 writeAKAService()
 {
-cat >/etc/systemd/system/aka-reboot.service <<EOF
+    cat >/etc/systemd/system/aka-reboot.service <<EOF
 [Unit]
 After=kubelet.service
 After=docker.service
