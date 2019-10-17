@@ -254,3 +254,17 @@ dockerRetagAndPushImageToRegistry() {
     (set -x; docker tag "$1" "$_localTag")
     (set -x; docker push "$_localTag")
 }
+
+#######################################
+# Gets the Docker logging driver.
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   DOCKER_LOGGING_DRIVER
+#######################################
+DOCKER_LOGGING_DRIVER=
+dockerGetLoggingDriver() {
+    DOCKER_LOGGING_DRIVER=docker info 2>/dev/null | grep -i "Logging Driver:" | sed 's/[Ll]ogging [Dd]river: *//'
+}
