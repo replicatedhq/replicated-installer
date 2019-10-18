@@ -1018,6 +1018,21 @@ isMasterNode()
     fi
 }
 
+isHAMaster()
+{
+    if ! isMasterNode; then
+        return 1
+    fi
+
+    if [ "$HA_CLUSTER" = "1" ]; then
+        return 0
+    elif cat /opt/replicated/kubeadm.conf | grep 'JoinConfiguration' && cat /opt/replicated/kubeadm.conf | grep 'controlPlane:'; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 #######################################
 # Spinner Pod Running
 # Globals:
@@ -1772,9 +1787,9 @@ KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl cordon \$(hostname | tr '[:upper
 
 EOF
 
-    if [ "$HA_CLUSTER" != "1" ]; then
+    if ! isHAMaster; then
         cat >>/opt/replicated/shutdown.sh <<EOF
-# only on masters
+# only on master of single-node clusters
 KUBECONFIG=/etc/kubernetes/admin.conf replicatedctl app stop || true
 KUBECONFIG=/etc/kubernetes/admin.conf kubectl scale deploy replicated-shared-fs-snapshotter --replicas=0 || true
 
