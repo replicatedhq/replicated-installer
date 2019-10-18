@@ -275,7 +275,7 @@ build_replicated_opts() {
         return
     fi
 
-REPLICATED_OPTS=""
+    REPLICATED_OPTS=""
 
 {% if customer_base_url_override %}
     REPLICATED_OPTS="$REPLICATED_OPTS -e MARKET_BASE_URL={{ customer_base_url_override }}"
@@ -301,7 +301,7 @@ REPLICATED_OPTS=""
         REPLICATED_OPTS="$REPLICATED_OPTS -e LOG_LEVEL=info"
     fi
     if [ "$AIRGAP" = "1" ]; then
-        REPLICATED_OPTS=$REPLICATED_OPTS" -e AIRGAP=true"
+        REPLICATED_OPTS="$REPLICATED_OPTS -e AIRGAP=true"
     fi
     if [ -n "$RELEASE_SEQUENCE" ]; then
         REPLICATED_OPTS="$REPLICATED_OPTS -e RELEASE_SEQUENCE=$RELEASE_SEQUENCE"
@@ -316,6 +316,11 @@ REPLICATED_OPTS=""
     REPLICATED_UI_OPTS=""
     if [ -n "$LOG_LEVEL" ]; then
         REPLICATED_UI_OPTS="$REPLICATED_UI_OPTS -e LOG_LEVEL=$LOG_LEVEL"
+    fi
+
+    if [ dockerGetLoggingDriver = "json-file" ]; then
+        REPLICATED_OPTS="$REPLICATED_OPTS --log-opt max-size=50m --log-opt max-file=3"
+        REPLICATED_UI_OPTS="$REPLICATED_UI_OPTS --log-opt max-size=50m --log-opt max-file=3"
     fi
 }
 
