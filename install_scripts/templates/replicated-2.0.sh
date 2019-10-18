@@ -35,6 +35,8 @@ HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 ADDITIONAL_NO_PROXY=
 FORCE_REPLICATED_DOWNGRADE=0
+SKIP_PREFLIGHTS=0
+IGNORE_PREFLIGHTS=0
 REGISTRY_ADDRESS_OVERRIDE=
 REGISTRY_PATH_PREFIX=
 
@@ -70,6 +72,7 @@ set -e
 {% include 'common/selinux.sh' %}
 {% include 'common/firewall.sh' %}
 {% include 'common/registryproxy.sh' %}
+{% include 'preflights/index.sh' %}
 
 ask_for_registry_name_ipv6() {
   line=
@@ -444,7 +447,7 @@ install_operator() {
     if isValidIpv6 "$_private_address_with_brackets"; then
         _private_address_with_brackets="[$_private_address_with_brackets]"
     fi
-    opts="no-docker daemon-endpoint=$_private_address_with_brackets:9879 daemon-token=$DAEMON_TOKEN private-address=$PRIVATE_ADDRESS tags=$OPERATOR_TAGS"
+    opts="no-docker skip-preflighs daemon-endpoint=$_private_address_with_brackets:9879 daemon-token=$DAEMON_TOKEN private-address=$PRIVATE_ADDRESS tags=$OPERATOR_TAGS"
     if [ -n "$PUBLIC_ADDRESS" ]; then
         opts=$opts" public-address=$PUBLIC_ADDRESS"
     elif [ "$NO_PUBLIC_ADDRESS" = "1" ]; then
@@ -625,6 +628,12 @@ while [ "$1" != "" ]; do
         force-replicated-downgrade|force_replicated_downgrade)
             FORCE_REPLICATED_DOWNGRADE=1
             ;;
+        skip-preflighs|skip_preflighs)
+            SKIP_PREFLIGHTS=1
+            ;;
+        ignore-preflighs|ignore_preflighs)
+            IGNORE_PREFLIGHTS=1
+            ;;
         no-ce-on-ee|no_ce_on_ee)
             NO_CE_ON_EE=1
             ;;
@@ -764,6 +773,24 @@ fi
 
 if [ -n "$PROXY_ADDRESS" ]; then
     checkDockerProxyConfig
+fi
+
+if [ "$SKIP_PREFLIGHTS" != "1" ]; then
+    echo ""
+    echo "Running preflight checks..."
+    runPreflights || true
+    if [ "$IGNORE_PREFLIGHTS" != "1" ]; then
+        if [ "$HAS_PREFLIGHT_ERRORS" = "1" ]; then
+            bail "\nPreflights have encountered some errors. Please correct them before proceeding."
+        elif [ "$HAS_PREFLIGHT_WARNINGS" = "1" ]; then
+            logWarn "\nPreflights have encountered some warnings. Please review them before proceeding."
+            logWarn "Would you like to proceed anyway?"
+            if ! confirmN; then
+                exit 1
+                return
+            fi
+        fi
+    fi
 fi
 
 if [ -n "$ARTIFACTORY_ADDRESS" ] && [ -n "$ARTIFACTORY_AUTH" ]; then

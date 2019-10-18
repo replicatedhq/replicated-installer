@@ -52,6 +52,8 @@ DEFAULT_CLUSTER_DNS="10.96.0.10"
 CLUSTER_DNS=$DEFAULT_CLUSTER_DNS
 ENCRYPT_NETWORK=
 ADDITIONAL_NO_PROXY=
+SKIP_PREFLIGHTS=0
+IGNORE_PREFLIGHTS=0
 IPVS=1
 CEPH_DASHBOARD_URL=
 CEPH_DASHBOARD_USER=
@@ -97,6 +99,7 @@ set -e
 {% include 'common/swap.sh' %}
 {% include 'common/kubernetes-upgrade.sh' %}
 {% include 'common/firewall.sh' %}
+{% include 'preflights/index.sh' %}
 
 LOAD_BALANCER_ADDRESS_CHANGED=0
 promptForLoadBalancerAddress() {
@@ -1116,6 +1119,12 @@ while [ "$1" != "" ]; do
                 ADDITIONAL_NO_PROXY="$ADDITIONAL_NO_PROXY,$_value"
             fi
             ;;
+        skip-preflighs|skip_preflighs)
+            SKIP_PREFLIGHTS=1
+            ;;
+        ignore-preflighs|ignore_preflighs)
+            IGNORE_PREFLIGHTS=1
+            ;;
         kubernetes-upgrade-patch-version|kubernetes_upgrade_patch_version)
             K8S_UPGRADE_PATCH_VERSION=1
             ;;
@@ -1226,6 +1235,24 @@ fi
 
 if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
     checkDockerProxyConfig
+fi
+
+if [ "$SKIP_PREFLIGHTS" != "1" ]; then
+    echo ""
+    echo "Running preflight checks..."
+    runPreflights || true
+    if [ "$IGNORE_PREFLIGHTS" != "1" ]; then
+        if [ "$HAS_PREFLIGHT_ERRORS" = "1" ]; then
+            bail "\nPreflights have encountered some errors. Please correct them before proceeding."
+        elif [ "$HAS_PREFLIGHT_WARNINGS" = "1" ]; then
+            logWarn "\nPreflights have encountered some warnings. Please review them before proceeding."
+            logWarn "Would you like to proceed anyway?"
+            if ! confirmN; then
+                exit 1
+                return
+            fi
+        fi
+    fi
 fi
 
 must_disable_selinux

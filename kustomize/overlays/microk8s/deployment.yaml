@@ -10,7 +10,7 @@ spec:
           image: replicated-install-scripts
           env:
             - name: GRAPHQL_PREM_ENDPOINT
-              value: http://graphql-api-prem:8033/graphql
+              value: "http://graphql-api-prem:8033/graphql"
             - name: REGISTRY_ENDPOINT
               value: 'registry.staging.replicated.com' # TODO
             - name: MYSQL_PASSWORD
