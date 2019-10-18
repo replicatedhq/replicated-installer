@@ -207,6 +207,25 @@ workflows:
             branches:
               ignore: master
 
+  master:
+    jobs:
+      - is_upstream:
+          filters:
+            branches:
+              only: master
+
+      - test:
+          requires:
+            - is_upstream
+      - build_staging_docker_image:
+          requires:
+            - is_upstream
+
+      - deploy_staging_eks:
+          requires:
+            - test
+            - build_staging_docker_image
+
   release:
     jobs:
       - is_upstream:
@@ -226,17 +245,22 @@ workflows:
           requires:
             - is_upstream
 
-      - deploy_staging_eks:
+      - hold_staging:
+          type: approval
           requires:
             - test
             - build_staging_docker_image
 
-      - hold:
+      - deploy_staging_eks:
+          requires:
+            - hold_staging
+
+      - hold_production:
           type: approval
           requires:
-            - deploy_staging_eks
+            - test
+            - build_production_docker_image
 
       - deploy_production_eks:
           requires:
-            - build_production_docker_image
-            - hold
+            - hold_production
