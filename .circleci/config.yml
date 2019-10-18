@@ -220,21 +220,47 @@ workflows:
       - build_staging_docker_image:
           requires:
             - is_upstream
-      - build_production_docker_image:
-          requires:
-            - is_upstream
 
       - deploy_staging_eks:
           requires:
             - test
             - build_staging_docker_image
 
-      - hold:
+  release:
+    jobs:
+      - is_upstream:
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-.*)*/
+            branches:
+              ignore: /.*/
+
+      - test:
+          requires:
+            - is_upstream
+      - build_staging_docker_image:
+          requires:
+            - is_upstream
+      - build_production_docker_image:
+          requires:
+            - is_upstream
+
+      - hold_staging:
           type: approval
           requires:
-            - deploy_staging_eks
+            - test
+            - build_staging_docker_image
+
+      - deploy_staging_eks:
+          requires:
+            - hold_staging
+
+      - hold_production:
+          type: approval
+          requires:
+            - test
+            - build_production_docker_image
 
       - deploy_production_eks:
           requires:
-            - build_production_docker_image
-            - hold
+            - hold_production
