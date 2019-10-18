@@ -197,6 +197,11 @@ jobs:
             deploy
 
 
+tags_filter: &tags_filter
+  filters:
+    tags:
+      only: /.*/
+
 workflows:
   version: 2
 
@@ -236,31 +241,38 @@ workflows:
               ignore: /.*/
 
       - test:
+          <<: *tags_filter
           requires:
             - is_upstream
       - build_staging_docker_image:
+          <<: *tags_filter
           requires:
             - is_upstream
       - build_production_docker_image:
+          <<: *tags_filter
           requires:
             - is_upstream
 
       - hold_staging:
           type: approval
+          <<: *tags_filter
           requires:
             - test
             - build_staging_docker_image
 
       - deploy_staging_eks:
+          <<: *tags_filter
           requires:
             - hold_staging
 
       - hold_production:
           type: approval
+          <<: *tags_filter
           requires:
             - test
             - build_production_docker_image
 
       - deploy_production_eks:
+          <<: *tags_filter
           requires:
             - hold_production
