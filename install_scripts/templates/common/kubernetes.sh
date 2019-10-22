@@ -333,7 +333,14 @@ loadIPVSKubeProxyModules() {
         return
     fi
 
-    modprobe nf_conntrack_ipv4
+    kernel_major=$(uname -r | cut -d'.' -f1)
+    kernel_minor=$(uname -r | cut -d'.' -f2)
+    if [ "$kernel_major" -lt "4" ] || ([ "$kernel_major" -eq "4" ] && [ "$kernel_minor" -lt "19" ]); then
+        modprobe nf_conntrack_ipv4
+    else
+        modprobe nf_conntrack
+    fi
+
     modprobe ip_vs
     modprobe ip_vs_rr
     modprobe ip_vs_wrr
