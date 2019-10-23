@@ -103,9 +103,11 @@ set -e
 
 LOAD_BALANCER_ADDRESS_CHANGED=0
 promptForLoadBalancerAddress() {
+    local isK8sInstalled=
     local lastLoadBalancerAddress=
 
     if kubeadm config view >/dev/null 2>&1; then
+        isK8sInstalled=1
         lastLoadBalancerAddress="$(kubeadm config view | grep 'controlPlaneEndpoint:' | sed 's/controlPlaneEndpoint: \|"//g')"
         if [ -n "$lastLoadBalancerAddress" ]; then
             splitHostPort "$lastLoadBalancerAddress"
@@ -119,9 +121,6 @@ promptForLoadBalancerAddress() {
         splitHostPort "$LOAD_BALANCER_ADDRESS"
         if [ "$HOST" = "$LOAD_BALANCER_ADDRESS" ]; then
             LOAD_BALANCER_ADDRESS="$LOAD_BALANCER_ADDRESS:6443"
-        fi
-        if [ "$LOAD_BALANCER_ADDRESS" != "$lastLoadBalancerAddress" ]; then
-            LOAD_BALANCER_ADDRESS_CHANGED=1
         fi
     fi
 
@@ -148,6 +147,12 @@ promptForLoadBalancerAddress() {
     fi
     if [ -z "$LOAD_BALANCER_PORT" ]; then
         LOAD_BALANCER_PORT=6443
+    fi
+
+    if [ "$isK8sInstalled" = "1" ] && [ -n "$LOAD_BALANCER_ADDRESS" ]; then
+        if [ "$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT" != "$lastLoadBalancerAddress" ]; then
+            LOAD_BALANCER_ADDRESS_CHANGED=1
+        fi
     fi
 }
 
