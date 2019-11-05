@@ -51,7 +51,7 @@ preflightDockerSeccompNonDefault()
         return 0
     fi
 
-    if ! docker info | grep -q seccomp; then
+    if ! docker info 2>&1 | grep -q seccomp; then
         # no seccomp profile
         return 0
     fi
