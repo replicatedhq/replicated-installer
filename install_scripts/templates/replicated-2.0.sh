@@ -321,7 +321,8 @@ build_replicated_opts() {
         REPLICATED_UI_OPTS="$REPLICATED_UI_OPTS -e LOG_LEVEL=$LOG_LEVEL"
     fi
 
-    if [ dockerGetLoggingDriver = "json-file" ]; then
+    dockerGetLoggingDriver
+    if [ "$DOCKER_LOGGING_DRIVER" = "json-file" ]; then
         REPLICATED_OPTS="$REPLICATED_OPTS --log-opt max-size=50m --log-opt max-file=3"
         REPLICATED_UI_OPTS="$REPLICATED_UI_OPTS --log-opt max-size=50m --log-opt max-file=3"
     fi

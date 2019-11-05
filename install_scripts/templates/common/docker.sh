@@ -266,5 +266,5 @@ dockerRetagAndPushImageToRegistry() {
 #######################################
 DOCKER_LOGGING_DRIVER=
 dockerGetLoggingDriver() {
-    DOCKER_LOGGING_DRIVER=docker info 2>/dev/null | grep -i "Logging Driver:" | sed 's/[Ll]ogging [Dd]river: *//'
+    DOCKER_LOGGING_DRIVER="$(docker info 2>/dev/null | grep -i "Logging Driver:" | sed 's/[Ll]ogging [Dd]river: *//')"
 }

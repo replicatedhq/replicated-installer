@@ -165,7 +165,8 @@ build_replicated_operator_opts() {
     find_hostname
     REPLICATED_OPERATOR_OPTS=$REPLICATED_OPERATOR_OPTS" -e NODENAME=$SYS_HOSTNAME"
 
-    if [ dockerGetLoggingDriver = "json-file" ]; then
+    dockerGetLoggingDriver
+    if [ "$DOCKER_LOGGING_DRIVER" = "json-file" ]; then
         REPLICATED_OPERATOR_OPTS="$REPLICATED_OPERATOR_OPTS --log-opt max-size=50m --log-opt max-file=3"
     fi
 }
