@@ -448,7 +448,7 @@ install_operator() {
     if isValidIpv6 "$_private_address_with_brackets"; then
         _private_address_with_brackets="[$_private_address_with_brackets]"
     fi
-    opts="no-docker skip-preflighs daemon-endpoint=$_private_address_with_brackets:9879 daemon-token=$DAEMON_TOKEN private-address=$PRIVATE_ADDRESS tags=$OPERATOR_TAGS"
+    opts="no-docker skip-preflights daemon-endpoint=$_private_address_with_brackets:9879 daemon-token=$DAEMON_TOKEN private-address=$PRIVATE_ADDRESS tags=$OPERATOR_TAGS"
     if [ -n "$PUBLIC_ADDRESS" ]; then
         opts=$opts" public-address=$PUBLIC_ADDRESS"
     elif [ "$NO_PUBLIC_ADDRESS" = "1" ]; then
@@ -629,10 +629,10 @@ while [ "$1" != "" ]; do
         force-replicated-downgrade|force_replicated_downgrade)
             FORCE_REPLICATED_DOWNGRADE=1
             ;;
-        skip-preflighs|skip_preflighs)
+        skip-preflights|skip_preflights)
             SKIP_PREFLIGHTS=1
             ;;
-        ignore-preflighs|ignore_preflighs)
+        ignore-preflights|ignore_preflights)
             IGNORE_PREFLIGHTS=1
             ;;
         no-ce-on-ee|no_ce_on_ee)
