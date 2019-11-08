@@ -373,10 +373,10 @@ while [ "$1" != "" ]; do
                 ADDITIONAL_NO_PROXY="$ADDITIONAL_NO_PROXY,$_value"
             fi
             ;;
-        skip-preflighs|skip_preflighs)
+        skip-preflights|skip_preflights)
             SKIP_PREFLIGHTS=1
             ;;
-        ignore-preflighs|ignore_preflighs)
+        ignore-preflights|ignore_preflights)
             IGNORE_PREFLIGHTS=1
             ;;
         artifactory-address|artifactory_address)
