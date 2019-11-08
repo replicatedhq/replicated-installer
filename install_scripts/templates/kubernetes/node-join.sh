@@ -426,7 +426,7 @@ if [ "$SKIP_PREFLIGHTS" != "1" ]; then
         elif [ "$HAS_PREFLIGHT_WARNINGS" = "1" ]; then
             logWarn "\nPreflights have encountered some warnings. Please review them before proceeding."
             logWarn "Would you like to proceed anyway?"
-            if ! confirmN; then
+            if ! confirmN " "; then
                 exit 1
                 return
             fi
