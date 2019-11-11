@@ -79,8 +79,8 @@ preflightDockerNonStandardRoot()
         return 0
     fi
     if [ "$dir" != "/var/lib/docker" ]; then
-        error "Docker using a non-standard root directory of $dir"
-        return 1
+        warn "Docker using a non-standard root directory of $dir"
+        return 0
     fi
     info "Docker using standard root directory"
     return 0
