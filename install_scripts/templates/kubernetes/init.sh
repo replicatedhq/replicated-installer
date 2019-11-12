@@ -621,6 +621,15 @@ weavenetDeploy() {
     logSuccess "weave network deployed"
 }
 
+clusterAdminDeploy() {
+    logStep "deploy cluster admin role"
+
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS cluster_role_binding_yaml=1 > /tmp/cluster-admin-role.yml
+
+    kubectl apply -f /tmp/cluster-admin-role.yml
+    logSuccess "Cluster admin role deployed"
+}
+
 rookDeploy() {
     logStep "deploy rook"
 
@@ -1336,6 +1345,7 @@ installAKAService
 
 if [ "$KUBERNETES_ONLY" -eq "1" ]; then
     spinnerKubeSystemReady "$KUBERNETES_VERSION"
+    clusterAdminDeploy
     rekOperatorDeploy
     outroKubeadm "$NO_CLEAR"
     exit 0

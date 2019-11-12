@@ -42,6 +42,7 @@ DEPLOYMENT_YAML=0
 REGISTRY_YAML=0
 REK_OPERATOR_YAML=0
 REPLICATED_REGISTRY_YAML=0
+CLUSTER_ROLE_BINDING_YAML=0
 BIND_DAEMON_TO_MASTERS=0
 BIND_DAEMON_HOSTNAME=
 API_SERVICE_ADDRESS="{{ api_service_address }}"
@@ -157,6 +158,10 @@ while [ "$1" != "" ]; do
             ;;
         replicated-registry-yaml|replicated_registry_yaml)
             REPLICATED_REGISTRY_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
+        cluster-role-binding-yaml|cluster_role_binding_yaml)
+            CLUSTER_ROLE_BINDING_YAML="$_value"
             REPLICATED_YAML=0
             ;;
         ip-alloc-range|ip_alloc_range)
@@ -1289,6 +1294,10 @@ fi
 
 if [ "$REPLICATED_REGISTRY_YAML" = "1" ]; then
     render_replicated_registry_service
+fi
+
+if [ "$CLUSTER_ROLE_BINDING_YAML" = "1" ]; then
+  render_cluster_role_binding
 fi
 
 if [ "$REPLICATED_YAML" = "1" ]; then
