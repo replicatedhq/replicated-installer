@@ -17,6 +17,7 @@ REPLICATED_USERNAME="{{ replicated_username }}"
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
+{% include 'common/log.sh' %}
 {% include 'common/system.sh' %}
 {% include 'common/docker.sh' %}
 {% include 'common/docker-version.sh' %}
