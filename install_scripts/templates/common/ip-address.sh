@@ -109,6 +109,24 @@ discoverPublicIp() {
         printf "The installer will use service address '%s' (discovered from EC2 metadata service)\n" "$PUBLIC_ADDRESS"
         return
     fi
+
+    # azure
+    if commandExists "curl"; then
+        set +e
+        _out=$(curl --noproxy "*" --max-time 5 --connect-timeout 2 -qSfs -H Metadata:true "http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipAddress/0/publicIpAddress?api-version=2017-08-01&format=text" 2>/dev/null)
+        _status=$?
+        set -e
+    else
+        set +e
+        _out=$(wget --no-proxy -t 1 --timeout=5 --connect-timeout=2 -qO- --header='Metadata:true' "http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipAddress/0/publicIpAddress?api-version=2017-08-01&format=text" 2>/dev/null)
+        _status=$?
+        set -e
+    fi
+    if [ "$_status" -eq "0" ] && [ -n "$_out" ]; then
+        PUBLIC_ADDRESS=$_out
+        printf "The installer will use service address '%s' (discovered from Azure metadata service)\n" "$PUBLIC_ADDRESS"
+        return
+    fi
 }
 
 #######################################
