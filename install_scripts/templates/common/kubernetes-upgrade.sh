@@ -385,7 +385,7 @@ maybeUpgradeKubernetesNode() {
         makeKubeadmJoinConfigV1Beta2
 
         if isMasterNode; then
-            local certArgs="--apiserver-advertise-address=$LOAD_BALANCER_ADDRESS --apiserver-cert-extra-sans=$PRIVATE_ADDRESS"
+            local certArgs="--apiserver-advertise-address=$PRIVATE_ADDRESS --apiserver-cert-extra-sans=$LOAD_BALANCER_ADDRESS"
             if [ -n "$PUBLIC_ADDRESS" ]; then
                 certArgs="$certArgs --apiserver-cert-extra-sans=$PUBLIC_ADDRESS"
             fi
