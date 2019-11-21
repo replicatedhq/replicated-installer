@@ -43,6 +43,10 @@ def template_args(**kwargs):
         args['disable_contour'] = True
     if get_arg('no_clear') is not None:
         args['no_clear'] = True
+    if get_arg('prompt_on_preflight_warnings') is None:
+        args['ignore_preflights'] = True
+    if get_arg('skip_preflights') is not None:
+        args['skip_preflights'] = True
     if kwargs:
         args.update(kwargs)
     return args
