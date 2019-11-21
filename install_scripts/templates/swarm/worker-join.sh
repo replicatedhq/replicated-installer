@@ -11,8 +11,8 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 ADDITIONAL_NO_PROXY=
-SKIP_PREFLIGHTS=0
-IGNORE_PREFLIGHTS=0
+SKIP_PREFLIGHTS="{{ '1' if skip_preflights else '' }}"
+IGNORE_PREFLIGHTS="{{ '1' if ignore_preflights else '' }}"
 REPLICATED_USERNAME="{{ replicated_username }}"
 
 {% include 'common/common.sh' %}
@@ -131,8 +131,8 @@ while [ "$1" != "" ]; do
         skip-preflights|skip_preflights)
             SKIP_PREFLIGHTS=1
             ;;
-        ignore-preflights|ignore_preflights)
-            IGNORE_PREFLIGHTS=1
+        prompt-on-preflight-warnings|prompt_on_preflight_warnings)
+            IGNORE_PREFLIGHTS=0
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""

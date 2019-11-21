@@ -9,6 +9,8 @@ spec:
       containers:
         - name: install-scripts
           image: replicated-install-scripts
+          livenessProbe: ~
+          readinessProbe: ~
           env:
             - name: ENVIRONMENT
               value: dev

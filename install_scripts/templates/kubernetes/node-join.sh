@@ -14,8 +14,8 @@ HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 KUBERNETES_ONLY=0
 WAIT_FOR_ROOK=0
 ADDITIONAL_NO_PROXY=
-SKIP_PREFLIGHTS=0
-IGNORE_PREFLIGHTS=0
+SKIP_PREFLIGHTS="{{ '1' if skip_preflights else '' }}"
+IGNORE_PREFLIGHTS="{{ '1' if ignore_preflights else '' }}"
 KUBERNETES_VERSION="{{ kubernetes_version }}"
 K8S_UPGRADE_PATCH_VERSION="{{ k8s_upgrade_patch_version }}"
 IPVS=1
@@ -308,8 +308,8 @@ while [ "$1" != "" ]; do
         skip-preflights|skip_preflights)
             SKIP_PREFLIGHTS=1
             ;;
-        ignore-preflights|ignore_preflights)
-            IGNORE_PREFLIGHTS=1
+        prompt-on-preflight-warnings|prompt_on_preflight_warnings)
+            IGNORE_PREFLIGHTS=0
             ;;
         kubernetes-upgrade-patch-version|kubernetes_upgrade_patch_version)
             K8S_UPGRADE_PATCH_VERSION=1
