@@ -15,6 +15,6 @@ preflightFirewalld()
         return 0
     fi
 
-    warn "Firewalld is active"
+    info "Firewalld is active"
     return 1
 }

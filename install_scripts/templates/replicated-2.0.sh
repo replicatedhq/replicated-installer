@@ -35,8 +35,8 @@ HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 ADDITIONAL_NO_PROXY=
 FORCE_REPLICATED_DOWNGRADE=0
-SKIP_PREFLIGHTS=0
-IGNORE_PREFLIGHTS=0
+SKIP_PREFLIGHTS="{{ '1' if skip_preflights else '' }}"
+IGNORE_PREFLIGHTS="{{ '1' if ignore_preflights else '' }}"
 REGISTRY_ADDRESS_OVERRIDE=
 REGISTRY_PATH_PREFIX=
 
@@ -632,8 +632,8 @@ while [ "$1" != "" ]; do
         skip-preflights|skip_preflights)
             SKIP_PREFLIGHTS=1
             ;;
-        ignore-preflights|ignore_preflights)
-            IGNORE_PREFLIGHTS=1
+        prompt-on-preflight-warnings|prompt_on_preflight_warnings)
+            IGNORE_PREFLIGHTS=0
             ;;
         no-ce-on-ee|no_ce_on_ee)
             NO_CE_ON_EE=1
