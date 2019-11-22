@@ -33,6 +33,8 @@ outro() {
 
 export DEBIAN_FRONTEND=noninteractive
 
+requireRootUser
+
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"
     _value="$(echo "$1" | grep '=' | cut -d= -f2-)"
