@@ -1130,6 +1130,9 @@ while [ "$1" != "" ]; do
         prompt-on-preflight-warnings|prompt_on_preflight_warnings)
             IGNORE_PREFLIGHTS=0
             ;;
+        ignore-preflights|ignore_preflights)
+            # do nothing
+            ;;
         kubernetes-upgrade-patch-version|kubernetes_upgrade_patch_version)
             K8S_UPGRADE_PATCH_VERSION=1
             ;;
