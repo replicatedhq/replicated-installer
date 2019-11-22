@@ -379,6 +379,9 @@ while [ "$1" != "" ]; do
         prompt-on-preflight-warnings|prompt_on_preflight_warnings)
             IGNORE_PREFLIGHTS=0
             ;;
+        ignore-preflights|ignore_preflights)
+            # do nothing
+            ;;
         artifactory-address|artifactory_address)
             ARTIFACTORY_ADDRESS="$_value"
             ;;
