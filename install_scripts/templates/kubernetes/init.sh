@@ -102,6 +102,7 @@ set -e
 {% include 'preflights/index.sh' %}
 
 LOAD_BALANCER_ADDRESS_CHANGED=0
+LAST_LOAD_BALANCER_ADDRESS=
 promptForLoadBalancerAddress() {
     local isK8sInstalled=
     local lastLoadBalancerAddress=
@@ -111,6 +112,7 @@ promptForLoadBalancerAddress() {
         lastLoadBalancerAddress="$(kubeadm config view | grep 'controlPlaneEndpoint:' | sed 's/controlPlaneEndpoint: \|"//g')"
         if [ -n "$lastLoadBalancerAddress" ]; then
             splitHostPort "$lastLoadBalancerAddress"
+            LAST_LOAD_BALANCER_ADDRESS="$HOST"
             if [ "$HOST" = "$lastLoadBalancerAddress" ]; then
                 lastLoadBalancerAddress="$lastLoadBalancerAddress:6443"
             fi
