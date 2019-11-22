@@ -101,63 +101,6 @@ set -e
 {% include 'common/firewall.sh' %}
 {% include 'preflights/index.sh' %}
 
-LOAD_BALANCER_ADDRESS_CHANGED=0
-LAST_LOAD_BALANCER_ADDRESS=
-promptForLoadBalancerAddress() {
-    local isK8sInstalled=
-    local lastLoadBalancerAddress=
-
-    if kubeadm config view >/dev/null 2>&1; then
-        isK8sInstalled=1
-        lastLoadBalancerAddress="$(kubeadm config view | grep 'controlPlaneEndpoint:' | sed 's/controlPlaneEndpoint: \|"//g')"
-        if [ -n "$lastLoadBalancerAddress" ]; then
-            splitHostPort "$lastLoadBalancerAddress"
-            LAST_LOAD_BALANCER_ADDRESS="$HOST"
-            if [ "$HOST" = "$lastLoadBalancerAddress" ]; then
-                lastLoadBalancerAddress="$lastLoadBalancerAddress:6443"
-            fi
-        fi
-    fi
-
-    if [ -n "$LOAD_BALANCER_ADDRESS" ] && [ -n "$lastLoadBalancerAddress" ]; then
-        splitHostPort "$LOAD_BALANCER_ADDRESS"
-        if [ "$HOST" = "$LOAD_BALANCER_ADDRESS" ]; then
-            LOAD_BALANCER_ADDRESS="$LOAD_BALANCER_ADDRESS:6443"
-        fi
-    fi
-
-    if [ -z "$LOAD_BALANCER_ADDRESS" ] && [ -n "$lastLoadBalancerAddress" ]; then
-        LOAD_BALANCER_ADDRESS="$lastLoadBalancerAddress"
-    fi
-
-    if [ -z "$LOAD_BALANCER_ADDRESS" ]; then
-        printf "Please enter a load balancer address to route external and internal traffic to the API servers.\n"
-        printf "In the absence of a load balancer address, all traffic will be routed to the first master.\n"
-        printf "Load balancer address: "
-        prompt
-        LOAD_BALANCER_ADDRESS="$PROMPT_RESULT"
-        if [ -z "$LOAD_BALANCER_ADDRESS" ]; then
-            LOAD_BALANCER_ADDRESS="$PRIVATE_ADDRESS"
-            LOAD_BALANCER_PORT=6443
-        fi
-    fi
-
-    if [ -z "$LOAD_BALANCER_PORT" ]; then
-        splitHostPort "$LOAD_BALANCER_ADDRESS"
-        LOAD_BALANCER_ADDRESS="$HOST"
-        LOAD_BALANCER_PORT="$PORT"
-    fi
-    if [ -z "$LOAD_BALANCER_PORT" ]; then
-        LOAD_BALANCER_PORT=6443
-    fi
-
-    if [ "$isK8sInstalled" = "1" ] && [ -n "$LOAD_BALANCER_ADDRESS" ]; then
-        if [ "$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT" != "$lastLoadBalancerAddress" ]; then
-            LOAD_BALANCER_ADDRESS_CHANGED=1
-        fi
-    fi
-}
-
 initKubeadmConfig() {
     local kubeadmVersion=$(getKubeadmVersion)
     semverParse "$kubeadmVersion"
@@ -316,7 +259,7 @@ handleLoadBalancerAddressChangedPreInit() {
 }
 
 handleLoadBalancerAddressChangedPostInit() {
-    runUpgradeScriptOnAllRemoteNodes "$REPLICATED_VERSION"
+    runUpgradeScriptOnAllRemoteNodes "$REPLICATED_VERSION" "{{ channel_name }}"
     export KUBECONFIG=/etc/kubernetes/admin.conf
 
     logStep "Restarting kube-proxy"

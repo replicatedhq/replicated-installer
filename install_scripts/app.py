@@ -713,6 +713,18 @@ def get_kubernetes_upgrade_worker(replicated_channel=None):
     return Response(response, mimetype='text/x-shellscript')
 
 
+@app.route('/kubernetes-update-apiserver-certs')
+@app.route('/kubernetes-update-apiserver-certs.sh')
+@app.route('/<replicated_channel>/kubernetes-update-apiserver-certs')
+def get_kubernetes_update_apiserver_certs(replicated_channel=None):
+    replicated_channel = replicated_channel if replicated_channel else 'stable'
+
+    response = render_template(
+        'kubernetes/update-apiserver-certs.sh',
+        **helpers.template_args())
+    return Response(response, mimetype='text/x-shellscript')
+
+
 @app.route('/kubernetes-migrate')
 @app.route('/kubernetes-migrate.sh')
 @app.route('/<replicated_channel>/kubernetes-migrate')
@@ -816,6 +828,7 @@ def get_kubernetes_init_master(replicated_channel=None,
     response = render_template(
         'kubernetes/init.sh',
         **helpers.template_args(
+            channel_name=replicated_channel,
             pinned_docker_version=pinned_docker_version,
             kubernetes_version=kubernetes_version,
             replicated_version=replicated_version,

@@ -221,10 +221,12 @@ upgradeKubernetes() {
 #   LOAD_BALANCER_PORT
 # Arguments:
 #   Replicated version
+#   Channel name
 # Returns:
 #   None
 #######################################
 runUpgradeScriptOnAllRemoteNodes() {
+    local channelName="$2"
     local numMasters="$(kubectl get nodes --selector='node-role.kubernetes.io/master' | sed '1d' | wc -l)"
     local numWorkers="$(kubectl get nodes --selector='!node-role.kubernetes.io/master' | sed '1d' | wc -l)"
 
@@ -232,18 +234,52 @@ runUpgradeScriptOnAllRemoteNodes() {
         return
     fi
 
-    if ! waitReplicatedReady "$1"; then
-        bail "Replicated failed to report ready"
-    fi
     echo ""
     logStep "Kubernetes control plane endpoint updated, upgrading control plane..."
     echo ""
 
     if [ "$numMasters" -gt "1" ]; then
+        if [ -n "$LOAD_BALANCER_ADDRESS_CHANGED" ]; then
+            getUrlCmd
+            echo ""
+            printf "Run the following script to regenerate the api server certificate on all master nodes before proceeding:\n\n${GREEN}"
+            local prefix=""
+            if [ -n "$channelName" ]; then
+                prefix="/$channelName"
+            fi
+            printf "$URLGET_CMD {{ replicated_install_url }}${prefix}/kubernetes-update-apiserver-certs | sudo bash -s \\ \n"
+            printf "    load-balancer-address=$LOAD_BALANCER_ADDRESS"
+            if [ -n "$LAST_LOAD_BALANCER_ADDRESS" ]; then
+                printf " \\ \n    additional-sans=$LAST_LOAD_BALANCER_ADDRESS"
+            fi
+            if [ -n "$PROXY_ADDRESS" ]; then
+                printf " \\ \n    http-proxy=$PROXY_ADDRESS"
+            fi
+            printf "${NC}\n\n"
+            kubectl get nodes --selector='node-role.kubernetes.io/master'
+            echo ""
+            echo ""
+
+            while true; do
+                echo ""
+                printf "${YELLOW}Have all master nodes been updated?${NC} "
+                if confirmN " "; then
+                    break
+                fi
+            done
+        fi
+    fi
+
+    if ! waitReplicatedReady "$1"; then
+        bail "Replicated failed to report ready"
+    fi
+
+    if [ "$numMasters" -gt "1" ]; then
+        local script="$(/usr/local/bin/replicatedctl cluster node-join-script --master | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/")"
+
         echo ""
-        printf "Run the upgrade script on remote master nodes before proceeding:\n\n${GREEN}"
-        /usr/local/bin/replicatedctl cluster node-join-script --master | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/"
-        printf "${NC}\n\n"
+        printf "Run the upgrade script on remote master nodes before proceeding:\n\n"
+        printf "${GREEN}${script}${NC}\n\n"
         kubectl get nodes --selector='node-role.kubernetes.io/master'
         echo ""
         echo ""
@@ -385,15 +421,7 @@ maybeUpgradeKubernetesNode() {
         makeKubeadmJoinConfigV1Beta2
 
         if isMasterNode; then
-            local certArgs="--apiserver-advertise-address=$PRIVATE_ADDRESS --apiserver-cert-extra-sans=$LOAD_BALANCER_ADDRESS"
-            if [ -n "$PUBLIC_ADDRESS" ]; then
-                certArgs="$certArgs --apiserver-cert-extra-sans=$PUBLIC_ADDRESS"
-            fi
-            logStep "Regenerate api server certs"
-            rm -f /etc/kubernetes/pki/apiserver.*
-            kubeadm init phase certs apiserver $certArgs
-            logSuccess "API server certs regenerated"
-            restartK8sAPIServerContainer "$LOAD_BALANCER_ADDRESS" "$LOAD_BALANCER_PORT"
+            updateApiServerCerts
 
             updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
         else
@@ -403,6 +431,45 @@ maybeUpgradeKubernetesNode() {
 
         kubeadm upgrade node
     fi
+}
+
+#######################################
+# Regenerates api server certs with "kubeadm init phase certs apiserver"
+# Globals:
+#   PRIVATE_ADDRESS
+#   LOAD_BALANCER_ADDRESS
+#   LOAD_BALANCER_PORT
+#   LAST_LOAD_BALANCER_ADDRESS
+#   PUBLIC_ADDRESS
+#   ADDITIONAL_SANS
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+updateApiServerCerts() {
+    local certArgs="--apiserver-advertise-address=$PRIVATE_ADDRESS --apiserver-cert-extra-sans=$LOAD_BALANCER_ADDRESS"
+    if [ -n "$LAST_LOAD_BALANCER_ADDRESS" ]; then
+        certArgs="$certArgs --apiserver-cert-extra-sans=$LAST_LOAD_BALANCER_ADDRESS"
+    fi
+    if [ -n "$PUBLIC_ADDRESS" ]; then
+        certArgs="$certArgs --apiserver-cert-extra-sans=$PUBLIC_ADDRESS"
+    fi
+    if [ -n "$ADDITIONAL_SANS" ]; then
+        local ipSan;
+        oIFS="$IFS"; IFS=";"
+        for ipSan in $ADDITIONAL_SANS; do
+            certArgs="$certArgs --apiserver-cert-extra-sans=$ipSan"
+        done
+        IFS="$oIFS"
+    fi
+
+    logStep "Regenerate api server certs"
+    rm -f /etc/kubernetes/pki/apiserver.*
+    kubeadm init phase certs apiserver $certArgs
+    logSuccess "API server certs regenerated"
+
+    restartK8sAPIServerContainer "$PRIVATE_ADDRESS" "6443"
 }
 
 #######################################
@@ -791,7 +858,7 @@ updateKubernetesAPIServerCerts()
         kubeadm init phase certs apiserver --config /opt/replicated/kubeadm.conf
         logSuccess "API server certs regenerated"
 
-        restartK8sAPIServerContainer "$1" "$2"
+        restartK8sAPIServerContainer "$PRIVATE_ADDRESS" "6443"
     fi
 }
 
@@ -799,8 +866,9 @@ restartK8sAPIServerContainer()
 {
     logStep "Restart kubernetes api server"
     # admin.conf may not have been updated yet so kubectl may not work
-    docker ps | grep k8s_kube-apiserver | awk '{print $1}' | xargs docker rm -f
-    while ! curl -skf "https://$1:$2/healthz" ; do
+    docker ps | grep k8s_kube-apiserver | awk '{print $1}' | xargs docker stop >/dev/null || true
+    docker ps -a | grep k8s_kube-apiserver | awk '{print $1}' | xargs docker rm -f >/dev/null || true
+    while ! curl -skf "https://$1:$2/healthz" >/dev/null ; do
         sleep 1
     done
     logSuccess "Kubernetes api server restarted"
