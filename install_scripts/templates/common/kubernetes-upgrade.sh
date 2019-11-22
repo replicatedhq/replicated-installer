@@ -389,8 +389,11 @@ maybeUpgradeKubernetesNode() {
             if [ -n "$PUBLIC_ADDRESS" ]; then
                 certArgs="$certArgs --apiserver-cert-extra-sans=$PUBLIC_ADDRESS"
             fi
+            logStep "Regenerate api server certs"
+            rm -f /etc/kubernetes/pki/apiserver.*
             kubeadm init phase certs apiserver $certArgs
-            restartK8sAPIServerContainer
+            logSuccess "API server certs regenerated"
+            restartK8sAPIServerContainer "$LOAD_BALANCER_ADDRESS" "$LOAD_BALANCER_PORT"
 
             updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
         else
@@ -788,7 +791,7 @@ updateKubernetesAPIServerCerts()
         kubeadm init phase certs apiserver --config /opt/replicated/kubeadm.conf
         logSuccess "API server certs regenerated"
 
-        restartK8sAPIServerContainer
+        restartK8sAPIServerContainer "$1" "$2"
     fi
 }
 

@@ -1486,6 +1486,11 @@ EOF
   - $PUBLIC_ADDRESS
 EOF
     fi
+    if [ -n "$LAST_LOAD_BALANCER_ADDRESS" ] && [ "$LAST_LOAD_BALANCER_ADDRESS" != "$LOAD_BALANCER_ADDRESS" ]; then
+        cat <<EOF >> /opt/replicated/kubeadm.conf
+  - $LAST_LOAD_BALANCER_ADDRESS
+EOF
+    fi
     if [ -n "$LOAD_BALANCER_ADDRESS" ] && [ -n "$LOAD_BALANCER_PORT" ]; then
         cat <<EOF >> /opt/replicated/kubeadm.conf
   - $LOAD_BALANCER_ADDRESS
