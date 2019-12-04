@@ -714,6 +714,8 @@ appRegistryServiceDeploy() {
 }
 
 objectStoreDeploy() {
+    logStep "Deploy rook object store"
+
     getYAMLOpts
 
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_object_store_yaml=1 > /tmp/rook-object-store.yml
@@ -729,9 +731,13 @@ objectStoreDeploy() {
     while ! kubectl -n rook-ceph get secret rook-ceph-object-user-replicated-replicated 2>/dev/null; do
         sleep 2
     done
+
+    logSuccess "Rook object store deployed"
 }
 
 objectStoreCreateDockerRegistryBucket() {
+    logStep "Create object store registry bucket"
+
     # create the docker-registry bucket through the S3 API
     OBJECT_STORE_ACCESS_KEY=$(kubectl -n rook-ceph get secret rook-ceph-object-user-replicated-replicated -o yaml | grep AccessKey | awk '{print $2}' | base64 --decode)
     OBJECT_STORE_SECRET_KEY=$(kubectl -n rook-ceph get secret rook-ceph-object-user-replicated-replicated -o yaml | grep SecretKey | awk '{print $2}' | base64 --decode)
@@ -747,6 +753,8 @@ objectStoreCreateDockerRegistryBucket() {
         -H "$acl" \
         -H "Authorization: AWS $OBJECT_STORE_ACCESS_KEY:$sig" \
         "http://$OBJECT_STORE_CLUSTER_IP/docker-registry" >/dev/null
+
+    logSuccess "Object store registry bucket created"
 }
 
 registryDeploy() {
