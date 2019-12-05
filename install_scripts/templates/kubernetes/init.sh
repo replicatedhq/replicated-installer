@@ -44,6 +44,7 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 DISABLE_CONTOUR="{{ disable_contour }}"
+DISABLE_ROOK_OBJECT_STORE="{{ disable_rook_object_store }}"
 NO_CLEAR="{{ no_clear }}"
 IP_ALLOC_RANGE=
 DEFAULT_SERVICE_CIDR="10.96.0.0/12"
@@ -713,6 +714,10 @@ appRegistryServiceDeploy() {
 }
 
 objectStoreDeploy() {
+    logStep "Deploy rook object store"
+
+    getYAMLOpts
+
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_object_store_yaml=1 > /tmp/rook-object-store.yml
     kubectl apply -f /tmp/rook-object-store.yml
 
@@ -726,6 +731,12 @@ objectStoreDeploy() {
     while ! kubectl -n rook-ceph get secret rook-ceph-object-user-replicated-replicated 2>/dev/null; do
         sleep 2
     done
+
+    logSuccess "Rook object store deployed"
+}
+
+objectStoreCreateDockerRegistryBucket() {
+    logStep "Create object store registry bucket"
 
     # create the docker-registry bucket through the S3 API
     OBJECT_STORE_ACCESS_KEY=$(kubectl -n rook-ceph get secret rook-ceph-object-user-replicated-replicated -o yaml | grep AccessKey | awk '{print $2}' | base64 --decode)
@@ -742,6 +753,8 @@ objectStoreDeploy() {
         -H "$acl" \
         -H "Authorization: AWS $OBJECT_STORE_ACCESS_KEY:$sig" \
         "http://$OBJECT_STORE_CLUSTER_IP/docker-registry" >/dev/null
+
+    logSuccess "Object store registry bucket created"
 }
 
 registryDeploy() {
@@ -750,14 +763,15 @@ registryDeploy() {
     # https://github.com/rook/rook/issues/3245
     # disabling object store backed registry until the object store is reliable
     if isRook1 && false; then
-        # cleanup pvc-backed registry if it exists; all images are re-pushed after this step
-        if kubectl get pvc registry-data-docker-registry-0 &>/dev/null; then
-            kubectl delete statefulset docker-registry
-            kubectl delete pvc registry-data-docker-registry-0
-        fi
+        if [ -z "$DISABLE_ROOK_OBJECT_STORE" ]; then
+            # cleanup pvc-backed registry if it exists; all images are re-pushed after this step
+            if kubectl get pvc registry-data-docker-registry-0 &>/dev/null; then
+                kubectl delete statefulset docker-registry
+                kubectl delete pvc registry-data-docker-registry-0
+            fi
 
-        objectStoreDeploy
-        getYAMLOpts
+            objectStoreCreateDockerRegistryBucket
+        fi
     fi
 
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS registry_yaml=1 > /tmp/registry.yml
@@ -1050,6 +1064,9 @@ while [ "$1" != "" ]; do
         disable-contour|disable_contour)
             DISABLE_CONTOUR=1
             ;;
+        disable-rook-object-store|disable_rook_object_store)
+            DISABLE_ROOK_OBJECT_STORE=1
+            ;;
         kubernetes-only|kubernetes_only)
             KUBERNETES_ONLY=1
             ;;
@@ -1273,8 +1290,20 @@ case "$STORAGE_PROVISIONER" in
             CEPH_DASHBOARD_PASSWORD="$cephDashboardPassword"
         fi
 
+        semverCompare "$REPLICATED_VERSION" "2.41.0"
+        if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
+            logWarn "Rook object store disabled, Replicated version must be greater than or equal to 2.41.0"
+            DISABLE_ROOK_OBJECT_STORE=1
+        elif ! isRook103; then
+            logWarn "Rook object store disabled, Rook version must be greater than or equal to 1.0.3"
+            DISABLE_ROOK_OBJECT_STORE=1
+        fi
+
         if isRook1; then
             MAINTAIN_ROOK_STORAGE_NODES=1
+        fi
+        if [ -z "$DISABLE_ROOK_OBJECT_STORE" ]; then
+            objectStoreDeploy
         fi
         ;;
     hostpath)
