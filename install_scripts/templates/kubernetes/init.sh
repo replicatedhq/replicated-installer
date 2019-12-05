@@ -1290,11 +1290,20 @@ case "$STORAGE_PROVISIONER" in
             CEPH_DASHBOARD_PASSWORD="$cephDashboardPassword"
         fi
 
+        semverCompare "$REPLICATED_VERSION" "2.41.0"
+        if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
+            logWarn "Rook object store disabled, Replicated version must be greater than or equal to 2.41.0"
+            DISABLE_ROOK_OBJECT_STORE=1
+        elif ! isRook103; then
+            logWarn "Rook object store disabled, Rook version must be greater than or equal to 1.0.3"
+            DISABLE_ROOK_OBJECT_STORE=1
+        fi
+
         if isRook1; then
             MAINTAIN_ROOK_STORAGE_NODES=1
-            if [ -z "$DISABLE_ROOK_OBJECT_STORE" ]; then
-                objectStoreDeploy
-            fi
+        fi
+        if [ -z "$DISABLE_ROOK_OBJECT_STORE" ]; then
+            objectStoreDeploy
         fi
         ;;
     hostpath)
