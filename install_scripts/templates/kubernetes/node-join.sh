@@ -95,7 +95,7 @@ joinKubernetes() {
     elif [ "$minor" -ge 13 ]; then
         mkdir -p /opt/replicated
         makeKubeadmJoinConfig
-        (set -x; kubeadm join --config /opt/replicated/kubeadm.conf)
+        (set -x; kubeadm join --config /opt/replicated/kubeadm.conf --ignore-preflight-errors=all)
         untaintMaster
     else
         (set -x; kubeadm join --discovery-token-ca-cert-hash "${KUBEADM_TOKEN_CA_HASH}" --token "${KUBEADM_TOKEN}" "${API_SERVICE_ADDRESS}")
