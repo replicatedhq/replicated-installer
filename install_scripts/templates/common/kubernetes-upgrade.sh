@@ -390,7 +390,7 @@ maybeUpgradeKubernetesNode() {
                 certArgs="$certArgs --apiserver-cert-extra-sans=$PUBLIC_ADDRESS"
             fi
             kubeadm init phase certs apiserver $certArgs
-            restartK8sAPIServerContainer
+            restartK8sAPIServerContainer "$PRIVATE_ADDRESS" "6443"
 
             updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
         else
@@ -788,7 +788,7 @@ updateKubernetesAPIServerCerts()
         kubeadm init phase certs apiserver --config /opt/replicated/kubeadm.conf
         logSuccess "API server certs regenerated"
 
-        restartK8sAPIServerContainer
+        restartK8sAPIServerContainer "$PRIVATE_ADDRESS" "6443"
     fi
 }
 
