@@ -30,6 +30,8 @@ def template_args(**kwargs):
                      default='https://pg.replicated.com/graphql'),
         'replicated_registry_endpoint':
         param.lookup('REGISTRY_ENDPOINT', default='registry.replicated.com'),
+        'release_sequence': helpers.get_arg('release_sequence', ''),
+        'release_patch_sequence': helpers.get_arg('release_patch_sequence', ''),
     }
     if get_arg('replicated_env') in ('staging', 'production'):
         args['replicated_env'] = get_arg('replicated_env')

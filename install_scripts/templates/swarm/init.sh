@@ -30,6 +30,8 @@ IGNORE_PREFLIGHTS="{{ '1' if ignore_preflights else '' }}"
 REPLICATED_VERSION="{{ replicated_version }}"
 REPLICATED_USERNAME="{{ replicated_username }}"
 FORCE_REPLICATED_DOWNGRADE=0
+RELEASE_SEQUENCE="{{ release_sequence }}"
+RELEASE_PATCH_SEQUENCE="{{ release_patch_sequence }}"
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -149,6 +151,9 @@ stackDeploy() {
     fi
     if [ -n "$RELEASE_SEQUENCE" ]; then
         opts=$opts" release-sequence=$RELEASE_SEQUENCE"
+    fi
+    if [ -n "$RELEASE_PATCH_SEQUENCE" ]; then
+        opts=$opts" release-patch-sequence=$RELEASE_PATCH_SEQUENCE"
     fi
     if [ -n "$SWARM_NODE_ADDRESS" ]; then
         opts=$opts" swarm-node-address=$SWARM_NODE_ADDRESS"
@@ -301,6 +306,9 @@ while [ "$1" != "" ]; do
             ;;
         release-sequence|release_sequence)
             RELEASE_SEQUENCE="$_value"
+            ;;
+        release-patch-sequence|release_patch_sequence)
+            RELEASE_PATCH_SEQUENCE="$_value"
             ;;
         skip-pull|skip_pull)
             SKIP_DOCKER_PULL=1
