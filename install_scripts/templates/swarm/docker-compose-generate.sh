@@ -22,6 +22,8 @@ UI_BIND_PORT="{{ ui_bind_port|default('8800', true) }}"
 USER_ID="{{ user_id }}"
 HTTP_PROXY="{{ http_proxy }}"
 NO_PROXY_ADDRESSES="{{ no_proxy_addresses }}"
+RELEASE_SEQUENCE="{{ release_sequence }}"
+RELEASE_PATCH_SEQUENCE="{{ release_patch_sequence }}"
 
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"
@@ -44,6 +46,9 @@ while [ "$1" != "" ]; do
             ;;
         release-sequence|release_sequence)
             RELEASE_SEQUENCE="$_value"
+            ;;
+        release-patch-sequence|release_patch_sequence)
+            RELEASE_PATCH_SEQUENCE="$_value"
             ;;
         suppress-runtime)
             SUPPRESS_RUNTIME=1
@@ -131,6 +136,9 @@ if [ -n "$PUBLIC_ADDRESS" ]; then
 fi
 if [ -n "$RELEASE_SEQUENCE" ]; then
     echo "      - RELEASE_SEQUENCE=${RELEASE_SEQUENCE}"
+fi
+if [ -n "$RELEASE_PATCH_SEQUENCE" ]; then
+    echo "      - RELEASE_PATCH_SEQUENCE=${RELEASE_PATCH_SEQUENCE}"
 fi
 if [ -n "$HTTP_PROXY" ]; then
     echo "      - HTTP_PROXY=${HTTP_PROXY}"

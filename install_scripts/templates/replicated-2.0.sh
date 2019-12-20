@@ -39,6 +39,8 @@ SKIP_PREFLIGHTS="{{ '1' if skip_preflights else '' }}"
 IGNORE_PREFLIGHTS="{{ '1' if ignore_preflights else '' }}"
 REGISTRY_ADDRESS_OVERRIDE=
 REGISTRY_PATH_PREFIX=
+RELEASE_SEQUENCE="{{ release_sequence }}"
+RELEASE_PATCH_SEQUENCE="{{ release_patch_sequence }}"
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -308,6 +310,9 @@ build_replicated_opts() {
     fi
     if [ -n "$RELEASE_SEQUENCE" ]; then
         REPLICATED_OPTS="$REPLICATED_OPTS -e RELEASE_SEQUENCE=$RELEASE_SEQUENCE"
+    fi
+    if [ -n "$RELEASE_PATCH_SEQUENCE" ]; then
+        REPLICATED_OPTS="$REPLICATED_OPTS -e RELEASE_PATCH_SEQUENCE=$RELEASE_PATCH_SEQUENCE"
     fi
     if [ "$CUSTOM_SELINUX_REPLICATED_DOMAIN" = "1" ]; then
         REPLICATED_OPTS="$REPLICATED_OPTS -e SELINUX_REPLICATED_DOMAIN=$SELINUX_REPLICATED_DOMAIN"
@@ -609,6 +614,9 @@ while [ "$1" != "" ]; do
             ;;
         release-sequence|release_sequence)
             RELEASE_SEQUENCE="$_value"
+            ;;
+        release-patch-sequence|release_patch_sequence)
+            RELEASE_PATCH_SEQUENCE="$_value"
             ;;
         skip-pull|skip_pull)
             SKIP_DOCKER_PULL=1

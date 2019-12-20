@@ -4,6 +4,7 @@ set -e
 
 LOG_LEVEL="{{ log_level }}"
 RELEASE_SEQUENCE="{{ release_sequence }}"
+RELEASE_PATCH_SEQUENCE="{{ release_patch_sequence }}"
 UI_BIND_PORT="{{ ui_bind_port }}"
 KUBERNETES_NAMESPACE="{{ kubernetes_namespace }}"
 PV_BASE_PATH="{{ pv_base_path }}"
@@ -70,6 +71,9 @@ while [ "$1" != "" ]; do
             ;;
         release-sequence|release_sequence)
             RELEASE_SEQUENCE="$_value"
+            ;;
+        release-patch-sequence|release_patch_sequence)
+            RELEASE_PATCH_SEQUENCE="$_value"
             ;;
         ui-bind-port|ui_bind_port)
             UI_BIND_PORT="$_value"
@@ -291,10 +295,11 @@ $NODE_SELECTOR
         - name: SCHEDULER_ENGINE
           value: kubernetes
         - name: RELEASE_CHANNEL
-          value: "{{ channel_name }}"{% if release_sequence %}
+          value: "{{ channel_name }}"
         - name: RELEASE_SEQUENCE
           value: "$RELEASE_SEQUENCE"
-{%- endif %}
+        - name: RELEASE_PATCH_SEQUENCE
+          value: "$RELEASE_PATCH_SEQUENCE"
         - name: COMPONENT_IMAGES_REGISTRY_ADDRESS_OVERRIDE
           value: "$REGISTRY_ADDRESS_OVERRIDE"{% if customer_base_url_override %}
         - name: MARKET_BASE_URL

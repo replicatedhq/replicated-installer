@@ -65,6 +65,8 @@ OBJECT_STORE_ACCESS_KEY=
 OBJECT_STORE_SECRET_KEY=
 OBJECT_STORE_CLUSTER_IP=
 DID_INIT_KUBERNETES=0
+RELEASE_SEQUENCE="{{ release_sequence }}"
+RELEASE_PATCH_SEQUENCE="{{ release_patch_sequence }}"
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -450,6 +452,9 @@ getYAMLOpts() {
     fi
     if [ -n "$RELEASE_SEQUENCE" ]; then
         opts=$opts" release-sequence=$RELEASE_SEQUENCE"
+    fi
+    if [ -n "$RELEASE_PATCH_SEQUENCE" ]; then
+        opts=$opts" release-patch-sequence=$RELEASE_PATCH_SEQUENCE"
     fi
     if [ -n "$UI_BIND_PORT" ]; then
         opts=$opts" ui-bind-port=$UI_BIND_PORT"
@@ -1033,6 +1038,9 @@ while [ "$1" != "" ]; do
             ;;
         release-sequence|release_sequence)
             RELEASE_SEQUENCE="$_value"
+            ;;
+        release-patch-sequence|release_patch_sequence)
+            RELEASE_PATCH_SEQUENCE="$_value"
             ;;
         skip-pull|skip_pull)
             SKIP_DOCKER_PULL=1

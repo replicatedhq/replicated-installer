@@ -31,6 +31,10 @@ spec:
         - name: RELEASE_SEQUENCE
           value: {{ .Values.deployment.replicated.env.releaseSequence }}
         {{- end }}
+        {{- if .Values.deployment.replicated.env.releasePatchSequence }}
+        - name: RELEASE_PATCH_SEQUENCE
+          value: {{ .Values.deployment.replicated.env.releasePatchSequence }}
+        {{- end }}
         {{- if .Values.deployment.replicated.env.customerBaseURLOverride }}
         - name: MARKET_BASE_URL
           value: .Values.deployment.replicated.env.customerBaseURLOverride
