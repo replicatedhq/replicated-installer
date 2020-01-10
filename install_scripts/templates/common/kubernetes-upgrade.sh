@@ -274,8 +274,19 @@ runUpgradeScriptOnAllRemoteNodes() {
         bail "Replicated failed to report ready"
     fi
 
+    joinArgs="--master"
+
+    if [ "$UNSAFE_SKIP_CA_VERIFICATION" = "1" ]; then
+        replicated2Version
+        # --unsafe-skip-ca-verification support as of 2.41.0
+        semverCompare "2.41.0" "$INSTALLED_REPLICATED_VERSION"
+        if [ "$SEMVER_COMPARE_RESULT" -ge "0" ]; then
+            joinArgs=$joinArgs" --unsafe-skip-ca-verification"
+        fi
+    fi
+
     if [ "$numMasters" -gt "1" ]; then
-        local script="$(/usr/local/bin/replicatedctl cluster node-join-script --master | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/")"
+        local script="$(/usr/local/bin/replicatedctl cluster node-join-script $joinArgs | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/")"
 
         echo ""
         printf "Run the upgrade script on remote master nodes before proceeding:\n\n"
@@ -591,14 +602,18 @@ upgradeK8sWorkers() {
 
 
         printf "\n\n\tRun the upgrade script on remote node before proceeding: ${GREEN}$nodeName${NC}\n\n"
-        local upgradePatchFlag=""
+        local upgradeArgs="hostname-check=${nodeName} kubernetes-version=${k8sVersion}"
         if [ "$shouldUpgradePatch" = "1" ]; then
-            upgradePatchFlag=" kubernetes-upgrade-patch-version"
+            upgradeArgs=$upgradeArgs" kubernetes-upgrade-patch-version"
         fi
+        if [ "$UNSAFE_SKIP_CA_VERIFICATION" = "1" ]; then
+            upgradeArgs=$upgradeArgs" unsafe-skip-ca-verification"
+        fi
+
         if [ "$AIRGAP" = "1" ]; then
-            printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s airgap hostname-check=${nodeName} kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
+            printf "\t${GREEN}cat kubernetes-node-upgrade.sh | sudo bash -s airgap ${upgradeArgs} ${NC}"
         else
-            printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s hostname-check=${nodeName} kubernetes-version=${k8sVersion}${upgradePatchFlag}${NC}"
+            printf "\t${GREEN}curl {{ replicated_install_url }}/kubernetes-node-upgrade | sudo bash -s ${upgradeArgs} ${NC}"
         fi
         while true; do
             echo ""

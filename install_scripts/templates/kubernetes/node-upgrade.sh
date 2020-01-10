@@ -4,6 +4,7 @@ set -e
 AIRGAP=0
 K8S_UPGRADE_PATCH_VERSION="{{ k8s_upgrade_patch_version }}"
 HOSTNAME_CHECK=
+UNSAFE_SKIP_CA_VERIFICATION="{{ '1' if unsafe_skip_ca_verification else '0' }}"
 
 {% include 'common/common.sh' %}
 {% include 'common/docker-version.sh' %}

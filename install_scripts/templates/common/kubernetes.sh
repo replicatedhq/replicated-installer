@@ -1552,6 +1552,7 @@ EOF
 #   KUBEADM_TOKEN
 #   KUBEADM_TOKEN_CA_HASH
 #   API_SERVICE_ADDRESS
+#   UNSAFE_SKIP_CA_VERIFICATION
 # Arguments:
 #   None
 # Returns:
@@ -1570,9 +1571,17 @@ discovery:
   bootstrapToken:
     token: $KUBEADM_TOKEN
     apiServerEndpoint: $API_SERVICE_ADDRESS
+EOF
+    if [ "$UNSAFE_SKIP_CA_VERIFICATION" = "1" ]; then
+        cat << EOF >> /opt/replicated/kubeadm.conf
+    unsafeSkipCAVerification: true
+EOF
+    else
+        cat << EOF >> /opt/replicated/kubeadm.conf
     caCertHashes:
     - $KUBEADM_TOKEN_CA_HASH
 EOF
+    fi
     if [ "$MASTER" = "1" ]; then
         cat << EOF >> /opt/replicated/kubeadm.conf
 controlPlane: {}
@@ -1837,7 +1846,7 @@ EOF
     if isSingleNodeMaster; then
         cat >>/opt/replicated/shutdown.sh <<EOF
 # only on master of single-node clusters
-KUBECONFIG=/etc/kubernetes/admin.conf replicatedctl app stop || true
+KUBECONFIG=/etc/kubernetes/admin.conf /usr/local/bin/replicatedctl app stop || true
 KUBECONFIG=/etc/kubernetes/admin.conf kubectl scale deploy replicated-shared-fs-snapshotter --replicas=0 || true
 
 EOF
