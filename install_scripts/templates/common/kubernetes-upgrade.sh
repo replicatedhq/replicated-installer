@@ -278,8 +278,8 @@ runUpgradeScriptOnAllRemoteNodes() {
 
     if [ "$UNSAFE_SKIP_CA_VERIFICATION" = "1" ]; then
         replicated2Version
-        # --unsafe-skip-ca-verification support as of 2.41.0
-        semverCompare "2.41.0" "$INSTALLED_REPLICATED_VERSION"
+        # --unsafe-skip-ca-verification support as of 2.42.0
+        semverCompare "2.42.0" "$INSTALLED_REPLICATED_VERSION"
         if [ "$SEMVER_COMPARE_RESULT" -ge "0" ]; then
             joinArgs=$joinArgs" --unsafe-skip-ca-verification"
         fi
