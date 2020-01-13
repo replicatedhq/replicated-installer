@@ -20,6 +20,7 @@ KUBERNETES_VERSION="{{ kubernetes_version }}"
 K8S_UPGRADE_PATCH_VERSION="{{ k8s_upgrade_patch_version }}"
 IPVS=1
 PRIVATE_ADDRESS=
+UNSAFE_SKIP_CA_VERIFICATION="{{ '1' if unsafe_skip_ca_verification else '0' }}"
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -322,6 +323,9 @@ while [ "$1" != "" ]; do
             ;;
         wait-for-rook|wait_for_rook)
             WAIT_FOR_ROOK=1
+            ;;
+        unsafe-skip-ca-verification|unsafe_skip_ca_verification)
+            UNSAFE_SKIP_CA_VERIFICATION=1
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""

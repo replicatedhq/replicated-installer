@@ -67,6 +67,7 @@ OBJECT_STORE_CLUSTER_IP=
 DID_INIT_KUBERNETES=0
 RELEASE_SEQUENCE="{{ release_sequence }}"
 RELEASE_PATCH_SEQUENCE="{{ release_patch_sequence }}"
+UNSAFE_SKIP_CA_VERIFICATION="{{ '1' if unsafe_skip_ca_verification else '0' }}"
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -931,6 +932,11 @@ outroKubeadm() {
 
     KUBEADM_TOKEN_CA_HASH=$(cat /tmp/kubeadm-init | grep 'kubeadm join' | awk '{ print $(NF) }')
 
+    local joinArgs="kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=${KUBEADM_TOKEN_CA_HASH} kubernetes-version=${KUBERNETES_VERSION}"
+    if [ "$UNSAFE_SKIP_CA_VERIFICATION" = "1" ]; then
+        joinArgs=$joinArgs" unsafe-skip-ca-verification"
+    fi
+
     printf "\n"
     printf "\t\t${GREEN}Installation${NC}\n"
     printf "\t\t${GREEN}  Complete ✔${NC}\n"
@@ -944,7 +950,7 @@ outroKubeadm() {
         printf "To add nodes to this installation, copy and unpack this bundle on your other nodes, and run the following:"
         printf "\n"
         printf "\n"
-        printf "${GREEN}    cat ./kubernetes-node-join.sh | sudo bash -s airgap kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION \n"
+        printf "${GREEN}    cat ./kubernetes-node-join.sh | sudo bash -s airgap $joinArgs \n"
         printf "${NC}"
         printf "\n"
         printf "\n"
@@ -952,7 +958,7 @@ outroKubeadm() {
         printf "\n"
         printf "To add nodes to this installation, run the following script on your other nodes"
         printf "\n"
-        printf "${GREEN}    curl {{ replicated_install_url }}/{{ kubernetes_node_join_path }} | sudo bash -s kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION \n"
+        printf "${GREEN}    curl {{ replicated_install_url }}/{{ kubernetes_node_join_path }} | sudo bash -s $joinArgs \n"
         printf "${NC}"
         printf "\n"
         printf "\n"
@@ -1114,6 +1120,9 @@ while [ "$1" != "" ]; do
             ;;
         kubernetes-upgrade-patch-version|kubernetes_upgrade_patch_version)
             K8S_UPGRADE_PATCH_VERSION=1
+            ;;
+        unsafe-skip-ca-verification|unsafe_skip_ca_verification)
+            UNSAFE_SKIP_CA_VERIFICATION=1
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""

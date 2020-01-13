@@ -48,7 +48,7 @@ replicated12Installed() {
 #   0 if replicated 2.0 is installed
 #######################################
 replicated2Installed() {
-    commandExists replicatedctl && replicatedctl version >/dev/null 2>&1
+    commandExists /usr/local/bin/replicatedctl && /usr/local/bin/replicatedctl version >/dev/null 2>&1
 }
 
 #######################################
@@ -62,7 +62,7 @@ replicated2Installed() {
 #######################################
 replicated2Version() {
     if replicated2Installed; then
-        INSTALLED_REPLICATED_VERSION="$(replicatedctl version --quiet)"
+        INSTALLED_REPLICATED_VERSION="$(/usr/local/bin/replicatedctl version --quiet)"
     else
         INSTALLED_REPLICATED_VERSION=""
     fi

@@ -51,6 +51,8 @@ def template_args(**kwargs):
         args['ignore_preflights'] = True
     if get_arg('skip_preflights') is not None:
         args['skip_preflights'] = True
+    if get_arg('unsafe_skip_ca_verification') is not None:
+        args['unsafe_skip_ca_verification'] = True
     if kwargs:
         args.update(kwargs)
     return args
