@@ -38,6 +38,9 @@ while [ "$1" != "" ]; do
         hostname-check)
             HOSTNAME_CHECK="$_value"
             ;;
+        unsafe-skip-ca-verification|unsafe_skip_ca_verification)
+            UNSAFE_SKIP_CA_VERIFICATION=1
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
