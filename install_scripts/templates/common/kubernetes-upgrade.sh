@@ -274,19 +274,21 @@ runUpgradeScriptOnAllRemoteNodes() {
         bail "Replicated failed to report ready"
     fi
 
-    joinArgs="--master"
+    masterJoinArgs=" --master"
+    workerJoinArgs=""
 
     if [ "$UNSAFE_SKIP_CA_VERIFICATION" = "1" ]; then
         replicated2Version
         # --unsafe-skip-ca-verification support as of 2.42.0
         semverCompare "2.42.0" "$INSTALLED_REPLICATED_VERSION"
         if [ "$SEMVER_COMPARE_RESULT" -ge "0" ]; then
-            joinArgs=$joinArgs" --unsafe-skip-ca-verification"
+            masterJoinArgs=$masterJoinArgs" --unsafe-skip-ca-verification"
+            workerJoinArgs=$workerJoinArgs" --unsafe-skip-ca-verification"
         fi
     fi
 
     if [ "$numMasters" -gt "1" ]; then
-        local script="$(/usr/local/bin/replicatedctl cluster node-join-script $joinArgs | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/")"
+        local script="$(/usr/local/bin/replicatedctl cluster node-join-script${masterJoinArgs} | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/")"
 
         echo ""
         printf "Run the upgrade script on remote master nodes before proceeding:\n\n"
@@ -310,7 +312,7 @@ runUpgradeScriptOnAllRemoteNodes() {
     if [ "$numWorkers" -gt "0" ]; then
         echo ""
         printf "Run the upgrade script on remote worker nodes before proceeding:\n\n${GREEN}"
-        /usr/local/bin/replicatedctl cluster node-join-script | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/"
+        /usr/local/bin/replicatedctl cluster node-join-script${workerJoinArgs} | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/"
         printf "${NC}\n\n"
         kubectl get nodes --selector='!node-role.kubernetes.io/master'
         echo ""
