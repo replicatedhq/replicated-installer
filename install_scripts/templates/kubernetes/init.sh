@@ -706,17 +706,20 @@ rekOperatorDeploy() {
 appRegistryServiceDeploy() {
     logStep "Deploy app registry service"
 
-    local additionalOpts=""
+    # Docker < 19.03 does not support cidr addresses in the no_proxy variable.
+    # This is a workaround to add support for http proxies until we upgrade docker.
+    local clusterIp=""
     if [ "$SERVICE_CIDR" = "10.96.0.0/12" ]; then
-        # Docker < 19.03 does not support cidr addresses in the no_proxy variable.
-        # This is a workaround to add support for http proxies until we upgrade docker.
-        if ! kubectl get svc replicated-registry &>/dev/null; then
-            # clusterIP is immutable
-            additionalOpts=$additionalOpts" replicated-registry-cluster-ip=10.100.100.101"
+        # clusterIP is immutable
+        clusterIp="$(kubectl get svc replicated-registry -ojsonpath --template '{.spec.clusterIP}' 2>/dev/null)" || :
+        if [ -z "$clusterIp" ]; then
+            clusterIp="10.100.100.101"
         fi
     fi
 
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS replicated_registry_yaml=1 $additionalOpts > /tmp/replicated-registry.yml
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS \
+        replicated_registry_yaml=1 \
+        replicated-registry-cluster-ip=$clusterIp > /tmp/replicated-registry.yml
     kubectl apply -f /tmp/replicated-registry.yml
 
     local replicatedRegistryIP=$(kubectl get service replicated-registry -o jsonpath='{.spec.clusterIP}')
@@ -790,17 +793,20 @@ registryDeploy() {
         fi
     fi
 
-    local additionalOpts=""
+    # Docker < 19.03 does not support cidr addresses in the no_proxy variable.
+    # This is a workaround to add support for http proxies until we upgrade docker.
+    local clusterIp=""
     if [ "$SERVICE_CIDR" = "10.96.0.0/12" ]; then
-        # Docker < 19.03 does not support cidr addresses in the no_proxy variable.
-        # This is a workaround to add support for http proxies until we upgrade docker.
-        if ! kubectl get svc docker-registry &>/dev/null; then
-            # clusterIP is immutable
-            additionalOpts=$additionalOpts" registry-cluster-ip=10.100.100.100"
+        # clusterIP is immutable
+        clusterIp="$(kubectl get svc docker-registry -ojsonpath --template '{.spec.clusterIP}' 2>/dev/null)" || :
+        if [ -z "$clusterIp" ]; then
+            clusterIp="10.100.100.100"
         fi
     fi
 
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS registry_yaml=1 $additionalOpts > /tmp/registry.yml
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS \
+        registry_yaml=1 \
+        registry-cluster-ip=$clusterIp > /tmp/registry.yml
     kubectl apply -f /tmp/registry.yml
 
     logStep "Waiting for registry..."
