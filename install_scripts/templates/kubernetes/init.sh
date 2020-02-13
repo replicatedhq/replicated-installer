@@ -1205,6 +1205,7 @@ if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" -ne "1" ]; then
 fi
 
 if [ -z "$PRIVATE_ADDRESS" ]; then
+    kubernetesDiscoverPrivateIp
     promptForPrivateIp
 fi
 
