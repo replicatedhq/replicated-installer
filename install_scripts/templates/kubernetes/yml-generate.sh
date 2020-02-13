@@ -17,6 +17,8 @@ NO_PROXY_ADDRESSES="{{ no_proxy_addresses }}"
 REGISTRY_ADDRESS_OVERRIDE="{{ registry_address_override }}"
 APP_REGISTRY_ADVERTISE_HOST="{{ app_registry_advertise_host }}"
 IP_ALLOC_RANGE=10.32.0.0/12  # default for weave
+REGISTRY_CLUSTER_IP=
+REPLICATED_REGISTRY_CLUSTER_IP=
 CEPH_DASHBOARD_URL=
 CEPH_DASHBOARD_USER=
 CEPH_DASHBOARD_PASSWORD=
@@ -163,6 +165,12 @@ while [ "$1" != "" ]; do
         replicated-registry-yaml|replicated_registry_yaml)
             REPLICATED_REGISTRY_YAML="$_value"
             REPLICATED_YAML=0
+            ;;
+        registry-cluster-ip|registry_cluster_ip)
+            REGISTRY_CLUSTER_IP="$_value"
+            ;;
+        replicated-registry-cluster-ip|replicated_registry_cluster_ip)
+            REPLICATED_REGISTRY_CLUSTER_IP="$_value"
             ;;
         cluster-role-binding-yaml|cluster_role_binding_yaml)
             CLUSTER_ROLE_BINDING_YAML="$_value"
@@ -512,6 +520,13 @@ metadata:
     tier: master
 spec:
   type: ClusterIP
+EOF
+    if [ -n "$REPLICATED_REGISTRY_CLUSTER_IP" ]; then
+      cat <<EOF
+  clusterIP: ${REPLICATED_REGISTRY_CLUSTER_IP}
+EOF
+    fi
+    cat <<EOF
   selector:
     app: replicated
     tier: master
@@ -1223,6 +1238,13 @@ metadata:
     app: docker-registry
 spec:
   type: ClusterIP
+EOF
+    if [ -n "$REGISTRY_CLUSTER_IP" ]; then
+      cat <<EOF
+  clusterIP: ${REGISTRY_CLUSTER_IP}
+EOF
+    fi
+    cat <<EOF
   ports:
   - port: 5000
     name: registry
