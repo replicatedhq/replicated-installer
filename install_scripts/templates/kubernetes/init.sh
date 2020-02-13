@@ -225,10 +225,12 @@ initKube15() {
 
     loadIPVSKubeProxyModules
 
+    set -o pipefail
     kubeadm init \
         --ignore-preflight-errors=all \
         --config /opt/replicated/kubeadm.conf \
         | tee /tmp/kubeadm-init
+    set +o pipefail
 
     exportKubeconfig
 
@@ -345,33 +347,26 @@ initKube() {
         fi
 
         if [ "$kubeV" = "v1.9.3" ]; then
-            ( set -x; kubeadm init \
+            ( set -exo pipefail; kubeadm init \
                 --skip-preflight-checks \
                 --config /opt/replicated/kubeadm.conf \
                 | tee /tmp/kubeadm-init
             )
-            _status=$?
         elif [ "$kubeV" = "v1.11.5" ]; then
-            ( set -x; kubeadm init \
+            ( set -exo pipefail; kubeadm init \
                 --ignore-preflight-errors=all \
                 --config /opt/replicated/kubeadm.conf \
                 | tee /tmp/kubeadm-init
             )
-            _status=$?
             patchCoreDNS
         else
-            (set -x; kubeadm init \
+            ( set -exo pipefail; kubeadm init \
                 --ignore-preflight-errors=all \
                 --config /opt/replicated/kubeadm.conf \
                 --skip-phases "$skipPhases" \
                 --skip-token-print \
                 | tee /tmp/kubeadm-init
             )
-            _status=$?
-        fi
-        if [ "$_status" -ne "0" ]; then
-            printf "${RED}Failed to initialize the kubernetes cluster.${NC}\n" 1>&2
-            exit $_status
         fi
 
         DID_INIT_KUBERNETES=1
