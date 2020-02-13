@@ -872,8 +872,11 @@ spinnerNodesReady()
         local nodes="$(kubectl get nodes 2>/dev/null)"
         local _exit="$?"
         set -e
-        if [ "$_exit" -eq "0" ] && ! echo "$nodes" | grep -q "NotReady"; then
-            break
+        if [ "$_exit" -eq "0" ]; then
+            local numNodes="$(kubectl get nodes 2>/dev/null | awk 'NR > 1' | wc -l)"
+            if [ "$numNodes" -gt "0" ] && ! echo "$nodes" | grep -q "NotReady"; then
+                break
+            fi
         fi
         local temp=${spinstr#?}
         printf " [%c]  " "$spinstr"
