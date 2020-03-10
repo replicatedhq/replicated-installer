@@ -312,6 +312,10 @@ $NODE_SELECTOR
           value: "$REGISTRY_ADDRESS_OVERRIDE"{% if customer_base_url_override %}
         - name: MARKET_BASE_URL
           value: "{{customer_base_url_override}}"
+        - name: REPLICATED_TMP_PATH
+          value: /var/lib/replicated-tmp
+        - name: SUPPORT_BUNDLES_PATH
+          value: /opt/replicated/data/support-bundles
 {%- endif %}{% if replicated_env == "staging" %}
         - name: MARKET_BASE_URL
           value: {{ customer_base_url_override|default('https://api.staging.replicated.com/market', true) }}
@@ -390,6 +394,10 @@ $PROXY_ENVS
         - name: proc
           mountPath: /host/proc
           readOnly: true
+        - name: replicated-tmp
+          mountPath: /var/lib/replicated-tmp
+        - name: replicated-support-bundles
+          mountPath: /opt/replicated/data/support-bundles
         resources:
           requests:
             cpu: 250m
@@ -427,6 +435,12 @@ $CEPH_DASHBOARD_CREDS_ENV
       - name: proc
         hostPath:
           path: /proc
+      - name: replicated-tmp
+        hostPath:
+          path: /opt/replicated/data/tmp
+      - name: replicated-support-bundles
+        hostPath:
+          path: /opt/replicated/data/support-bundles
 EOF
 }
 
