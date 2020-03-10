@@ -1037,20 +1037,28 @@ data:
         region: "us-east-1"
         regionendpoint: http://$OBJECT_STORE_CLUSTER_IP
         bucket: docker-registry
-        accesskey: $OBJECT_STORE_ACCESS_KEY
-        secretkey: $OBJECT_STORE_SECRET_KEY
     version: 0.1
 ---
-apiVersion: apps/v1beta1
-kind: StatefulSet
+apiVersion: v1
+kind: Secret
+metadata:
+  name: docker-registry-s3-secret
+  labels:
+    app: docker-registry
+type: Opaque
+stringData:
+  access-key-id: $OBJECT_STORE_ACCESS_KEY
+  secret-access-key: $OBJECT_STORE_SECRET_KEY
+---
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: docker-registry
 spec:
   selector:
     matchLabels:
       app: docker-registry
-  serviceName: "registry"
-  replicas: 1
+  replicas: 2
   template:
     metadata:
       labels:
@@ -1077,6 +1085,16 @@ spec:
             secretKeyRef:
               key: haSharedSecret
               name: docker-registry-secret
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: access-key-id
+              name: docker-registry-s3-secret
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: secret-access-key
+              name: docker-registry-s3-secret
         livenessProbe:
           failureThreshold: 3
           httpGet:

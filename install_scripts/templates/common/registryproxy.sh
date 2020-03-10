@@ -34,7 +34,7 @@ configureRegistryProxyAddressOverride()
     fi
 
     if [ "$AIRGAP" = "1" ]; then
-        bail "Artifactory regsitry proxy cannot be used with airgap."
+        bail "Artifactory registry proxy cannot be used with airgap."
     fi
 
     case "$ARTIFACTORY_ACCESS_METHOD" in

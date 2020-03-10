@@ -774,18 +774,18 @@ objectStoreCreateDockerRegistryBucket() {
 registryDeploy() {
     logStep "Deploy registry"
 
-    # https://github.com/rook/rook/issues/3245
-    # disabling object store backed registry until the object store is reliable
-    if isRook1 && false; then
-        if [ -z "$DISABLE_ROOK_OBJECT_STORE" ]; then
-            # cleanup pvc-backed registry if it exists; all images are re-pushed after this step
-            if kubectl get pvc registry-data-docker-registry-0 &>/dev/null; then
-                kubectl delete statefulset docker-registry
-                kubectl delete pvc registry-data-docker-registry-0
-            fi
-
-            objectStoreCreateDockerRegistryBucket
+    # Replicated >= 2.43.0 which includes RGW fixes
+    semverCompare "$REPLICATED_VERSION" "2.43.0"
+    if [ -z "$DISABLE_ROOK_OBJECT_STORE" ] && [ "$SEMVER_COMPARE_RESULT" -ge "0" ]; then
+        # cleanup pvc-backed registry if it exists; all images are re-pushed after this step
+        if kubectl get statefulset docker-registry &>/dev/null; then
+            kubectl delete statefulset docker-registry
         fi
+        if kubectl get pvc registry-data-docker-registry-0 &>/dev/null; then
+            kubectl delete pvc registry-data-docker-registry-0
+        fi
+
+        objectStoreCreateDockerRegistryBucket
     fi
 
     # Docker < 19.03 does not support cidr addresses in the no_proxy variable.
@@ -798,6 +798,8 @@ registryDeploy() {
             clusterIp="10.100.100.100"
         fi
     fi
+
+    getYAMLOpts
 
     sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS \
         registry_yaml=1 \
