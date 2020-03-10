@@ -140,7 +140,7 @@ preflightDockerUlimitNofileSet()
 
     maybeBuildPreflightImage
     maybeRemoveDockerContainer preflightDockerUlimitNofileSet
-    docker run -d -p 38888:80 --name preflightDockerUlimitNofileSet "$PREFLIGHT_IMAGE" 10 >/dev/null 2&>1
+    docker run -d -p 38888:80 --name preflightDockerUlimitNofileSet "$PREFLIGHT_IMAGE" 10 >/dev/null 2>&1
     local nofile="$(docker inspect preflightDockerUlimitNofileSet | awk '/"nofile",/,0')"
     maybeRemoveDockerContainer preflightDockerUlimitNofileSet
 
@@ -167,7 +167,7 @@ preflightDockerUserlandProxyDisabled()
 
     maybeBuildPreflightImage
     maybeRemoveDockerContainer preflightDockerUserlandProxyDisabled
-    docker run -d -p 38888:80 --name preflightDockerUserlandProxyDisabled "$PREFLIGHT_IMAGE" 10 >/dev/null 2&>1
+    docker run -d -p 38888:80 --name preflightDockerUserlandProxyDisabled "$PREFLIGHT_IMAGE" 10 >/dev/null 2>&1
     if ! ps auxw | grep -q "[d]ocker-proxy"; then
         maybeRemoveDockerContainer preflightDockerUserlandProxyDisabled
         warn "Docker userland proxy disabled"
@@ -181,7 +181,7 @@ preflightDockerUserlandProxyDisabled()
 PREFLIGHT_IMAGE="replicated/sleep:1.0"
 maybeBuildPreflightImage()
 {
-    if docker inspect "$PREFLIGHT_IMAGE" >/dev/null 2&>1; then
+    if docker inspect "$PREFLIGHT_IMAGE" >/dev/null 2>&1; then
         return
     fi
 
@@ -218,5 +218,5 @@ EOF
 
 maybeRemoveDockerContainer()
 {
-    docker rm -f "$1" >/dev/null 2&>1 || true
+    docker rm -f "$1" >/dev/null 2>&1 || true
 }
