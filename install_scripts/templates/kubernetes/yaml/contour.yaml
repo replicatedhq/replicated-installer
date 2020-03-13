@@ -223,6 +223,11 @@ spec:
           httpGet:
             path: /healthz
             port: 8000
+        # https://projectcontour.io/guides/resource-limits/
+        resources:
+          requests:
+            cpu: "10m"
+            memory: "64Mi"
       - image: docker.io/envoyproxy/envoy-alpine:v1.10.0
         name: envoy
         ports:
@@ -249,9 +254,11 @@ spec:
           preStop:
             exec:
               command: ["wget", "-qO-", "--post-data=''", "http://localhost:9001/healthcheck/fail"]
-        requests:
-          cpu: "TODO"
-          memory: "TODO"
+        # https://projectcontour.io/guides/resource-limits/
+        resources:
+          requests:
+            cpu: "10m"
+            memory: "32Mi"
       initContainers:
       - image: gcr.io/heptio-images/contour:v0.13.0
         imagePullPolicy: IfNotPresent
