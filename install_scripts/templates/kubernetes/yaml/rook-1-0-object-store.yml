@@ -20,6 +20,8 @@ spec:
     securePort:
     instances: 1
     allNodes: false
+    # https://rook.io/docs/rook/v1.0/ceph-cluster-crd.html#cluster-wide-resources-configuration-settings
+    # https://docs.ceph.com/docs/jewel/start/hardware-recommendations/
     resources:
       requests:
         cpu: "500m"

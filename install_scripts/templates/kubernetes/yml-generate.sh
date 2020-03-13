@@ -868,10 +868,10 @@ $weave_passwd_env
                   path: /status
                   port: 6784
                 initialDelaySeconds: 30
+              # https://www.weave.works/docs/net/latest/kubernetes/kube-addon/#cpu-and-memory-requirements
               resources:
                 requests:
                   cpu: 10m
-                  memory: "TODO"
               securityContext:
                 privileged: true
               volumeMounts:
@@ -898,10 +898,10 @@ $weave_passwd_env
                       apiVersion: v1
                       fieldPath: spec.nodeName
               image: weaveworks/weave-npc:2.5.2
+              # https://www.weave.works/docs/net/latest/kubernetes/kube-addon/#cpu-and-memory-requirements
               resources:
                 requests:
                   cpu: 10m
-                  memory: "TODO"
               securityContext:
                 privileged: true
               volumeMounts:

@@ -474,6 +474,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        # https://rook.io/docs/rook/v1.0/ceph-cluster-crd.html#cluster-wide-resources-configuration-settings
         resources:
           requests:
             cpu: "TODO"

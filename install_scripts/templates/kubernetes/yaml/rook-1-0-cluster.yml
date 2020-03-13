@@ -186,6 +186,8 @@ spec:
     # The number of daemons that will perform the rbd mirroring.
     # rbd mirroring must be configured with "rbd mirror" from the rook toolbox.
     workers: 0
+  # https://rook.io/docs/rook/v1.0/ceph-cluster-crd.html#cluster-wide-resources-configuration-settings
+  # https://docs.ceph.com/docs/jewel/start/hardware-recommendations/
   resources:
     mon:
       requests:
