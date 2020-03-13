@@ -20,3 +20,7 @@ spec:
     securePort:
     instances: 1
     allNodes: false
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "1024Mi"

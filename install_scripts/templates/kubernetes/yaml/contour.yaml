@@ -248,7 +248,10 @@ spec:
         lifecycle:
           preStop:
             exec:
-              command: ["wget", "-qO-", "--post-data=''", "http://localhost:9001/healthcheck/fail"] 
+              command: ["wget", "-qO-", "--post-data=''", "http://localhost:9001/healthcheck/fail"]
+        requests:
+          cpu: "TODO"
+          memory: "TODO"
       initContainers:
       - image: gcr.io/heptio-images/contour:v0.13.0
         imagePullPolicy: IfNotPresent

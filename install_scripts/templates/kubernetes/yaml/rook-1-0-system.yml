@@ -474,6 +474,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        resources:
+          requests:
+            cpu: "TODO"
+            memory: "TODO"
       volumes:
       - name: rook-config
         emptyDir: {}

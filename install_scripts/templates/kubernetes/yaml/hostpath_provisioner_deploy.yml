@@ -30,6 +30,9 @@ spec:
         volumeMounts:
           - name: pv-volume
             mountPath: /opt/replicated/hostpath-provisioner
+        requests:
+          cpu: "TODO"
+          memory: "TODO"
       volumes:
         - name: pv-volume
           hostPath:

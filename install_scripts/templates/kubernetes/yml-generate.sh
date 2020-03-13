@@ -344,6 +344,10 @@ $NODE_SELECTOR
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        resources:
+          requests:
+            cpu: "TODO"
+            memory: "TODO"
 EOF
     if [ -n "$APP_REGISTRY_ADVERTISE_HOST" ]; then
         cat <<EOF
@@ -405,6 +409,10 @@ $CEPH_DASHBOARD_CREDS_ENV
         volumeMounts:
         - name: replicated-socket
           mountPath: /var/run/replicated
+        resources:
+          requests:
+            cpu: "TODO"
+            memory: "TODO"
       volumes:
       - name: replicated-persistent
         persistentVolumeClaim:
@@ -863,6 +871,7 @@ $weave_passwd_env
               resources:
                 requests:
                   cpu: 10m
+                  memory: "TODO"
               securityContext:
                 privileged: true
               volumeMounts:
@@ -892,6 +901,7 @@ $weave_passwd_env
               resources:
                 requests:
                   cpu: 10m
+                  memory: "TODO"
               securityContext:
                 privileged: true
               volumeMounts:
@@ -1008,6 +1018,10 @@ spec:
           value: default
         - name: RECONCILE_INTERVAL
           value: 1m
+        resources:
+          requests:
+            cpu: "TODO"
+            memory: "TODO"
 EOF
 }
 
@@ -1113,6 +1127,10 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: "TODO"
+            memory: "TODO"
       volumes:
       - name: docker-registry-config
         configMap:
@@ -1207,6 +1225,10 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: "TODO"
+            memory: "TODO"
       volumes:
       - name: registry-data
         persistentVolumeClaim:
