@@ -187,15 +187,15 @@ spec:
     # rbd mirroring must be configured with "rbd mirror" from the rook toolbox.
     workers: 0
   # https://rook.io/docs/rook/v1.0/ceph-cluster-crd.html#cluster-wide-resources-configuration-settings
-  # https://docs.ceph.com/docs/jewel/start/hardware-recommendations/
+  # https://docs.ceph.com/docs/luminous/start/hardware-recommendations/
   resources:
     mon:
       requests:
-        cpu: 500m
-        memory: 512Mi
+        cpu: 100m
+        memory: 1024Mi
     mgr:
       requests:
-        cpu: 500m
+        cpu: 200m
         memory: 512Mi
     osd:
       requests:

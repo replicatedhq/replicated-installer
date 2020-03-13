@@ -346,8 +346,8 @@ $NODE_SELECTOR
               fieldPath: metadata.namespace
         resources:
           requests:
-            cpu: "TODO"
-            memory: "TODO"
+            cpu: 500m
+            memory: 256Mi
 EOF
     if [ -n "$APP_REGISTRY_ADVERTISE_HOST" ]; then
         cat <<EOF
@@ -411,8 +411,8 @@ $CEPH_DASHBOARD_CREDS_ENV
           mountPath: /var/run/replicated
         resources:
           requests:
-            cpu: "TODO"
-            memory: "TODO"
+            cpu: 10m
+            memory: 64Mi
       volumes:
       - name: replicated-persistent
         persistentVolumeClaim:
@@ -1020,8 +1020,8 @@ spec:
           value: 1m
         resources:
           requests:
-            cpu: "TODO"
-            memory: "TODO"
+            cpu: 10m
+            memory: 64Mi
 EOF
 }
 
@@ -1129,8 +1129,8 @@ spec:
           timeoutSeconds: 1
         resources:
           requests:
-            cpu: "TODO"
-            memory: "TODO"
+            cpu: 10m
+            memory: 64Mi
       volumes:
       - name: docker-registry-config
         configMap:
@@ -1227,8 +1227,8 @@ spec:
           timeoutSeconds: 1
         resources:
           requests:
-            cpu: "TODO"
-            memory: "TODO"
+            cpu: 10m
+            memory: 64Mi
       volumes:
       - name: registry-data
         persistentVolumeClaim:
