@@ -477,8 +477,8 @@ spec:
         # https://rook.io/docs/rook/v1.0/ceph-cluster-crd.html#cluster-wide-resources-configuration-settings
         resources:
           requests:
-            cpu: "TODO"
-            memory: "TODO"
+            cpu: 100m
+            memory: 256Mi
       volumes:
       - name: rook-config
         emptyDir: {}

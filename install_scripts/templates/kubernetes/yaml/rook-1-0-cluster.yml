@@ -191,16 +191,16 @@ spec:
   resources:
     mon:
       requests:
-        cpu: "500m"
-        memory: "512Mi"
+        cpu: 500m
+        memory: 512Mi
     mgr:
       requests:
-        cpu: "500m"
-        memory: "512Mi"
+        cpu: 500m
+        memory: 512Mi
     osd:
       requests:
-        cpu: "500m"
-        memory: "1024Mi"
+        cpu: 500m
+        memory: 1024Mi
   storage: # cluster level storage configuration and selection
     # the REK operator will disable this flag and manage the list of nodes explicitly
     useAllNodes: true
