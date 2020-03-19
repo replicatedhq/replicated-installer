@@ -192,11 +192,11 @@ spec:
     mon:
       requests:
         cpu: 100m
-        memory: 1024Mi
+        memory: 256Mi
     mgr:
       requests:
-        cpu: 200m
-        memory: 512Mi
+        cpu: 100m
+        memory: 256Mi
     osd:
       requests:
         cpu: 500m

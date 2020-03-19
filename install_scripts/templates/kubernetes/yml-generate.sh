@@ -346,7 +346,7 @@ $NODE_SELECTOR
               fieldPath: metadata.namespace
         resources:
           requests:
-            cpu: 500m
+            cpu: 250m
             memory: 256Mi
 EOF
     if [ -n "$APP_REGISTRY_ADVERTISE_HOST" ]; then
