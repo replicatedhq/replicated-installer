@@ -186,7 +186,21 @@ spec:
     # The number of daemons that will perform the rbd mirroring.
     # rbd mirroring must be configured with "rbd mirror" from the rook toolbox.
     workers: 0
+  # https://rook.io/docs/rook/v1.0/ceph-cluster-crd.html#cluster-wide-resources-configuration-settings
+  # https://docs.ceph.com/docs/luminous/start/hardware-recommendations/
   resources:
+    mon:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    mgr:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    osd:
+      requests:
+        cpu: 500m
+        memory: 1024Mi
   storage: # cluster level storage configuration and selection
     # the REK operator will disable this flag and manage the list of nodes explicitly
     useAllNodes: true

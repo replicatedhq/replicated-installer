@@ -344,6 +344,10 @@ $NODE_SELECTOR
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
 EOF
     if [ -n "$APP_REGISTRY_ADVERTISE_HOST" ]; then
         cat <<EOF
@@ -405,6 +409,10 @@ $CEPH_DASHBOARD_CREDS_ENV
         volumeMounts:
         - name: replicated-socket
           mountPath: /var/run/replicated
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
       volumes:
       - name: replicated-persistent
         persistentVolumeClaim:
@@ -860,6 +868,7 @@ $weave_passwd_env
                   path: /status
                   port: 6784
                 initialDelaySeconds: 30
+              # https://www.weave.works/docs/net/latest/kubernetes/kube-addon/#cpu-and-memory-requirements
               resources:
                 requests:
                   cpu: 10m
@@ -889,6 +898,7 @@ $weave_passwd_env
                       apiVersion: v1
                       fieldPath: spec.nodeName
               image: weaveworks/weave-npc:2.5.2
+              # https://www.weave.works/docs/net/latest/kubernetes/kube-addon/#cpu-and-memory-requirements
               resources:
                 requests:
                   cpu: 10m
@@ -1008,6 +1018,10 @@ spec:
           value: default
         - name: RECONCILE_INTERVAL
           value: 1m
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
 EOF
 }
 
@@ -1113,6 +1127,10 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
       volumes:
       - name: docker-registry-config
         configMap:
@@ -1207,6 +1225,10 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
       volumes:
       - name: registry-data
         persistentVolumeClaim:

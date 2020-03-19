@@ -30,6 +30,14 @@ spec:
         volumeMounts:
           - name: pv-volume
             mountPath: /opt/replicated/hostpath-provisioner
+        # https://github.com/rimusz/charts/blob/b3aef3bf5a3519f0a1a79c0569e8233bdec0e30d/stable/hostpath-provisioner/values.yaml#L35-L41
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
       volumes:
         - name: pv-volume
           hostPath:
