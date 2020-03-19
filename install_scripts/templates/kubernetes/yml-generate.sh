@@ -344,10 +344,6 @@ $NODE_SELECTOR
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        resources:
-          requests:
-            cpu: 250m
-            memory: 256Mi
 EOF
     if [ -n "$APP_REGISTRY_ADVERTISE_HOST" ]; then
         cat <<EOF
@@ -394,6 +390,10 @@ $PROXY_ENVS
         - name: proc
           mountPath: /host/proc
           readOnly: true
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
       - name: replicated-ui
         image: "${REGISTRY_ADDRESS_OVERRIDE:-quay.io}/replicated/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}"
         imagePullPolicy: IfNotPresent
