@@ -835,7 +835,7 @@ k8sMasterNodeNames() {
 #   None
 #######################################
 k8sNamespaceExists() {
-    kubectl get namespaces | grep "$1" > /dev/null
+    kubectl get namespaces | grep -q "$1"
 }
 
 #######################################
@@ -1567,7 +1567,7 @@ makeKubeadmJoinConfigV1Beta2() {
 kind: JoinConfiguration
 apiVersion: kubeadm.k8s.io/v1beta2
 nodeRegistration:
-  taints: []
+  # TODO: add taints if TAINT_CONTROL_PLANE=1
   kubeletExtraArgs:
     node-ip: $PRIVATE_ADDRESS
 discovery:

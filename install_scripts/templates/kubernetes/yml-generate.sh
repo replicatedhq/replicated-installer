@@ -423,6 +423,10 @@ $CEPH_DASHBOARD_CREDS_ENV
           requests:
             cpu: 10m
             memory: 64Mi
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+        operator: Exists
       volumes:
       - name: replicated-persistent
         persistentVolumeClaim:
@@ -930,8 +934,7 @@ $weave_passwd_env
             seLinuxOptions: {}
           serviceAccountName: weave-net
           tolerations:
-            - effect: NoSchedule
-              operator: Exists
+            - operator: Exists
           volumes:
             - name: weavedb
               hostPath:
@@ -1038,6 +1041,10 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+        operator: Exists
 EOF
 }
 
@@ -1147,6 +1154,10 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+        operator: Exists
       volumes:
       - name: docker-registry-config
         configMap:
@@ -1245,6 +1256,10 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+        operator: Exists
       volumes:
       - name: registry-data
         persistentVolumeClaim:

@@ -474,11 +474,38 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        # Rook Agent toleration. Will tolerate all taints with all keys.
+        # Choose between NoSchedule, PreferNoSchedule and NoExecute:
+        - name: AGENT_TOLERATION
+          value: NoSchedule
+        # (Optional) Rook Agent toleration key. Set this to the key of the taint you want to tolerate
+        - name: AGENT_TOLERATION_KEY
+          value: node-role.kubernetes.io/master
+        # Rook Agent toleration. Will tolerate all taints with all keys.
+        # Choose between NoSchedule, PreferNoSchedule and NoExecute:
+        - name: AGENT_TOLERATION
+          value: NoSchedule
+        # (Optional) Rook Agent toleration key. Set this to the key of the taint you want to tolerate
+        - name: AGENT_TOLERATION_KEY
+          value: node-role.kubernetes.io/master
+        # Rook Discover toleration. Will tolerate all taints with all keys.
+        # Choose between NoSchedule, PreferNoSchedule and NoExecute:
+        - name: DISCOVER_TOLERATION
+          value: NoSchedule
+        # (Optional) Rook Discover toleration key. Set this to the key of the taint you want to tolerate
+        - name: DISCOVER_TOLERATION_KEY
+          value: node-role.kubernetes.io/master
+        - name: ROOK_LOG_LEVEL
+          value: DEBUG
         # https://rook.io/docs/rook/v1.0/ceph-cluster-crd.html#cluster-wide-resources-configuration-settings
         resources:
           requests:
             cpu: 100m
             memory: 256Mi
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+        operator: Exists
       volumes:
       - name: rook-config
         emptyDir: {}

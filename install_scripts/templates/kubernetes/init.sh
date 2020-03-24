@@ -15,6 +15,7 @@ YAML_GENERATE_OPTS=
 PUBLIC_ADDRESS=
 PRIVATE_ADDRESS=
 HA_CLUSTER=0
+TAINT_CONTROL_PLANE=0
 MAINTAIN_ROOK_STORAGE_NODES=0
 PURGE_DEAD_NODES=0
 LOAD_BALANCER_ADDRESS=
@@ -132,8 +133,8 @@ bootstrapTokens:
   - authentication
 localAPIEndpoint:
   advertiseAddress: $PRIVATE_ADDRESS
-nodeRegistration:
-  taints: [] # prevent the default master taint
+nodeRegistration: {}
+  # TODO: add taints if TAINT_CONTROL_PLANE=1
 EOF
 }
 
@@ -589,9 +590,12 @@ rookDeploy() {
 
     # namespaces used in Rook 0.8+
     if k8sNamespaceExists rook-ceph && k8sNamespaceExists rook-ceph-system ; then
-        logSuccess "Rook already deployed"
-        maybeDefaultRookStorageClass
-        return
+        # we no longer have other rook version yaml
+        if ! isRook103; then
+            logSuccess "Rook already deployed"
+            maybeDefaultRookStorageClass
+            return
+        fi
     fi
 
     local rook08=0
@@ -1036,6 +1040,9 @@ while [ "$1" != "" ]; do
             ;;
         ha)
             HA_CLUSTER=1
+            ;;
+        taint-control-plane|taint_control_plane)
+            TAINT_CONTROL_PLANE=1
             ;;
         http-proxy|http_proxy)
             PROXY_ADDRESS="$_value"
