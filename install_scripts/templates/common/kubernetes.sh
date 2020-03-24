@@ -491,7 +491,7 @@ airgapLoadKubernetesCommonImages1135() {
         docker tag 1186b980992e docker.io/envoyproxy/envoy-alpine:v1.9.1
         docker tag 0a0aad7cff75 gcr.io/heptio-images/contour:v0.11.0
         docker tag eb6fe47e91ae docker.io/rook/ceph:v1.0.0
-        docker tag 243030ce8ef0 docker.io/ceph/ceph:v14.2.0-20190410
+        docker tag 243030ce8ef0 docker.io/ceph/ceph:v14.2.8-20200305
         docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
     )
 }
@@ -526,7 +526,7 @@ airgapLoadKubernetesCommonImages1153() {
         docker tag 0246380e4b70 docker.io/envoyproxy/envoy-alpine:v1.10.0
         docker tag 672aff19e6e4 gcr.io/heptio-images/contour:v0.13.0
         docker tag 3ee0a397fb56 docker.io/rook/ceph:v1.0.3
-        docker tag 243030ce8ef0 docker.io/ceph/ceph:v14.2.0-20190410
+        docker tag 243030ce8ef0 docker.io/ceph/ceph:v14.2.8-20200305
         docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
     )
 }
@@ -1567,7 +1567,13 @@ makeKubeadmJoinConfigV1Beta2() {
 kind: JoinConfiguration
 apiVersion: kubeadm.k8s.io/v1beta2
 nodeRegistration:
-  # TODO: add taints if TAINT_CONTROL_PLANE=1
+EOF
+    if [ "$MASTER" != "1" ] || [ "$TAINT_CONTROL_PLANE" != "1" ]; then
+        cat << EOF >> /opt/replicated/kubeadm.conf
+  taints: []
+EOF
+    fi
+    cat << EOF >> /opt/replicated/kubeadm.conf
   kubeletExtraArgs:
     node-ip: $PRIVATE_ADDRESS
 discovery:
@@ -2008,4 +2014,31 @@ kubernetesDiscoverPrivateIp()
         return 0
     fi
     PRIVATE_ADDRESS=$(cat /etc/kubernetes/manifests/kube-apiserver.yaml 2>/dev/null | grep advertise-address | awk -F'=' '{ print $2 }')
+}
+
+maybeSetTaintControlPlane()
+{
+    if [ "$TAINT_CONTROL_PLANE" = "1" ]; then
+        return
+    fi
+    # is this a master node
+    if [ "$MASTER" != "1" ]; then
+        return
+    fi
+
+    waitForNodes
+
+    # do the other masters have NoSchedule taints
+    if kubectl get nodes --selector=node-role.kubernetes.io/master -ojsonpath --template='{.items[*].spec.taints[?(@.key == "node-role.kubernetes.io/master")].effect}' | grep -q NoSchedule ; then
+        TAINT_CONTROL_PLANE=1
+    fi
+}
+
+maybeTaintControlPlaneNodeJoin()
+{
+    maybeSetTaintControlPlane
+    if [ "$TAINT_CONTROL_PLANE" = "1" ]; then
+        makeKubeadmJoinConfigV1Beta2
+        kubeadm join phase control-plane-join mark-control-plane --config /opt/replicated/kubeadm.conf
+    fi
 }

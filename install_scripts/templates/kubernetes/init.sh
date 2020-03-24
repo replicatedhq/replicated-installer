@@ -15,7 +15,7 @@ YAML_GENERATE_OPTS=
 PUBLIC_ADDRESS=
 PRIVATE_ADDRESS=
 HA_CLUSTER=0
-TAINT_CONTROL_PLANE=0
+TAINT_CONTROL_PLANE="{{ '1' if taint_control_plane else '0' }}"
 MAINTAIN_ROOK_STORAGE_NODES=0
 PURGE_DEAD_NODES=0
 LOAD_BALANCER_ADDRESS=
@@ -133,9 +133,13 @@ bootstrapTokens:
   - authentication
 localAPIEndpoint:
   advertiseAddress: $PRIVATE_ADDRESS
-nodeRegistration: {}
-  # TODO: add taints if TAINT_CONTROL_PLANE=1
+nodeRegistration:
 EOF
+    if [ "$TAINT_CONTROL_PLANE" != "1" ]; then
+        cat << EOF >> /opt/replicated/kubeadm.conf
+  taints: []
+EOF
+    fi
 }
 
 initKubeadmConfigBeta() {
@@ -1300,6 +1304,12 @@ else
 fi
 
 installCNIPlugins
+
+semverCompare "$REPLICATED_VERSION" "2.43.0"
+# support for tainting masters added in 2.43.0
+if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
+    TAINT_CONTROL_PLANE=0
+fi
 
 maybeGenerateBootstrapToken
 if ! upgradeInProgress; then
