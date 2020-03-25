@@ -313,9 +313,9 @@ $NODE_SELECTOR
         - name: MARKET_BASE_URL
           value: "{{customer_base_url_override}}"
         - name: REPLICATED_TMP_PATH
-          value: /var/lib/replicated-tmp
+          value: /var/lib/replicated-tmp/tmp
         - name: SUPPORT_BUNDLES_PATH
-          value: /opt/replicated/data/support-bundles
+          value: /var/lib/replicated-tmp/support-bundles
 {%- endif %}{% if replicated_env == "staging" %}
         - name: MARKET_BASE_URL
           value: {{ customer_base_url_override|default('https://api.staging.replicated.com/market', true) }}
@@ -385,6 +385,8 @@ $PROXY_ENVS
         volumeMounts:
         - name: replicated-persistent
           mountPath: /var/lib/replicated
+        - name: replicated-tmp
+          mountPath: /var/lib/replicated-tmp
         - name: replicated-socket
           mountPath: /var/run/replicated
         - name: docker-socket
@@ -394,10 +396,6 @@ $PROXY_ENVS
         - name: proc
           mountPath: /host/proc
           readOnly: true
-        - name: replicated-tmp
-          mountPath: /var/lib/replicated-tmp
-        - name: replicated-support-bundles
-          mountPath: /opt/replicated/data/support-bundles
         resources:
           requests:
             cpu: 250m
@@ -425,6 +423,9 @@ $CEPH_DASHBOARD_CREDS_ENV
       - name: replicated-persistent
         persistentVolumeClaim:
           claimName: replicated-pv-claim
+      - name: replicated-tmp
+        persistentVolumeClaim:
+          claimName: replicated-tmp
       - name: replicated-socket
       - name: docker-socket
         hostPath:
@@ -435,12 +436,6 @@ $CEPH_DASHBOARD_CREDS_ENV
       - name: proc
         hostPath:
           path: /proc
-      - name: replicated-tmp
-        hostPath:
-          path: /opt/replicated/data/tmp
-      - name: replicated-support-bundles
-        hostPath:
-          path: /opt/replicated/data/support-bundles
 EOF
 }
 
@@ -465,6 +460,21 @@ spec:
     requests:
       storage: "$size"
   storageClassName: "$STORAGE_CLASS"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: replicated-tmp
+  labels:
+    app: replicated
+    tier: master
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: temp
 EOF
 }
 
@@ -661,6 +671,15 @@ metadata:
 provisioner: ceph.rook.io/block
 parameters:
   pool: replicapool
+  clusterNamespace: rook-ceph
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+   name: temp
+provisioner: ceph.rook.io/block
+parameters:
+  pool: temppool
   clusterNamespace: rook-ceph
 EOF
 }
