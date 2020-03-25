@@ -467,21 +467,6 @@ spec:
     requests:
       storage: "$size"
   storageClassName: "$STORAGE_CLASS"
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: replicated-tmp
-  labels:
-    app: replicated
-    tier: master
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
-  storageClassName: temp
 EOF
 }
 
