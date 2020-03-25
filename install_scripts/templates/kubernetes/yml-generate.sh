@@ -313,9 +313,11 @@ $NODE_SELECTOR
         - name: MARKET_BASE_URL
           value: "{{customer_base_url_override}}"
         - name: REPLICATED_TMP_PATH
-          value: /var/lib/replicated-tmp/tmp
+          value: /var/lib/replicated-tmp
         - name: SUPPORT_BUNDLES_PATH
-          value: /var/lib/replicated-tmp/support-bundles
+          value: /var/lib/replicated-support-bundles
+        - name: SUPPORT_BUNDLES_HOST_PATH
+          value: /var/lib/replicated/support-bundles
 {%- endif %}{% if replicated_env == "staging" %}
         - name: MARKET_BASE_URL
           value: {{ customer_base_url_override|default('https://api.staging.replicated.com/market', true) }}
@@ -387,6 +389,8 @@ $PROXY_ENVS
           mountPath: /var/lib/replicated
         - name: replicated-tmp
           mountPath: /var/lib/replicated-tmp
+        - name: replicated-support-bundles
+          mountPath: /var/lib/replicated-support-bundles
         - name: replicated-socket
           mountPath: /var/run/replicated
         - name: docker-socket
@@ -424,8 +428,11 @@ $CEPH_DASHBOARD_CREDS_ENV
         persistentVolumeClaim:
           claimName: replicated-pv-claim
       - name: replicated-tmp
-        persistentVolumeClaim:
-          claimName: replicated-tmp
+        hostPath:
+          path: /var/lib/replicated/tmp
+      - name: replicated-support-bundles
+        hostPath:
+          path: /var/lib/replicated/support-bundles
       - name: replicated-socket
       - name: docker-socket
         hostPath:
@@ -671,15 +678,6 @@ metadata:
 provisioner: ceph.rook.io/block
 parameters:
   pool: replicapool
-  clusterNamespace: rook-ceph
----
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-   name: temp
-provisioner: ceph.rook.io/block
-parameters:
-  pool: temppool
   clusterNamespace: rook-ceph
 EOF
 }

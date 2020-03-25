@@ -230,14 +230,3 @@ spec:
   replicated:
     # the REK operator will scale this up to 3 as nodes join the cluster
     size: 1
----
-apiVersion: ceph.rook.io/v1
-kind: CephBlockPool
-metadata:
-  name: temppool
-  namespace: rook-ceph
-spec:
-  failureDomain: host
-  replicated:
-    # never scale this up to reduce load
-    size: 1
