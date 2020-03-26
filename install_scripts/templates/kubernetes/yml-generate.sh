@@ -312,6 +312,12 @@ $NODE_SELECTOR
           value: "$REGISTRY_ADDRESS_OVERRIDE"{% if customer_base_url_override %}
         - name: MARKET_BASE_URL
           value: "{{customer_base_url_override}}"
+        - name: REPLICATED_TMP_PATH
+          value: /var/lib/replicated-tmp
+        - name: SUPPORT_BUNDLES_PATH
+          value: /var/lib/replicated-support-bundles
+        - name: SUPPORT_BUNDLES_HOST_PATH
+          value: /var/lib/replicated/support-bundles
 {%- endif %}{% if replicated_env == "staging" %}
         - name: MARKET_BASE_URL
           value: {{ customer_base_url_override|default('https://api.staging.replicated.com/market', true) }}
@@ -381,6 +387,10 @@ $PROXY_ENVS
         volumeMounts:
         - name: replicated-persistent
           mountPath: /var/lib/replicated
+        - name: replicated-tmp
+          mountPath: /var/lib/replicated-tmp
+        - name: replicated-support-bundles
+          mountPath: /var/lib/replicated-support-bundles
         - name: replicated-socket
           mountPath: /var/run/replicated
         - name: docker-socket
@@ -417,6 +427,12 @@ $CEPH_DASHBOARD_CREDS_ENV
       - name: replicated-persistent
         persistentVolumeClaim:
           claimName: replicated-pv-claim
+      - name: replicated-tmp
+        hostPath:
+          path: /var/lib/replicated/tmp
+      - name: replicated-support-bundles
+        hostPath:
+          path: /var/lib/replicated/support-bundles
       - name: replicated-socket
       - name: docker-socket
         hostPath:
