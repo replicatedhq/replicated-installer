@@ -23,6 +23,9 @@ spec:
     # https://rook.io/docs/rook/v1.0/ceph-cluster-crd.html#cluster-wide-resources-configuration-settings
     # https://docs.ceph.com/docs/jewel/start/hardware-recommendations/
     resources:
+      limits:
+        cpu: "2"
+        memory: 4096Mi
       requests:
         cpu: 250m
         memory: 256Mi

@@ -190,14 +190,23 @@ spec:
   # https://docs.ceph.com/docs/luminous/start/hardware-recommendations/
   resources:
     mon:
+      limits:
+        cpu: "2"
+        memory: 4096Mi
       requests:
         cpu: 100m
         memory: 256Mi
     mgr:
+      limits:
+        cpu: "2"
+        memory: 4096Mi
       requests:
         cpu: 100m
         memory: 256Mi
     osd:
+      limits:
+        cpu: "2"
+        memory: 4096Mi
       requests:
         cpu: 500m
         memory: 1024Mi
