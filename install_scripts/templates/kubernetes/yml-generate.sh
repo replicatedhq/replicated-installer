@@ -904,6 +904,8 @@ items:
                       fieldPath: spec.nodeName
                 - name: IPALLOC_RANGE
                   value: $IP_ALLOC_RANGE
+                - name: EXTRA_ARGS
+                  value: "--log-level=info" # default log level is debug
 $weave_passwd_env
               image: weaveworks/weave-kube:2.5.2
               livenessProbe:
@@ -934,7 +936,7 @@ $weave_passwd_env
                 - name: xtables-lock
                   mountPath: /run/xtables.lock
             - name: weave-npc
-              args: []
+              args: ["--log-level", "info"] # default log level is debug
               env:
                 - name: HOSTNAME
                   valueFrom:
