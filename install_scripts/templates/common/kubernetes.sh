@@ -1726,9 +1726,9 @@ isRook1()
 # Returns:
 #   None, exits 0 if Rook 1.0.3+ is detected
 #######################################
-isRook103()
+isRook103Plus()
 {
-    local rookVersion="$(kubectl -n rook-ceph-system get deploy rook-ceph-operator -oyaml | grep image: | sed 's/ *image:[^:]*:v//')"
+    local rookVersion="$(kubectl -n rook-ceph-system get deploy rook-ceph-operator -oyaml 2>/dev/null | grep image: | sed 's/ *image:[^:]*:v//')"
     if [ -z "$rookVersion" ]; then
         return 1
     fi
@@ -1737,6 +1737,24 @@ isRook103()
         return 1
     fi
     return 0
+}
+
+#######################################
+# Check if Rook 1.0.3 is installed
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None, exits 0 if Rook 1.0.3 is detected
+#######################################
+isRook103()
+{
+    local rookVersion="$(kubectl -n rook-ceph-system get deploy rook-ceph-operator -oyaml 2>/dev/null | grep image: | sed 's/ *image:[^:]*:v//')"
+    if [ "$rookVersion" = "1.0.3" ]; then
+        return 0
+    fi
+    return 1
 }
 
 #######################################

@@ -592,26 +592,23 @@ rookDeploy() {
         return
     fi
 
-    local rook08=0
-    local rook103=0
-
     # namespaces used in Rook 0.8+
     if k8sNamespaceExists rook-ceph && k8sNamespaceExists rook-ceph-system ; then
-        # we no longer have other rook version yaml
-        if ! isRook103; then
+        if ! isRook103Plus; then
+            # we no longer have v0.8.x rook version yaml
             logSuccess "Rook already deployed"
             maybeDefaultRookStorageClass
             return
         fi
-        rook103=1
     fi
 
     semverCompare "$REPLICATED_VERSION" "2.36.0"
     if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
-        rook08=1
-        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_system_yaml=1 > /tmp/rook-ceph-system.yml
-        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_cluster_yaml=1 > /tmp/rook-ceph.yml
-    elif [ "$rook103" = "1" ]; then
+        rookDeploy08
+        return
+    fi
+
+    if isRook103; then
         # do not upgrade rook/ceph
         sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_103_system_yaml=1 > /tmp/rook-ceph-system.yml
         sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_103_cluster_yaml=1 > /tmp/rook-ceph.yml
@@ -623,25 +620,35 @@ rookDeploy() {
     kubectl apply -f /tmp/rook-ceph-system.yml
 
     spinnerRookReady # creating the cluster before the operator is ready fails
-    if [ "$rook08" = "1" ]; then
-        sudo systemctl restart kubelet
-    fi
 
     kubectl apply -f /tmp/rook-ceph.yml
     storageClassDeploy
  
     # wait for ceph dashboard password to be generated
-    if [ "$rook08" = "0" ]; then
-        local delay=0.75
-        local spinstr='|/-\'
-        while ! kubectl -n rook-ceph get secret rook-ceph-dashboard-password &>/dev/null; do
-            local temp=${spinstr#?}
-            printf " [%c]  " "$spinstr"
-            local spinstr=$temp${spinstr%"$temp"}
-            sleep $delay
-            printf "\b\b\b\b\b\b"
-        done
-    fi
+    local delay=0.75
+    local spinstr='|/-\'
+    while ! kubectl -n rook-ceph get secret rook-ceph-dashboard-password &>/dev/null; do
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
+
+    logSuccess "Rook deployed"
+}
+
+rookDeploy08() {
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_system_yaml=1 > /tmp/rook-ceph-system.yml
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_cluster_yaml=1 > /tmp/rook-ceph.yml
+
+    kubectl apply -f /tmp/rook-ceph-system.yml
+
+    spinnerRookReady # creating the cluster before the operator is ready fails
+    sudo systemctl restart kubelet
+
+    kubectl apply -f /tmp/rook-ceph.yml
+    storageClassDeploy
 
     logSuccess "Rook deployed"
 }
@@ -1316,6 +1323,9 @@ semverCompare "$REPLICATED_VERSION" "2.43.0"
 # support for tainting masters added in 2.43.0
 if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
     TAINT_CONTROL_PLANE=0
+elif isRook103; then
+    # we do not upgrade rook ceph and tolerations do not seem to work well on rook v1.0.3
+    TAINT_CONTROL_PLANE=0
 fi
 
 maybeGenerateBootstrapToken
@@ -1365,7 +1375,7 @@ case "$STORAGE_PROVISIONER" in
         if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
             logWarn "Rook object store disabled, Replicated version must be greater than or equal to 2.41.0"
             DISABLE_ROOK_OBJECT_STORE=1
-        elif ! isRook103; then
+        elif ! isRook103Plus; then
             logWarn "Rook object store disabled, Rook version must be greater than or equal to 1.0.3"
             DISABLE_ROOK_OBJECT_STORE=1
         fi
