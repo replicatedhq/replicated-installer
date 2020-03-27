@@ -245,3 +245,13 @@ spec:
   replicated:
     # the REK operator will scale this up to 3 as nodes join the cluster
     size: 1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rook-config-override
+  namespace: rook-ceph
+data:
+  config: |
+    [global]
+    osd pool default pg num = 128

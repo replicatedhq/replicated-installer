@@ -592,6 +592,9 @@ rookDeploy() {
         return
     fi
 
+    local rook08=0
+    local rook103=0
+
     # namespaces used in Rook 0.8+
     if k8sNamespaceExists rook-ceph && k8sNamespaceExists rook-ceph-system ; then
         # we no longer have other rook version yaml
@@ -600,17 +603,21 @@ rookDeploy() {
             maybeDefaultRookStorageClass
             return
         fi
+        rook103=1
     fi
 
-    local rook08=0
     semverCompare "$REPLICATED_VERSION" "2.36.0"
     if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
         rook08=1
         sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_system_yaml=1 > /tmp/rook-ceph-system.yml
         sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_cluster_yaml=1 > /tmp/rook-ceph.yml
+    elif [ "$rook103" = "1" ]; then
+        # do not upgrade rook/ceph
+        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_103_system_yaml=1 > /tmp/rook-ceph-system.yml
+        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_103_cluster_yaml=1 > /tmp/rook-ceph.yml
     else
-        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_system_yaml=1 > /tmp/rook-ceph-system.yml
-        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_cluster_yaml=1 > /tmp/rook-ceph.yml
+        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_106_system_yaml=1 > /tmp/rook-ceph-system.yml
+        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_106_cluster_yaml=1 > /tmp/rook-ceph.yml
     fi
 
     kubectl apply -f /tmp/rook-ceph-system.yml
