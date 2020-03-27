@@ -489,7 +489,7 @@ spec:
         - name: DISCOVER_TOLERATION_KEY
           value: node-role.kubernetes.io/master
         - name: ROOK_LOG_LEVEL
-          value: DEBUG
+          value: DEBUG # TODO: change this back to INFO
         # https://rook.io/docs/rook/v1.0/ceph-cluster-crd.html#cluster-wide-resources-configuration-settings
         resources:
           requests:
