@@ -15,6 +15,7 @@ YAML_GENERATE_OPTS=
 PUBLIC_ADDRESS=
 PRIVATE_ADDRESS=
 HA_CLUSTER=0
+TAINT_CONTROL_PLANE="{{ '1' if taint_control_plane else '0' }}"
 MAINTAIN_ROOK_STORAGE_NODES=0
 PURGE_DEAD_NODES=0
 LOAD_BALANCER_ADDRESS=
@@ -133,8 +134,12 @@ bootstrapTokens:
 localAPIEndpoint:
   advertiseAddress: $PRIVATE_ADDRESS
 nodeRegistration:
-  taints: [] # prevent the default master taint
 EOF
+    if [ "$TAINT_CONTROL_PLANE" != "1" ]; then
+        cat << EOF >> /opt/replicated/kubeadm.conf
+  taints: []
+EOF
+    fi
 }
 
 initKubeadmConfigBeta() {
@@ -589,44 +594,61 @@ rookDeploy() {
 
     # namespaces used in Rook 0.8+
     if k8sNamespaceExists rook-ceph && k8sNamespaceExists rook-ceph-system ; then
-        logSuccess "Rook already deployed"
-        maybeDefaultRookStorageClass
+        if ! isRook103Plus; then
+            # we no longer have v0.8.x rook version yaml
+            logSuccess "Rook already deployed"
+            maybeDefaultRookStorageClass
+            return
+        fi
+    fi
+
+    semverCompare "$REPLICATED_VERSION" "2.36.0"
+    if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
+        rookDeploy08
         return
     fi
 
-    local rook08=0
-    semverCompare "$REPLICATED_VERSION" "2.36.0"
-    if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
-        rook08=1
-        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_system_yaml=1 > /tmp/rook-ceph-system.yml
-        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_cluster_yaml=1 > /tmp/rook-ceph.yml
+    if isRook103; then
+        # do not upgrade rook/ceph
+        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_103_system_yaml=1 > /tmp/rook-ceph-system.yml
+        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_103_cluster_yaml=1 > /tmp/rook-ceph.yml
     else
-        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_system_yaml=1 > /tmp/rook-ceph-system.yml
-        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_cluster_yaml=1 > /tmp/rook-ceph.yml
+        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_106_system_yaml=1 > /tmp/rook-ceph-system.yml
+        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_106_cluster_yaml=1 > /tmp/rook-ceph.yml
     fi
 
     kubectl apply -f /tmp/rook-ceph-system.yml
 
     spinnerRookReady # creating the cluster before the operator is ready fails
-    if [ "$rook08" = "1" ]; then
-        sudo systemctl restart kubelet
-    fi
 
     kubectl apply -f /tmp/rook-ceph.yml
     storageClassDeploy
  
     # wait for ceph dashboard password to be generated
-    if [ "$rook08" = "0" ]; then
-        local delay=0.75
-        local spinstr='|/-\'
-        while ! kubectl -n rook-ceph get secret rook-ceph-dashboard-password &>/dev/null; do
-            local temp=${spinstr#?}
-            printf " [%c]  " "$spinstr"
-            local spinstr=$temp${spinstr%"$temp"}
-            sleep $delay
-            printf "\b\b\b\b\b\b"
-        done
-    fi
+    local delay=0.75
+    local spinstr='|/-\'
+    while ! kubectl -n rook-ceph get secret rook-ceph-dashboard-password &>/dev/null; do
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
+
+    logSuccess "Rook deployed"
+}
+
+rookDeploy08() {
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_system_yaml=1 > /tmp/rook-ceph-system.yml
+    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_cluster_yaml=1 > /tmp/rook-ceph.yml
+
+    kubectl apply -f /tmp/rook-ceph-system.yml
+
+    spinnerRookReady # creating the cluster before the operator is ready fails
+    sudo systemctl restart kubelet
+
+    kubectl apply -f /tmp/rook-ceph.yml
+    storageClassDeploy
 
     logSuccess "Rook deployed"
 }
@@ -1037,6 +1059,9 @@ while [ "$1" != "" ]; do
         ha)
             HA_CLUSTER=1
             ;;
+        taint-control-plane|taint_control_plane)
+            TAINT_CONTROL_PLANE=1
+            ;;
         http-proxy|http_proxy)
             PROXY_ADDRESS="$_value"
             ;;
@@ -1294,6 +1319,15 @@ fi
 
 installCNIPlugins
 
+semverCompare "$REPLICATED_VERSION" "2.43.0"
+# support for tainting masters added in 2.43.0
+if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
+    TAINT_CONTROL_PLANE=0
+elif isRook103; then
+    # we do not upgrade rook ceph and tolerations do not seem to work well on rook v1.0.3
+    TAINT_CONTROL_PLANE=0
+fi
+
 maybeGenerateBootstrapToken
 if ! upgradeInProgress; then
     # If re-initing the node will be temporarily tainted which will trigger orchestration.
@@ -1341,7 +1375,7 @@ case "$STORAGE_PROVISIONER" in
         if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
             logWarn "Rook object store disabled, Replicated version must be greater than or equal to 2.41.0"
             DISABLE_ROOK_OBJECT_STORE=1
-        elif ! isRook103; then
+        elif ! isRook103Plus; then
             logWarn "Rook object store disabled, Rook version must be greater than or equal to 1.0.3"
             DISABLE_ROOK_OBJECT_STORE=1
         fi

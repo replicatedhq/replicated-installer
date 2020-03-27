@@ -157,8 +157,7 @@ metadata:
   namespace: rook-ceph
 spec:
   cephVersion:
-    # image: ceph/ceph:v14.2.1 has dashboard errors but 14.2.2 should work once released
-    image: ceph/ceph:v14.2.0-20190410
+    image: ceph/ceph:v14.2.8-20200305
     # Whether to allow unsupported versions of Ceph.
     # Do not set to true in production.
     allowUnsupported: false
@@ -186,6 +185,13 @@ spec:
     # The number of daemons that will perform the rbd mirroring.
     # rbd mirroring must be configured with "rbd mirror" from the rook toolbox.
     workers: 0
+  # To control where various services will be scheduled by kubernetes, use the placement configuration sections below.
+  placement:
+    all:
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+        operator: Exists
   # https://rook.io/docs/rook/v1.0/ceph-cluster-crd.html#cluster-wide-resources-configuration-settings
   # https://docs.ceph.com/docs/luminous/start/hardware-recommendations/
   resources:
@@ -239,3 +245,13 @@ spec:
   replicated:
     # the REK operator will scale this up to 3 as nodes join the cluster
     size: 1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rook-config-override
+  namespace: rook-ceph
+data:
+  config: |
+    [global]
+    osd pool default pg num = 128

@@ -38,11 +38,15 @@ spec:
           requests:
             cpu: 100m
             memory: 128Mi
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+        operator: Exists
       volumes:
-        - name: pv-volume
-          hostPath:
-            path: "$PV_BASE_PATH"
-            type: DirectoryOrCreate
+      - name: pv-volume
+        hostPath:
+          path: "$PV_BASE_PATH"
+          type: DirectoryOrCreate
       serviceAccountName: hostpath-provisioner
 ---
 apiVersion: v1

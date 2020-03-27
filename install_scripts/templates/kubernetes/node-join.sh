@@ -21,6 +21,7 @@ K8S_UPGRADE_PATCH_VERSION="{{ k8s_upgrade_patch_version }}"
 IPVS=1
 PRIVATE_ADDRESS=
 UNSAFE_SKIP_CA_VERIFICATION="{{ '1' if unsafe_skip_ca_verification else '0' }}"
+TAINT_CONTROL_PLANE="{{ '1' if taint_control_plane else '0' }}"
 
 {% include 'common/common.sh' %}
 {% include 'common/prompt.sh' %}
@@ -481,6 +482,8 @@ if ! docker ps | grep -q 'k8s.gcr.io/pause'; then
 else
     maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"
 fi
+
+maybeTaintControlPlaneNodeJoin
 
 if [ "$MASTER" -eq "1" ]; then
     if [ "$AIRGAP" = "1" ]; then

@@ -526,7 +526,9 @@ airgapLoadKubernetesCommonImages1153() {
         docker tag 0246380e4b70 docker.io/envoyproxy/envoy-alpine:v1.10.0
         docker tag 672aff19e6e4 gcr.io/heptio-images/contour:v0.13.0
         docker tag 3ee0a397fb56 docker.io/rook/ceph:v1.0.3
+        docker tag d6b028bcaada docker.io/rook/ceph:v1.0.6
         docker tag 243030ce8ef0 docker.io/ceph/ceph:v14.2.0-20190410
+        docker tag 1307831d9d2f docker.io/ceph/ceph:v14.2.8-20200305
         docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
     )
 }
@@ -835,7 +837,7 @@ k8sMasterNodeNames() {
 #   None
 #######################################
 k8sNamespaceExists() {
-    kubectl get namespaces | grep "$1" > /dev/null
+    kubectl get namespaces | grep -q "$1"
 }
 
 #######################################
@@ -1567,7 +1569,13 @@ makeKubeadmJoinConfigV1Beta2() {
 kind: JoinConfiguration
 apiVersion: kubeadm.k8s.io/v1beta2
 nodeRegistration:
+EOF
+    if [ "$MASTER" != "1" ] || [ "$TAINT_CONTROL_PLANE" != "1" ]; then
+        cat << EOF >> /opt/replicated/kubeadm.conf
   taints: []
+EOF
+    fi
+    cat << EOF >> /opt/replicated/kubeadm.conf
   kubeletExtraArgs:
     node-ip: $PRIVATE_ADDRESS
 discovery:
@@ -1718,9 +1726,9 @@ isRook1()
 # Returns:
 #   None, exits 0 if Rook 1.0.3+ is detected
 #######################################
-isRook103()
+isRook103Plus()
 {
-    local rookVersion="$(kubectl -n rook-ceph-system get deploy rook-ceph-operator -oyaml | grep image: | sed 's/ *image:[^:]*:v//')"
+    local rookVersion="$(kubectl -n rook-ceph-system get deploy rook-ceph-operator -oyaml 2>/dev/null | grep image: | sed 's/ *image:[^:]*:v//')"
     if [ -z "$rookVersion" ]; then
         return 1
     fi
@@ -1729,6 +1737,24 @@ isRook103()
         return 1
     fi
     return 0
+}
+
+#######################################
+# Check if Rook 1.0.3 is installed
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None, exits 0 if Rook 1.0.3 is detected
+#######################################
+isRook103()
+{
+    local rookVersion="$(kubectl -n rook-ceph-system get deploy rook-ceph-operator -oyaml 2>/dev/null | grep image: | sed 's/ *image:[^:]*:v//')"
+    if [ "$rookVersion" = "1.0.3" ]; then
+        return 0
+    fi
+    return 1
 }
 
 #######################################
@@ -2008,4 +2034,31 @@ kubernetesDiscoverPrivateIp()
         return 0
     fi
     PRIVATE_ADDRESS=$(cat /etc/kubernetes/manifests/kube-apiserver.yaml 2>/dev/null | grep advertise-address | awk -F'=' '{ print $2 }')
+}
+
+maybeSetTaintControlPlane()
+{
+    if [ "$TAINT_CONTROL_PLANE" = "1" ]; then
+        return
+    fi
+    # is this a master node
+    if [ "$MASTER" != "1" ]; then
+        return
+    fi
+
+    waitForNodes
+
+    # do the other masters have NoSchedule taints
+    if kubectl get nodes --selector=node-role.kubernetes.io/master -ojsonpath --template='{.items[*].spec.taints[?(@.key == "node-role.kubernetes.io/master")].effect}' | grep -q NoSchedule ; then
+        TAINT_CONTROL_PLANE=1
+    fi
+}
+
+maybeTaintControlPlaneNodeJoin()
+{
+    maybeSetTaintControlPlane
+    if [ "$TAINT_CONTROL_PLANE" = "1" ]; then
+        makeKubeadmJoinConfigV1Beta2
+        kubeadm join phase control-plane-join mark-control-plane --config /opt/replicated/kubeadm.conf
+    fi
 }
