@@ -254,4 +254,4 @@ metadata:
 data:
   config: |
     [global]
-    osd pool default pg num = 128
+    osd pool default pg num = 64
