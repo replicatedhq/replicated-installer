@@ -255,3 +255,4 @@ data:
   config: |
     [global]
     osd pool default pg num = 64
+    osd pool default pgp num = 64
