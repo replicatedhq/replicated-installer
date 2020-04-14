@@ -319,15 +319,15 @@ $NODE_SELECTOR
         - name: RELEASE_PATCH_SEQUENCE
           value: "$RELEASE_PATCH_SEQUENCE"
         - name: COMPONENT_IMAGES_REGISTRY_ADDRESS_OVERRIDE
-          value: "$REGISTRY_ADDRESS_OVERRIDE"{% if customer_base_url_override %}
-        - name: MARKET_BASE_URL
-          value: "{{customer_base_url_override}}"
+          value: "$REGISTRY_ADDRESS_OVERRIDE"
         - name: REPLICATED_TMP_PATH
           value: /var/lib/replicated-tmp
         - name: SUPPORT_BUNDLES_PATH
           value: /var/lib/replicated-support-bundles
         - name: SUPPORT_BUNDLES_HOST_PATH
-          value: /var/lib/replicated/support-bundles
+          value: /var/lib/replicated/support-bundles{% if customer_base_url_override %}
+        - name: MARKET_BASE_URL
+          value: "{{customer_base_url_override}}"
 {%- endif %}{% if replicated_env == "staging" %}
         - name: MARKET_BASE_URL
           value: {{ customer_base_url_override|default('https://api.staging.replicated.com/market', true) }}
