@@ -960,7 +960,12 @@ $weave_passwd_env
             seLinuxOptions: {}
           serviceAccountName: weave-net
           tolerations:
-            - operator: Exists
+            - key: node-role.kubernetes.io/master
+              effect: NoSchedule
+              operator: Exists
+            - key: node-role.kubernetes.io/master
+              effect: NoSchedule
+              operator: Exists
           volumes:
             - name: weavedb
               hostPath:
