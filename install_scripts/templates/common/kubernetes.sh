@@ -528,7 +528,7 @@ airgapLoadKubernetesCommonImages1153() {
         docker tag 3ee0a397fb56 docker.io/rook/ceph:v1.0.3
         docker tag d6b028bcaada docker.io/rook/ceph:v1.0.6
         docker tag 243030ce8ef0 docker.io/ceph/ceph:v14.2.0-20190410
-        docker tag 1307831d9d2f docker.io/ceph/ceph:v14.2.8-20200305
+        docker tag c1221b5126bc docker.io/ceph/ceph:v14.2.2-20191210
         docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
     )
 }
