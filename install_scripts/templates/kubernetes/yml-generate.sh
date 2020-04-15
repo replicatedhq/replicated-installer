@@ -960,8 +960,7 @@ $weave_passwd_env
             seLinuxOptions: {}
           serviceAccountName: weave-net
           tolerations:
-            - key: node-role.kubernetes.io/master
-              effect: NoSchedule
+            - key: node.kubernetes.io/not-ready
               operator: Exists
             - key: node-role.kubernetes.io/master
               effect: NoSchedule
