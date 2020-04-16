@@ -512,7 +512,7 @@ airgapLoadKubernetesCommonImages1143() {
 airgapLoadKubernetesCommonImages1153() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.15.3-20190820"
+        "quay.io/replicated/k8s-images-common:v1.15.3-20200415"
 
     (
         set -x
@@ -522,7 +522,7 @@ airgapLoadKubernetesCommonImages1153() {
         docker tag f04a043bb67a docker.io/weaveworks/weave-kube:2.5.2
         docker tag 5ce48e0d813c docker.io/weaveworks/weave-npc:2.5.2
         docker tag 8474972641bd docker.io/weaveworks/weaveexec:2.5.2
-        docker tag d5ef411ad932 docker.io/registry:2
+        docker tag 10b45af23ff3 docker.io/registry:2
         docker tag 0246380e4b70 docker.io/envoyproxy/envoy-alpine:v1.10.0
         docker tag 672aff19e6e4 gcr.io/heptio-images/contour:v0.13.0
         docker tag 3ee0a397fb56 docker.io/rook/ceph:v1.0.3
