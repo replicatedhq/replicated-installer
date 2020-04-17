@@ -754,7 +754,12 @@ objectStoreDeploy() {
 
     getYAMLOpts
 
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_object_store_yaml=1 > /tmp/rook-object-store.yml
+    if isRook106Plus; then
+        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_106_object_store_yaml=1 > /tmp/rook-object-store.yml
+    else
+        # do not render limits and requests
+        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_103_object_store_yaml=1 > /tmp/rook-object-store.yml
+    fi
     kubectl apply -f /tmp/rook-object-store.yml
 
     # wait for the object store gateway before creating the user

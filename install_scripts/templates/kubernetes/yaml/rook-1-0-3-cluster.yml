@@ -193,30 +193,6 @@ spec:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
         operator: Exists
-  # https://rook.io/docs/rook/v1.0/ceph-cluster-crd.html#cluster-wide-resources-configuration-settings
-  # https://docs.ceph.com/docs/luminous/start/hardware-recommendations/
-  resources:
-    mon:
-      limits:
-        cpu: "2"
-        memory: 4096Mi
-      requests:
-        cpu: 100m
-        memory: 256Mi
-    mgr:
-      limits:
-        cpu: "2"
-        memory: 4096Mi
-      requests:
-        cpu: 100m
-        memory: 256Mi
-    osd:
-      limits:
-        cpu: "2"
-        memory: 4096Mi
-      requests:
-        cpu: 500m
-        memory: 1024Mi
   storage: # cluster level storage configuration and selection
     # the REK operator will disable this flag and manage the list of nodes explicitly
     useAllNodes: true

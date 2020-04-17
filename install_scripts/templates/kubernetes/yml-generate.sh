@@ -37,7 +37,8 @@ ROOK_08_SYSTEM_YAML=0
 ROOK_106_CLUSTER_YAML=0
 ROOK_103_CLUSTER_YAML=0
 ROOK_08_CLUSTER_YAML=0
-ROOK_OBJECT_STORE_YAML=0
+ROOK_103_OBJECT_STORE_YAML=0
+ROOK_106_OBJECT_STORE_YAML=0
 ROOK_OBJECT_STORE_USER_YAML=0
 STORAGE_CLASS_YAML=0
 HOSTPATH_PROVISIONER_YAML=0
@@ -136,8 +137,12 @@ while [ "$1" != "" ]; do
             ROOK_08_CLUSTER_YAML="$_value"
             REPLICATED_YAML=0
             ;;
-        rook-object-store-yaml|rook_object_store_yaml)
-            ROOK_OBJECT_STORE_YAML="$_value"
+        rook-103-object-store-yaml|rook_103_object_store_yaml)
+            ROOK_103_OBJECT_STORE_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
+        rook-106-object-store-yaml|rook_106_object_store_yaml)
+            ROOK_106_OBJECT_STORE_YAML="$_value"
             REPLICATED_YAML=0
             ;;
         rook-object-store-user-yaml|rook_object_store_user_yaml)
@@ -723,9 +728,15 @@ render_rook08_cluster_yaml() {
 EOF
 }
 
-render_rook_object_store_yaml() {
+render_rook_103_object_store_yaml() {
     cat <<EOF
-{% include 'kubernetes/yaml/rook-1-0-object-store.yml' %}
+{% include 'kubernetes/yaml/rook-1-0-3-object-store.yml' %}
+EOF
+}
+
+render_rook_106_object_store_yaml() {
+    cat <<EOF
+{% include 'kubernetes/yaml/rook-1-0-6-object-store.yml' %}
 EOF
 }
 
@@ -1380,8 +1391,12 @@ if [ "$ROOK_08_CLUSTER_YAML" = "1" ]; then
     render_rook08_cluster_yaml
 fi
 
-if [ "$ROOK_OBJECT_STORE_YAML" = "1" ]; then
-    render_rook_object_store_yaml
+if [ "$ROOK_103_OBJECT_STORE_YAML" = "1" ]; then
+    render_rook_103_object_store_yaml
+fi
+
+if [ "$ROOK_106_OBJECT_STORE_YAML" = "1" ]; then
+    render_rook_106_object_store_yaml
 fi
 
 if [ "$ROOK_OBJECT_STORE_USER_YAML" = "1" ]; then
