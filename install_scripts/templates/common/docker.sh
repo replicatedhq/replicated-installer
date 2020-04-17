@@ -67,10 +67,6 @@ startDocker() {
 #   None
 #######################################
 restartDocker() {
-    if [ "$LSB_DIST" = "amzn" ]; then
-        service docker restart
-        return
-    fi
     case "$INIT_SYSTEM" in
         systemd)
             systemctl daemon-reload
