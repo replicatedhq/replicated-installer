@@ -1005,7 +1005,7 @@ spinnerMasterNodeReady()
 labelMasterNodeDeprecated()
 {
     semverCompare "$REPLICATED_VERSION" "2.26.0"
-    if [ "$SEMVER_COMPARE_RESULT" -ge 0 ]; then
+    if [ "$SEMVER_COMPARE_RESULT" -ge "0" ]; then
         return
     fi
     if kubectl get nodes --show-labels | grep -q "$DAEMON_NODE_KEY" ; then
@@ -1720,7 +1720,7 @@ isRook1()
 #######################################
 # Check if Rook 1.0.3+ is installed
 # Globals:
-#   None
+#   ROOK_VERSION
 # Arguments:
 #   None
 # Returns:
@@ -1728,11 +1728,27 @@ isRook1()
 #######################################
 isRook103Plus()
 {
-    local rookVersion="$(kubectl -n rook-ceph-system get deploy rook-ceph-operator -oyaml 2>/dev/null | grep image: | sed 's/ *image:[^:]*:v//')"
-    if [ -z "$rookVersion" ]; then
+    getRookVersion
+    semverCompare "1.0.3" "$ROOK_VERSION"
+    if [ "$SEMVER_COMPARE_RESULT" -gt "0" ]; then
         return 1
     fi
-    semverCompare "1.0.3" "$rookVersion"
+    return 0
+}
+
+#######################################
+# Check if Rook 1.0.6+ is installed
+# Globals:
+#   ROOK_VERSION
+# Arguments:
+#   None
+# Returns:
+#   None, exits 0 if Rook 1.0.6+ is detected
+#######################################
+isRook106Plus()
+{
+    getRookVersion
+    semverCompare "1.0.6" "$ROOK_VERSION"
     if [ "$SEMVER_COMPARE_RESULT" -gt "0" ]; then
         return 1
     fi
@@ -1742,7 +1758,7 @@ isRook103Plus()
 #######################################
 # Check if Rook 1.0.3 is installed
 # Globals:
-#   None
+#   ROOK_VERSION
 # Arguments:
 #   None
 # Returns:
@@ -1750,11 +1766,26 @@ isRook103Plus()
 #######################################
 isRook103()
 {
-    local rookVersion="$(kubectl -n rook-ceph-system get deploy rook-ceph-operator -oyaml 2>/dev/null | grep image: | sed 's/ *image:[^:]*:v//')"
-    if [ "$rookVersion" = "1.0.3" ]; then
+    getRookVersion
+    if [ "$ROOK_VERSION" = "1.0.3" ]; then
         return 0
     fi
     return 1
+}
+
+#######################################
+# Get rook version
+# Globals:
+#   ROOK_VERSION
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+ROOK_VERSION=
+getRookVersion()
+{
+    ROOK_VERSION="$(kubectl -n rook-ceph-system get deploy rook-ceph-operator -oyaml 2>/dev/null | grep image: | sed 's/ *image:[^:]*:v//')"
 }
 
 #######################################
