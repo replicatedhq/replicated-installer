@@ -1737,6 +1737,24 @@ isRook103Plus()
 }
 
 #######################################
+# Check if Rook is installed
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None, exits 0 if Rook is installed
+#######################################
+isRookInstalled()
+{
+    if kubectl get ns rook-ceph &>/dev/null ; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+#######################################
 # Check if Rook 1.0.6+ is installed
 # Globals:
 #   ROOK_VERSION
