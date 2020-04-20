@@ -1337,23 +1337,25 @@ fi
 
 installCNIPlugins
 
-semverCompare "$REPLICATED_VERSION" "2.43.0"
-# support for tainting masters added in 2.43.0
-if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
-    logWarn "Will not taint contol plane, Replicated version 2.43.0+ required"
-    TAINT_CONTROL_PLANE=0
-elif isRookInstalled && ! isRook106Plus; then
-    # we do not upgrade rook ceph and tolerations do not seem to work well on rook v1.0.3
-    # This happens before we install rook
-    logWarn "Will not taint contol plane, Rook 1.0.6+ required"
-    TAINT_CONTROL_PLANE=0
-else
-    getKernelVersion
-    # Rook 1.0.4+ does not seem to work on linux kernel 4 less than or equal 4.5
-    # This happens before we install rook
-    if [ "$KERNEL_MAJOR" -eq "4" ] && [ "$KERNEL_MINOR" -lt "5" ]; then
-        logWarn "Will not taint contol plane, Kernel version 4.5+ required"
+if [ "$TAINT_CONTROL_PLANE" = "1" ]; then
+    semverCompare "$REPLICATED_VERSION" "2.43.0"
+    # support for tainting masters added in 2.43.0
+    if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
+        logWarn "Will not taint contol plane, Replicated version 2.43.0+ required"
         TAINT_CONTROL_PLANE=0
+    elif isRookInstalled && ! isRook106Plus; then
+        # we do not upgrade rook ceph and tolerations do not seem to work well on rook v1.0.3
+        # This happens before we install rook
+        logWarn "Will not taint contol plane, Rook 1.0.6+ required"
+        TAINT_CONTROL_PLANE=0
+    else
+        getKernelVersion
+        # Rook 1.0.4+ does not seem to work on linux kernel 4 less than or equal 4.5
+        # This happens before we install rook
+        if [ "$KERNEL_MAJOR" -eq "4" ] && [ "$KERNEL_MINOR" -lt "5" ]; then
+            logWarn "Will not taint contol plane, Kernel version 4.5+ required"
+            TAINT_CONTROL_PLANE=0
+        fi
     fi
 fi
 
