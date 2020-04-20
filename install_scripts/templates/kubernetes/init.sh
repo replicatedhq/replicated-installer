@@ -1342,8 +1342,9 @@ semverCompare "$REPLICATED_VERSION" "2.43.0"
 if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
     logWarn "Will not taint contol plane, Replicated version 2.43.0+ required"
     TAINT_CONTROL_PLANE=0
-elif ! isRook106Plus; then
+elif isRookInstalled && ! isRook106Plus; then
     # we do not upgrade rook ceph and tolerations do not seem to work well on rook v1.0.3
+    # This happens before we install rook
     logWarn "Will not taint contol plane, Rook 1.0.6+ required"
     TAINT_CONTROL_PLANE=0
 else
