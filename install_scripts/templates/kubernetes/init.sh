@@ -608,7 +608,20 @@ rookDeploy() {
         return
     fi
 
+    local use_rook_103=0
     if isRook103; then
+        use_rook_103=1
+    else
+        getKernelVersion
+        # Rook 1.0.4+ does not seem to work on linux kernel 4 less than or equal 4.5
+        # https://github.com/rook/rook/issues/3751
+        # https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1728739
+        if [ "$KERNEL_MAJOR" -eq "4" ] && [ "$KERNEL_MINOR" -lt "5" ]; then
+            use_rook_103=1
+        fi
+    fi
+
+    if [ "$use_rook_103" = "1" ]; then
         # do not upgrade rook/ceph
         sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_103_system_yaml=1 > /tmp/rook-ceph-system.yml
         sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_103_cluster_yaml=1 > /tmp/rook-ceph.yml
@@ -1327,10 +1340,20 @@ installCNIPlugins
 semverCompare "$REPLICATED_VERSION" "2.43.0"
 # support for tainting masters added in 2.43.0
 if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
+    logWarn "Will not taint contol plane, Replicated version 2.43.0+ required"
     TAINT_CONTROL_PLANE=0
-elif isRook103; then
+elif ! isRook106Plus; then
     # we do not upgrade rook ceph and tolerations do not seem to work well on rook v1.0.3
+    logWarn "Will not taint contol plane, Rook 1.0.6+ required"
     TAINT_CONTROL_PLANE=0
+else
+    getKernelVersion
+    # Rook 1.0.4+ does not seem to work on linux kernel 4 less than or equal 4.5
+    # This happens before we install rook
+    if [ "$KERNEL_MAJOR" -eq "4" ] && [ "$KERNEL_MINOR" -lt "5" ]; then
+        logWarn "Will not taint contol plane, Kernel version 4.5+ required"
+        TAINT_CONTROL_PLANE=0
+    fi
 fi
 
 maybeGenerateBootstrapToken

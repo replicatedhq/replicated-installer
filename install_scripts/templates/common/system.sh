@@ -27,6 +27,27 @@ require64Bit() {
 }
 
 #######################################
+# Detects the Linux kernel version.
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   KERNEL_MAJOR
+#   KERNEL_MINOR
+#   KERNEL_PATCH
+#######################################
+KERNEL_MAJOR=
+KERNEL_MINOR=
+KERNEL_PATCH=
+getKernelVersion() {
+    semverParse "$(uname -r)"
+    KERNEL_MAJOR=$major
+    KERNEL_MINOR=$minor
+    KERNEL_PATCH=$patch
+}
+
+#######################################
 # Requires that the script be run with the root user.
 # Globals:
 #   None
