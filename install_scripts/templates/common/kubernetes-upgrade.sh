@@ -247,7 +247,11 @@ runUpgradeScriptOnAllRemoteNodes() {
             if [ -n "$channelName" ]; then
                 prefix="/$channelName"
             fi
-            printf "$URLGET_CMD {{ replicated_install_url }}${prefix}/kubernetes-update-apiserver-certs | sudo bash -s \\ \n"
+            if [ "$AIRGAP" = "1" ]; then
+                printf "cat kubernetes-update-apiserver-certs.sh | sudo bash -s \\ \n"
+            else
+                printf "$URLGET_CMD {{ replicated_install_url }}${prefix}/kubernetes-update-apiserver-certs | sudo bash -s \\ \n"
+            fi
             printf "    load-balancer-address=$LOAD_BALANCER_ADDRESS"
             if [ -n "$LAST_LOAD_BALANCER_ADDRESS" ]; then
                 printf " \\ \n    additional-sans=$LAST_LOAD_BALANCER_ADDRESS"
