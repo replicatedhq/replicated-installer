@@ -171,7 +171,7 @@ _installDocker() {
             yum install -y -q container-selinux 2> /dev/null || true
             # verify installation success
             if yum list installed "container-selinux" >/dev/null 2>&1; then
-                printf "{$GREEN}Installed container-selinux from existing sources{$NC}\n"
+                printf "${GREEN}Installed container-selinux from existing sources${NC}\n"
             else
                 if [ "$DIST_VERSION" = "7.6" ]; then
                     # Install container-selinux from mirror.centos.org
