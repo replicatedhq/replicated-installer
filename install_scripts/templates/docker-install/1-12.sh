@@ -452,10 +452,15 @@ do_install() {
 			;;
 
 		fedora|centos|redhat|oraclelinux)
-			if [ "${lsb_dist}" = "redhat" ]; then
-				# we use the centos repository for both redhat and centos releases
-				lsb_dist='centos'
+			if ([ "${lsb_dist}" = "redhat" ] || [ "${lsb_dist}" = "centos" ]) && [ "${dist_version}" = "6" ]; then
+				(
+					set -x
+					$sh_c "sleep 3; yum install -y -q --setopt=obsoletes=0 https://get.docker.com/rpm/1.7.1/centos-6/RPMS/x86_64/docker-engine-{{ rpm_version }}.x86_64.rpm"
+				)
+				echo_docker_as_nonroot
+				exit 0
 			fi
+
 			$sh_c "cat >/etc/yum.repos.d/docker-${repo}.repo" <<-EOF
 			[docker-${repo}-repo]
 			name=Docker ${repo} Repository
@@ -478,6 +483,7 @@ do_install() {
 			echo_docker_as_nonroot
 			exit 0
 			;;
+
 		gentoo)
 			if [ "$url" = "https://test.docker.com/" ]; then
 				# intentionally mixed spaces and tabs here -- tabs are stripped by "<<-'EOF'", spaces are kept in the output
