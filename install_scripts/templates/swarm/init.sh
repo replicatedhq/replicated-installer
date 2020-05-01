@@ -16,6 +16,7 @@ SKIP_DOCKER_PULL=0
 EXCLUDE_SUBNETS=
 SWARM_ADVERTISE_ADDR=
 SWARM_LISTEN_ADDR=
+SWARM_DEFAULT_ADDRESS_POOL=
 SWARM_NODE_ADDRESS=
 SWARM_STACK_NAMESPACE=replicated
 TLS_CERT_PATH=
@@ -71,7 +72,7 @@ initSwarm() {
     if ! docker node ls 2>/dev/null | grep -q "Leader"; then
         echo "Initializing the swarm"
         set +e
-        docker swarm init --advertise-addr="$SWARM_ADVERTISE_ADDR" --listen-addr="$SWARM_LISTEN_ADDR"
+        docker swarm init --advertise-addr="$SWARM_ADVERTISE_ADDR" --listen-addr="$SWARM_LISTEN_ADDR" --default-addr-pool="$SWARM_DEFAULT_ADDRESS_POOL"
         _status=$?
         set -e
         if [ "$_status" -ne "0" ]; then
@@ -325,6 +326,9 @@ while [ "$1" != "" ]; do
             ;;
         swarm-listen-addr|swarm_listen_addr)
             SWARM_LISTEN_ADDR="$_value"
+            ;;
+        swarm-default-address-pool|swarm_default_address_pool)
+            SWARM_DEFAULT_ADDRESS_POOL="$_value"
             ;;
         swarm-stack-namespace|swarm_stack_namespace)
             SWARM_STACK_NAMESPACE="$_value"
