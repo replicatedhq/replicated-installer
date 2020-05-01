@@ -70,9 +70,16 @@ set -e
 initSwarm() {
     # init swarm (need for service command); if not created
     if ! docker node ls 2>/dev/null | grep -q "Leader"; then
+        local initAdditionalArgs=
+        if [ -n "$SWARM_DEFAULT_ADDRESS_POOL" ]; then
+            initAdditionalArgs=$initAdditionalArgs" --default-addr-pool=$SWARM_DEFAULT_ADDRESS_POOL"
+        fi
+
         echo "Initializing the swarm"
         set +e
-        docker swarm init --advertise-addr="$SWARM_ADVERTISE_ADDR" --listen-addr="$SWARM_LISTEN_ADDR" --default-addr-pool="$SWARM_DEFAULT_ADDRESS_POOL"
+        set -x
+        docker swarm init --advertise-addr="$SWARM_ADVERTISE_ADDR" --listen-addr="$SWARM_LISTEN_ADDR" $initAdditionalArgs
+        set +x
         _status=$?
         set -e
         if [ "$_status" -ne "0" ]; then
