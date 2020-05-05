@@ -1930,6 +1930,17 @@ KUBECONFIG=/etc/kubernetes/admin.conf kubectl scale deploy replicated-shared-fs-
 EOF
     fi
 
+    if isMasterNode; then
+        cat >>/opt/replicated/shutdown.sh <<EOF
+DAEMON_SELECTOR=\$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get deploy replicated -ojsonpath='{.spec.template.spec.nodeSelector.kubernetes\.io\/hostname }')
+if [ "\$DAEMON_SELECTOR" = "\$(hostname | tr '[:upper:]' '[:lower:]')" ]; then
+    KUBECONFIG=/etc/kubernetes/admin.conf kubectl patch deploy replicated --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/nodeSelector", "value":{"node-role.kubernetes.io/master":""}}]'
+fi
+
+EOF
+    fi
+
+
     cat >>/opt/replicated/shutdown.sh <<EOF
 # delete local pods with PVCs
 while read -r uid; do
