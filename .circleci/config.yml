@@ -124,16 +124,6 @@ jobs:
             cd bundles/k8s-rhel7
             make $K8S_VERSION
 
-  build_images:
-    <<: *defaults
-    steps:
-      - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
-      - run: echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin
-      - run: make -C images build
-      - run: make -C images push
-
   build_staging_docker_image:
     <<: *defaults
     steps:
@@ -221,10 +211,6 @@ workflows:
           filters:
             branches:
               ignore: master
-      - build_images:
-          filters:
-            branches:
-              ignore: master
 
   master:
     jobs:
@@ -236,9 +222,6 @@ workflows:
       - test:
           requires:
             - is_upstream
-      - build_images:
-          requires:
-            - is_upstream
       - build_staging_docker_image:
           requires:
             - is_upstream
@@ -246,7 +229,6 @@ workflows:
       - deploy_staging_eks:
           requires:
             - test
-            - build_images
             - build_staging_docker_image
 
   release:
@@ -259,10 +241,6 @@ workflows:
               ignore: /.*/
 
       - test:
-          <<: *tags_filter
-          requires:
-            - is_upstream
-      - build_images:
           <<: *tags_filter
           requires:
             - is_upstream
@@ -280,7 +258,6 @@ workflows:
           <<: *tags_filter
           requires:
             - test
-            - build_images
             - build_staging_docker_image
 
       - deploy_staging_eks:
