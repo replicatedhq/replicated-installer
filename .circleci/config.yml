@@ -221,6 +221,10 @@ workflows:
           filters:
             branches:
               ignore: master
+      - build_images:
+          filters:
+            branches:
+              ignore: master
 
   master:
     jobs:
@@ -232,6 +236,9 @@ workflows:
       - test:
           requires:
             - is_upstream
+      - build_images:
+          requires:
+            - is_upstream
       - build_staging_docker_image:
           requires:
             - is_upstream
@@ -239,6 +246,7 @@ workflows:
       - deploy_staging_eks:
           requires:
             - test
+            - build_images
             - build_staging_docker_image
 
   release:
@@ -251,6 +259,10 @@ workflows:
               ignore: /.*/
 
       - test:
+          <<: *tags_filter
+          requires:
+            - is_upstream
+      - build_images:
           <<: *tags_filter
           requires:
             - is_upstream
@@ -268,6 +280,7 @@ workflows:
           <<: *tags_filter
           requires:
             - test
+            - build_images
             - build_staging_docker_image
 
       - deploy_staging_eks:

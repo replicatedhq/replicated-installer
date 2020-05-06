@@ -1,8 +1,7 @@
 SHELL := /bin/bash
 
-DOCKER_USER ?= replicated
-DOCKER_IMAGE ?= weave-kube
-DOCKER_TAG ?= 2.5.2-20200505
+DOCKER_IMAGE := weave-kube
+DOCKER_TAG := 2.5.2-20200505
 
 .PHONY: build
 build:
