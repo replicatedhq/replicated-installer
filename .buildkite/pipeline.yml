@@ -1,0 +1,3 @@
+steps:
+  - commands:
+      - make -C images/weave-kube/2.5.2/

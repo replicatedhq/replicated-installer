@@ -6,6 +6,10 @@ export DOCKER_USER := replicated
 build:
 	$(MAKE) -C weave-kube/2.5.2 build
 
+.PHONY: scan
+scan:
+	$(MAKE) -C weave-kube/2.5.2 scan
+
 .PHONY: push
 push:
 	$(MAKE) -C weave-kube/2.5.2 push
