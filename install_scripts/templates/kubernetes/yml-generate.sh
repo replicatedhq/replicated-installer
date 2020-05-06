@@ -918,7 +918,7 @@ items:
                 - name: EXTRA_ARGS
                   value: "--log-level=info" # default log level is debug
 $weave_passwd_env
-              image: weaveworks/weave-kube:2.5.2
+              image: replicated/weave-kube:2.5.2
               livenessProbe:
                 httpGet:
                   host: 127.0.0.1

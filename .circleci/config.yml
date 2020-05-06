@@ -124,6 +124,16 @@ jobs:
             cd bundles/k8s-rhel7
             make $K8S_VERSION
 
+  build_images:
+    <<: *defaults
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run: echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin
+      - run: make -C images build
+      - run: make -C images push
+
   build_staging_docker_image:
     <<: *defaults
     steps:
