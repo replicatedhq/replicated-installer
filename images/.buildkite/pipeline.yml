@@ -1,3 +1,4 @@
 steps:
   - commands:
-      - make -C $IMAGE_TARGET
+      - make -C images/$IMAGE_TARGET
+    if: build.env("IMAGE_TARGET") != ""
