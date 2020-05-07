@@ -520,7 +520,7 @@ airgapLoadKubernetesCommonImages1153() {
         docker tag da86e6ba6ca1 k8s.gcr.io/pause:3.1
         docker tag eb516548c180 k8s.gcr.io/coredns:1.3.1
         docker tag cab675c30d57 docker.io/replicated/weave-kube:2.5.2-20200505
-        docker tag 5ce48e0d813c docker.io/weaveworks/weave-npc:2.5.2
+        docker tag TODO docker.io/replicated/weave-npc:2.5.2-20200507
         docker tag 8474972641bd docker.io/weaveworks/weaveexec:2.5.2
         docker tag 10b45af23ff3 docker.io/registry:2
         docker tag 0246380e4b70 docker.io/envoyproxy/envoy-alpine:v1.10.0

@@ -954,7 +954,7 @@ $weave_passwd_env
                     fieldRef:
                       apiVersion: v1
                       fieldPath: spec.nodeName
-              image: weaveworks/weave-npc:2.5.2
+              image: replicated/weave-npc:2.5.2-20200507
               # https://www.weave.works/docs/net/latest/kubernetes/kube-addon/#cpu-and-memory-requirements
               resources:
                 requests:
