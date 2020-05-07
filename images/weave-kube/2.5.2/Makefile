@@ -14,7 +14,7 @@ build:
 export ANCHORE_VERSION
 
 .PHONY: scan
-scan: export POLICY_FAILURE = 1
+scan: export POLICY_FAILURE = true
 scan: export TIMEOUT = 300
 scan: export POLICY_BUNDLE_PATH = ../../policy-bundle.json
 scan: export DOCKERFILE_PATH = ./Dockerfile

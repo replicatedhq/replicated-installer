@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 run_cmd="curl -s https://ci-tools.anchore.io/inline_scan-${ANCHORE_VERSION} | bash -s -- -r -t $TIMEOUT"
 if $POLICY_FAILURE; then
@@ -18,4 +18,4 @@ else
 fi
 run_cmd="$run_cmd $IMAGE_NAME"
 docker pull docker.io/anchore/inline-scan:${ANCHORE_VERSION}
-eval "$run_cmd"
+eval "set -x; $run_cmd"
