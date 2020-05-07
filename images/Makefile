@@ -1,15 +1,12 @@
 SHELL := /bin/bash
 
-export DOCKER_USER := replicated
+export BUILDKITE_ACCESS_TOKEN
+export IMAGE_TARGET
 
-.PHONY: build
-build:
-	$(MAKE) -C weave-kube/2.5.2 build
+export COMMIT := HEAD
+export BRANCH := master
+export MESSAGE = Build image $(IMAGE_TARGET)
 
-.PHONY: scan
-scan:
-	$(MAKE) -C weave-kube/2.5.2 scan
-
-.PHONY: push
-push:
-	$(MAKE) -C weave-kube/2.5.2 push
+.PHONY: build_ci
+build_ci:
+	./scripts/build_ci.sh

@@ -20,7 +20,7 @@ scan: export POLICY_BUNDLE_PATH = ../../policy-bundle.json
 scan: export DOCKERFILE_PATH = ./Dockerfile
 scan: export IMAGE_NAME = $(WEAVE_KUBE_252)
 scan:
-	bash ../../inline_scan.sh
+	bash ../../scripts/inline_scan.sh
 
 .PHONY: push
 push:
