@@ -1,5 +1,7 @@
 DATE=$(shell date +%Y%m%d)
 
+include ../../images/manifest.mk
+
 all: deps update_k8s_manifest build retag push
 
 deps:

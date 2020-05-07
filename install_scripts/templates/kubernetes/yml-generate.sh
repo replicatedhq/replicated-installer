@@ -918,7 +918,7 @@ items:
                 - name: EXTRA_ARGS
                   value: "--log-level=info" # default log level is debug
 $weave_passwd_env
-              image: weaveworks/weave-kube:2.5.2
+              image: replicated/weave-kube:2.5.2-20200505
               livenessProbe:
                 httpGet:
                   host: 127.0.0.1
@@ -954,7 +954,7 @@ $weave_passwd_env
                     fieldRef:
                       apiVersion: v1
                       fieldPath: spec.nodeName
-              image: weaveworks/weave-npc:2.5.2
+              image: replicated/weave-npc:2.5.2-20200507
               # https://www.weave.works/docs/net/latest/kubernetes/kube-addon/#cpu-and-memory-requirements
               resources:
                 requests:

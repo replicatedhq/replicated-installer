@@ -1,0 +1,43 @@
+{
+  "id": "platform_default_bundle01",
+  "version": "1_0",
+  "name": "Platform Default Bundle",
+  "description": "",
+  "last_updated": 1586869510,
+  "whitelisted_images": [],
+  "blacklisted_images": [],
+  "mappings": [
+    {
+      "id": "platform_default_policy_mapping01",
+      "name": "default",
+      "registry": "*",
+      "repository": "*",
+      "image": { "type": "tag", "value": "*" },
+      "policy_ids": [ "platform_default_policy01" ],
+      "whitelist_ids": [ ]
+    }
+  ],
+  "whitelists": [],
+  "policies": [
+    {
+      "id": "platform_default_policy01",
+      "name": "Platform Default Policy",
+      "version": "1_0",
+      "comment": "",
+      "rules": [
+        {
+          "id": "d0a57935-f81e-4df9-9bf8-448ee3307554",
+          "action": "STOP",
+          "gate": "vulnerabilities",
+          "params": [
+            { "name": "package_type", "value": "os" },
+            { "name": "severity_comparison", "value": ">=" },
+            { "name": "severity", "value": "unknown" },
+            { "name": "fix_available", "value": "true" }
+          ],
+          "trigger": "package"
+        }
+      ]
+    }
+  ]
+}
