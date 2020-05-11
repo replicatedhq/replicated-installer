@@ -10,7 +10,7 @@ from flask import request, render_template, Response
 
 from . import db, param
 
-_default_docker_version = '18.09.2'
+_default_docker_version = '19.03.8'
 _default_kubernetes_version = '1.15.3'
 
 
@@ -439,7 +439,7 @@ def base64_encode(data):
 
 def get_docker_deb_pkg_version(docker_version, lsb_dist, dist_version):
     major, minor, patch = map(int, docker_version.split('.'))
-    if major == 18:
+    if major == 18 or major == 19:
         return ''  # unused
     elif major == 1:
         if minor < 12 or (minor == 12 and patch <= 3):
@@ -457,7 +457,7 @@ def get_docker_deb_pkg_version(docker_version, lsb_dist, dist_version):
 
 def get_docker_rpm_pkg_version(docker_version, lsb_dist, dist_version):
     major, minor, _ = map(int, docker_version.split('.'))
-    if major == 18:
+    if major == 18 or major == 19:
         return ''  # unused
     elif major == 1:
         if lsb_dist == 'ol' or (lsb_dist in ('centos', 'rhel')

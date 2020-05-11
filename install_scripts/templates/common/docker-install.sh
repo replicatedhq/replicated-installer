@@ -119,16 +119,16 @@ _installDocker() {
         printf "${YELLOW}Pinning Docker version not supported on Amazon Linux${NC}\n"
         printf "${GREEN}Installing Docker from Yum repository${NC}\n"
 
-        # 2019-01-07
-        # Amazon Linux has Docker 17.12.1ce and Docker 18.06.1ce available.
+        # 2020-05-11
+        # Amazon Linux has Docker 17.12.1ce and Docker 18.09.9ce available.
         compareDockerVersions "18.0.0" "${1}"
         if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
             if commandExists "amazon-linux-extras"; then
                 # NOTE: need to patch here with 18.09.2 or 18.06.2 when available.
-                ( set -x; amazon-linux-extras install -y -q docker=18.06.1 || amazon-linux-extras install docker=18.06.1 || \
+                ( set -x; amazon-linux-extras install -y -q docker=18.09.9 || amazon-linux-extras install docker=18.09.9 || \
                     amazon-linux-extras install -y -q docker || amazon-linux-extras install docker )
             else
-                ( set -x; yum install -y -q docker-18.06.1ce || yum install -y -q docker )
+                ( set -x; yum install -y -q docker-18.09.9ce || yum install -y -q docker )
             fi
         else
             if commandExists "amazon-linux-extras"; then
@@ -146,14 +146,18 @@ _installDocker() {
         printf "${YELLOW}Pinning Docker version not supported on SUSE Linux${NC}\n"
         printf "${GREEN}Installing Docker from Zypper repository${NC}\n"
 
-        # 2019-01-07
-        # SUSE has Docker 17.09.1_ce and Docker 18.09.0_ce available.
-        # NOTE: need to patch here with 18.09.2 or 18.06.2 when available.
-        compareDockerVersions "18.0.0" "${1}"
+        # 2020-05-11
+        # SUSE has Docker 17.09.1_ce, 18.09.7_ce and 19.03.5 available.
+        compareDockerVersions "19.0.0" "${1}"
         if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
-            ( set -x; zypper -n install "docker=18.06.1_ce" || zypper -n install docker )
+            ( set -x; zypper -n install "docker=19.03.5_ce" || zypper -n install docker )
         else
-            ( set -x; zypper -n install "docker=17.09.1_ce" || zypper -n install docker )
+            compareDockerVersions "18.0.0" "${1}"
+            if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
+                ( set -x; zypper -n install "docker=18.09.7_ce" || zypper -n install docker )
+            else
+                ( set -x; zypper -n install "docker=17.09.1_ce" || zypper -n install docker )
+            fi
         fi
 
         service docker start || true
