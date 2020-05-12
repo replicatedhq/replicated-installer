@@ -1478,6 +1478,7 @@ imageRepository: docker.io/replicated
 controllerManager: {}
 dns:
   type: CoreDNS
+  imageRepository: k8s.gcr.io
 etcd:
   local:
     dataDir: /var/lib/etcd
