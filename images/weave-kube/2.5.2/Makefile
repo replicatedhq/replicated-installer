@@ -1,7 +1,6 @@
 SHELL := /bin/bash
 
-ANCHORE_VERSION := v0.7.1
-
+include ../../common.mk
 include ../../manifest.mk
 
 .PHONY: all
@@ -10,8 +9,6 @@ all: build scan push
 .PHONY: build
 build:
 	docker build --pull -t $(WEAVE_KUBE_252) .
-
-export ANCHORE_VERSION
 
 .PHONY: scan
 scan: export POLICY_FAILURE = true
