@@ -8,7 +8,7 @@ all: build scan push
 
 .PHONY: build
 build:
-	@echo nothing to do
+	docker pull $(PAUSE_31)
 
 .PHONY: scan
 scan: export POLICY_FAILURE = true
