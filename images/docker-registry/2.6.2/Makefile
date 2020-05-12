@@ -8,16 +8,16 @@ all: build scan push
 
 .PHONY: build
 build:
-	docker pull $(REPLICATED_HOSTPATH_PROVISIONER_CD1D272)
+	docker build --pull -t $(REGISTRY_262) .
 
 .PHONY: scan
 scan: export POLICY_FAILURE = true
 scan: export TIMEOUT = 300
 scan: export POLICY_BUNDLE_PATH = ../../policy-bundle.json
-scan: export IMAGE_NAME = $(REPLICATED_HOSTPATH_PROVISIONER_CD1D272)
+scan: export IMAGE_NAME = $(REGISTRY_262)
 scan:
 	bash ../../scripts/inline_scan.sh
 
 .PHONY: push
 push:
-	@echo nothing to do
+	docker push $(REGISTRY_262)

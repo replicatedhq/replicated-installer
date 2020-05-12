@@ -1145,7 +1145,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
       - name: docker-registry
-        image: registry:2
+        image: replicated/docker-registry:2.6.2-20200512
         imagePullPolicy: IfNotPresent
         command:
         - /bin/registry
@@ -1253,7 +1253,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
       - name: docker-registry
-        image: registry:2
+        image: replicated/docker-registry:2.6.2-20200512
         imagePullPolicy: IfNotPresent
         command:
         - /bin/registry

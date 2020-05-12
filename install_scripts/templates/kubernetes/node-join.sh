@@ -469,8 +469,8 @@ if [ "$AIRGAP" = "1" ]; then
     fi
     addInsecureRegistry "$SERVICE_CIDR"
 else
-    docker pull registry:2.6.2
-    docker tag registry:2.6.2 registry:2
+    docker pull replicated/docker-registry:2.6.2-20200512
+    docker tag replicated/docker-registry:2.6.2-20200512 registry:2
 fi
 
 loadIPVSKubeProxyModules

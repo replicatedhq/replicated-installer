@@ -8,7 +8,7 @@ all: build scan push
 
 .PHONY: build
 build:
-	@echo nothing to do
+	docker pull $(CONTOUR_V0130)
 
 .PHONY: scan
 scan: export POLICY_FAILURE = true
