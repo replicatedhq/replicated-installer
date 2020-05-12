@@ -10,6 +10,9 @@ steps:
       - make -C images/pause/3.1/ build scan
 
   - commands:
+      - make -C images/docker-registry/2.6.2/ build scan
+
+  - commands:
       - make -C images/replicated-hostpath-provisioner/cd1d272/ build scan
 
   - commands:
