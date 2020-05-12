@@ -1332,7 +1332,6 @@ if [ "$AIRGAP" = "1" ]; then
     airgapLoadKubernetesControlImages "$KUBERNETES_VERSION"
 else
     docker pull replicated/docker-registry:2.6.2-20200512
-    docker tag replicated/docker-registry:2.6.2-20200512 registry:2
 fi
 
 installCNIPlugins

@@ -917,6 +917,8 @@ items:
                   value: $IP_ALLOC_RANGE
                 - name: EXTRA_ARGS
                   value: "--log-level=info" # default log level is debug
+                - name: EXEC_IMAGE
+                  value: replicated/weaveexec:2.5.2-20200512
 $weave_passwd_env
               image: replicated/weave-kube:2.5.2-20200505
               livenessProbe:
@@ -954,6 +956,8 @@ $weave_passwd_env
                     fieldRef:
                       apiVersion: v1
                       fieldPath: spec.nodeName
+                - name: EXEC_IMAGE
+                  value: replicated/weaveexec:2.5.2-20200512
               image: replicated/weave-npc:2.5.2-20200507
               # https://www.weave.works/docs/net/latest/kubernetes/kube-addon/#cpu-and-memory-requirements
               resources:

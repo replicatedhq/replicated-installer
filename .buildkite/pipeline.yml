@@ -16,6 +16,9 @@ steps:
       - make -C images/replicated-hostpath-provisioner/cd1d272/ build scan
 
   - commands:
+      - make -C images/weaveexec/2.5.2/ build scan
+
+  - commands:
       - make -C images/weave-kube/2.5.2/ build scan
 
   - commands:

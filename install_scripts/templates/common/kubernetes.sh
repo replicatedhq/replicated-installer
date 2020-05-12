@@ -521,7 +521,7 @@ airgapLoadKubernetesCommonImages1153() {
         docker tag eb516548c180 k8s.gcr.io/coredns:1.3.1
         docker tag cab675c30d57 docker.io/replicated/weave-kube:2.5.2-20200505
         docker tag ae0e3813615e docker.io/replicated/weave-npc:2.5.2-20200507
-        docker tag 8474972641bd docker.io/weaveworks/weaveexec:2.5.2
+        docker tag 8474972641bd docker.io/replicated/weaveexec:2.5.2-20200512
         docker tag ad8962360f2f docker.io/replicated/docker-registry:2.6.2-20200512
         docker tag ad8962360f2f docker.io/registry:2
         docker tag 0246380e4b70 docker.io/envoyproxy/envoy-alpine:v1.10.0
@@ -1245,15 +1245,15 @@ weave_reset()
     DATAPATH=datapath
     CONTAINER_IFNAME=ethwe
 
-    WEAVE_TAG=2.5.1
+    WEAVE_IMAGE=replicated/weaveexec:2.5.2-20200512
     DOCKER_BRIDGE=docker0
 
     # if we never unpacked/pulled the weave image, its unlikely we need to do any of this
-    if ! dockerImageExists "weaveworks/weaveexec:${WEAVE_TAG}"; then
+    if ! dockerImageExists "$WEAVE_IMAGE"; then
         return
     fi
 
-    DOCKER_BRIDGE_IP=$(docker run --rm --pid host --net host --privileged -v /var/run/docker.sock:/var/run/docker.sock --entrypoint=/usr/bin/weaveutil weaveworks/weaveexec:$WEAVE_TAG bridge-ip $DOCKER_BRIDGE)
+    DOCKER_BRIDGE_IP=$(docker run --rm --pid host --net host --privileged -v /var/run/docker.sock:/var/run/docker.sock --entrypoint=/usr/bin/weaveutil $WEAVE_IMAGE bridge-ip $DOCKER_BRIDGE)
 
 
     for NETDEV in $BRIDGE $DATAPATH ; do
@@ -1261,7 +1261,7 @@ weave_reset()
             if [ -d /sys/class/net/$NETDEV/bridge ] ; then
                 ip link del $NETDEV
             else
-                docker run --rm --pid host --net host --privileged -v /var/run/docker.sock:/var/run/docker.sock --entrypoint=/usr/bin/weaveutil weaveworks/weaveexec:$WEAVE_TAG delete-datapath $NETDEV
+                docker run --rm --pid host --net host --privileged -v /var/run/docker.sock:/var/run/docker.sock --entrypoint=/usr/bin/weaveutil $WEAVE_IMAGE delete-datapath $NETDEV
             fi
         fi
     done
