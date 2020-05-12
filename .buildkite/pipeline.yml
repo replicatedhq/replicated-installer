@@ -1,4 +1,17 @@
 steps:
+
+  - commands:
+      - make -C images/contour/v0.13.0/ build scan
+
+  - commands:
+      - make -C images/coredns/1.3.1/ build scan
+
+  - commands:
+      - make -C images/pause/3.1/ build scan
+
+  - commands:
+      - make -C images/replicated-hostpath-provisioner/cd1d272/ build scan
+
   - commands:
       - make -C images/weave-kube/2.5.2/ build scan
 
