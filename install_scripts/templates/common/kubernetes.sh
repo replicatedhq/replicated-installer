@@ -1244,23 +1244,25 @@ weave_reset()
     DATAPATH=datapath
     CONTAINER_IFNAME=ethwe
 
-    WEAVE_IMAGE=replicated/weaveexec:2.5.2-20200512
+    WEAVEKUBE_IMAGE=replicated/weave-kube:2.5.2-20200505
+    WEAVEEXEC_IMAGE=replicated/weaveexec:2.5.2-20200512
     DOCKER_BRIDGE=docker0
 
     # if we never unpacked/pulled the weave image, its unlikely we need to do any of this
-    if ! dockerImageExists "$WEAVE_IMAGE"; then
+    if ! dockerImageExists "$WEAVEKUBE_IMAGE"; then
         return
     fi
 
-    DOCKER_BRIDGE_IP=$(docker run --rm --pid host --net host --privileged -v /var/run/docker.sock:/var/run/docker.sock --entrypoint=/usr/bin/weaveutil $WEAVE_IMAGE bridge-ip $DOCKER_BRIDGE)
+    docker pull "$WEAVEEXEC_IMAGE"
 
+    DOCKER_BRIDGE_IP=$(docker run --rm --pid host --net host --privileged -v /var/run/docker.sock:/var/run/docker.sock --entrypoint=/usr/bin/weaveutil $WEAVEEXEC_IMAGE bridge-ip $DOCKER_BRIDGE)
 
     for NETDEV in $BRIDGE $DATAPATH ; do
         if [ -d /sys/class/net/$NETDEV ] ; then
             if [ -d /sys/class/net/$NETDEV/bridge ] ; then
                 ip link del $NETDEV
             else
-                docker run --rm --pid host --net host --privileged -v /var/run/docker.sock:/var/run/docker.sock --entrypoint=/usr/bin/weaveutil $WEAVE_IMAGE delete-datapath $NETDEV
+                docker run --rm --pid host --net host --privileged -v /var/run/docker.sock:/var/run/docker.sock --entrypoint=/usr/bin/weaveutil $WEAVEEXEC_IMAGE delete-datapath $NETDEV
             fi
         fi
     done
