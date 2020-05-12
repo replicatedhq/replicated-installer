@@ -13,7 +13,6 @@ set -e
 repo=k8s.gcr.io
 kubernetes_version=v1.15.3
 etcd_version=3.3.10
-weave_version=2.5.2
 envoy_version=v1.10.0
 contour_version=v0.13.0
 rook_103_version=v1.0.3
@@ -27,7 +26,7 @@ common="
 	$COREDNS_131
 	$WEAVE_KUBE_252
 	$WEAVE_NPC_252
-	weaveworks/weaveexec:$weave_version
+	$WEAVEEXEC_252
 	$REGISTRY_262
 	docker.io/envoyproxy/envoy-alpine:$envoy_version
 	$CONTOUR_V0130
