@@ -3,23 +3,25 @@ SHELL := /bin/bash
 include ../../common.mk
 include ../../manifest.mk
 
+DATE := $(shell date '+%Y%m%d')
+
 .PHONY: all
 all: build scan push
 
 .PHONY: build
 build:
-	# kubeadm config dictates that all images must be in the same repo
-	docker pull k8s.gcr.io/pause:3.1
-	docker tag k8s.gcr.io/pause:3.1 $(PAUSE_31)
+	docker build --pull -t $(KUBE_APISERVER_V1153)-$(DATE) .
 
 .PHONY: scan
 scan: export POLICY_FAILURE = true
 scan: export TIMEOUT = 300
 scan: export POLICY_BUNDLE_PATH = ../../policy-bundle.json
-scan: export IMAGE_NAME = $(PAUSE_31)
+scan: export IMAGE_NAME = $(KUBE_APISERVER_V1153)-$(DATE)
 scan:
 	bash ../../scripts/inline_scan.sh
 
 .PHONY: push
 push:
-	docker push $(PAUSE_31)
+	docker push $(KUBE_APISERVER_V1153)-$(DATE)
+	docker tag $(KUBE_APISERVER_V1153)-$(DATE) $(KUBE_APISERVER_V1153)
+	docker push $(KUBE_APISERVER_V1153)
