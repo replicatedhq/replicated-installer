@@ -512,24 +512,23 @@ airgapLoadKubernetesCommonImages1143() {
 airgapLoadKubernetesCommonImages1153() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.15.3-20200415"
+        "quay.io/replicated/k8s-images-common:v1.15.3-20200415" # TODO
 
     (
         set -x
-        docker tag 232b5c793146 k8s.gcr.io/kube-proxy:v1.15.3
+        docker tag 232b5c793146 k8s.gcr.io/kube-proxy:v1.15.3 # TODO
         docker tag da86e6ba6ca1 k8s.gcr.io/pause:3.1
         docker tag eb516548c180 k8s.gcr.io/coredns:1.3.1
-        docker tag cab675c30d57 docker.io/replicated/weave-kube:2.5.2-20200505
+        docker tag a3cb8ab06265 docker.io/replicated/weave-kube:2.5.2-20200505
         docker tag ae0e3813615e docker.io/replicated/weave-npc:2.5.2-20200507
-        docker tag 8474972641bd docker.io/replicated/weaveexec:2.5.2-20200512
-        docker tag ad8962360f2f docker.io/replicated/docker-registry:2.6.2-20200512
-        docker tag ad8962360f2f docker.io/registry:2
+        docker tag 2be53f0ed591 docker.io/replicated/weaveexec:2.5.2-20200512
+        docker tag 8a7014fbf188 docker.io/replicated/docker-registry:2.6.2-20200512
         docker tag 0246380e4b70 docker.io/envoyproxy/envoy-alpine:v1.10.0
         docker tag 672aff19e6e4 gcr.io/heptio-images/contour:v0.13.0
-        docker tag 3ee0a397fb56 docker.io/rook/ceph:v1.0.3
-        docker tag d6b028bcaada docker.io/rook/ceph:v1.0.6
-        docker tag 243030ce8ef0 docker.io/ceph/ceph:v14.2.0-20190410
-        docker tag c1221b5126bc docker.io/ceph/ceph:v14.2.2-20191210
+        docker tag 3ee0a397fb56 docker.io/rook/ceph:v1.0.3 # TODO
+        docker tag d6b028bcaada docker.io/rook/ceph:v1.0.6 # TODO
+        docker tag 243030ce8ef0 docker.io/ceph/ceph:v14.2.0-20190410 # TODO
+        docker tag c1221b5126bc docker.io/ceph/ceph:v14.2.2-20191210 # TODO
         docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
     )
 }
