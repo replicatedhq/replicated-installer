@@ -474,7 +474,7 @@ fi
 
 loadIPVSKubeProxyModules
 
-if ! docker ps | grep -q 'k8s.gcr.io/pause'; then
+if ! docker ps | grep -q '/pause:'; then
     downloadPkiBundle
 
     joinKubernetes

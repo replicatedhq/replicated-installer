@@ -10,16 +10,13 @@
 
 set -e
 
-repo=k8s.gcr.io
-kubernetes_version=v1.15.3
-etcd_version=3.3.10
 rook_103_version=v1.0.3
 rook_106_version=v1.0.6
 ceph_103_version=v14.2.0-20190410
 ceph_106_version=v14.2.2-20191210
 
 common="
-	$repo/kube-proxy-amd64:$kubernetes_version
+	$KUBE_PROXY_V1153
 	$PAUSE_31
 	$COREDNS_131
 	$WEAVE_KUBE_252
@@ -35,10 +32,10 @@ common="
 	$REPLICATED_HOSTPATH_PROVISIONER_CD1D272"
 
 control="
-	$repo/kube-apiserver-amd64:$kubernetes_version
-	$repo/kube-controller-manager-amd64:$kubernetes_version
-	$repo/kube-scheduler-amd64:$kubernetes_version
-	$repo/etcd-amd64:$etcd_version"
+	$KUBE_APISERVER_V1153
+	$KUBE_CONTROLLER_MANAGER_V1153
+	$KUBE_SCHEDULER_V1153
+	$ETCD_3310"
 
 oi() {
 	local i="$1"

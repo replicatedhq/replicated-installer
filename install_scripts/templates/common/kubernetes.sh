@@ -516,8 +516,8 @@ airgapLoadKubernetesCommonImages1153() {
 
     (
         set -x
-        docker tag 232b5c793146 k8s.gcr.io/kube-proxy:v1.15.3 # TODO
-        docker tag da86e6ba6ca1 k8s.gcr.io/pause:3.1
+        docker tag 2a4fefd1c764 docker.io/replicated/kube-proxy:v1.15.3
+        docker tag da86e6ba6ca1 docker.io/replicated/pause:3.1
         docker tag eb516548c180 k8s.gcr.io/coredns:1.3.1
         docker tag a3cb8ab06265 docker.io/replicated/weave-kube:2.5.2-20200505
         docker tag ae0e3813615e docker.io/replicated/weave-npc:2.5.2-20200507
@@ -686,10 +686,10 @@ airgapLoadKubernetesControlImages1153() {
 
     (
         set -x
-        docker tag 5eb2d3fc7a44 k8s.gcr.io/kube-apiserver:v1.15.3
-        docker tag e77c31de5547 k8s.gcr.io/kube-controller-manager:v1.15.3
-        docker tag 703f9c69a5d5 k8s.gcr.io/kube-scheduler:v1.15.3
-        docker tag 2c4adeb21b4f k8s.gcr.io/etcd:3.3.10
+        docker tag 1f0d9b9d85b1 docker.io/replicated/kube-apiserver:v1.15.3
+        docker tag 56101f946b35 docker.io/replicated/kube-controller-manager:v1.15.3
+        docker tag 0ba5117e640e docker.io/replicated/kube-scheduler:v1.15.3
+        docker tag 3a9e5cce725f docker.io/replicated/etcd:3.3.10-20200512
     )
 }
 
@@ -1474,12 +1474,16 @@ kind: ClusterConfiguration
 kubernetesVersion: v$k8sVersion
 certificatesDir: /etc/kubernetes/pki
 clusterName: kubernetes
+imageRepository: docker.io/replicated
 controllerManager: {}
 dns:
   type: CoreDNS
+  imageRepository: k8s.gcr.io
 etcd:
   local:
     dataDir: /var/lib/etcd
+    imageRepository: docker.io/replicated
+    imageTag: 3.3.10-20200512
 networking:
   serviceSubnet: $SERVICE_CIDR
 apiServer:
