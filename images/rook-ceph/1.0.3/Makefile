@@ -12,7 +12,7 @@ build:
 
 .PHONY: scan
 scan: export POLICY_FAILURE = true
-scan: export TIMEOUT = 1200
+scan: export TIMEOUT = 6000
 scan: export POLICY_BUNDLE_PATH = ../../policy-bundle.json
 scan: export IMAGE_NAME = $(ROOK_CEPH_103)
 scan:

@@ -1,3 +1,5 @@
+# https://github.com/ceph/ceph-container
+
 FROM ceph/ceph:v14.2.0-20190410
 
 RUN yum install -y \
