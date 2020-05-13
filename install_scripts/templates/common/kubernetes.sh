@@ -525,10 +525,10 @@ airgapLoadKubernetesCommonImages1153() {
         docker tag 8a7014fbf188 docker.io/replicated/docker-registry:2.6.2-20200512
         docker tag 209649db0758 docker.io/replicated/envoy:v1.10.0-20200512
         docker tag 672aff19e6e4 gcr.io/heptio-images/contour:v0.13.0
-        docker tag TODO docker.io/replicated/rook-ceph:v1.0.3-20200512
-        docker tag TODO docker.io/replicated/rook-ceph:v1.0.6-20200512
-        docker tag TODO docker.io/replicated/ceph:v14.2.0-20200512
-        docker tag TODO docker.io/replicated/ceph:v14.2.2-20200512
+        docker tag 256b3f903f60 docker.io/replicated/rook-ceph:v1.0.3-20200512
+        docker tag 50efc5dbfe03 docker.io/replicated/rook-ceph:v1.0.6-20200512
+        docker tag 3869f635df54 docker.io/replicated/ceph:v14.2.0-20200512
+        docker tag 7287040d1921 docker.io/replicated/ceph:v14.2.2-20200512
         docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
     )
 }

@@ -3,13 +3,17 @@ SHELL := /bin/bash
 include ../../common.mk
 include ../../manifest.mk
 
+DATE := $(shell date '+%Y%m%d')
+
 .PHONY: pull
 pull:
-	docker pull $(WEAVE_KUBE_252)
+	docker pull $(WEAVE_KUBE_252_20200505)
+	docker tag $(WEAVE_KUBE_252_20200505) $(WEAVE_KUBE_252)
 
 .PHONY: build
 build:
-	docker build --pull -t $(WEAVE_KUBE_252) .
+	docker build --pull -t $(WEAVE_KUBE_252)-$(DATE) .
+	docker tag $(WEAVE_KUBE_252)-$(DATE) $(WEAVE_KUBE_252)
 
 .PHONY: scan
 scan: export POLICY_FAILURE = true
@@ -22,4 +26,4 @@ scan:
 
 .PHONY: push
 push:
-	docker push $(WEAVE_KUBE_252)
+	docker push $(WEAVE_KUBE_252)-$(DATE)

@@ -18,6 +18,7 @@ build:
 scan: export POLICY_FAILURE = true
 scan: export TIMEOUT = 300
 scan: export POLICY_BUNDLE_PATH = ../../policy-bundle.json
+scan: export DOCKERFILE_PATH = ./Dockerfile
 scan: export IMAGE_NAME = $(KUBE_CONTROLLER_MANAGER_V1153)
 scan:
 	bash ../../scripts/inline_scan.sh
