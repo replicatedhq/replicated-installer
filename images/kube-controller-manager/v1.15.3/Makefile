@@ -12,17 +12,17 @@ pull:
 .PHONY: build
 build:
 	docker build --pull -t $(KUBE_CONTROLLER_MANAGER_V1153)-$(DATE) .
+	docker tag $(KUBE_CONTROLLER_MANAGER_V1153)-$(DATE) $(KUBE_CONTROLLER_MANAGER_V1153)
 
 .PHONY: scan
 scan: export POLICY_FAILURE = true
 scan: export TIMEOUT = 300
 scan: export POLICY_BUNDLE_PATH = ../../policy-bundle.json
-scan: export IMAGE_NAME = $(KUBE_CONTROLLER_MANAGER_V1153)-$(DATE)
+scan: export IMAGE_NAME = $(KUBE_CONTROLLER_MANAGER_V1153)
 scan:
 	bash ../../scripts/inline_scan.sh
 
 .PHONY: push
 push:
 	docker push $(KUBE_CONTROLLER_MANAGER_V1153)-$(DATE)
-	docker tag $(KUBE_CONTROLLER_MANAGER_V1153)-$(DATE) $(KUBE_CONTROLLER_MANAGER_V1153)
 	docker push $(KUBE_CONTROLLER_MANAGER_V1153)
