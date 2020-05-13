@@ -10,11 +10,6 @@
 
 set -e
 
-rook_103_version=v1.0.3
-rook_106_version=v1.0.6
-ceph_103_version=v14.2.0-20190410
-ceph_106_version=v14.2.2-20191210
-
 common="
 	$KUBE_PROXY_V1153
 	$PAUSE_31
@@ -25,10 +20,10 @@ common="
 	$REGISTRY_262
 	$ENVOY_V1100
 	$CONTOUR_V0130
-	rook/ceph:$rook_103_version
-	rook/ceph:$rook_106_version
-	ceph/ceph:$ceph_103_version
-	ceph/ceph:$ceph_106_version
+	$ROOK_CEPH_103
+	$ROOK_CEPH_106
+	$CEPH_1420
+	$CEPH_1422
 	$REPLICATED_HOSTPATH_PROVISIONER_CD1D272"
 
 control="
