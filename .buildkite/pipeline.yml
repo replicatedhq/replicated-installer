@@ -1,55 +1,55 @@
 steps:
 
   - commands:
-      - make -C images/ceph/14.2.0/ build scan
+      - make -C images/ceph/14.2.0/ pull scan
 
   - commands:
-      - make -C images/ceph/14.2.2/ build scan
+      - make -C images/ceph/14.2.2/ pull scan
 
   - commands:
-      - make -C images/contour/v0.13.0/ build scan
+      - make -C images/contour/v0.13.0/ pull scan
 
   - commands:
-      - make -C images/coredns/1.3.1/ build scan
+      - make -C images/coredns/1.3.1/ pull scan
 
   - commands:
-      - make -C images/docker-registry/2.6.2/ build scan
+      - make -C images/docker-registry/2.6.2/ pull scan
 
   - commands:
-      - make -C images/envoy/v1.10.0/ build scan
+      - make -C images/envoy/v1.10.0/ pull scan
 
   - commands:
-      - make -C images/etcd/3.3.10/ build scan
+      - make -C images/etcd/3.3.10/ pull scan
 
   - commands:
-      - make -C images/kube-apiserver/v1.15.3/ build scan
+      - make -C images/kube-apiserver/v1.15.3/ pull scan
 
   - commands:
-      - make -C images/kube-controller-manager/v1.15.3/ build scan
+      - make -C images/kube-controller-manager/v1.15.3/ pull scan
 
   - commands:
-      - make -C images/kube-proxy/v1.15.3/ build scan
+      - make -C images/kube-proxy/v1.15.3/ pull scan
 
   - commands:
-      - make -C images/kube-scheduler/v1.15.3/ build scan
+      - make -C images/kube-scheduler/v1.15.3/ pull scan
 
   - commands:
-      - make -C images/pause/3.1/ build scan
+      - make -C images/pause/3.1/ pull scan
 
   - commands:
-      - make -C images/replicated-hostpath-provisioner/cd1d272/ build scan
+      - make -C images/replicated-hostpath-provisioner/cd1d272/ pull scan
 
   - commands:
-      - make -C images/rook-ceph/1.0.3/ build scan
+      - make -C images/rook-ceph/1.0.3/ pull scan
 
   - commands:
-      - make -C images/rook-ceph/1.0.6/ build scan
+      - make -C images/rook-ceph/1.0.6/ pull scan
 
   - commands:
-      - make -C images/weaveexec/2.5.2/ build scan
+      - make -C images/weave-kube/2.5.2/ pull scan
 
   - commands:
-      - make -C images/weave-kube/2.5.2/ build scan
+      - make -C images/weave-npc/2.5.2/ pull scan
 
   - commands:
-      - make -C images/weave-npc/2.5.2/ build scan
+      - make -C images/weaveexec/2.5.2/ pull scan
