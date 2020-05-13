@@ -3,8 +3,9 @@ SHELL := /bin/bash
 include ../../common.mk
 include ../../manifest.mk
 
-.PHONY: all
-all: build scan push
+.PHONY: pull
+pull:
+	docker pull $(CEPH_1422)
 
 .PHONY: build
 build:

@@ -5,8 +5,9 @@ include ../../manifest.mk
 
 DATE := $(shell date '+%Y%m%d')
 
-.PHONY: all
-all: build scan push
+.PHONY: pull
+pull:
+	docker pull $(KUBE_CONTROLLER_MANAGER_V1153)
 
 .PHONY: build
 build:
