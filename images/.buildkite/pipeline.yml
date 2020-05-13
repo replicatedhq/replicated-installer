@@ -1,4 +1,4 @@
 steps:
   - commands:
-      - make -C images/$IMAGE_TARGET
+      - make -C images/$IMAGE_TARGET build scan push
     if: build.env("IMAGE_TARGET") != ""

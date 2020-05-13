@@ -3,12 +3,17 @@ SHELL := /bin/bash
 include ../../common.mk
 include ../../manifest.mk
 
-.PHONY: all
-all: build scan push
+DATE := $(shell date '+%Y%m%d')
+
+.PHONY: pull
+pull:
+	docker pull $(WEAVEEXEC_252_20200512)
+	docker tag $(WEAVEEXEC_252_20200512) $(WEAVEEXEC_252)
 
 .PHONY: build
 build:
-	docker build --pull -t $(WEAVEEXEC_252) .
+	docker build --pull -t $(WEAVEEXEC_252)-$(DATE) .
+	docker tag $(WEAVEEXEC_252)-$(DATE) $(WEAVEEXEC_252)
 
 .PHONY: scan
 scan: export POLICY_FAILURE = true
@@ -21,4 +26,4 @@ scan:
 
 .PHONY: push
 push:
-	docker push $(WEAVEEXEC_252)
+	docker push $(WEAVEEXEC_252)-$(DATE)

@@ -3,12 +3,13 @@ SHELL := /bin/bash
 include ../../common.mk
 include ../../manifest.mk
 
-.PHONY: all
-all: build scan push
+.PHONY: pull
+pull:
+	docker pull $(REPLICATED_HOSTPATH_PROVISIONER_CD1D272)
 
 .PHONY: build
 build:
-	docker pull $(REPLICATED_HOSTPATH_PROVISIONER_CD1D272)
+	@echo nothing to do
 
 .PHONY: scan
 scan: export POLICY_FAILURE = true

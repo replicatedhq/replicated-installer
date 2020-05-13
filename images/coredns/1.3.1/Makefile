@@ -3,12 +3,13 @@ SHELL := /bin/bash
 include ../../common.mk
 include ../../manifest.mk
 
-.PHONY: all
-all: build scan push
+.PHONY: pull
+pull:
+	docker pull $(COREDNS_131)
 
 .PHONY: build
 build:
-	docker pull $(COREDNS_131)
+	@echo nothing to do
 
 .PHONY: scan
 scan: export POLICY_FAILURE = true
