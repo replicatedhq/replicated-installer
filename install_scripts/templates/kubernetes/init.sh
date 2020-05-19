@@ -405,8 +405,8 @@ shouldReinitK8s() {
         if kubectl version --short 2>/dev/null | grep -q 'Server Version: v1.13'; then
             return 0
         fi
-    elif curl -k https://localhost:6443/version 2>/dev/null | grep -q '"gitVersion": '; then
-        if curl -k https://localhost:6443/version 2>/dev/null | grep -q '"gitVersion": "v1.13"'; then
+    elif curl --noproxy "*" -k https://localhost:6443/version 2>/dev/null | grep -q '"gitVersion": '; then
+        if curl --noproxy "*" -k https://localhost:6443/version 2>/dev/null | grep -q '"gitVersion": "v1.13"'; then
             return 0
         fi
     else
@@ -801,7 +801,7 @@ objectStoreCreateDockerRegistryBucket() {
     local string="PUT\n\n\n${d}\n${acl}\n/docker-registry"
     local sig=$(echo -en "${string}" | openssl sha1 -hmac "${OBJECT_STORE_SECRET_KEY}" -binary | base64)
 
-    curl -X PUT  \
+    curl --noproxy "*" -X PUT  \
         -H "Host: $OBJECT_STORE_CLUSTER_IP" \
         -H "Date: $d" \
         -H "$acl" \
