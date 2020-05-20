@@ -5,4 +5,5 @@ FROM k8s.gcr.io/kube-proxy-amd64:v1.15.3
 
 RUN clean-install \
     libcomerr2 \
-    libidn11
+    libidn11 \
+    libapt-pkg5.0
