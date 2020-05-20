@@ -1113,6 +1113,8 @@ data:
       fields:
         service: registry
     storage:
+      redirect:
+        disable: true
       cache:
         blobdescriptor: inmemory
       s3:
