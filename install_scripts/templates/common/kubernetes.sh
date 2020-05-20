@@ -512,11 +512,11 @@ airgapLoadKubernetesCommonImages1143() {
 airgapLoadKubernetesCommonImages1153() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.15.3-20200520" # TODO
+        "quay.io/replicated/k8s-images-common:v1.15.3-20200520"
 
     (
         set -x
-        docker tag 2a4fefd1c764 docker.io/replicated/kube-proxy:v1.15.3
+        docker tag af41209a559f docker.io/replicated/kube-proxy:v1.15.3
         docker tag da86e6ba6ca1 docker.io/replicated/pause:3.1
         docker tag eb516548c180 k8s.gcr.io/coredns:1.3.1
         docker tag a3cb8ab06265 docker.io/replicated/weave-kube:2.5.2-20200505
@@ -686,9 +686,9 @@ airgapLoadKubernetesControlImages1153() {
 
     (
         set -x
-        docker tag 1f0d9b9d85b1 docker.io/replicated/kube-apiserver:v1.15.3
-        docker tag 56101f946b35 docker.io/replicated/kube-controller-manager:v1.15.3
-        docker tag 0ba5117e640e docker.io/replicated/kube-scheduler:v1.15.3
+        docker tag 4953a1998aa8 docker.io/replicated/kube-apiserver:v1.15.3
+        docker tag d091bb0ecf03 docker.io/replicated/kube-controller-manager:v1.15.3
+        docker tag 2aae1cd664df docker.io/replicated/kube-scheduler:v1.15.3
         docker tag 3a9e5cce725f docker.io/replicated/etcd:3.3.10-20200512
     )
 }
