@@ -512,7 +512,7 @@ airgapLoadKubernetesCommonImages1143() {
 airgapLoadKubernetesCommonImages1153() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.15.3-20200415" # TODO
+        "quay.io/replicated/k8s-images-common:v1.15.3-20200520" # TODO
 
     (
         set -x
@@ -682,7 +682,7 @@ airgapLoadKubernetesControlImages1143() {
 airgapLoadKubernetesControlImages1153() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-control:v1.15.3-20190820"
+        "quay.io/replicated/k8s-images-control:v1.15.3-20200520"
 
     (
         set -x
