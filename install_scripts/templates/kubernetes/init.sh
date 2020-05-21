@@ -568,7 +568,7 @@ weavenetDeploy() {
         fi
     fi
 
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS weave_yaml=1 weave_secret=$secret > /tmp/weave.yml
+    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS weave_yaml=1 weave_secret=$secret > /tmp/weave.yml
 
     kubectl apply -f /tmp/weave.yml -n kube-system
     logSuccess "weave network deployed"
@@ -577,7 +577,7 @@ weavenetDeploy() {
 clusterAdminDeploy() {
     logStep "deploy cluster admin role"
 
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS cluster_role_binding_yaml=1 > /tmp/cluster-admin-role.yml
+    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS cluster_role_binding_yaml=1 > /tmp/cluster-admin-role.yml
 
     kubectl apply -f /tmp/cluster-admin-role.yml
     logSuccess "Cluster admin role deployed"
@@ -624,11 +624,11 @@ rookDeploy() {
 
     if [ "$use_rook_103" = "1" ]; then
         # do not upgrade rook/ceph
-        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_103_system_yaml=1 > /tmp/rook-ceph-system.yml
-        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_103_cluster_yaml=1 > /tmp/rook-ceph.yml
+        bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_103_system_yaml=1 > /tmp/rook-ceph-system.yml
+        bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_103_cluster_yaml=1 > /tmp/rook-ceph.yml
     else
-        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_106_system_yaml=1 > /tmp/rook-ceph-system.yml
-        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_106_cluster_yaml=1 > /tmp/rook-ceph.yml
+        bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_106_system_yaml=1 > /tmp/rook-ceph-system.yml
+        bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_106_cluster_yaml=1 > /tmp/rook-ceph.yml
     fi
 
     kubectl apply -f /tmp/rook-ceph-system.yml
@@ -653,8 +653,8 @@ rookDeploy() {
 }
 
 rookDeploy08() {
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_system_yaml=1 > /tmp/rook-ceph-system.yml
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_cluster_yaml=1 > /tmp/rook-ceph.yml
+    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_system_yaml=1 > /tmp/rook-ceph-system.yml
+    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_cluster_yaml=1 > /tmp/rook-ceph.yml
 
     kubectl apply -f /tmp/rook-ceph-system.yml
 
@@ -683,7 +683,7 @@ maybeDefaultRookStorageClass() {
 hostpathProvisionerDeploy() {
     logStep "deploy hostpath provisioner"
 
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS hostpath_provisioner_yaml=1 > /tmp/hostpath-provisioner.yml
+    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS hostpath_provisioner_yaml=1 > /tmp/hostpath-provisioner.yml
 
     kubectl apply -f /tmp/hostpath-provisioner.yml
     spinnerHostpathProvisionerReady
@@ -692,7 +692,7 @@ hostpathProvisionerDeploy() {
 }
 
 storageClassDeploy() {
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS storage_class_yaml=1 > /tmp/storage-class.yml
+    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS storage_class_yaml=1 > /tmp/storage-class.yml
     kubectl apply -f /tmp/storage-class.yml
 }
 
@@ -711,7 +711,7 @@ contourDeploy() {
     # prior to 2.31.0 this was a DaemonSet but now is a Deployment
     kubectl -n heptio-contour delete daemonset contour 2>/dev/null || true
 
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS contour_yaml=1 > /tmp/contour.yml
+    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS contour_yaml=1 > /tmp/contour.yml
     kubectl apply -f /tmp/contour.yml
     logSuccess "Contour deployed"
 }
@@ -730,7 +730,7 @@ rekOperatorDeploy() {
     fi
     getYAMLOpts
 
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rek_operator_yaml=1 > /tmp/rek-operator.yml
+    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rek_operator_yaml=1 > /tmp/rek-operator.yml
     kubectl apply -f /tmp/rek-operator.yml -n $KUBERNETES_NAMESPACE
 }
 
@@ -748,7 +748,7 @@ appRegistryServiceDeploy() {
         fi
     fi
 
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS \
+    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS \
         replicated_registry_yaml=1 \
         replicated-registry-cluster-ip=$clusterIp > /tmp/replicated-registry.yml
     kubectl apply -f /tmp/replicated-registry.yml
@@ -769,17 +769,17 @@ objectStoreDeploy() {
     getYAMLOpts
 
     if isRook106Plus; then
-        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_106_object_store_yaml=1 > /tmp/rook-object-store.yml
+        bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_106_object_store_yaml=1 > /tmp/rook-object-store.yml
     else
         # do not render limits and requests
-        sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_103_object_store_yaml=1 > /tmp/rook-object-store.yml
+        bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_103_object_store_yaml=1 > /tmp/rook-object-store.yml
     fi
     kubectl apply -f /tmp/rook-object-store.yml
 
     # wait for the object store gateway before creating the user
     spinnerPodRunning rook-ceph rook-ceph-rgw-replicated
 
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_object_store_user_yaml=1 > /tmp/rook-object-store-user.yml
+    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_object_store_user_yaml=1 > /tmp/rook-object-store-user.yml
     kubectl apply -f /tmp/rook-object-store-user.yml
 
     # Rook operator creates this secret from the user CRD just applied 
@@ -842,7 +842,7 @@ registryDeploy() {
 
     getYAMLOpts
 
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS \
+    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS \
         registry_yaml=1 \
         registry-cluster-ip=$clusterIp > /tmp/registry.yml
     kubectl apply -f /tmp/registry.yml
@@ -909,7 +909,7 @@ replicatedDeploy() {
 
     logStep "generate manifests"
     getYAMLOpts
-    sh /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS > /tmp/kubernetes.yml
+    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS > /tmp/kubernetes.yml
 
     kubectl apply -f /tmp/kubernetes.yml -n $KUBERNETES_NAMESPACE
     kubectl -n $KUBERNETES_NAMESPACE get pods,svc

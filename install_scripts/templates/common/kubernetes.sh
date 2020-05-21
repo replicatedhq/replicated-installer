@@ -531,11 +531,9 @@ airgapLoadKubernetesCommonImages1153() {
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-common:v1.15.3-20200520"
 
-    (
-        while read -r image; do
-            (set -x; docker tag $image)
-        done < <(airgapListKubernetesCommonImages1153)
-    )
+    while read -r image; do
+        (set -x; docker tag $image)
+    done < <(airgapListKubernetesCommonImages1153)
 }
 
 #######################################
@@ -696,11 +694,9 @@ airgapLoadKubernetesControlImages1153() {
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-control:v1.15.3-20200520"
 
-    (
-        while read -r image; do
-            (set -x; docker tag $image)
-        done < <(airgapListKubernetesControlImages1153)
-    )
+    while read -r image; do
+        (set -x; docker tag $image)
+    done < <(airgapListKubernetesControlImages1153)
 }
 
 function list_all_required_images() {
