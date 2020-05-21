@@ -509,27 +509,32 @@ airgapLoadKubernetesCommonImages1143() {
     )
 }
 
+airgapListKubernetesCommonImages1153() {
+    echo "af41209a559f docker.io/replicated/kube-proxy:v1.15.3"
+    echo "da86e6ba6ca1 docker.io/replicated/pause:3.1"
+    echo "eb516548c180 k8s.gcr.io/coredns:1.3.1"
+    echo "a3cb8ab06265 docker.io/replicated/weave-kube:2.5.2-20200505"
+    echo "ae0e3813615e docker.io/replicated/weave-npc:2.5.2-20200507"
+    echo "2be53f0ed591 docker.io/replicated/weaveexec:2.5.2-20200512"
+    echo "8a7014fbf188 docker.io/replicated/docker-registry:2.6.2-20200512"
+    echo "209649db0758 docker.io/replicated/envoy:v1.10.0-20200512"
+    echo "672aff19e6e4 gcr.io/heptio-images/contour:v0.13.0"
+    echo "256b3f903f60 docker.io/replicated/rook-ceph:v1.0.3-20200512"
+    echo "50efc5dbfe03 docker.io/replicated/rook-ceph:v1.0.6-20200512"
+    echo "3869f635df54 docker.io/replicated/ceph:v14.2.0-20200512"
+    echo "7287040d1921 docker.io/replicated/ceph:v14.2.2-20200512"
+    echo "376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272"
+}
+
 airgapLoadKubernetesCommonImages1153() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-common:v1.15.3-20200520"
 
     (
-        set -x
-        docker tag af41209a559f docker.io/replicated/kube-proxy:v1.15.3
-        docker tag da86e6ba6ca1 docker.io/replicated/pause:3.1
-        docker tag eb516548c180 k8s.gcr.io/coredns:1.3.1
-        docker tag a3cb8ab06265 docker.io/replicated/weave-kube:2.5.2-20200505
-        docker tag ae0e3813615e docker.io/replicated/weave-npc:2.5.2-20200507
-        docker tag 2be53f0ed591 docker.io/replicated/weaveexec:2.5.2-20200512
-        docker tag 8a7014fbf188 docker.io/replicated/docker-registry:2.6.2-20200512
-        docker tag 209649db0758 docker.io/replicated/envoy:v1.10.0-20200512
-        docker tag 672aff19e6e4 gcr.io/heptio-images/contour:v0.13.0
-        docker tag 256b3f903f60 docker.io/replicated/rook-ceph:v1.0.3-20200512
-        docker tag 50efc5dbfe03 docker.io/replicated/rook-ceph:v1.0.6-20200512
-        docker tag 3869f635df54 docker.io/replicated/ceph:v14.2.0-20200512
-        docker tag 7287040d1921 docker.io/replicated/ceph:v14.2.2-20200512
-        docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
+        while read -r image; do
+            (set -x; docker tag $image)
+        done < <(airgapListKubernetesCommonImages1153)
     )
 }
 
@@ -679,18 +684,40 @@ airgapLoadKubernetesControlImages1143() {
     )
 }
 
+airgapListKubernetesControlImages1153() {
+    echo "4953a1998aa8 docker.io/replicated/kube-apiserver:v1.15.3"
+    echo "d091bb0ecf03 docker.io/replicated/kube-controller-manager:v1.15.3"
+    echo "2aae1cd664df docker.io/replicated/kube-scheduler:v1.15.3"
+    echo "3a9e5cce725f docker.io/replicated/etcd:3.3.10-20200512"
+}
+
 airgapLoadKubernetesControlImages1153() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-control:v1.15.3-20200520"
 
     (
-        set -x
-        docker tag 4953a1998aa8 docker.io/replicated/kube-apiserver:v1.15.3
-        docker tag d091bb0ecf03 docker.io/replicated/kube-controller-manager:v1.15.3
-        docker tag 2aae1cd664df docker.io/replicated/kube-scheduler:v1.15.3
-        docker tag 3a9e5cce725f docker.io/replicated/etcd:3.3.10-20200512
+        while read -r image; do
+            (set -x; docker tag $image)
+        done < <(airgapListKubernetesControlImages1153)
     )
+}
+
+function list_all_required_images() {
+    local k8sVersion="$1"
+    local nodeName="$2"
+
+    case "$k8sVersion" in
+        1.15.3)
+            airgapListKubernetesCommonImages1153 | awk '{print $2}'
+            if is_master_node "$nodeName" ; then
+                airgapListKubernetesControlImages1153 | awk '{print $2}'
+            fi
+            ;;
+        *)
+            # unsupported
+            ;;
+    esac
 }
 
 airgapPushReplicatedImagesToRegistry() {
@@ -1336,8 +1363,6 @@ k8s_reset() {
             exit 1
         fi
     fi
-
-
 
     if commandExists "kubectl" && [ -f "/opt/replicated/kubeadm.conf" ]; then
         set +e
@@ -2127,4 +2152,113 @@ maybeTaintControlPlaneNodeJoin()
         makeKubeadmJoinConfigV1Beta2
         kubeadm join phase control-plane-join mark-control-plane --config /opt/replicated/kubeadm.conf
     fi
+}
+
+function k8s_load_images() {
+    local k8sVersion="$1"
+    airgapLoadKubernetesCommonImages "$k8sVersion"
+    if isMasterNode ; then
+        airgapLoadKubernetesControlImages "$k8sVersion"
+    fi
+}
+
+function is_master_node() {
+    local nodeName="$1"
+    kubectl get nodes --no-headers --show-labels "$nodeName" 2>/dev/null | grep -q 'node-role.kubernetes.io/master'
+}
+
+# if remote nodes are in the cluster and this is an airgap install, prompt the user to run the
+# load-images task on all remotes before proceeding because remaining steps may cause pods to
+# be scheduled on those nodes with new images.
+function prompt_airgap_preload_images() {
+    if [ "$AIRGAP" != "1" ]; then
+        return 0
+    fi
+
+    if ! kubernetes_has_remotes; then
+        return 0
+    fi
+
+    local k8sVersion="$1"
+ 
+    while read -r node; do
+        local nodeName=$(echo "$node" | awk '{ print $1 }')
+        if [ "$nodeName" = "$(hostname)" ]; then
+            continue
+        fi
+        if kubernetes_node_has_all_images "$k8sVersion" "$nodeName"; then
+            continue
+        fi
+        printf "\nRun this script on node ${GREEN}${nodeName}${NC} to load required images before proceeding:\n"
+        printf "\n"
+        printf "${GREEN}\tcat ./kubernetes-init.sh | sudo bash -s load-images kubernetes-version=${KUBERNETES_VERSION}${NC}"
+        printf "\n"
+
+        while true; do
+            echo ""
+            printf "Have images been loaded on node ${nodeName}? "
+            if confirmY " "; then
+                break
+            fi
+        done
+    done < <(kubectl get nodes --no-headers)
+}
+
+function kubernetes_node_has_all_images() {
+    local k8sVersion="$1"
+    local nodeName="$2"
+
+    while read -r image; do
+        if ! kubernetes_node_has_image "$nodeName" "$image"; then
+            printf "\n${YELLOW}Node $nodeName missing image $image${NC}\n"
+            return 1
+        fi
+    done < <(list_all_required_images "$k8sVersion" "$nodeName")
+}
+
+function kubernetes_node_has_image() {
+    local nodeName="$1"
+    # docker.io/envoyproxy/envoy-alpine:v1.10.0 -> envoyproxy/envoy-alpine:v1.10.0
+    local image=$(echo $2 | sed 's/^docker.io\///')
+
+    while read -r nodeImage; do
+        if [ "$nodeImage" = "$image" ]; then
+            return 0
+        fi
+    done < <(kubernetes_node_images "$nodeName")
+
+    return 1
+}
+
+# exit 0 if there are any remote workers or masters
+function kubernetes_has_remotes() {
+    if ! kubernetes_api_is_healthy; then
+        # assume this is a new install
+        return 1
+    fi
+
+    local count=$(kubectl get nodes --no-headers --selector="kubernetes.io/hostname!=$(hostname)" 2>/dev/null | wc -l)
+    if [ "$count" -gt "0" ]; then
+        return 0
+    fi
+
+    return 1
+}
+
+function kubernetes_api_is_healthy() {
+    curl --noproxy "*" --fail --silent --insecure "https://$(kubernetes_api_address)/healthz" >/dev/null
+}
+
+function kubernetes_api_address() {
+    if [ -n "$LOAD_BALANCER_ADDRESS" ]; then
+        echo "${LOAD_BALANCER_ADDRESS}:${LOAD_BALANCER_PORT}"
+        return
+    fi
+    echo "${PRIVATE_ADDRESS}:6443"
+}
+
+function kubernetes_node_images() {
+    local nodeName="$1"
+
+    kubectl get node "$nodeName" -ojsonpath="{range .status.images[*]}{ range .names[*] }{ @ }{'\n'}{ end }{ end }"
 }
