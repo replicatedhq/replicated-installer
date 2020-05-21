@@ -27,6 +27,7 @@ SKIP_DOCKER_PULL=0
 KUBERNETES_ONLY=0
 RESET=0
 FORCE_RESET=0
+LOAD_IMAGES=0
 BIND_DAEMON_TO_MASTERS=1
 BIND_DAEMON_HOSTNAME=
 TLS_CERT_PATH=
@@ -1029,13 +1030,15 @@ outroKubeadm() {
 }
 
 outroReset() {
-    # NO_CLEAR
-    if [ -z "$1" ]; then
-        clear
-    fi
-
     printf "\n"
     printf "\t\t${GREEN}Uninstallation${NC}\n"
+    printf "\t\t${GREEN}  Complete ✔${NC}\n"
+    printf "\n"
+}
+
+outroLoadImages() {
+    printf "\n"
+    printf "\t\t${GREEN}Load images${NC}\n"
     printf "\t\t${GREEN}  Complete ✔${NC}\n"
     printf "\n"
 }
@@ -1147,6 +1150,9 @@ while [ "$1" != "" ]; do
         disable-rook-object-store|disable_rook_object_store)
             DISABLE_ROOK_OBJECT_STORE=1
             ;;
+        kubernetes-version|kubernetes_version)
+            KUBERNETES_VERSION="$_value"
+            ;;
         kubernetes-only|kubernetes_only)
             KUBERNETES_ONLY=1
             ;;
@@ -1155,6 +1161,9 @@ while [ "$1" != "" ]; do
             ;;
         force-reset|force_reset)
             FORCE_RESET=1
+            ;;
+        load-images)
+            LOAD_IMAGES=1
             ;;
         force-replicated-downgrade|force_replicated_downgrade)
             FORCE_REPLICATED_DOWNGRADE=1
@@ -1211,6 +1220,18 @@ discoverCurrentKubernetesVersion
 parseKubernetesTargetVersion
 setK8sPatchVersion
 
+if [ "$RESET" == "1" ]; then
+    k8s_reset "$FORCE_RESET"
+    outroReset "$NO_CLEAR"
+	exit 0
+fi
+
+if [ "$LOAD_IMAGES" == "1" ]; then
+    k8s_load_images "$KUBERNETES_VERSION"
+    outroLoadImages "$NO_CLEAR"
+	exit 0
+fi
+
 checkDockerK8sVersion
 checkFirewalld
 
@@ -1223,12 +1244,6 @@ fi
 
 if [ "$KUBERNETES_VERSION" == "1.9.3" ]; then
     IPVS=0
-fi
-
-if [ "$RESET" == "1" ]; then
-    k8s_reset "$FORCE_RESET"
-    outroReset "$NO_CLEAR"
-	exit 0
 fi
 
 if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" -ne "1" ]; then
@@ -1323,6 +1338,8 @@ if [ "$SKIP_PREFLIGHTS" != "1" ]; then
         fi
     fi
 fi
+
+prompt_airgap_preload_images "$KUBERNETES_VERSION"
 
 must_disable_selinux
 installKubernetesComponents "$KUBERNETES_VERSION"
