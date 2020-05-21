@@ -718,7 +718,6 @@ function list_all_required_images() {
             # unsupported
             ;;
     esac
-    exit 0
 }
 
 airgapPushReplicatedImagesToRegistry() {
@@ -928,7 +927,10 @@ spinnerNodesReady()
 #######################################
 spinnerK8sAPIHealthy()
 {
-    local addr="$(kubernetes_api_address)"
+    local addr="${PRIVATE_ADDRESS}:6443"
+    if [ -n "$LOAD_BALANCER_ADDRESS" ]; then
+        addr="${LOAD_BALANCER_ADDRESS}:${LOAD_BALANCER_PORT}"
+    fi
 
     local delay=1
     local elapsed=0

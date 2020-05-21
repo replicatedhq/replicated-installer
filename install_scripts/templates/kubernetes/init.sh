@@ -1223,13 +1223,13 @@ setK8sPatchVersion
 if [ "$RESET" == "1" ]; then
     k8s_reset "$FORCE_RESET"
     outroReset "$NO_CLEAR"
-	exit 0
+    exit 0
 fi
 
 if [ "$LOAD_IMAGES" == "1" ]; then
     k8s_load_images "$KUBERNETES_VERSION"
     outroLoadImages "$NO_CLEAR"
-	exit 0
+    exit 0
 fi
 
 checkDockerK8sVersion
