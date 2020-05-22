@@ -531,11 +531,9 @@ airgapLoadKubernetesCommonImages1153() {
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-common:v1.15.3-20200520"
 
-    (
-        while read -r image; do
-            (set -x; docker tag $image)
-        done < <(airgapListKubernetesCommonImages1153)
-    )
+    while read -r image; do
+        (set -x; docker tag $image)
+    done <<< "$(airgapListKubernetesCommonImages1153)"
 }
 
 #######################################
@@ -696,11 +694,9 @@ airgapLoadKubernetesControlImages1153() {
         -v /var/run/docker.sock:/var/run/docker.sock \
         "quay.io/replicated/k8s-images-control:v1.15.3-20200520"
 
-    (
-        while read -r image; do
-            (set -x; docker tag $image)
-        done < <(airgapListKubernetesControlImages1153)
-    )
+    while read -r image; do
+        (set -x; docker tag $image)
+    done < <(airgapListKubernetesControlImages1153)
 }
 
 function list_all_required_images() {
@@ -2201,7 +2197,7 @@ function prompt_airgap_preload_images() {
                 break
             fi
         done
-    done < <(kubectl get nodes --no-headers)
+    done <<< "$(kubectl get nodes --no-headers)"
 }
 
 function kubernetes_node_has_all_images() {
@@ -2213,7 +2209,7 @@ function kubernetes_node_has_all_images() {
             printf "\n${YELLOW}Node $nodeName missing image $image${NC}\n"
             return 1
         fi
-    done < <(list_all_required_images "$k8sVersion" "$nodeName")
+    done <<< "$(list_all_required_images "$k8sVersion" "$nodeName")"
 }
 
 function kubernetes_node_has_image() {
@@ -2225,7 +2221,7 @@ function kubernetes_node_has_image() {
         if [ "$nodeImage" = "$image" ]; then
             return 0
         fi
-    done < <(kubernetes_node_images "$nodeName")
+    done <<< "$(kubernetes_node_images "$nodeName")"
 
     return 1
 }
