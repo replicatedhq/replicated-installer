@@ -144,6 +144,8 @@ compareDockerVersions() {
 #######################################
 MAX_DOCKER_VERSION_RESULT=
 getMaxDockerVersion() {
+    MAX_DOCKER_VERSION_RESULT=
+
     # Max Docker version on CentOS 6 is 1.7.1.
     if [ "$LSB_DIST" = "centos" ]; then
         if [ "$DIST_VERSION_MAJOR" = "6" ]; then
@@ -187,6 +189,27 @@ getMaxDockerVersion() {
     if [ "$LSB_DIST" = "ol" ]; then
         if [ "$DIST_VERSION_MAJOR" = "6" ]; then
             MAX_DOCKER_VERSION_RESULT="17.05.0"
+        fi
+    fi
+}
+
+#######################################
+# Get min docker version for lsb dist/version.
+# Globals:
+#   LSB_DIST
+# Arguments:
+#   None
+# Returns:
+#   MIN_DOCKER_VERSION_RESULT
+#######################################
+MIN_DOCKER_VERSION_RESULT=
+getMinDockerVersion() {
+    MIN_DOCKER_VERSION_RESULT=
+
+    if [ "$LSB_DIST" = "ubuntu" ]; then
+        # Min Docker version on Ubuntu 20.04 is 19.03.9.
+        if [ "$DIST_VERSION" = "20.04" ]; then
+            MIN_DOCKER_VERSION_RESULT="19.03.11"
         fi
     fi
 }

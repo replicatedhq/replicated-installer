@@ -312,11 +312,20 @@ _dockerProceedAnyway() {
 
 _dockerGetBestVersion() {
     BEST_DOCKER_VERSION_RESULT="$1"
+    getMinDockerVersion
+    if [ -n "$MIN_DOCKER_VERSION_RESULT" ]; then
+        compareDockerVersions "$MIN_DOCKER_VERSION_RESULT" "$BEST_DOCKER_VERSION_RESULT"
+        if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "1" ]; then
+            BEST_DOCKER_VERSION_RESULT="$MIN_DOCKER_VERSION_RESULT"
+            return
+        fi
+    fi
     getMaxDockerVersion
     if [ -n "$MAX_DOCKER_VERSION_RESULT" ]; then
         compareDockerVersions "$BEST_DOCKER_VERSION_RESULT" "$MAX_DOCKER_VERSION_RESULT"
         if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "1" ]; then
             BEST_DOCKER_VERSION_RESULT="$MAX_DOCKER_VERSION_RESULT"
+            return
         fi
     fi
 }
