@@ -22,3 +22,4 @@ COPY --from=base /usr/bin/weaveutil /usr/bin/weaveutil
 COPY --from=base /weavedb /weavedb
 
 ENTRYPOINT ["/home/weave/launch.sh"]
+WORKDIR /home/weave
