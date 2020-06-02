@@ -2185,7 +2185,7 @@ function prompt_airgap_preload_images() {
         if kubernetes_node_has_all_images "$k8sVersion" "$nodeName"; then
             continue
         fi
-        printf "\nRun this script on node ${GREEN}${nodeName}${NC} to load required images before proceeding:\n"
+        printf "\nDownload the Replicated airgap bundle and run the following script on node ${GREEN}${nodeName}${NC} to load required images before proceeding:\n"
         printf "\n"
         printf "${GREEN}\tcat ./kubernetes-init.sh | sudo bash -s load-images kubernetes-version=${KUBERNETES_VERSION}${NC}"
         printf "\n"
