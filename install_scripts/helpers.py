@@ -53,6 +53,8 @@ def template_args(**kwargs):
         args['skip_preflights'] = True
     if get_arg('unsafe_skip_ca_verification') is not None:
         args['unsafe_skip_ca_verification'] = True
+    if get_arg('nodelocal_dnscache') is not None:
+        args['nodelocal_dnscache'] = True
     if get_arg('taint_control_plane') is not None:
         args['taint_control_plane'] = True
     if kwargs:
