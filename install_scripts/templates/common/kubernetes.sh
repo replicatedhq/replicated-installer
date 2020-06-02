@@ -687,6 +687,7 @@ airgapListKubernetesControlImages1153() {
     echo "d091bb0ecf03 docker.io/replicated/kube-controller-manager:v1.15.3"
     echo "2aae1cd664df docker.io/replicated/kube-scheduler:v1.15.3"
     echo "3a9e5cce725f docker.io/replicated/etcd:3.3.10-20200512"
+    echo "TODO docker.io/replicated/etcd:3.4.7-20200602"
 }
 
 airgapLoadKubernetesControlImages1153() {
@@ -1488,6 +1489,14 @@ EOF
 
 appendKubeadmClusterConfigV1Beta2() {
     k8sVersion=$1
+
+    etcdVersion=$2
+    local etcdImageTag=
+    case $etcdVersion in
+        3.3) etcdImageTag="3.3.10-20200512" ;;
+        *)   etcdImageTag="3.4.7-20200602" ;;
+    esac
+
     cat <<EOF >> /opt/replicated/kubeadm.conf
 ---
 apiVersion: kubeadm.k8s.io/v1beta2
@@ -1504,7 +1513,7 @@ etcd:
   local:
     dataDir: /var/lib/etcd
     imageRepository: docker.io/replicated
-    imageTag: 3.3.10-20200512
+    imageTag: $etcdImageTag
 networking:
   serviceSubnet: $SERVICE_CIDR
 apiServer:
@@ -1846,7 +1855,10 @@ isRook103()
 ROOK_VERSION=
 getRookVersion()
 {
-    ROOK_VERSION="$(kubectl -n rook-ceph-system get deploy rook-ceph-operator -oyaml 2>/dev/null | grep image: | sed 's/ *image:[^:]*:v//')"
+    ROOK_VERSION="$(kubectl -n rook-ceph-system get deploy rook-ceph-operator -oyaml 2>/dev/null \
+        | grep ' image: ' \
+        | awk -F':' 'NR==1 { print $3 }' \
+        | sed 's/v\([^-]*\).*/\1/')"
 }
 
 #######################################
@@ -1861,6 +1873,65 @@ getRookVersion()
 isRook08()
 {
     kubectl -n rook-ceph get pool replicapool &>/dev/null
+}
+
+#######################################
+# Check if Etcd 3.3 is installed
+# Globals:
+#   ETCD_VERSION
+# Arguments:
+#   None
+# Returns:
+#   None, exits 0 if Etcd 3.3 is detected
+#######################################
+isEtcd33()
+{
+    getEtcdVersion
+    semverCompare "3.3.0" "$ETCD_VERSION"
+    if [ "$SEMVER_COMPARE_RESULT" -gt "0" ]; then
+        return 1
+    fi
+    semverCompare "3.4.0" "$ETCD_VERSION"
+    if [ "$SEMVER_COMPARE_RESULT" -le "0" ]; then
+        return 1
+    fi
+    return 0
+}
+
+#######################################
+# Get etcd version
+# Globals:
+#   ETCD_VERSION
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+ETCD_VERSION=
+getEtcdVersion()
+{
+    ETCD_VERSION="$(kubectl -n kube-system get pod -l tier=control-plane -l component=etcd -oyaml 2>/dev/null \
+        | grep ' image: ' \
+        | awk -F':' 'NR==1 { print $3 }' \
+        | sed 's/\([^-]*\).*/\1/')"
+}
+
+#######################################
+# Check if Etcd is installed
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None, exits 0 if Etcd is installed
+#######################################
+isEtcdInstalled()
+{
+    if kubectl -n kube-system get pods 2>/dev/null | grep -q etcd ; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 #######################################
