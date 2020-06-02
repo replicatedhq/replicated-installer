@@ -70,6 +70,8 @@ DID_INIT_KUBERNETES=0
 RELEASE_SEQUENCE="{{ release_sequence }}"
 RELEASE_PATCH_SEQUENCE="{{ release_patch_sequence }}"
 UNSAFE_SKIP_CA_VERIFICATION="{{ '1' if unsafe_skip_ca_verification else '0' }}"
+NODELOCAL_DNSCACHE="{{ '1' if nodelocal_dnscache else '0' }}"
+NODELOCAL_ADDRESS="169.254.20.10"
 
 CHANNEL_CSS={% if channel_css %}
 set +e
@@ -228,6 +230,7 @@ initKube15() {
     initKubeadmConfigV1Beta2
     appendKubeadmClusterConfigV1Beta2 "$k8sVersion"
     appendKubeProxyConfigV1Alpha1
+    appendKubeletConfigV1Beta1
 
     loadIPVSKubeProxyModules
 
@@ -581,6 +584,26 @@ clusterAdminDeploy() {
 
     kubectl apply -f /tmp/cluster-admin-role.yml
     logSuccess "Cluster admin role deployed"
+}
+
+nodelocaldnsDeploy() {
+    # https://kubernetes.io/docs/tasks/administer-cluster/nodelocaldns/
+    logStep "deploy nodelocal dnscache"
+
+    local kubedns="$(kubectl get svc kube-dns -n kube-system -o jsonpath={.spec.clusterIP})"
+    local domain="cluster.local"
+    local localdns="$1"
+
+    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS nodelocaldns_yaml=1 > /tmp/nodelocaldns.yml
+
+    if [ "$IPVS" != "1" ]; then
+        sed -i "s/__PILLAR__LOCAL__DNS__/$localdns/g; s/__PILLAR__DNS__DOMAIN__/$domain/g; s/__PILLAR__DNS__SERVER__/$kubedns/g" /tmp/nodelocaldns.yml
+    else
+        sed -i "s/__PILLAR__LOCAL__DNS__/$localdns/g; s/__PILLAR__DNS__DOMAIN__/$domain/g; s/,*__PILLAR__DNS__SERVER__//g; s/__PILLAR__CLUSTER__DNS__/$kubedns/g" /tmp/nodelocaldns.yml
+    fi
+
+    kubectl apply -f /tmp/nodelocaldns.yml
+    logSuccess "NodeLocal DNSCache deployed"
 }
 
 rookDeploy() {
@@ -1199,6 +1222,12 @@ while [ "$1" != "" ]; do
         unsafe-skip-ca-verification|unsafe_skip_ca_verification)
             UNSAFE_SKIP_CA_VERIFICATION=1
             ;;
+        nodelocal-dnscache|nodelocal_dnscache)
+            NODELOCAL_DNSCACHE=1
+            ;;
+        nodelocal-address|nodelocal_address)
+            NODELOCAL_ADDRESS="$_value"
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -1388,6 +1417,10 @@ kubectl cluster-info
 logSuccess "Cluster Initialized"
 
 getK8sYmlGenerator
+
+if [ "$NODELOCAL_DNSCACHE" = "1" ]; then
+    nodelocaldnsDeploy "$NODELOCAL_ADDRESS"
+fi
 
 weavenetDeploy
 

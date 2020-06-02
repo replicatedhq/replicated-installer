@@ -49,6 +49,7 @@ REGISTRY_YAML=0
 REK_OPERATOR_YAML=0
 REPLICATED_REGISTRY_YAML=0
 CLUSTER_ROLE_BINDING_YAML=0
+NODELOCALDNS_YAML=0
 BIND_DAEMON_TO_MASTERS=0
 BIND_DAEMON_HOSTNAME=
 API_SERVICE_ADDRESS="{{ api_service_address }}"
@@ -189,6 +190,10 @@ while [ "$1" != "" ]; do
             ;;
         cluster-role-binding-yaml|cluster_role_binding_yaml)
             CLUSTER_ROLE_BINDING_YAML="$_value"
+            REPLICATED_YAML=0
+            ;;
+        nodelocaldns-yaml|nodelocaldns_yaml)
+            NODELOCALDNS_YAML="$_value"
             REPLICATED_YAML=0
             ;;
         ip-alloc-range|ip_alloc_range)
@@ -667,6 +672,12 @@ subjects:
   - kind: ServiceAccount
     name: default
     namespace: "$KUBERNETES_NAMESPACE"
+EOF
+}
+
+render_nodelocaldns_yaml() {
+  cat <<EOF
+{% include 'kubernetes/yaml/nodelocaldns.yml' %}
 EOF
 }
 
@@ -1455,6 +1466,10 @@ fi
 
 if [ "$CLUSTER_ROLE_BINDING_YAML" = "1" ]; then
   render_cluster_role_binding
+fi
+
+if [ "$NODELOCALDNS_YAML" = "1" ]; then
+  render_nodelocaldns_yaml
 fi
 
 if [ "$REPLICATED_YAML" = "1" ]; then

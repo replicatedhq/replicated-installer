@@ -1532,7 +1532,7 @@ EOF
 }
 
 appendKubeProxyConfigV1Alpha1() {
-    if [ "$IPVS" = "0" ]; then
+    if [ "$IPVS" != "1" ]; then
         return
     fi
     cat <<EOF >> /opt/replicated/kubeadm.conf
@@ -1540,6 +1540,22 @@ appendKubeProxyConfigV1Alpha1() {
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
 mode: ipvs
+EOF
+}
+
+appendKubeletConfigV1Beta1() {
+    if [ "$IPVS" != "1" ]; then
+        return
+    fi
+    if [ "$NODELOCAL_DNSCACHE" != "1" ]; then
+        return
+    fi
+    cat <<EOF >> /opt/replicated/kubeadm.conf
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+clusterDNS:
+- $NODELOCAL_ADDRESS
 EOF
 }
 
