@@ -831,7 +831,7 @@ objectStoreCreateDockerRegistryBucket() {
     local string="PUT\n\n\n${d}\n${acl}\n/docker-registry"
     local sig=$(echo -en "${string}" | openssl sha1 -hmac "${OBJECT_STORE_SECRET_KEY}" -binary | base64)
 
-    curl --noproxy "*" -X PUT  \
+    curl -f --noproxy "*" -X PUT  \
         -H "Host: $OBJECT_STORE_CLUSTER_IP" \
         -H "Date: $d" \
         -H "$acl" \
