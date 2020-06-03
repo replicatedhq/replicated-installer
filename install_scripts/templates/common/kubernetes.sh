@@ -687,7 +687,7 @@ airgapListKubernetesControlImages1153() {
     echo "d091bb0ecf03 docker.io/replicated/kube-controller-manager:v1.15.3"
     echo "2aae1cd664df docker.io/replicated/kube-scheduler:v1.15.3"
     echo "3a9e5cce725f docker.io/replicated/etcd:3.3.10-20200512"
-    echo "TODO docker.io/replicated/etcd:3.4.7-20200602"
+    echo "9eedcb1b6638 docker.io/replicated/etcd:3.4.7-20200602"
 }
 
 airgapLoadKubernetesControlImages1153() {
