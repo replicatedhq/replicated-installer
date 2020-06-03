@@ -119,8 +119,6 @@ maybeWriteRegistryProxyConfig()
     fi
 
     printf "\n${YELLOW}Registry proxy configuration file /etc/replicated/registry_proxy.json not found.${NC}\n\n"
-    printf "${YELLOW}Please follow the documentation at: ${NC}\n"
-    printf "${YELLOW}  https://help.replicated.com/docs/native/customer-installations/registry-proxies/ .${NC}\n\n"
     printf "${YELLOW}Do you want to proceed anyway? ${NC}"
     if ! confirmN; then
         exit 0
