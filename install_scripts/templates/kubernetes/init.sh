@@ -228,7 +228,13 @@ initKube15() {
     fi
 
     initKubeadmConfigV1Beta2
-    appendKubeadmClusterConfigV1Beta2 "$k8sVersion"
+
+    local etcdVersion="3.4"
+    if isEtcdInstalled && isEtcd33 ; then
+        etcdVersion="3.3"
+    fi
+
+    appendKubeadmClusterConfigV1Beta2 "$k8sVersion" "$etcdVersion"
     appendKubeProxyConfigV1Alpha1
     appendKubeletConfigV1Beta1
 
