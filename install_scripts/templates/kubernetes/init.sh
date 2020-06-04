@@ -789,8 +789,6 @@ appRegistryServiceDeploy() {
     done
     APP_REGISTRY_ADVERTISE_HOST="$replicatedRegistryIP"
 
-    # TODO addInsecureRegistry "$clusterIp" or "$SERVICE_CIDR"
-
     logSuccess "App registry service deployed"
 }
 
@@ -887,7 +885,6 @@ registryDeploy() {
     REGISTRY_ADDRESS_OVERRIDE="$registryIP:5000"
     YAML_GENERATE_OPTS="$YAML_GENERATE_OPTS registry-address-override=$REGISTRY_ADDRESS_OVERRIDE"
 
-    # TODO addInsecureRegistry "$clusterIp" or "$SERVICE_CIDR"
     addInsecureRegistry "$SERVICE_CIDR"
     # check if there are worker nodes that need to be configured for the insecure registry
     local workers=$(kubectl get nodes --selector='!node-role.kubernetes.io/master' -o jsonpath='{.items[*].metadata.name}')
