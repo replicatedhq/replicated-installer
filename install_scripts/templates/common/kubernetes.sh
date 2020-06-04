@@ -123,13 +123,13 @@ installCNIPlugins() {
             if [ "$AIRGAP" = "1" ]; then
                 docker load < k8s-cni-0-7-5.tar
             fi
-            docker run -v /tmp:/out quay.io/replicated/k8s-cni:0.7.5
+            docker run -v /tmp:/out replicated/k8s-cni:0.7.5
             ;;
         *)
             if [ "$AIRGAP" = "1" ]; then
                 docker load < k8s-cni.tar
             fi
-            docker run -v /tmp:/out quay.io/replicated/k8s-cni:0.6.0
+            docker run -v /tmp:/out replicated/k8s-cni:0.6.0
             ;;
     esac
 
@@ -404,7 +404,7 @@ airgapLoadKubernetesCommonImages() {
 airgapLoadKubernetesCommonImages193() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.9.3-20180809"
+        "replicated/k8s-images-common:v1.9.3-20180809"
 
     # uh. its kind of insane that we have to do this. the linuxkit pkg
     # comes to us without tags, which seems super useless... we should build our own bundler maybe
@@ -429,7 +429,7 @@ airgapLoadKubernetesCommonImages193() {
 airgapLoadKubernetesCommonImages1106() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.10.6-20180809"
+        "replicated/k8s-images-common:v1.10.6-20180809"
 
     (
         set -x
@@ -444,7 +444,7 @@ airgapLoadKubernetesCommonImages1106() {
 airgapLoadKubernetesCommonImages1115() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.11.5-20181207"
+        "replicated/k8s-images-common:v1.11.5-20181207"
 
     # kube-proxy is a daemon set so clusters that started at v1.11.1 will need this available on all nodes
     (
@@ -468,7 +468,7 @@ airgapLoadKubernetesCommonImages1115() {
 airgapLoadKubernetesCommonImages1123() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.12.3-20181207"
+        "replicated/k8s-images-common:v1.12.3-20181207"
 
     docker tag ab97fa69b926 k8s.gcr.io/kube-proxy:v1.12.3
     docker tag 367cdc8433a4 k8s.gcr.io/coredns:1.2.2
@@ -477,7 +477,7 @@ airgapLoadKubernetesCommonImages1123() {
 airgapLoadKubernetesCommonImages1135() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.13.5-20190507"
+        "replicated/k8s-images-common:v1.13.5-20190507"
 
     (
         set -x
@@ -500,7 +500,7 @@ airgapLoadKubernetesCommonImages1135() {
 airgapLoadKubernetesCommonImages1143() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.14.3-20190702"
+        "replicated/k8s-images-common:v1.14.3-20190702"
 
     (
         set -x
@@ -530,7 +530,7 @@ airgapListKubernetesCommonImages1153() {
 airgapLoadKubernetesCommonImages1153() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.15.3-20200604"
+        "replicated/k8s-images-common:v1.15.3-20200604"
 
     while read -r image; do
         (set -x; docker tag $image)
@@ -602,7 +602,7 @@ airgapLoadReplicatedAddonImages() {
 airgapLoadKubernetesControlImages193() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-control:v1.9.3-20180809"
+        "replicated/k8s-images-control:v1.9.3-20180809"
 
     (
         set -x
@@ -616,7 +616,7 @@ airgapLoadKubernetesControlImages193() {
 airgapLoadKubernetesControlImages1106() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-control:v1.10.6-20180809"
+        "replicated/k8s-images-control:v1.10.6-20180809"
 
     (
         set -x
@@ -630,7 +630,7 @@ airgapLoadKubernetesControlImages1106() {
 airgapLoadKubernetesControlImages1115() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-control:v1.11.5-20181204"
+        "replicated/k8s-images-control:v1.11.5-20181204"
 
     (
         set -x
@@ -644,7 +644,7 @@ airgapLoadKubernetesControlImages1115() {
 airgapLoadKubernetesControlImages1123() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-control:v1.12.3-20181210"
+        "replicated/k8s-images-control:v1.12.3-20181210"
 
     (
         set -x
@@ -658,7 +658,7 @@ airgapLoadKubernetesControlImages1123() {
 airgapLoadKubernetesControlImages1135() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-control:v1.13.5-20190411"
+        "replicated/k8s-images-control:v1.13.5-20190411"
 
     (
         set -x
@@ -672,7 +672,7 @@ airgapLoadKubernetesControlImages1135() {
 airgapLoadKubernetesControlImages1143() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-control:v1.14.3-20190702"
+        "replicated/k8s-images-control:v1.14.3-20190702"
 
     (
         set -x
@@ -694,7 +694,7 @@ airgapListKubernetesControlImages1153() {
 airgapLoadKubernetesControlImages1153() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-control:v1.15.3-20200603"
+        "replicated/k8s-images-control:v1.15.3-20200603"
 
     while read -r image; do
         (set -x; docker tag $image)
@@ -830,7 +830,7 @@ prepareK8sPackageArchives() {
     fi
     docker run \
       -v $PWD:/out \
-      "quay.io/replicated/k8s-packages:${pkgTag}"
+      "replicated/k8s-packages:${pkgTag}"
 }
 
 #######################################

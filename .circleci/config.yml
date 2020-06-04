@@ -38,7 +38,7 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
       - run:
           name: make
           command: |
@@ -52,7 +52,7 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
       - run:
           name: build & push
           command: |
@@ -65,7 +65,7 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
       - run:
           name: build & push
           command: |
@@ -78,7 +78,7 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
       - run:
           name: build & push
           command: |
@@ -91,7 +91,7 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
       - run:
           name: build & push
           command: |
@@ -104,7 +104,7 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
       - run:
           name: build & push
           command: |
@@ -117,7 +117,7 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
       - run:
           name: build & push
           command: |

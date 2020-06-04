@@ -1,13 +1,13 @@
 DATE=$(shell date +%Y%m%d)
 
 build:
-	docker build -t quay.io/replicated/docker-packages:rhel7-v18.09.7-${DATE} .
+	docker build -t replicated/docker-packages:rhel7-v18.09.7-${DATE} .
 
 push:
-	docker push quay.io/replicated/docker-packages:rhel7-v18.09.7-${DATE}
+	docker push replicated/docker-packages:rhel7-v18.09.7-${DATE}
 
 print_layer_id:
-	@docker save quay.io/replicated/docker-packages:rhel7-v18.09.7-${DATE} | tar -t | grep layer.tar | cut -d'/' -f1
+	@docker save replicated/docker-packages:rhel7-v18.09.7-${DATE} | tar -t | grep layer.tar | cut -d'/' -f1
 
 export: build
 	docker save replicated/docker-packages:rhel7-v18.09.7-${DATE} > packages-docker-rhel7.tar
