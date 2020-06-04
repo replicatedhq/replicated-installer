@@ -530,7 +530,7 @@ airgapListKubernetesCommonImages1153() {
 airgapLoadKubernetesCommonImages1153() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "quay.io/replicated/k8s-images-common:v1.15.3-20200520"
+        "quay.io/replicated/k8s-images-common:v1.15.3-20200604"
 
     while read -r image; do
         (set -x; docker tag $image)
