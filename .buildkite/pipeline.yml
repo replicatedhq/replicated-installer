@@ -25,6 +25,9 @@ steps:
       - make -C images/etcd/3.4.7/ pull scan
 
   - commands:
+      - make -C images/k8s-dns-node-cache/1.15.13/ pull scan
+
+  - commands:
       - make -C images/kube-apiserver/v1.15.3/ pull scan
 
   - commands:
