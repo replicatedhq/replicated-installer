@@ -460,7 +460,7 @@ airgapLoadKubernetesCommonImages1115() {
         docker tag 6521ac58ca80 docker.io/envoyproxy/envoy-alpine:v1.6.0
         docker tag 6a9ec4bcb60e gcr.io/heptio-images/contour:v0.5.0
         docker tag b5c343f1a3a6 rook/ceph:v0.8.1
-        docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
+        docker tag 376cb7e8748c replicated/replicated-hostpath-provisioner:cd1d272
     )
 }
 
@@ -492,7 +492,7 @@ airgapLoadKubernetesCommonImages1135() {
         docker tag 0a0aad7cff75 gcr.io/heptio-images/contour:v0.11.0
         docker tag eb6fe47e91ae docker.io/rook/ceph:v1.0.0
         docker tag 243030ce8ef0 docker.io/ceph/ceph:v14.2.0-20190410
-        docker tag 376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272
+        docker tag 376cb7e8748c replicated/replicated-hostpath-provisioner:cd1d272
     )
 }
 
@@ -523,7 +523,7 @@ airgapListKubernetesCommonImages1153() {
     echo "50efc5dbfe03 docker.io/replicated/rook-ceph:v1.0.6-20200512"
     echo "3869f635df54 docker.io/replicated/ceph:v14.2.0-20200512"
     echo "7287040d1921 docker.io/replicated/ceph:v14.2.2-20200512"
-    echo "376cb7e8748c quay.io/replicated/replicated-hostpath-provisioner:cd1d272"
+    echo "376cb7e8748c replicated/replicated-hostpath-provisioner:cd1d272"
     echo "9029072d8268 docker.io/replicated/k8s-dns-node-cache:1.15.13-20200604"
 }
 
