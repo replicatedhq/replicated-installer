@@ -18,13 +18,13 @@ update_k8s_manifest_%: clean deps
 
 build_%:
 	$(eval common_image = $(shell linuxkit pkg build ./kubernetes-tmp-$*/pkg/kubernetes-docker-image-cache-common 2>/dev/null | grep 'Tagging linuxkit/kubernetes-docker-image-cache-common'| awk '{print $$2}'))
-	docker tag ${common_image} quay.io/replicated/k8s-images-common:$*-${DATE}
+	docker tag ${common_image} replicated/k8s-images-common:$*-${DATE}
 	$(eval control_image = $(shell linuxkit pkg build ./kubernetes-tmp-$*/pkg/kubernetes-docker-image-cache-control-plane 2>/dev/null | grep 'Tagging linuxkit/kubernetes-docker-image-cache-control-plane' | awk '{print $$2}'))
-	docker tag ${control_image} quay.io/replicated/k8s-images-control:$*-${DATE}
+	docker tag ${control_image} replicated/k8s-images-control:$*-${DATE}
 
 push_%:
-	docker push quay.io/replicated/k8s-images-common:$*-${DATE}
-	docker push quay.io/replicated/k8s-images-control:$*-${DATE}
+	docker push replicated/k8s-images-common:$*-${DATE}
+	docker push replicated/k8s-images-control:$*-${DATE}
 
 clean:
 	rm -rf ./kubernetes-tmp*
