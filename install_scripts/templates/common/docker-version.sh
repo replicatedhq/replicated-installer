@@ -18,7 +18,7 @@
 #######################################
 DOCKER_VERSION=
 getDockerVersion() {
-    if ! commandExists "docker"; then
+    if ! isDockerInstalled ; then
         return
     fi
 

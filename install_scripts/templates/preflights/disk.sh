@@ -15,7 +15,7 @@ preflightDiskUsageRootDir()
 ###############################################################################
 preflightDiskUsageDockerDataDir()
 {
-    if ! commandExists "docker"; then
+    if ! isDockerInstalled ; then
         return 0
     fi
     preflightDiskUsage /var/lib/docker 83

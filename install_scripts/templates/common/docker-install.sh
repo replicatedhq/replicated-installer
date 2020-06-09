@@ -24,7 +24,7 @@ DID_INSTALL_DOCKER=0
 installDocker() {
     _dockerGetBestVersion "$1"
 
-    if ! commandExists "docker"; then
+    if ! isDockerInstalled ; then
         _dockerRequireMinInstallableVersion "$2"
         _installDocker "$BEST_DOCKER_VERSION_RESULT" 1
         return
@@ -65,7 +65,7 @@ installDocker() {
 #######################################
 DID_INSTALL_DOCKER=0
 installDockerOffline() {
-    if commandExists "docker"; then
+    if isDockerInstalled ; then
         return
     fi
 

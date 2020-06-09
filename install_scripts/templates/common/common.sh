@@ -249,3 +249,16 @@ insertOrReplaceJsonParam() {
 splitHostPort() {
     oIFS="$IFS"; IFS=":" read -r HOST PORT <<< "$1"; IFS="$oIFS"
 }
+
+#######################################
+# Checks if Docker is installed
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   0 if Docker is installed
+#######################################
+isDockerInstalled() {
+    commandExists "docker" && ps aux | grep -q '[d]ockerd'
+}
