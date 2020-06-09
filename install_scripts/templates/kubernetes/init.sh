@@ -48,7 +48,7 @@ HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 DISABLE_CONTOUR="{{ disable_contour }}"
 DISABLE_ROOK_OBJECT_STORE="{{ disable_rook_object_store }}"
 NO_CLEAR="{{ no_clear }}"
-IP_ALLOC_RANGE=
+IP_ALLOC_RANGE="10.32.0.0/12" # default for weave
 DEFAULT_SERVICE_CIDR="10.96.0.0/12"
 SERVICE_CIDR=$DEFAULT_SERVICE_CIDR
 DEFAULT_CLUSTER_DNS="10.96.0.10"
@@ -1312,9 +1312,9 @@ if [ "$NO_PROXY" != "1" ]; then
         if [ "$SERVICE_CIDR" = "10.96.0.0/12" ]; then
             # Docker < 19.03 does not support cidr addresses in the no_proxy variable.
             # This is a workaround to add support for http proxies until we upgrade docker.
-            getNoProxyAddresses "$PRIVATE_ADDRESS" "$SERVICE_CIDR" "10.100.100.100" "10.100.100.101"
+            getNoProxyAddresses "$PRIVATE_ADDRESS" "$IP_ALLOC_RANGE" "$SERVICE_CIDR" "10.100.100.100" "10.100.100.101"
         else
-            getNoProxyAddresses "$PRIVATE_ADDRESS" "$SERVICE_CIDR"
+            getNoProxyAddresses "$PRIVATE_ADDRESS" "$IP_ALLOC_RANGE" "$SERVICE_CIDR"
         fi
     fi
 fi

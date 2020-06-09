@@ -383,9 +383,21 @@ if [ "$NO_PROXY" != "1" ]; then
     if [ -z "$PROXY_ADDRESS" ] && [ "$AIRGAP" != "1" ]; then
         promptForProxy
     fi
+
+    if [ -n "$PROXY_ADDRESS" ]; then
+        if [ "$SERVICE_CIDR" = "10.96.0.0/12" ]; then
+            # Docker < 19.03 does not support cidr addresses in the no_proxy variable.
+            # This is a workaround to add support for http proxies until we upgrade docker.
+            getNoProxyAddresses "$KUBERNETES_MASTER_ADDR" "$SERVICE_CIDR" "10.100.100.100" "10.100.100.101"
+        else
+            getNoProxyAddresses "$KUBERNETES_MASTER_ADDR" "$SERVICE_CIDR"
+        fi
+    fi
 fi
 
 exportProxy
+# enable kubeadm to reach the K8s API server
+export no_proxy="$NO_PROXY_ADDRESSES"
 
 # never upgrade docker underneath kubernetes
 if commandExists docker ; then
@@ -410,16 +422,6 @@ else
 fi
 
 if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
-    if [ "$SERVICE_CIDR" = "10.96.0.0/12" ]; then
-        # Docker < 19.03 does not support cidr addresses in the no_proxy variable.
-        # This is a workaround to add support for http proxies until we upgrade docker.
-        getNoProxyAddresses "$KUBERNETES_MASTER_ADDR" "$SERVICE_CIDR" "10.100.100.100" "10.100.100.101"
-    else
-        getNoProxyAddresses "$KUBERNETES_MASTER_ADDR" "$SERVICE_CIDR"
-    fi
-
-    # enable kubeadm to reach the K8s API server
-    export no_proxy="$NO_PROXY_ADDRESSES"
     requireDockerProxy
 fi
 
