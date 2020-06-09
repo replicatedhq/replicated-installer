@@ -7,7 +7,7 @@
 ###############################################################################
 preflightDockerDevicemapperLoopback()
 {
-    if ! commandExists "docker"; then
+    if ! isDockerInstalled ; then
         return 0
     fi
 
@@ -28,7 +28,7 @@ preflightDockerDevicemapperLoopback()
 ###############################################################################
 preflightDockerHttpProxy()
 {
-    if ! commandExists "docker"; then
+    if ! isDockerInstalled ; then
         return 0
     fi
 
@@ -47,7 +47,7 @@ preflightDockerHttpProxy()
 ###############################################################################
 preflightDockerSeccompNonDefault()
 {
-    if ! commandExists "docker"; then
+    if ! isDockerInstalled ; then
         return 0
     fi
 
@@ -69,7 +69,7 @@ preflightDockerSeccompNonDefault()
 ###############################################################################
 preflightDockerNonStandardRoot()
 {
-    if ! commandExists "docker"; then
+    if ! isDockerInstalled ; then
         return 0
     fi
 
@@ -91,7 +91,7 @@ preflightDockerNonStandardRoot()
 ###############################################################################
 preflightDockerIccDisabled()
 {
-    if ! commandExists "docker"; then
+    if ! isDockerInstalled ; then
         return 0
     fi
 
@@ -113,7 +113,7 @@ preflightDockerIccDisabled()
 ###############################################################################
 preflightDockerContainerRegistriesBlocked()
 {
-    if ! commandExists "docker"; then
+    if ! isDockerInstalled ; then
         return 0
     fi
 
@@ -134,7 +134,7 @@ preflightDockerContainerRegistriesBlocked()
 ###############################################################################
 preflightDockerUlimitNofileSet()
 {
-    if ! commandExists "docker"; then
+    if ! isDockerInstalled ; then
         return 0
     fi
 
@@ -161,7 +161,7 @@ preflightDockerUlimitNofileSet()
 ###############################################################################
 preflightDockerUserlandProxyDisabled()
 {
-    if ! commandExists "docker"; then
+    if ! isDockerInstalled ; then
         return 0
     fi
 

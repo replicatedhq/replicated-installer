@@ -388,7 +388,7 @@ fi
 exportProxy
 
 # never upgrade docker underneath kubernetes
-if commandExists docker ; then
+if isDockerInstalled ; then
     SKIP_DOCKER_INSTALL=1
 fi
 if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then

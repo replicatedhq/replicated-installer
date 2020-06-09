@@ -19,7 +19,7 @@ RESTART_DOCKER=0
 #   None
 #######################################
 requireDocker() {
-    if commandExists "docker"; then
+    if isDockerInstalled ; then
         return
     fi
 
@@ -88,7 +88,7 @@ restartDocker() {
 #   None
 #######################################
 checkDockerDriver() {
-    if ! commandExists "docker"; then
+    if ! isDockerInstalled ; then
         echo >&2 "Error: docker is not installed."
         exit 1
     fi
@@ -121,7 +121,7 @@ checkDockerStorageDriver() {
         return
     fi
 
-    if ! commandExists "docker"; then
+    if ! isDockerInstalled ; then
         echo >&2 "Error: docker is not installed."
         exit 1
     fi
