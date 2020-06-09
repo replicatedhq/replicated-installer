@@ -16,7 +16,7 @@ NO_PROXY_ADDRESSES="{{ no_proxy_addresses }}"
 # replicated components registry
 REGISTRY_ADDRESS_OVERRIDE="{{ registry_address_override }}"
 APP_REGISTRY_ADVERTISE_HOST="{{ app_registry_advertise_host }}"
-IP_ALLOC_RANGE=10.32.0.0/12  # default for weave
+IP_ALLOC_RANGE="10.32.0.0/12" # default for weave
 REGISTRY_CLUSTER_IP=
 REPLICATED_REGISTRY_CLUSTER_IP=
 CEPH_DASHBOARD_URL=
