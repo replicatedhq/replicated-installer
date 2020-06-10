@@ -47,7 +47,7 @@ run_container() {
         -e LOCAL_ADDRESS=\${PRIVATE_ADDRESS} \\
         -e RELEASE_CHANNEL=\${RELEASE_CHANNEL} \\
         \$REPLICATED_OPTS \\
-        quay.io/replicated/replicated:current
+        ${REPLICATED_REGISTRY_PREFIX}/replicated:current
 }
 
 stop_container() {

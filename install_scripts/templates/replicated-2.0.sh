@@ -224,10 +224,10 @@ remove_docker_containers() {
 tag_docker_images() {
     printf "Tagging replicated and replicated-ui images\n"
     # older docker versions require -f flag to move a tag from one image to another
-    docker tag "quay.io/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}" "quay.io/replicated/replicated:current" 2>/dev/null \
-        || docker tag -f "quay.io/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}" "quay.io/replicated/replicated:current"
-    docker tag "quay.io/replicated/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}" "quay.io/replicated/replicated-ui:current" 2>/dev/null \
-        || docker tag -f "quay.io/replicated/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}" "quay.io/replicated/replicated-ui:current"
+    docker tag "$REPLICATED_REGISTRY_PREFIX/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}" "$REPLICATED_REGISTRY_PREFIX/replicated:current" 2>/dev/null \
+        || docker tag -f "$REPLICATED_REGISTRY_PREFIX/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}" "$REPLICATED_REGISTRY_PREFIX/replicated:current"
+    docker tag "$REPLICATED_REGISTRY_PREFIX/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}" "$REPLICATED_REGISTRY_PREFIX/replicated-ui:current" 2>/dev/null \
+        || docker tag -f "$REPLICATED_REGISTRY_PREFIX/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}" "$REPLICATED_REGISTRY_PREFIX/replicated-ui:current"
 }
 
 find_hostname() {
@@ -533,6 +533,7 @@ requireRootUser
 detectLsbDist
 detectInitSystem
 detectInitSystemConfDir
+getReplicatedRegistryPrefix
 
 mkdir -p /var/lib/replicated/branding
 if [ -n "$CHANNEL_CSS" ]; then
@@ -670,6 +671,9 @@ while [ "$1" != "" ]; do
             ;;
         artifactory-access-method|artifactory_access_method)
             ARTIFACTORY_ACCESS_METHOD="$_value"
+            ;;
+        artifactory-docker-repo-key|artifactory_docker_repo_key)
+            ARTIFACTORY_DOCKER_REPO_KEY="$_value"
             ;;
         artifactory-quay-repo-key|artifactory_quay_repo_key)
             ARTIFACTORY_QUAY_REPO_KEY="$_value"

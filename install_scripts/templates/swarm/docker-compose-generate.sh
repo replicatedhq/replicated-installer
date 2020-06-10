@@ -24,6 +24,7 @@ HTTP_PROXY="{{ http_proxy }}"
 NO_PROXY_ADDRESSES="{{ no_proxy_addresses }}"
 RELEASE_SEQUENCE="{{ release_sequence }}"
 RELEASE_PATCH_SEQUENCE="{{ release_patch_sequence }}"
+REPLICATED_REGISTRY_PREFIX=replicated
 
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"
@@ -50,7 +51,7 @@ while [ "$1" != "" ]; do
         release-patch-sequence|release_patch_sequence)
             RELEASE_PATCH_SEQUENCE="$_value"
             ;;
-        suppress-runtime)
+        suppress-runtime|suppress_runtime)
             SUPPRESS_RUNTIME=1
             ;;
         swarm-node-address|swarm_node_address)
@@ -68,11 +69,14 @@ while [ "$1" != "" ]; do
         user-id|user_id)
             USER_ID="$_value"
             ;;
-        http-proxy)
+        http-proxy|http_proxy)
             HTTP_PROXY="$_value"
             ;;
-        no-proxy-addresses)
+        no-proxy-addresses|no_proxy_addresses)
             NO_PROXY_ADDRESSES="$_value"
+            ;;
+        replicated-registry-prefix|replicated_registry_prefix)
+            REPLICATED_REGISTRY_PREFIX="$_value"
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
@@ -113,7 +117,7 @@ echo ""
 echo "services:"
 echo ""
 echo "  replicated:"
-echo "    image: quay.io/replicated/replicated:{{ replicated_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+echo "    image: ${REPLICATED_REGISTRY_PREFIX}/replicated:{{ replicated_tag|default('stable', true) }}{{ environment_tag_suffix }}"
 echo "    ports:"
 echo "      - ${REGISTRY_BIND_PORT}:9874"
 echo "      - 9878:9878"
@@ -199,7 +203,7 @@ fi
 echo "        mode: 0440"
 echo ""
 echo "  replicated-ui:"
-echo "    image: quay.io/replicated/replicated-ui:{{ replicated_ui_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+echo "    image: ${REPLICATED_REGISTRY_PREFIX}/replicated-ui:{{ replicated_ui_tag|default('stable', true) }}{{ environment_tag_suffix }}"
 echo "    ports:"
 echo "      - ${UI_BIND_PORT}:8800"
 echo "    environment:"
@@ -234,7 +238,7 @@ echo "  replicated-operator:"
 if [ "$AIRGAP" = "1" ]; then
     echo "    image: ${SWARM_NODE_ADDRESS}:${REGISTRY_BIND_PORT}/replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}"
 else
-    echo "    image: quay.io/replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+    echo "    image: ${REPLICATED_REGISTRY_PREFIX}/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}"
 fi
 echo "    environment:"
 echo "      - RELEASE_CHANNEL={{ channel_name|default('stable', true) }}"

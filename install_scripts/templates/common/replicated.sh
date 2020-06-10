@@ -134,20 +134,44 @@ maybeCreateReplicatedUser() {
 }
 
 #######################################
-# Pull replicated and replicated-ui container images.
+# Gets the replicated image registry prefix
 # Globals:
 #   None
+# Arguments:
+#   Replicated version
+# Returns:
+#   REPLICATED_REGISTRY_PREFIX
+#######################################
+REPLICATED_REGISTRY_PREFIX=
+getReplicatedRegistryPrefix() {
+    REPLICATED_REGISTRY_PREFIX=replicated
+    local replicated_version="$1"
+    semverCompare "$replicated_version" "2.44.3"
+    if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
+        REPLICATED_REGISTRY_PREFIX=quay.io/replicated
+    fi
+}
+
+#######################################
+# Pull replicated and replicated-ui container images.
+# Globals:
+#   REGISTRY_ADDRESS_OVERRIDE
+#   REGISTRY_PATH_PREFIX
+#   REPLICATED_REGISTRY_PREFIX
 # Arguments:
 #   None
 # Returns:
 #   None
 #######################################
 pullReplicatedImages() {
-    docker pull "${REGISTRY_ADDRESS_OVERRIDE:-quay.io}/${REGISTRY_PATH_PREFIX}replicated/replicated:{{ replicated_tag|default('stable', true) }}{{ environment_tag_suffix }}"
-    docker pull "${REGISTRY_ADDRESS_OVERRIDE:-quay.io}/${REGISTRY_PATH_PREFIX}replicated/replicated-ui:{{ replicated_ui_tag|default('stable', true) }}{{ environment_tag_suffix }}"
-    if [ -n "$REGISTRY_ADDRESS_OVERRIDE" ] || [ -n "$REGISTRY_PATH_PREFIX" ]; then
-        (set -x; docker tag "${REGISTRY_ADDRESS_OVERRIDE:-quay.io}/${REGISTRY_PATH_PREFIX}replicated/replicated:{{ replicated_tag|default('stable', true) }}{{ environment_tag_suffix }}" "quay.io/replicated/replicated:{{ replicated_tag|default('stable', true) }}{{ environment_tag_suffix }}")
-        (set -x; docker tag "${REGISTRY_ADDRESS_OVERRIDE:-quay.io}/${REGISTRY_PATH_PREFIX}replicated/replicated-ui:{{ replicated_ui_tag|default('stable', true) }}{{ environment_tag_suffix }}" "quay.io/replicated/replicated-ui:{{ replicated_ui_tag|default('stable', true) }}{{ environment_tag_suffix }}")
+    if [ -n "$REGISTRY_ADDRESS_OVERRIDE" ]; then
+        docker pull "${REGISTRY_ADDRESS_OVERRIDE}/${REGISTRY_PATH_PREFIX}replicated/replicated:{{ replicated_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+        docker pull "${REGISTRY_ADDRESS_OVERRIDE}/${REGISTRY_PATH_PREFIX}replicated/replicated-ui:{{ replicated_ui_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+        (set -x; docker tag "${REGISTRY_ADDRESS_OVERRIDE}/${REGISTRY_PATH_PREFIX}replicated/replicated:{{ replicated_tag|default('stable', true) }}{{ environment_tag_suffix }}" "${REPLICATED_REGISTRY_PREFIX}/replicated:{{ replicated_tag|default('stable', true) }}{{ environment_tag_suffix }}")
+        (set -x; docker tag "${REGISTRY_ADDRESS_OVERRIDE}/${REGISTRY_PATH_PREFIX}replicated/replicated-ui:{{ replicated_ui_tag|default('stable', true) }}{{ environment_tag_suffix }}" "${REPLICATED_REGISTRY_PREFIX}/replicated-ui:{{ replicated_ui_tag|default('stable', true) }}{{ environment_tag_suffix }}")
+    else
+        docker pull "${REPLICATED_REGISTRY_PREFIX}replicated/replicated:{{ replicated_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+        docker pull "${REPLICATED_REGISTRY_PREFIX}replicated/replicated-ui:{{ replicated_ui_tag|default('stable', true) }}{{ environment_tag_suffix }}"
     fi
 }
 
@@ -161,9 +185,11 @@ pullReplicatedImages() {
 #   None
 #######################################
 pullOperatorImage() {
-    docker pull "${REGISTRY_ADDRESS_OVERRIDE:-quay.io}/${REGISTRY_PATH_PREFIX}replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}"
-    if [ -n "$REGISTRY_ADDRESS_OVERRIDE" ] || [ -n "$REGISTRY_PATH_PREFIX" ]; then
-        (set -x; docker tag "${REGISTRY_ADDRESS_OVERRIDE:-quay.io}/${REGISTRY_PATH_PREFIX}replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}" "quay.io/replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}")
+    if [ -n "$REGISTRY_ADDRESS_OVERRIDE" ]; then
+        docker pull "${REGISTRY_ADDRESS_OVERRIDE}/${REGISTRY_PATH_PREFIX}replicated/replicated-operator:{{ replicated_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+        (set -x; docker tag "${REGISTRY_ADDRESS_OVERRIDE}/${REGISTRY_PATH_PREFIX}replicated/replicated-operator:{{ replicated_tag|default('stable', true) }}{{ environment_tag_suffix }}" "${REPLICATED_REGISTRY_PREFIX}/replicated-operator:{{ replicated_tag|default('stable', true) }}{{ environment_tag_suffix }}")
+    else
+        docker pull "${REPLICATED_REGISTRY_PREFIX}replicated/replicated-operator:{{ replicated_tag|default('stable', true) }}{{ environment_tag_suffix }}"
     fi
 }
 
@@ -178,7 +204,7 @@ pullOperatorImage() {
 #######################################
 tagAndPushOperatorImage()  {
     docker tag \
-        "quay.io/replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}" \
+        "${REPLICATED_REGISTRY_PREFIX}/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}" \
         "${1}/replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}"
     docker push "${1}/replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}"
 }

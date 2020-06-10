@@ -11,6 +11,7 @@
 
 ARTIFACTORY_ADDRESS=
 ARTIFACTORY_ACCESS_METHOD=
+ARTIFACTORY_DOCKER_REPO_KEY=
 ARTIFACTORY_QUAY_REPO_KEY=
 ARTIFACTORY_AUTH=
 
@@ -20,7 +21,9 @@ ARTIFACTORY_AUTH=
 # Globals:
 #   ARTIFACTORY_ADDRESS
 #   ARTIFACTORY_ACCESS_METHOD
+#   ARTIFACTORY_DOCKER_REPO_KEY
 #   ARTIFACTORY_QUAY_REPO_KEY
+#   REPLICATED_REGISTRY_PREFIX
 # Arguments:
 #   None
 # Returns:
@@ -37,21 +40,39 @@ configureRegistryProxyAddressOverride()
         bail "Artifactory registry proxy cannot be used with airgap."
     fi
 
-    case "$ARTIFACTORY_ACCESS_METHOD" in
-        url-prefix)
-            _configureRegistryProxyAddressOverride_UrlPrefix
-            ;;
-        subdomain)
-            _configureRegistryProxyAddressOverride_Subdomain
-            ;;
-        port)
-            _configureRegistryProxyAddressOverride_Port
-            ;;
-        *)
-            # default url-prefix
-            _configureRegistryProxyAddressOverride_UrlPrefix
-            ;;
-    esac
+    if [ "$REPLICATED_REGISTRY_PREFIX" = "quay.io/replicated" ]; then
+        case "$ARTIFACTORY_ACCESS_METHOD" in
+            url-prefix)
+                _configureRegistryProxyAddressOverride_UrlPrefixQuay
+                ;;
+            subdomain)
+                _configureRegistryProxyAddressOverride_SubdomainQuay
+                ;;
+            port)
+                _configureRegistryProxyAddressOverride_PortQuay
+                ;;
+            *)
+                # default url-prefix
+                _configureRegistryProxyAddressOverride_UrlPrefixQuay
+                ;;
+        esac
+    else
+        case "$ARTIFACTORY_ACCESS_METHOD" in
+            url-prefix)
+                _configureRegistryProxyAddressOverride_UrlPrefix
+                ;;
+            subdomain)
+                _configureRegistryProxyAddressOverride_Subdomain
+                ;;
+            port)
+                _configureRegistryProxyAddressOverride_Port
+                ;;
+            *)
+                # default url-prefix
+                _configureRegistryProxyAddressOverride_UrlPrefix
+                ;;
+        esac
+    fi
 }
 
 _configureRegistryProxyAddressOverride_UrlPrefix()
@@ -60,13 +81,28 @@ _configureRegistryProxyAddressOverride_UrlPrefix()
         return
     fi
 
-    local quayRepoKey="$ARTIFACTORY_QUAY_REPO_KEY"
-    if [ -z "$quayRepoKey" ]; then
-        logWarn "Flag \"artifactory-quay-repo-key\" not set, defaulting to \"quay-remote\"."
-        quayRepoKey="quay-remote"
+    local repoKey="$ARTIFACTORY_DOCKER_REPO_KEY"
+    if [ -z "$repoKey" ]; then
+        logWarn "Flag \"artifactory-docker-repo-key\" not set, defaulting to \"docker-remote\"."
+        repoKey="docker-remote"
     fi
     REGISTRY_ADDRESS_OVERRIDE="$ARTIFACTORY_ADDRESS"
-    REGISTRY_PATH_PREFIX="${quayRepoKey}/"
+    REGISTRY_PATH_PREFIX="${repoKey}/"
+}
+
+_configureRegistryProxyAddressOverride_UrlPrefixQuay()
+{
+    if [ -z "$ARTIFACTORY_ADDRESS" ]; then
+        return
+    fi
+
+    local repoKey="$ARTIFACTORY_QUAY_REPO_KEY"
+    if [ -z "$repoKey" ]; then
+        logWarn "Flag \"artifactory-quay-repo-key\" not set, defaulting to \"quay-remote\"."
+        repoKey="quay-remote"
+    fi
+    REGISTRY_ADDRESS_OVERRIDE="$ARTIFACTORY_ADDRESS"
+    REGISTRY_PATH_PREFIX="${repoKey}/"
 }
 
 _configureRegistryProxyAddressOverride_Subdomain()
@@ -75,15 +111,42 @@ _configureRegistryProxyAddressOverride_Subdomain()
         return
     fi
 
-    local quayRepoKey="$ARTIFACTORY_QUAY_REPO_KEY"
-    if [ -z "$quayRepoKey" ]; then
-        logWarn "Flag \"artifactory-quay-repo-key\" not set, defaulting to \"quay-remote\"."
-        quayRepoKey="quay-remote"
+    local repoKey="$ARTIFACTORY_DOCKER_REPO_KEY"
+    if [ -z "$repoKey" ]; then
+        logWarn "Flag \"artifactory-docker-repo-key\" not set, defaulting to \"docker-remote\"."
+        repoKey="docker-remote"
     fi
-    REGISTRY_ADDRESS_OVERRIDE="${quayRepoKey}.${ARTIFACTORY_ADDRESS}"
+    REGISTRY_ADDRESS_OVERRIDE="${repoKey}.${ARTIFACTORY_ADDRESS}"
+}
+
+_configureRegistryProxyAddressOverride_SubdomainQuay()
+{
+    if [ -z "$ARTIFACTORY_ADDRESS" ]; then
+        return
+    fi
+
+    local repoKey="$ARTIFACTORY_QUAY_REPO_KEY"
+    if [ -z "$repoKey" ]; then
+        logWarn "Flag \"artifactory-quay-repo-key\" not set, defaulting to \"quay-remote\"."
+        repoKey="quay-remote"
+    fi
+    REGISTRY_ADDRESS_OVERRIDE="${repoKey}.${ARTIFACTORY_ADDRESS}"
 }
 
 _configureRegistryProxyAddressOverride_Port()
+{
+    if [ -z "$ARTIFACTORY_ADDRESS" ]; then
+        return
+    fi
+
+    if [ -z "$ARTIFACTORY_DOCKER_REPO_KEY" ]; then
+        bail "Flag \"artifactory-docker-repo-key\" required for Artifactory access method \"port\"."
+    fi
+    splitHostPort "$ARTIFACTORY_ADDRESS"
+    REGISTRY_ADDRESS_OVERRIDE="${HOST}:${ARTIFACTORY_DOCKER_REPO_KEY}"
+}
+
+_configureRegistryProxyAddressOverride_PortQuay()
 {
     if [ -z "$ARTIFACTORY_ADDRESS" ]; then
         return
@@ -101,6 +164,7 @@ _configureRegistryProxyAddressOverride_Port()
 # Globals:
 #   ARTIFACTORY_ADDRESS
 #   ARTIFACTORY_ACCESS_METHOD
+#   ARTIFACTORY_DOCKER_REPO_KEY
 #   ARTIFACTORY_QUAY_REPO_KEY
 #   ARTIFACTORY_AUTH
 # Arguments:
@@ -124,34 +188,44 @@ maybeWriteRegistryProxyConfig()
         exit 0
     fi
 
+    mkdir -p /etc/replicated
     _writeRegistryProxyConfig "/etc/replicated/registry_proxy.json"
 }
 
 _writeRegistryProxyConfig()
 {
-    mkdir -p /etc/replicated
     cat > "$1" <<-EOF
 {
   "artifactory": {
     "address": "$ARTIFACTORY_ADDRESS",
     "auth": "$ARTIFACTORY_AUTH",
 EOF
-    if [ -n "$ARTIFACTORY_QUAY_REPO_KEY" ]; then
-        cat >> "$1" <<-EOF
-    "access_method": "$ARTIFACTORY_ACCESS_METHOD",
-    "repository_key_map": {
-      "quay.io": "$ARTIFACTORY_QUAY_REPO_KEY"
-    }
-  }
-}
-EOF
-    else
+    if [ -z "$ARTIFACTORY_DOCKER_REPO_KEY" ] && [ -z "$ARTIFACTORY_QUAY_REPO_KEY" ]; then
         cat >> "$1" <<-EOF
     "access_method": "$ARTIFACTORY_ACCESS_METHOD"
   }
 }
 EOF
+        return
     fi
+
+    cat >> "$1" <<-EOF
+    "access_method": "$ARTIFACTORY_ACCESS_METHOD",
+    "repository_key_map": {
+EOF
+    if [ -n "$ARTIFACTORY_DOCKER_REPO_KEY" ] && [ -n "$ARTIFACTORY_QUAY_REPO_KEY" ]; then
+        echo "      \"docker.io\": \"$ARTIFACTORY_DOCKER_REPO_KEY\"," >> "$1"
+    elif [ -n "$ARTIFACTORY_DOCKER_REPO_KEY" ]; then
+        echo "      \"docker.io\": \"$ARTIFACTORY_DOCKER_REPO_KEY\"" >> "$1"
+    fi
+    if [ -n "$ARTIFACTORY_QUAY_REPO_KEY" ]; then
+        echo "      \"quay.io\": \"$ARTIFACTORY_QUAY_REPO_KEY\"" >> "$1"
+    fi
+    cat >> "$1" <<-EOF
+    }
+  }
+}
+EOF
 }
 
 #######################################

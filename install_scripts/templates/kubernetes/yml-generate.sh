@@ -56,6 +56,7 @@ API_SERVICE_ADDRESS="{{ api_service_address }}"
 HA_CLUSTER="{{ ha_cluster }}"
 PURGE_DEAD_NODES="{{ purge_dead_nodes }}"
 MAINTAIN_ROOK_STORAGE_NODES="{{ maintain_rook_storage_nodes }}"
+REPLICATED_REGISTRY_PREFIX=replicated
 
 {% include 'common/kubernetes.sh' %}
 
@@ -238,6 +239,9 @@ while [ "$1" != "" ]; do
         object-store-cluster-ip|object_store_cluster_ip)
             OBJECT_STORE_CLUSTER_IP="$_value"
             ;;
+        replicated-registry-prefix|replicated_registry_prefix)
+            REPLICATED_REGISTRY_PREFIX="$_value"
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -292,6 +296,11 @@ EOF
         )
     fi
 
+    DOCKER_REGISTRY_PREFIX="$REPLICATED_REGISTRY_PREFIX"
+    if [ -n "$REGISTRY_ADDRESS_OVERRIDE" ]; then
+      DOCKER_REGISTRY_PREFIX="$REGISTRY_ADDRESS_OVERRIDE/replicated"
+    fi
+
     cat <<EOF
 ---
 apiVersion: apps/v1
@@ -317,7 +326,7 @@ spec:
 $NODE_SELECTOR
       containers:
       - name: replicated
-        image: "${REGISTRY_ADDRESS_OVERRIDE:-quay.io}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
+        image: "${DOCKER_REGISTRY_PREFIX}/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
         imagePullPolicy: IfNotPresent
         env:
         - name: SCHEDULER_ENGINE
@@ -425,7 +434,7 @@ $PROXY_ENVS
             cpu: 250m
             memory: 256Mi
       - name: replicated-ui
-        image: "${REGISTRY_ADDRESS_OVERRIDE:-quay.io}/replicated/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}"
+        image: "${DOCKER_REGISTRY_PREFIX}/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}"
         imagePullPolicy: IfNotPresent
         env:
         - name: RELEASE_CHANNEL
@@ -1059,7 +1068,7 @@ spec:
             weight: 100
       containers:
       - name: rek
-        image: "${REGISTRY_ADDRESS_OVERRIDE:-quay.io}/replicated/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
+        image: "${DOCKER_REGISTRY_PREFIX}/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
         imagePullPolicy: IfNotPresent
         command:
         - /usr/bin/rek
