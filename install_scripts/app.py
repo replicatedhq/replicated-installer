@@ -233,6 +233,7 @@ def get_replicated_operator(replicated_channel=None,
         **helpers.template_args(
             channel_name=replicated_channel,
             pinned_docker_version=pinned_docker_version,
+            replicated_version=replicated_operator_version,
             replicated_operator_tag=replicated_operator_tag,
             replicated_root_volume_mount=root_volume,
             replicated_operator_additional_etc_mounts=additional_etc_mounts,

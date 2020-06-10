@@ -1096,7 +1096,7 @@ detectLsbDist
 bailIfUnsupportedOS
 detectInitSystem
 mustSwapoff
-getReplicatedRegistryPrefix
+getReplicatedRegistryPrefix "$REPLICATED_VERSION"
 
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"

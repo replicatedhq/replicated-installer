@@ -533,7 +533,7 @@ requireRootUser
 detectLsbDist
 detectInitSystem
 detectInitSystemConfDir
-getReplicatedRegistryPrefix
+getReplicatedRegistryPrefix "$REPLICATED_VERSION"
 
 mkdir -p /var/lib/replicated/branding
 if [ -n "$CHANNEL_CSS" ]; then

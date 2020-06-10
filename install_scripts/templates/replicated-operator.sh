@@ -11,6 +11,7 @@
 
 set -e
 
+REPLICATED_VERSION="{{ replicated_version }}"
 PINNED_DOCKER_VERSION="{{ pinned_docker_version }}"
 MIN_DOCKER_VERSION="{{ min_docker_version }}"
 SKIP_DOCKER_INSTALL=0
@@ -280,7 +281,7 @@ requireRootUser
 detectLsbDist
 detectInitSystem
 detectInitSystemConfDir
-getReplicatedRegistryPrefix
+getReplicatedRegistryPrefix "$REPLICATED_VERSION"
 
 # read existing replicated opts values
 if [ -f $CONFDIR/replicated-operator ]; then
