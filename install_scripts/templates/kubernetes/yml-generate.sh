@@ -1035,6 +1035,11 @@ EOF
 }
 
 render_rek_operator_yaml() {
+    DOCKER_REGISTRY_PREFIX="$REPLICATED_REGISTRY_PREFIX"
+    if [ -n "$REGISTRY_ADDRESS_OVERRIDE" ]; then
+      DOCKER_REGISTRY_PREFIX="$REGISTRY_ADDRESS_OVERRIDE/replicated"
+    fi
+
     cat <<EOF
 ---
 apiVersion: apps/v1
