@@ -698,7 +698,7 @@ airgapLoadKubernetesControlImages1153() {
 
     while read -r image; do
         (set -x; docker tag $image)
-    done < <(airgapListKubernetesControlImages1153)
+    done <<< "$(airgapListKubernetesControlImages1153)"
 }
 
 function list_all_required_images() {
