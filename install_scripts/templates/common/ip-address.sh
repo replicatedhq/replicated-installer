@@ -228,3 +228,24 @@ PARSED_IPV4=
 parseIpv4FromAddress() {
     PARSED_IPV4=$(echo "$1" | grep --only-matching '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*')
 }
+
+#######################################
+# Validates a private address against the ip routes.
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   0 if valid
+#######################################
+isValidPrivateIp() {
+    local privateIp="$1"
+    local _regex="^[[:digit:]]+: ([^[:space:]]+)[[:space:]]+[[:alnum:]]+ ([[:digit:].]+)"
+    while read -r _line; do
+        [[ $_line =~ $_regex ]]
+        if [ "${BASH_REMATCH[1]}" != "lo" ] && [ "${BASH_REMATCH[2]}" = "$privateIp" ]; then
+            return 0
+        fi
+    done <<< "$(ip -4 -o addr)"
+    return 1
+}
