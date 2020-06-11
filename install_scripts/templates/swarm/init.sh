@@ -184,6 +184,9 @@ stackDeploy() {
     if [ -n "$NO_PROXY_ADDRESSES" ]; then
         opts=$opts" no-proxy-addresses=$NO_PROXY_ADDRESSES"
     fi
+    if [ -n "$REPLICATED_REGISTRY_PREFIX" ]; then
+        opts=$opts" replicated-registry-prefix=$REPLICATED_REGISTRY_PREFIX"
+    fi
 
     echo "Deploying Replicated stack"
 
@@ -275,6 +278,7 @@ require64Bit
 requireRootUser
 detectLsbDist
 detectInitSystem
+getReplicatedRegistryPrefix "$REPLICATED_VERSION"
 
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"

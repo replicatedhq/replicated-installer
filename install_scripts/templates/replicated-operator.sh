@@ -11,6 +11,7 @@
 
 set -e
 
+REPLICATED_VERSION="{{ replicated_version }}"
 PINNED_DOCKER_VERSION="{{ pinned_docker_version }}"
 MIN_DOCKER_VERSION="{{ min_docker_version }}"
 SKIP_DOCKER_INSTALL=0
@@ -86,8 +87,8 @@ remove_docker_containers() {
 tag_docker_images() {
     printf "Tagging replicated-operator image\n"
     # older docker versions require -f flag to move a tag from one image to another
-    docker tag "quay.io/replicated/replicated-operator:{{ replicated_operator_tag }}{{ environment_tag_suffix }}" "quay.io/replicated/replicated-operator:current" 2>/dev/null \
-        || docker tag -f "quay.io/replicated/replicated-operator:{{ replicated_operator_tag }}{{ environment_tag_suffix }}" "quay.io/replicated/replicated-operator:current"
+    docker tag "${REPLICATED_REGISTRY_PREFIX}/replicated-operator:{{ replicated_operator_tag }}{{ environment_tag_suffix }}" "${REPLICATED_REGISTRY_PREFIX}/replicated-operator:current" 2>/dev/null \
+        || docker tag -f "${REPLICATED_REGISTRY_PREFIX}/replicated-operator:{{ replicated_operator_tag }}{{ environment_tag_suffix }}" "${REPLICATED_REGISTRY_PREFIX}/replicated-operator:current"
 }
 
 find_hostname() {
@@ -280,6 +281,7 @@ requireRootUser
 detectLsbDist
 detectInitSystem
 detectInitSystemConfDir
+getReplicatedRegistryPrefix "$REPLICATED_VERSION"
 
 # read existing replicated opts values
 if [ -f $CONFDIR/replicated-operator ]; then
@@ -387,6 +389,9 @@ while [ "$1" != "" ]; do
             ;;
         artifactory-access-method|artifactory_access_method)
             ARTIFACTORY_ACCESS_METHOD="$_value"
+            ;;
+        artifactory-docker-repo-key|artifactory_docker_repo_key)
+            ARTIFACTORY_DOCKER_REPO_KEY="$_value"
             ;;
         artifactory-quay-repo-key|artifactory_quay_repo_key)
             ARTIFACTORY_QUAY_REPO_KEY="$_value"

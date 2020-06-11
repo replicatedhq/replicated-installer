@@ -533,6 +533,9 @@ getYAMLOpts() {
     if [ -n "$OBJECT_STORE_CLUSTER_IP" ]; then
         opts=$opts" object-store-cluster-ip=$OBJECT_STORE_CLUSTER_IP"
     fi
+    if [ -n "$REPLICATED_REGISTRY_PREFIX" ]; then
+        opts=$opts" replicated-registry-prefix=$REPLICATED_REGISTRY_PREFIX"
+    fi
     YAML_GENERATE_OPTS="$opts"
 }
 
@@ -789,6 +792,10 @@ appRegistryServiceDeploy() {
     done
     APP_REGISTRY_ADVERTISE_HOST="$replicatedRegistryIP"
 
+    # TODO: add insecure registry "$clusterIp" or "$SERVICE_CIDR"
+    # note that addInsecureRegistry does not reconfigure this setting so we should configure all
+    # insecure registries up front before installing docker.
+
     logSuccess "App registry service deployed"
 }
 
@@ -885,7 +892,12 @@ registryDeploy() {
     REGISTRY_ADDRESS_OVERRIDE="$registryIP:5000"
     YAML_GENERATE_OPTS="$YAML_GENERATE_OPTS registry-address-override=$REGISTRY_ADDRESS_OVERRIDE"
 
-    addInsecureRegistry "$SERVICE_CIDR"
+    if [ -n "$clusterIp" ]; then
+        addInsecureRegistry "$clusterIp"
+    else
+        addInsecureRegistry "$SERVICE_CIDR"
+    fi
+
     # check if there are worker nodes that need to be configured for the insecure registry
     local workers=$(kubectl get nodes --selector='!node-role.kubernetes.io/master' -o jsonpath='{.items[*].metadata.name}')
     local numMasters=$(kubectl get nodes --selector='node-role.kubernetes.io/master' | sed '1d' | wc -l)
@@ -1084,6 +1096,7 @@ detectLsbDist
 bailIfUnsupportedOS
 detectInitSystem
 mustSwapoff
+getReplicatedRegistryPrefix "$REPLICATED_VERSION"
 
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"
