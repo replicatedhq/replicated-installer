@@ -437,11 +437,13 @@ if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" != "1" ] && [ "$NO_PUBLIC_ADDRESS" !=
     if [ -z "$PUBLIC_ADDRESS" ]; then
         PUBLIC_ADDRESS="$REPLICATED_OPTS_VALUE"
     fi
+    # Check that the public address from discoverPublicIp matches the one from Replicated Operator opts
     if [ -n "$REPLICATED_OPTS_VALUE" ] && [ "$REPLICATED_OPTS_VALUE" = "$PUBLIC_ADDRESS" ]; then
         PUBLIC_ADDRESS="$REPLICATED_OPTS_VALUE"
         printf "The installer will use service address '%s' (imported from $CONFDIR/replicated-operator 'PUBLIC_ADDRESS')\n" $PUBLIC_ADDRESS
     else
         if [ -n "$PUBLIC_ADDRESS" ]; then
+            # If public addresses do not match then prompt with confirmation
             shouldUsePublicIp
         else
             printf "The installer was unable to automatically detect the service IP address of this machine.\n"
