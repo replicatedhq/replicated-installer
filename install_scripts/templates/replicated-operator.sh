@@ -433,22 +433,24 @@ if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" != "1" ] && [ "$NO_PUBLIC_ADDRESS" !=
     printf "Determining service address\n"
     discoverPublicIp
 
+    readReplicatedOperatorOpts "PUBLIC_ADDRESS"
     if [ -z "$PUBLIC_ADDRESS" ]; then
-        readReplicatedOperatorOpts "PUBLIC_ADDRESS"
-        if [ -n "$REPLICATED_OPTS_VALUE" ]; then
-            PUBLIC_ADDRESS="$REPLICATED_OPTS_VALUE"
-            printf "The installer will use service address '%s' (imported from $CONFDIR/replicated-operator 'PUBLIC_ADDRESS')\n" $PUBLIC_ADDRESS
-        fi
+        PUBLIC_ADDRESS="$REPLICATED_OPTS_VALUE"
     fi
-
-    if [ -n "$PUBLIC_ADDRESS" ]; then
-        shouldUsePublicIp
+    # Check that the public address from discoverPublicIp matches the one from Replicated Operator opts
+    if [ -n "$REPLICATED_OPTS_VALUE" ] && [ "$REPLICATED_OPTS_VALUE" = "$PUBLIC_ADDRESS" ]; then
+        printf "The installer will use service address '%s' (imported from $CONFDIR/replicated-operator 'PUBLIC_ADDRESS')\n" $PUBLIC_ADDRESS
     else
-        printf "The installer was unable to automatically detect the service IP address of this machine.\n"
-        printf "Please enter the address or leave blank for unspecified.\n"
-        promptForPublicIp
-        if [ -z "$PUBLIC_ADDRESS" ]; then
-            NO_PUBLIC_ADDRESS=1
+        if [ -n "$PUBLIC_ADDRESS" ]; then
+            # If public addresses do not match then prompt with confirmation
+            shouldUsePublicIp
+        else
+            printf "The installer was unable to automatically detect the service IP address of this machine.\n"
+            printf "Please enter the address or leave blank for unspecified.\n"
+            promptForPublicIp
+            if [ -z "$PUBLIC_ADDRESS" ]; then
+                NO_PUBLIC_ADDRESS=1
+            fi
         fi
     fi
 fi

@@ -1299,7 +1299,9 @@ if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" -ne "1" ]; then
     discoverPublicIp
 
     if [ -n "$PUBLIC_ADDRESS" ]; then
-        shouldUsePublicIp
+        if ! cat /opt/replicated/kubeadm.conf 2>/dev/null | grep -q "$PUBLIC_ADDRESS" ; then
+            shouldUsePublicIp
+        fi
     else
         printf "The installer was unable to automatically detect the service IP address of this machine.\n"
         printf "Please enter the address or leave blank for unspecified.\n"

@@ -97,10 +97,12 @@ discoverPrivateIp() {
     if [ -n "$PRIVATE_ADDRESS" ]; then
         if [ "$NO_PRIVATE_ADDRESS_PROMPT" != "1" ]; then
             printf "Validating local address supplied in parameter: '%s'\n" $PRIVATE_ADDRESS
-            promptForPrivateIp
-        else
-            printf "The installer will use local address '%s' (from parameter)\n" $PRIVATE_ADDRESS
+            if ! isValidPrivateIp "$PRIVATE_ADDRESS" ; then
+                promptForPrivateIp
+                return
+            fi
         fi
+        printf "The installer will use local address '%s' (from parameter)\n" $PRIVATE_ADDRESS
         return
     fi
 
@@ -109,10 +111,12 @@ discoverPrivateIp() {
         PRIVATE_ADDRESS="$REPLICATED_CONF_VALUE"
         if [ "$NO_PRIVATE_ADDRESS_PROMPT" != "1" ]; then
             printf "Validating local address found in /etc/replicated.conf: '%s'\n" $PRIVATE_ADDRESS
-            promptForPrivateIp
-        else
-            printf "The installer will use local address '%s' (imported from /etc/replicated.conf 'LocalAddress')\n" $PRIVATE_ADDRESS
+            if ! isValidPrivateIp "$PRIVATE_ADDRESS" ; then
+                promptForPrivateIp
+                return
+            fi
         fi
+        printf "The installer will use local address '%s' (imported from /etc/replicated.conf 'LocalAddress')\n" $PRIVATE_ADDRESS
         return
     fi
 
@@ -725,22 +729,24 @@ if [ -z "$PUBLIC_ADDRESS" ] && [ "$AIRGAP" != "1" ] && [ "$NO_PUBLIC_ADDRESS" !=
         # Even though this script does not use PUBLIC_ADDRESS, we must prompt prior to replicated
         # operator installation to minimize the delay between starting replicated and the operator for
         # automated installs. If the operator takes too long to start then the app start will fail.
+        readReplicatedOperatorOpts "PUBLIC_ADDRESS"
         if [ -z "$PUBLIC_ADDRESS" ]; then
-            readReplicatedOperatorOpts "PUBLIC_ADDRESS"
-            if [ -n "$REPLICATED_OPTS_VALUE" ]; then
-                PUBLIC_ADDRESS="$REPLICATED_OPTS_VALUE"
-                printf "The installer will use service address '%s' (imported from $CONFDIR/replicated-operator 'PUBLIC_ADDRESS')\n" $PUBLIC_ADDRESS
-            fi
+            PUBLIC_ADDRESS="$REPLICATED_OPTS_VALUE"
         fi
-
-        if [ -n "$PUBLIC_ADDRESS" ]; then
-            shouldUsePublicIp
+        # Check that the public address from discoverPublicIp matches the one from Replicated Operator opts
+        if [ -n "$REPLICATED_OPTS_VALUE" ] && [ "$REPLICATED_OPTS_VALUE" = "$PUBLIC_ADDRESS" ]; then
+            printf "The installer will use service address '%s' (imported from $CONFDIR/replicated-operator 'PUBLIC_ADDRESS')\n" $PUBLIC_ADDRESS
         else
-            printf "The installer was unable to automatically detect the service IP address of this machine.\n"
-            printf "Please enter the address or leave blank for unspecified.\n"
-            promptForPublicIp
-            if [ -z "$PUBLIC_ADDRESS" ]; then
-                NO_PUBLIC_ADDRESS=1
+            if [ -n "$PUBLIC_ADDRESS" ]; then
+                # If public addresses do not match then prompt with confirmation
+                shouldUsePublicIp
+            else
+                printf "The installer was unable to automatically detect the service IP address of this machine.\n"
+                printf "Please enter the address or leave blank for unspecified.\n"
+                promptForPublicIp
+                if [ -z "$PUBLIC_ADDRESS" ]; then
+                    NO_PUBLIC_ADDRESS=1
+                fi
             fi
         fi
     fi
