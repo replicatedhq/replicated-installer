@@ -4,6 +4,10 @@ FROM rook/ceph:v1.0.3 AS base
 
 FROM ceph/ceph:v14.2.1
 
+RUN yum install -y \
+    bind-license \
+  && yum clean all
+
 COPY --from=base /tini /tini
 
 COPY --from=base /usr/local/bin/rook /usr/local/bin/rookflex /usr/local/bin/toolbox.sh /usr/local/bin/

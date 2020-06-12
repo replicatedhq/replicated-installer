@@ -1,1 +1,1 @@
-export ANCHORE_VERSION := v0.7.1
+export ANCHORE_VERSION := v0.7.2

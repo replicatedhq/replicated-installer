@@ -519,12 +519,12 @@ airgapListKubernetesCommonImages1153() {
     echo "8a7014fbf188 docker.io/replicated/docker-registry:2.6.2-20200512"
     echo "209649db0758 docker.io/replicated/envoy:v1.10.0-20200512"
     echo "672aff19e6e4 gcr.io/heptio-images/contour:v0.13.0"
-    echo "256b3f903f60 docker.io/replicated/rook-ceph:v1.0.3-20200512"
-    echo "50efc5dbfe03 docker.io/replicated/rook-ceph:v1.0.6-20200512"
-    echo "3869f635df54 docker.io/replicated/ceph:v14.2.0-20200512"
-    echo "7287040d1921 docker.io/replicated/ceph:v14.2.2-20200512"
+    echo "558cc68e86af docker.io/replicated/rook-ceph:v1.0.3-20200612"
+    echo "dfa130aeec57 docker.io/replicated/rook-ceph:v1.0.6-20200612"
+    echo "43e751735008 docker.io/replicated/ceph:v14.2.0-20200612"
+    echo "757dcef88ce2 docker.io/replicated/ceph:v14.2.2-20200612"
     echo "376cb7e8748c replicated/replicated-hostpath-provisioner:cd1d272"
-    echo "9029072d8268 docker.io/replicated/k8s-dns-node-cache:1.15.13-20200604"
+    echo "d7324507154a docker.io/replicated/k8s-dns-node-cache:1.15.13-20200612"
 }
 
 airgapLoadKubernetesCommonImages1153() {
