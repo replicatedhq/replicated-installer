@@ -14,10 +14,43 @@
       "repository": "*",
       "image": { "type": "tag", "value": "*" },
       "policy_ids": [ "platform_default_policy01" ],
-      "whitelist_ids": []
+      "whitelist_ids": [ "whitelist_ignore_python3_pip" ]
     }
   ],
-  "whitelists": [],
+  "whitelists": [
+    {
+      "id": "whitelist_ignore_python3_pip",
+      "name": "Whitelist Ignore python3-pip false positive",
+      "version": "1_0",
+      "comment": "",
+      "items": [
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-fc3b46168a18",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2018-18074+python3-pip"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-fc3b46168a28",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2018-20060+python3-pip"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-fc3b46168a38",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-11236+python3-pip"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-fc3b46168a48",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-11324+python3-pip"
+        }
+      ]
+    }
+  ],
   "policies": [
     {
       "id": "platform_default_policy01",
