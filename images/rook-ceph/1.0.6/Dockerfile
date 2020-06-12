@@ -4,8 +4,7 @@ FROM rook/ceph:v1.0.6 AS base
 
 FROM ceph/ceph:v14.2.1
 
-RUN yum update -y \
-  && yum install -y \
+RUN yum install -y \
     bind-license \
   && yum clean all
 
