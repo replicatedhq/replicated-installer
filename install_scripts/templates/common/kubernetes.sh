@@ -524,7 +524,7 @@ airgapListKubernetesCommonImages1153() {
     echo "3869f635df54 docker.io/replicated/ceph:v14.2.0-20200512"
     echo "7287040d1921 docker.io/replicated/ceph:v14.2.2-20200512"
     echo "376cb7e8748c replicated/replicated-hostpath-provisioner:cd1d272"
-    echo "9029072d8268 docker.io/replicated/k8s-dns-node-cache:1.15.13-20200604"
+    echo "d7324507154a docker.io/replicated/k8s-dns-node-cache:1.15.13-20200612"
 }
 
 airgapLoadKubernetesCommonImages1153() {

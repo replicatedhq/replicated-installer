@@ -14,25 +14,10 @@
       "repository": "*",
       "image": { "type": "tag", "value": "*" },
       "policy_ids": [ "platform_default_policy01" ],
-      "whitelist_ids": [ "whitelist_ignore_ghsa01" ]
+      "whitelist_ids": []
     }
   ],
-  "whitelists": [
-    {
-      "id": "whitelist_ignore_ghsa01",
-      "name": "Whitelist Ignore GHSA",
-      "version": "1_0",
-      "comment": "To work around this issue https://github.com/anchore/anchore-engine/issues/450. Fixed in engine 0.7.2",
-      "items": [
-        {
-          "id": "c200ce15-a6cd-4f48-b3a1-fc3b46168a98",
-          "gate": "vulnerabilities",
-          "trigger": "package",
-          "trigger_id": "GHSA-*"
-        }
-      ]
-    }
-  ],
+  "whitelists": [],
   "policies": [
     {
       "id": "platform_default_policy01",
