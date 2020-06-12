@@ -158,7 +158,7 @@ metadata:
 spec:
   cephVersion:
     # image: ceph/ceph:v14.2.1 has dashboard errors but 14.2.2 should work once released
-    image: replicated/ceph:v14.2.0-20200512
+    image: replicated/ceph:v14.2.0-20200612
     # Whether to allow unsupported versions of Ceph.
     # Do not set to true in production.
     allowUnsupported: false
