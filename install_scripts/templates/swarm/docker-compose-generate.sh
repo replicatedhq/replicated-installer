@@ -24,7 +24,11 @@ HTTP_PROXY="{{ http_proxy }}"
 NO_PROXY_ADDRESSES="{{ no_proxy_addresses }}"
 RELEASE_SEQUENCE="{{ release_sequence }}"
 RELEASE_PATCH_SEQUENCE="{{ release_patch_sequence }}"
-REPLICATED_REGISTRY_PREFIX=replicated
+REPLICATED_REGISTRY_PREFIX=
+REPLICATED_VERSION="{{ replicated_version }}"
+
+{% include 'common/common.sh' %}
+{% include 'common/replicated.sh' %}
 
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"
@@ -85,6 +89,10 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
+
+if [ -z "$REPLICATED_REGISTRY_PREFIX" ]; then
+    getReplicatedRegistryPrefix "$REPLICATED_VERSION"
+fi
 
 if [ "$SUPPRESS_RUNTIME" != "1" ]; then
     if [ -z "$SWARM_NODE_ADDRESS" ]; then
