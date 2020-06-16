@@ -429,6 +429,7 @@ def get_replicated_compose_v3_template_args(replicated_channel=None,
     return helpers.template_args(
         channel_name=replicated_channel,
         pinned_docker_version=pinned_docker_version,
+        replicated_version=replicated_version,
         replicated_tag=replicated_tag,
         replicated_port_range=port_range,
         replicated_ui_tag=replicated_ui_tag,
@@ -557,6 +558,7 @@ def get_kubernetes_yaml_template_args(replicated_channel=None,
 
     return helpers.template_args(
         channel_name=replicated_channel,
+        replicated_version=replicated_version,
         replicated_tag=replicated_tag,
         replicated_ui_tag=replicated_ui_tag,
         replicated_operator_tag=replicated_operator_tag,

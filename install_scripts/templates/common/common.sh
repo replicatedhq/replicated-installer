@@ -169,13 +169,13 @@ semverParse() {
 SEMVER_COMPARE_RESULT=
 semverCompare() {
     semverParse "$1"
-    _a_major="$major"
-    _a_minor="$minor"
-    _a_patch="$patch"
+    _a_major="${major:-0}"
+    _a_minor="${minor:-0}"
+    _a_patch="${patch:-0}"
     semverParse "$2"
-    _b_major="$major"
-    _b_minor="$minor"
-    _b_patch="$patch"
+    _b_major="${major:-0}"
+    _b_minor="${minor:-0}"
+    _b_patch="${patch:-0}"
     if [ "$_a_major" -lt "$_b_major" ]; then
         SEMVER_COMPARE_RESULT=-1
         return

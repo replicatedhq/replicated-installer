@@ -56,8 +56,11 @@ API_SERVICE_ADDRESS="{{ api_service_address }}"
 HA_CLUSTER="{{ ha_cluster }}"
 PURGE_DEAD_NODES="{{ purge_dead_nodes }}"
 MAINTAIN_ROOK_STORAGE_NODES="{{ maintain_rook_storage_nodes }}"
-REPLICATED_REGISTRY_PREFIX=replicated
+REPLICATED_REGISTRY_PREFIX=
+REPLICATED_VERSION="{{ replicated_version }}"
 
+{% include 'common/common.sh' %}
+{% include 'common/replicated.sh' %}
 {% include 'common/kubernetes.sh' %}
 
 while [ "$1" != "" ]; do
@@ -1401,6 +1404,10 @@ EOF
 ################################################################################
 # Execution starts here
 ################################################################################
+
+if [ -z "$REPLICATED_REGISTRY_PREFIX" ]; then
+    getReplicatedRegistryPrefix "$REPLICATED_VERSION"
+fi
 
 if [ "$WEAVE_YAML" = "1" ]; then
     render_weave_yaml
