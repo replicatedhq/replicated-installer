@@ -146,7 +146,7 @@ REPLICATED_REGISTRY_PREFIX=
 getReplicatedRegistryPrefix() {
     REPLICATED_REGISTRY_PREFIX=replicated
     local replicated_version="$1"
-    semverCompare "$replicated_version" "2.44.3"
+    semverCompare "$replicated_version" "2.45.0"
     if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
         REPLICATED_REGISTRY_PREFIX=quay.io/replicated
     fi
