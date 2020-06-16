@@ -892,11 +892,7 @@ registryDeploy() {
     REGISTRY_ADDRESS_OVERRIDE="$registryIP:5000"
     YAML_GENERATE_OPTS="$YAML_GENERATE_OPTS registry-address-override=$REGISTRY_ADDRESS_OVERRIDE"
 
-    if [ -n "$clusterIp" ]; then
-        addInsecureRegistry "$clusterIp"
-    else
-        addInsecureRegistry "$SERVICE_CIDR"
-    fi
+    addInsecureRegistry "$REGISTRY_ADDRESS_OVERRIDE"
 
     # check if there are worker nodes that need to be configured for the insecure registry
     local workers=$(kubectl get nodes --selector='!node-role.kubernetes.io/master' -o jsonpath='{.items[*].metadata.name}')
