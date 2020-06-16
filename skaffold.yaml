@@ -12,6 +12,13 @@ profiles:
     deploy:
       kustomize:
         path: "./kustomize/overlays/staging-dev"
+  # `export SKAFFOLD_PROFILE=local` in your environment for any local overrides
+  - name: local
+    activation:
+      - kubeContext: local
+    deploy:
+      kustomize:
+        path: "./kustomize/overlays/local"
 
 build:
   local:

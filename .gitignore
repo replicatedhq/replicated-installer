@@ -5,4 +5,4 @@
 .idea/*
 /src
 /venv
-
+/kustomize/overlays/local/
