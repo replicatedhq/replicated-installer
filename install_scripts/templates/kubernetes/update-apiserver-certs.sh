@@ -76,8 +76,10 @@ fi
 
 promptForLoadBalancerAddress
 
+# NOTE: this should use joinUpdateApiServerCerts for additional nodes
+# this will need a new bootstrap token
 updateApiServerCerts
-    
+
 outro
 
 exit 0
