@@ -489,6 +489,15 @@ updateApiServerCerts() {
     restartK8sAPIServerContainer "$PRIVATE_ADDRESS" "6443"
 }
 
+#######################################
+# Regenerates api server certs with "kubeadm join phase control-plane-prepare certs"
+# Globals:
+#   PRIVATE_ADDRESS
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
 joinUpdateApiServerCerts() {
     logStep "Regenerate api server certs"
     rm -f /etc/kubernetes/pki/apiserver.*
