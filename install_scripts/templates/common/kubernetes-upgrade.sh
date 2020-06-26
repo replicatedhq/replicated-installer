@@ -438,7 +438,7 @@ maybeUpgradeKubernetesNode() {
         makeKubeadmJoinConfigV1Beta2
 
         if isMasterNode; then
-            updateApiServerCerts
+            joinUpdateApiServerCerts
 
             updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
         else
@@ -484,6 +484,15 @@ updateApiServerCerts() {
     logStep "Regenerate api server certs"
     rm -f /etc/kubernetes/pki/apiserver.*
     kubeadm init phase certs apiserver $certArgs
+    logSuccess "API server certs regenerated"
+
+    restartK8sAPIServerContainer "$PRIVATE_ADDRESS" "6443"
+}
+
+joinUpdateApiServerCerts() {
+    logStep "Regenerate api server certs"
+    rm -f /etc/kubernetes/pki/apiserver.*
+    kubeadm join phase control-plane-prepare certs --config /opt/replicated/kubeadm.conf
     logSuccess "API server certs regenerated"
 
     restartK8sAPIServerContainer "$PRIVATE_ADDRESS" "6443"
