@@ -905,8 +905,8 @@ restartK8sAPIServerContainer()
 {
     logStep "Restart kubernetes api server"
     # admin.conf may not have been updated yet so kubectl may not work
-    docker ps | grep k8s_kube-apiserver | awk '{print $1}' | xargs docker stop >/dev/null || true
-    docker ps -a | grep k8s_kube-apiserver | awk '{print $1}' | xargs docker rm -f >/dev/null || true
+    docker ps | grep k8s_kube-apiserver | awk '{print $1}' | xargs docker stop &>/dev/null || true
+    docker ps -a | grep k8s_kube-apiserver | awk '{print $1}' | xargs docker rm -f &>/dev/null || true
     while ! curl -skf "https://$1:$2/healthz" >/dev/null ; do
         sleep 1
     done
