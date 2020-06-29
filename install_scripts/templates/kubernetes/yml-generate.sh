@@ -466,9 +466,11 @@ $CEPH_DASHBOARD_CREDS_ENV
       - name: replicated-tmp
         hostPath:
           path: /var/lib/replicated/tmp
+          type: DirectoryOrCreate
       - name: replicated-support-bundles
         hostPath:
           path: /var/lib/replicated/support-bundles
+          type: DirectoryOrCreate
       - name: replicated-socket
       - name: docker-socket
         hostPath:
