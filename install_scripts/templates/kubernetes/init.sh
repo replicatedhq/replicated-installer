@@ -18,6 +18,7 @@ HA_CLUSTER=0
 TAINT_CONTROL_PLANE="{{ '1' if taint_control_plane else '0' }}"
 MAINTAIN_ROOK_STORAGE_NODES=0
 PURGE_DEAD_NODES=0
+CLEAR_DEAD_NODES=0
 LOAD_BALANCER_ADDRESS=
 LOAD_BALANCER_PORT=
 REGISTRY_BIND_PORT=
@@ -512,6 +513,9 @@ getYAMLOpts() {
     if [ "$PURGE_DEAD_NODES" = "1" ]; then
         opts=$opts" purge-dead-nodes"
     fi
+    if [ "$CLEAR_DEAD_NODES" = "1" ]; then
+        opts=$opts" clear-dead-nodes"
+    fi
     if [ -n "$REGISTRY_ADDRESS_OVERRIDE" ]; then
         opts=$opts" registry-address-override=$REGISTRY_ADDRESS_OVERRIDE"
     fi
@@ -758,7 +762,7 @@ rekOperatorDeploy() {
     fi
 
     if [ "$HA_CLUSTER" = "1" ]; then
-        PURGE_DEAD_NODES=1
+        CLEAR_DEAD_NODES=1
     fi
     getYAMLOpts
 
