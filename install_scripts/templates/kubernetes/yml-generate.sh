@@ -55,6 +55,7 @@ BIND_DAEMON_HOSTNAME=
 API_SERVICE_ADDRESS="{{ api_service_address }}"
 HA_CLUSTER="{{ ha_cluster }}"
 PURGE_DEAD_NODES="{{ purge_dead_nodes }}"
+CLEAR_DEAD_NODES="{{ clear_dead_nodes }}"
 MAINTAIN_ROOK_STORAGE_NODES="{{ maintain_rook_storage_nodes }}"
 REPLICATED_REGISTRY_PREFIX=
 REPLICATED_VERSION="{{ replicated_version }}"
@@ -96,6 +97,9 @@ while [ "$1" != "" ]; do
             ;;
         purge-dead-nodes|purge_dead_nodes)
             PURGE_DEAD_NODES=1
+            ;;
+        clear-dead-nodes|clear_dead_nodes)
+            CLEAR_DEAD_NODES=1
             ;;
         maintain-rook-storage-nodes|maintain_rook_storage_nodes)
             MAINTAIN_ROOK_STORAGE_NODES=1
