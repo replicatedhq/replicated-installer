@@ -1091,9 +1091,11 @@ spec:
         - name: LOG_LEVEL
           value: "$LOG_LEVEL"
         - name: NODE_UNREACHABLE_TOLERATION
-          value: 1h
+          value: 5m
         - name: PURGE_DEAD_NODES
           value: "$PURGE_DEAD_NODES"
+        - name: CLEAR_DEAD_NODES
+          value: "$CLEAR_DEAD_NODES"
         - name: MIN_READY_MASTER_NODES
           value: "2"
         - name: MIN_READY_WORKER_NODES
