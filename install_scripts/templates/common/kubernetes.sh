@@ -2354,5 +2354,8 @@ function node_name() {
 function label_node() {
     local nodeName="$1"
     local label="$2"
-    kubectl label node "$nodeName" "$label"
+    if kubectl get nodes --show-labels --no-headers "$nodeName" | grep -q "$label" ; then
+        return
+    fi
+    kubectl label nodes --overwrite "$nodeName" "$label"
 }
