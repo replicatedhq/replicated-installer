@@ -562,6 +562,9 @@ spec:
     app: replicated
     tier: master
   ports:
+  - name: replicated-api
+    port: 9876
+    protocol: TCP
   - name: replicated-iapi
     port: 9877
     protocol: TCP
