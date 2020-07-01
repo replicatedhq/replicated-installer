@@ -292,7 +292,10 @@ build_replicated_opts() {
     REPLICATED_OPTS="$REPLICATED_OPTS -e MARKET_BASE_URL=https://api.staging.replicated.com/market"
 {%- endif %}
 {% if replicated_env == "staging" %}
-    REPLICATED_OPTS="$REPLICATED_OPTS -e DATA_BASE_URL=https://data.staging.replicated.com/market -e VENDOR_REGISTRY=registry.staging.replicated.com -e INSTALLER_URL=https://get.staging.replicated.com -e REPLICATED_IMAGE_TAG_SUFFIX=.staging"
+    REPLICATED_OPTS="$REPLICATED_OPTS -e DATA_BASE_URL=https://data.staging.replicated.com/market -e VENDOR_REGISTRY=registry.staging.replicated.com -e REPLICATED_IMAGE_TAG_SUFFIX=.staging"
+{%- endif %}
+{% if replicated_install_url != "https://get.replicated.com" %}
+    REPLICATED_OPTS="$REPLICATED_OPTS -e INSTALLER_URL={{ replicated_install_url }}"
 {%- endif %}
 
     if [ -n "$PROXY_ADDRESS" ]; then

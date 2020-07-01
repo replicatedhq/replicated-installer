@@ -24,8 +24,8 @@ services:
       MARKET_BASE_URL: https://api.staging.replicated.com/market
       DATA_BASE_URL: https://data.staging.replicated.com/market
       VENDOR_REGISTRY: registry.staging.replicated.com
-      INSTALLER_URL: https://get.staging.replicated.com
-      REPLICATED_IMAGE_TAG_SUFFIX: .staging{% endif %}
+      REPLICATED_IMAGE_TAG_SUFFIX: .staging{% endif %}{% if replicated_install_url != "https://get.replicated.com" %}
+      INSTALLER_URL: {{ replicated_install_url }}{% endif %}
     volumes:
       - "{{ data_dir_path }}/replicated:{{ data_dir_path }}/replicated"
       - replicated-sock-volume:/var/run/replicated

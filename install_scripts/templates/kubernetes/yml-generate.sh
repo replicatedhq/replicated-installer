@@ -361,10 +361,11 @@ $NODE_SELECTOR
           value: https://data.staging.replicated.com/market
         - name: VENDOR_REGISTRY
           value: registry.staging.replicated.com
-        - name: INSTALLER_URL
-          value: https://get.staging.replicated.com
         - name: REPLICATED_IMAGE_TAG_SUFFIX
           value: .staging
+{%- endif %}{% if replicated_install_url != "https://get.replicated.com" %}
+        - name: INSTALLER_URL
+          value: {{ replicated_install_url }}
 {%- endif %}
         - name: LOCAL_ADDRESS
           valueFrom:
