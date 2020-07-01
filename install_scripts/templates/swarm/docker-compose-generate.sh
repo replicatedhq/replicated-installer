@@ -166,9 +166,11 @@ fi
 {% if replicated_env == "staging" %}
     echo "      - DATA_BASE_URL=https://data.staging.replicated.com/market"
     echo "      - VENDOR_REGISTRY=registry.staging.replicated.com"
-    echo "      - INSTALLER_URL=https://get.staging.replicated.com"
     echo "      - REPLICATED_IMAGE_TAG_SUFFIX=.staging"
 {% endif %}
+{% if replicated_install_url != "https://get.replicated.com" %}
+    echo "      - INSTALLER_URL={{ replicated_install_url }}"
+{%- endif %}
 echo "    volumes:"
 echo "      - replicated-data-volume:/var/lib/replicated"
 echo "      - replicated-sock-volume:/var/run/replicated"
