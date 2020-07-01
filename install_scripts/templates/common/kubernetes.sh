@@ -2346,3 +2346,13 @@ function kubernetes_node_images() {
 
     kubectl get node "$nodeName" -ojsonpath="{range .status.images[*]}{ range .names[*] }{ @ }{'\n'}{ end }{ end }"
 }
+
+function node_name() {
+    echo "$(hostname | tr '[:upper:]' '[:lower:]')"
+}
+
+function label_node() {
+    local nodeName="$1"
+    local label="$2"
+    kubectl label node "$nodeName" "$label"
+}

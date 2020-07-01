@@ -56,6 +56,8 @@ API_SERVICE_ADDRESS="{{ api_service_address }}"
 HA_CLUSTER="{{ ha_cluster }}"
 PURGE_DEAD_NODES="{{ purge_dead_nodes }}"
 MAINTAIN_ROOK_STORAGE_NODES="{{ maintain_rook_storage_nodes }}"
+USE_ROOK_NODES_LABEL="{{ '1' if use_rook_nodes_label else '0' }}"
+ROOK_STORAGE_NODES_LABEL="node-role.kubernetes.io/rook=true"
 REPLICATED_REGISTRY_PREFIX=
 REPLICATED_VERSION="{{ replicated_version }}"
 
@@ -99,6 +101,9 @@ while [ "$1" != "" ]; do
             ;;
         maintain-rook-storage-nodes|maintain_rook_storage_nodes)
             MAINTAIN_ROOK_STORAGE_NODES=1
+            ;;
+        use-rook-nodes-label|use_rook_nodes_label)
+            USE_ROOK_NODES_LABEL=1
             ;;
         api-service-address|api_service_address)
             API_SERVICE_ADDRESS="$_value"
@@ -1043,6 +1048,11 @@ render_rek_operator_yaml() {
       DOCKER_REGISTRY_PREFIX="$REGISTRY_ADDRESS_OVERRIDE/replicated"
     fi
 
+    rook_label=
+    if [ "$USE_ROOK_NODES_LABEL" = "1" ]; then
+      rook_label="$ROOK_STORAGE_NODES_LABEL"
+    fi
+
     cat <<EOF
 ---
 apiVersion: apps/v1
@@ -1094,6 +1104,8 @@ spec:
           value: "0"
         - name: MAINTAIN_ROOK_STORAGE_NODES
           value: "$MAINTAIN_ROOK_STORAGE_NODES"
+        - name: ROOK_STORAGE_NODES_LABEL
+          value: "$rook_label"
         - name: CEPH_BLOCK_POOL
           value: replicapool
         - name: CEPH_FILESYSTEM

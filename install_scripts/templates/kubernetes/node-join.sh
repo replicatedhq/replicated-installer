@@ -12,6 +12,8 @@ NO_CE_ON_EE="{{ no_ce_on_ee }}"
 HARD_FAIL_ON_LOOPBACK="{{ hard_fail_on_loopback }}"
 HARD_FAIL_ON_FIREWALLD="{{ hard_fail_on_firewalld }}"
 KUBERNETES_ONLY=0
+ROOK_STORAGE_NODE="{{ '1' if rook_storage_node else '' }}"
+ROOK_STORAGE_NODES_LABEL="node-role.kubernetes.io/rook=true"
 WAIT_FOR_ROOK=0
 ADDITIONAL_NO_PROXY=
 SKIP_PREFLIGHTS="{{ '1' if skip_preflights else '' }}"
@@ -322,6 +324,9 @@ while [ "$1" != "" ]; do
         private-address|private_address)
             PRIVATE_ADDRESS="$_value"
             ;;
+        rook-storage-node|rook_storage_node)
+            ROOK_STORAGE_NODE=1
+            ;;
         wait-for-rook|wait_for_rook)
             WAIT_FOR_ROOK=1
             ;;
@@ -509,6 +514,11 @@ if [ "$MASTER" -eq "1" ]; then
 fi
 
 installAKAService
+
+if [ "$ROOK_STORAGE_NODE" = "1" ]; then
+    label_node "$(node_name)" "$ROOK_STORAGE_NODES_LABEL"
+    logSuccess "Node marked as storage node with label $ROOK_STORAGE_NODES_LABEL"
+fi
 
 waitForRook
 

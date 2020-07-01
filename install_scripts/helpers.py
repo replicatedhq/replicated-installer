@@ -57,6 +57,10 @@ def template_args(**kwargs):
         args['nodelocal_dnscache'] = True
     if get_arg('taint_control_plane') is not None:
         args['taint_control_plane'] = True
+    if get_arg('use_rook_nodes_label') is not None:
+        args['use_rook_nodes_label'] = True
+    if get_arg('rook_storage_node') is not None:
+        args['rook_storage_node'] = True
     if kwargs:
         args.update(kwargs)
     return args
