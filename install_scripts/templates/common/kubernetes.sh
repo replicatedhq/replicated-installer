@@ -2346,3 +2346,16 @@ function kubernetes_node_images() {
 
     kubectl get node "$nodeName" -ojsonpath="{range .status.images[*]}{ range .names[*] }{ @ }{'\n'}{ end }{ end }"
 }
+
+function node_name() {
+    echo "$(hostname | tr '[:upper:]' '[:lower:]')"
+}
+
+function label_node() {
+    local nodeName="$1"
+    local label="$2"
+    if kubectl get nodes --show-labels --no-headers "$nodeName" | grep -q "$label" ; then
+        return
+    fi
+    kubectl label nodes --overwrite "$nodeName" "$label"
+}

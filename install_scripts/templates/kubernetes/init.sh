@@ -17,6 +17,8 @@ PRIVATE_ADDRESS=
 HA_CLUSTER=0
 TAINT_CONTROL_PLANE="{{ '1' if taint_control_plane else '0' }}"
 MAINTAIN_ROOK_STORAGE_NODES=0
+USE_ROOK_NODES_LABEL="{{ '1' if use_rook_nodes_label else '0' }}"
+ROOK_STORAGE_NODES_LABEL="node-role.kubernetes.io/rook=true"
 PURGE_DEAD_NODES=0
 CLEAR_DEAD_NODES=0
 LOAD_BALANCER_ADDRESS=
@@ -251,6 +253,9 @@ initKube15() {
     exportKubeconfig
 
     waitForNodes
+
+    # always label the first master as a storage node
+    label_node "$(node_name)" "$ROOK_STORAGE_NODES_LABEL"
 
     DID_INIT_KUBERNETES=1
     logSuccess "Kubernetes Master Initialized"
@@ -509,6 +514,9 @@ getYAMLOpts() {
     fi
     if [ "$MAINTAIN_ROOK_STORAGE_NODES" = "1" ]; then
         opts=$opts" maintain-rook-storage-nodes"
+    fi
+    if [ "$USE_ROOK_NODES_LABEL" = "1" ]; then
+        opts=$opts" use-rook-nodes-label"
     fi
     if [ "$PURGE_DEAD_NODES" = "1" ]; then
         opts=$opts" purge-dead-nodes"
@@ -1124,6 +1132,9 @@ while [ "$1" != "" ]; do
             ;;
         taint-control-plane|taint_control_plane)
             TAINT_CONTROL_PLANE=1
+            ;;
+        use-rook-nodes-label|use_rook_nodes_label)
+            USE_ROOK_NODES_LABEL=1
             ;;
         http-proxy|http_proxy)
             PROXY_ADDRESS="$_value"
