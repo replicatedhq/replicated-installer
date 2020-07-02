@@ -240,9 +240,11 @@ runUpgradeScriptOnAllRemoteNodes() {
 
     if [ "$numMasters" -gt "1" ]; then
         if [ -n "$LOAD_BALANCER_ADDRESS_CHANGED" ]; then
-            getUrlCmd
+            BOOTSTRAP_TOKEN="$(kubeadm token create)"
+            KUBEADM_TOKEN_CA_HASH="sha256:$(openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //')"
+
             echo ""
-            printf "Run the following script to regenerate the api server certificate on all master nodes before proceeding:\n\n${GREEN}"
+            printf "Run the following script to regenerate the api server certificate on all remote master nodes before proceeding:\n\n${GREEN}"
             local prefix=""
             if [ -n "$channelName" ]; then
                 prefix="/$channelName"
@@ -250,17 +252,21 @@ runUpgradeScriptOnAllRemoteNodes() {
             if [ "$AIRGAP" = "1" ]; then
                 printf "cat kubernetes-update-apiserver-certs.sh | sudo bash -s \\ \n"
             else
-                printf "$URLGET_CMD {{ replicated_install_url }}${prefix}/kubernetes-update-apiserver-certs | sudo bash -s \\ \n"
+                getUrlCmd
+                printf "$URLGET_CMD {{ replicated_install_url }}${prefix}/kubernetes-update-apiserver-certs | sudo bash -s"
             fi
-            printf "    load-balancer-address=$LOAD_BALANCER_ADDRESS"
-            if [ -n "$LAST_LOAD_BALANCER_ADDRESS" ]; then
-                printf " \\ \n    additional-sans=$LAST_LOAD_BALANCER_ADDRESS"
+            printf " \\ \n    load-balancer-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
+            printf " \\ \n    kubeadm-token=$BOOTSTRAP_TOKEN"
+            if [ "$UNSAFE_SKIP_CA_VERIFICATION" = "1" ]; then
+                printf " \\ \n    unsafe-skip-ca-verification"
+            elif [ -n "$KUBEADM_TOKEN_CA_HASH" ]; then
+                printf " \\ \n    kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH"
             fi
-            if [ -n "$PROXY_ADDRESS" ]; then
-                printf " \\ \n    http-proxy=$PROXY_ADDRESS"
+            if [ "$TAINT_CONTROL_PLANE" = "1" ]; then
+                printf " \\ \n    taint-control-plane"
             fi
             printf "${NC}\n\n"
-            kubectl get nodes --selector='node-role.kubernetes.io/master'
+            kubectl get nodes --selector='node-role.kubernetes.io/master' | grep -v "$(node_name)"
             echo ""
             echo ""
 
@@ -295,9 +301,9 @@ runUpgradeScriptOnAllRemoteNodes() {
         local script="$(/usr/local/bin/replicatedctl cluster node-join-script${masterJoinArgs} | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/")"
 
         echo ""
-        printf "Run the upgrade script on remote master nodes before proceeding:\n\n"
+        printf "Run the upgrade script on all remote master nodes before proceeding:\n\n"
         printf "${GREEN}${script}${NC}\n\n"
-        kubectl get nodes --selector='node-role.kubernetes.io/master'
+        kubectl get nodes --selector='node-role.kubernetes.io/master' | grep -v "$(node_name)"
         echo ""
         echo ""
 
@@ -315,7 +321,7 @@ runUpgradeScriptOnAllRemoteNodes() {
     local numWorkers="$(kubectl get nodes --selector='!node-role.kubernetes.io/master' | sed '1d' | wc -l)"
     if [ "$numWorkers" -gt "0" ]; then
         echo ""
-        printf "Run the upgrade script on remote worker nodes before proceeding:\n\n${GREEN}"
+        printf "Run the upgrade script on all remote worker nodes before proceeding:\n\n${GREEN}"
         /usr/local/bin/replicatedctl cluster node-join-script${workerJoinArgs} | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/"
         printf "${NC}\n\n"
         kubectl get nodes --selector='!node-role.kubernetes.io/master'
@@ -451,45 +457,6 @@ maybeUpgradeKubernetesNode() {
 }
 
 #######################################
-# Regenerates api server certs with "kubeadm init phase certs apiserver"
-# Globals:
-#   PRIVATE_ADDRESS
-#   LOAD_BALANCER_ADDRESS
-#   LOAD_BALANCER_PORT
-#   LAST_LOAD_BALANCER_ADDRESS
-#   PUBLIC_ADDRESS
-#   ADDITIONAL_SANS
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-updateApiServerCerts() {
-    local certArgs="--apiserver-advertise-address=$PRIVATE_ADDRESS --apiserver-cert-extra-sans=$LOAD_BALANCER_ADDRESS"
-    if [ -n "$LAST_LOAD_BALANCER_ADDRESS" ]; then
-        certArgs="$certArgs --apiserver-cert-extra-sans=$LAST_LOAD_BALANCER_ADDRESS"
-    fi
-    if [ -n "$PUBLIC_ADDRESS" ]; then
-        certArgs="$certArgs --apiserver-cert-extra-sans=$PUBLIC_ADDRESS"
-    fi
-    if [ -n "$ADDITIONAL_SANS" ]; then
-        local ipSan;
-        oIFS="$IFS"; IFS=";"
-        for ipSan in $ADDITIONAL_SANS; do
-            certArgs="$certArgs --apiserver-cert-extra-sans=$ipSan"
-        done
-        IFS="$oIFS"
-    fi
-
-    logStep "Regenerate api server certs"
-    rm -f /etc/kubernetes/pki/apiserver.*
-    kubeadm init phase certs apiserver $certArgs
-    logSuccess "API server certs regenerated"
-
-    restartK8sAPIServerContainer "$PRIVATE_ADDRESS" "6443"
-}
-
-#######################################
 # Regenerates api server certs with "kubeadm join phase control-plane-prepare certs"
 # Globals:
 #   PRIVATE_ADDRESS
@@ -505,6 +472,23 @@ joinUpdateApiServerCerts() {
     logSuccess "API server certs regenerated"
 
     restartK8sAPIServerContainer "$PRIVATE_ADDRESS" "6443"
+}
+
+#######################################
+# Regenerates kubeconfig for control plane components "kubeadm join phase control-plane-prepare kubeconfig"
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+joinUpdateKubeconfigs() {
+    logStep "Regenerate kubeconfig for control plane components"
+    rm /etc/kubernetes/*.conf
+    kubeadm join phase control-plane-prepare kubeconfig --config /opt/replicated/kubeadm.conf
+    kubeadm join phase kubelet-start --config /opt/replicated/kubeadm.conf
+    logSuccess "Kubeconfig for control plane components server certs regenerated"
 }
 
 #######################################
@@ -623,7 +607,6 @@ upgradeK8sWorkers() {
             --grace-period=30 \
             --timeout=300s \
             --pod-selector 'app notin (rook-ceph-mon,rook-ceph-osd,rook-ceph-osd-prepare,rook-ceph-operator,rook-ceph-agent)' || :
-
 
         printf "\n\n\tRun the upgrade script on remote node before proceeding: ${GREEN}$nodeName${NC}\n\n"
         local upgradeArgs="hostname-check=${nodeName} kubernetes-version=${k8sVersion}"

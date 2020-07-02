@@ -118,38 +118,6 @@ joinKubernetes() {
     fi
 }
 
-promptForToken() {
-    if [ -n "$KUBEADM_TOKEN" ]; then
-        return
-    fi
-
-    printf "Please enter the kubernetes discovery token.\n"
-    while true; do
-        printf "Kubernetes join token: "
-        prompt
-        if [ -n "$PROMPT_RESULT" ]; then
-            KUBEADM_TOKEN="$PROMPT_RESULT"
-            return
-        fi
-    done
-}
-
-promptForTokenCAHash() {
-    if [ -n "$KUBEADM_TOKEN_CA_HASH" ]; then
-        return
-    fi
-
-    printf "Please enter the discovery token CA's hash.\n"
-    while true; do
-        printf "Kubernetes discovery token CA hash: "
-        prompt
-        if [ -n "$PROMPT_RESULT" ]; then
-            KUBEADM_TOKEN_CA_HASH="$PROMPT_RESULT"
-            return
-        fi
-    done
-}
-
 promptForMasterAddress() {
     if [ -n "$KUBERNETES_MASTER_ADDR" ]; then
         return
@@ -376,6 +344,7 @@ fi
 promptForToken
 promptForTokenCAHash
 
+kubernetesDiscoverPrivateIp
 if [ -z "$PRIVATE_ADDRESS" ]; then
     promptForPrivateIp
 fi
