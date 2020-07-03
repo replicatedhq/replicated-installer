@@ -97,6 +97,8 @@ installDockerOffline() {
             pushd archives/
                 rpm --upgrade --force --nodeps *.rpm
             popd
+            systemctl enable docker
+            systemctl start docker
             DID_INSTALL_DOCKER=1
             return
             ;;
