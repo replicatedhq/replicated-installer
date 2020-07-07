@@ -3,7 +3,7 @@
 
 FROM envoyproxy/envoy-alpine:v1.10.0 AS base
 
-FROM frolvlad/alpine-glibc:alpine-3.11
+FROM frolvlad/alpine-glibc:alpine-3.12
 
 RUN mkdir -p /etc/envoy
 
