@@ -770,7 +770,12 @@ rekOperatorDeploy() {
     fi
 
     if [ "$HA_CLUSTER" = "1" ]; then
-        CLEAR_DEAD_NODES=1
+        semverCompare "$REPLICATED_VERSION" "2.46.0"
+        if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
+            PURGE_DEAD_NODES=1
+        else
+            CLEAR_DEAD_NODES=1
+        fi
     fi
     getYAMLOpts
 
