@@ -56,6 +56,7 @@ API_SERVICE_ADDRESS="{{ api_service_address }}"
 HA_CLUSTER="{{ ha_cluster }}"
 PURGE_DEAD_NODES="{{ purge_dead_nodes }}"
 CLEAR_DEAD_NODES="{{ clear_dead_nodes }}"
+NODE_UNREACHABLE_TOLERATION=5m
 MAINTAIN_ROOK_STORAGE_NODES="{{ maintain_rook_storage_nodes }}"
 USE_ROOK_NODES_LABEL="{{ '1' if use_rook_nodes_label else '0' }}"
 ROOK_STORAGE_NODES_LABEL="node-role.kubernetes.io/rook=true"
@@ -1063,6 +1064,10 @@ render_rek_operator_yaml() {
       rook_label="$ROOK_STORAGE_NODES_LABEL"
     fi
 
+    if [ "$PURGE_DEAD_NODES" = "1" ]; then
+        NODE_UNREACHABLE_TOLERATION=1h
+    fi
+
     cat <<EOF
 ---
 apiVersion: apps/v1
@@ -1105,7 +1110,7 @@ spec:
         - name: LOG_LEVEL
           value: "$LOG_LEVEL"
         - name: NODE_UNREACHABLE_TOLERATION
-          value: 5m
+          value: $NODE_UNREACHABLE_TOLERATION
         - name: PURGE_DEAD_NODES
           value: "$PURGE_DEAD_NODES"
         - name: CLEAR_DEAD_NODES
