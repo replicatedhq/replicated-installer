@@ -509,7 +509,9 @@ getYAMLOpts() {
     if kubectl get pvc | grep replicated-pv-claim > /dev/null ; then
         opts=$opts" replicated-pvc=0"
     fi
-    if [ -n "$PRIVATE_ADDRESS" ]; then
+    if [ -n "$APP_REGISTRY_ADVERTISE_HOST" ]; then
+        opts=$opts" app-registry-advertise-host=$APP_REGISTRY_ADVERTISE_HOST"
+    elif [ -n "$PRIVATE_ADDRESS" ]; then
         opts=$opts" app-registry-advertise-host=$PRIVATE_ADDRESS"
     fi
     if [ "$MAINTAIN_ROOK_STORAGE_NODES" = "1" ]; then
@@ -526,9 +528,6 @@ getYAMLOpts() {
     fi
     if [ -n "$REGISTRY_ADDRESS_OVERRIDE" ]; then
         opts=$opts" registry-address-override=$REGISTRY_ADDRESS_OVERRIDE"
-    fi
-    if [ -n "$APP_REGISTRY_ADVERTISE_HOST" ]; then
-        opts=$opts" app-registry-advertise-host=$APP_REGISTRY_ADVERTISE_HOST"
     fi
     if [ "$BIND_DAEMON_TO_MASTERS" = "1" ]; then
         opts=$opts" bind-daemon-to-masters"
@@ -1542,11 +1541,11 @@ if [ "$AIRGAP" = "1" ]; then
         registryDeploy
         airgapPushReplicatedImagesToRegistry "$REGISTRY_ADDRESS_OVERRIDE"
     fi
-
-    # deploy the app registry service before the Replicated deployment so the cluster IP can be
-    # passed in as the registry advertise host
-    appRegistryServiceDeploy
 fi
+
+# deploy the app registry service before the Replicated deployment so the cluster IP can be
+# passed in as the registry advertise host
+appRegistryServiceDeploy
 
 replicatedDeploy
 
