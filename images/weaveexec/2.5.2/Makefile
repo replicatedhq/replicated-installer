@@ -7,8 +7,8 @@ DATE := $(shell date '+%Y%m%d')
 
 .PHONY: pull
 pull:
-	docker pull $(WEAVEEXEC_252_20200512)
-	docker tag $(WEAVEEXEC_252_20200512) $(WEAVEEXEC_252)
+	docker pull $(WEAVEEXEC_252_20200713)
+	docker tag $(WEAVEEXEC_252_20200713) $(WEAVEEXEC_252)
 
 .PHONY: build
 build:

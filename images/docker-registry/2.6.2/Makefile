@@ -7,8 +7,8 @@ DATE := $(shell date '+%Y%m%d')
 
 .PHONY: pull
 pull:
-	docker pull $(REGISTRY_262_20200512)
-	docker tag $(REGISTRY_262_20200512) $(REGISTRY_262)
+	docker pull $(REGISTRY_262_20200713)
+	docker tag $(REGISTRY_262_20200713) $(REGISTRY_262)
 
 .PHONY: build
 build:
