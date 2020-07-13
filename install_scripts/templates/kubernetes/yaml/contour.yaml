@@ -228,7 +228,7 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
-      - image: docker.io/replicated/envoy:v1.10.0-20200512
+      - image: docker.io/replicated/envoy:v1.10.0-20200713
         name: envoy
         ports:
         - containerPort: 8080

@@ -513,11 +513,11 @@ airgapListKubernetesCommonImages1153() {
     echo "af41209a559f docker.io/replicated/kube-proxy:v1.15.3"
     echo "da86e6ba6ca1 docker.io/replicated/pause:3.1"
     echo "eb516548c180 k8s.gcr.io/coredns:1.3.1"
-    echo "a3cb8ab06265 docker.io/replicated/weave-kube:2.5.2-20200505"
-    echo "ae0e3813615e docker.io/replicated/weave-npc:2.5.2-20200507"
-    echo "2be53f0ed591 docker.io/replicated/weaveexec:2.5.2-20200512"
-    echo "8a7014fbf188 docker.io/replicated/docker-registry:2.6.2-20200512"
-    echo "209649db0758 docker.io/replicated/envoy:v1.10.0-20200512"
+    echo "a3cb8ab06265 docker.io/replicated/weave-kube:2.5.2-20200713"
+    echo "ae0e3813615e docker.io/replicated/weave-npc:2.5.2-20200713"
+    echo "2be53f0ed591 docker.io/replicated/weaveexec:2.5.2-20200713"
+    echo "8a7014fbf188 docker.io/replicated/docker-registry:2.6.2-20200713"
+    echo "209649db0758 docker.io/replicated/envoy:v1.10.0-20200713"
     echo "672aff19e6e4 gcr.io/heptio-images/contour:v0.13.0"
     echo "558cc68e86af docker.io/replicated/rook-ceph:v1.0.3-20200612"
     echo "dfa130aeec57 docker.io/replicated/rook-ceph:v1.0.6-20200612"
@@ -1269,8 +1269,8 @@ weave_reset()
     DATAPATH=datapath
     CONTAINER_IFNAME=ethwe
 
-    WEAVEKUBE_IMAGE=replicated/weave-kube:2.5.2-20200505
-    WEAVEEXEC_IMAGE=replicated/weaveexec:2.5.2-20200512
+    WEAVEKUBE_IMAGE=replicated/weave-kube:2.5.2-20200713
+    WEAVEEXEC_IMAGE=replicated/weaveexec:2.5.2-20200713
     DOCKER_BRIDGE=docker0
 
     # if we never unpacked/pulled the weave image, its unlikely we need to do any of this
