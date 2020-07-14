@@ -5,8 +5,14 @@ include ../../images/manifest.mk
 all: deps update_k8s_manifest build retag push
 
 deps:
-	go get github.com/linuxkit/linuxkit/src/cmd/linuxkit
-	go get github.com/linuxkit/kubernetes || :
+	mkdir -p $(shell echo ${GOPATH} | cut -d ':' -f 1)/src/github.com/linuxkit
+	cd $(shell echo ${GOPATH} | cut -d ':' -f 1)/src/github.com/linuxkit
+	git clone https://github.com/linuxkit/linuxkit
+	cd ./linuxkit
+	git checkout v0.7
+	make local-build install
+	cd ../
+	git clone github.com/linuxkit/kubernetes
 
 update_k8s_manifest_%: clean deps
 	mkdir -p ./kubernetes-tmp-$*
