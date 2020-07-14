@@ -5,20 +5,17 @@ include ../../images/manifest.mk
 all: deps update_k8s_manifest build retag push
 
 deps:
-	mkdir -p $(shell echo ${GOPATH} | cut -d ':' -f 1)/src/github.com/linuxkit
-	cd $(shell echo ${GOPATH} | cut -d ':' -f 1)/src/github.com/linuxkit
-	git clone https://github.com/linuxkit/linuxkit
-	cd ./linuxkit
-	git checkout v0.7
-	make local-build install
-	cd ../
-	git clone github.com/linuxkit/kubernetes
+	go get github.com/linuxkit/linuxkit/src/cmd/linuxkit
+	(cd $(GOPATH)/src/github.com/linuxkit/linuxkit; git checkout v0.7)
+	make -C $(GOPATH)/src/github.com/linuxkit/linuxkit local-build
+	cp $(GOPATH)/src/github.com/linuxkit/linuxkit/bin/linuxkit $(GOPATH)/bin/linuxkit
+	go get github.com/linuxkit/kubernetes || :
 
 update_k8s_manifest_%: clean deps
 	mkdir -p ./kubernetes-tmp-$*
 	# CircleCI GOPATH is two paths separated by :
-	cp -r $(shell echo ${GOPATH} | cut -d ':' -f 1)/src/github.com/linuxkit/kubernetes/pkg ./kubernetes-tmp-$*/
-	cp -r $(shell echo ${GOPATH} | cut -d ':' -f 1)/src/github.com/linuxkit/kubernetes/.git ./kubernetes-tmp-$*/
+	cp -r $(GOPATH)/src/github.com/linuxkit/kubernetes/pkg ./kubernetes-tmp-$*/
+	cp -r $(GOPATH)/src/github.com/linuxkit/kubernetes/.git ./kubernetes-tmp-$*/
 	./mk-image-cache-lst-$* common > ./kubernetes-tmp-$*/pkg/kubernetes-docker-image-cache-common/images.lst
 	./mk-image-cache-lst-$* control-plane > ./kubernetes-tmp-$*/pkg/kubernetes-docker-image-cache-control-plane/images.lst
 

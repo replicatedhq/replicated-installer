@@ -43,7 +43,6 @@ jobs:
           name: make
           command: |
             cd bundles/k8s-containers
-            make deps
             make update_k8s_manifest_${K8S_VERSION} build_${K8S_VERSION} push_${K8S_VERSION}
 
   build_ubuntu1604_docker_package:
