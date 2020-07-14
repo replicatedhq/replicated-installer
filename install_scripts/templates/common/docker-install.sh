@@ -365,3 +365,29 @@ _should_skip_docker_ee_install() {
   fi
   SHOULD_SKIP_DOCKER_EE_INSTALL=0
 }
+
+
+#######################################
+# Docker uses cgroupfs by default to manage cgroup. On distributions using systemd,
+# i.e. RHEL and Ubuntu, this causes issues because there are now 2 seperate ways
+# to manage resources. For more info see the link below.
+# https://github.com/kubernetes/kubeadm/issues/1394#issuecomment-462878219
+# Globals:
+#   None
+# Returns:
+#   None
+#######################################
+changeCgroupDriverToSystemd() {
+    if [ -f /var/lib/kubelet/kubeadm-flags.env ] || [ -f /etc/docker/daemon.json ]; then
+        return
+    fi
+
+    mkdir -p /etc/docker
+    cat > /etc/docker/daemon.json <<EOF
+{
+    "exec-opts": ["native.cgroupdriver=systemd"]
+}
+EOF
+
+    mkdir -p /etc/systemd/system/docker.service.d
+}
