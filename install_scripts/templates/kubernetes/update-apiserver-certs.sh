@@ -66,7 +66,7 @@ while [ "$1" != "" ]; do
     shift
 done
 
-MASTER=1
+PRIMARY=1
 
 promptForToken
 promptForTokenCAHash

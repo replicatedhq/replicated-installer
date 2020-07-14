@@ -46,12 +46,12 @@ TAINT_CONTROL_PLANE="{{ '1' if taint_control_plane else '0' }}"
 {% include 'common/firewall.sh' %}
 {% include 'preflights/index.sh' %}
 
-KUBERNETES_MASTER_PORT="6443"
-KUBERNETES_MASTER_ADDR="{{ kubernetes_master_address }}"
+KUBERNETES_PRIMARY_PORT="6443"
+KUBERNETES_PRIMARY_ADDR="{{ kubernetes_primary_address }}"
 API_SERVICE_ADDRESS=
-MASTER_PKI_BUNDLE_URL=
+PRIMARY_PKI_BUNDLE_URL=
 INSECURE=0
-MASTER=0
+PRIMARY=0
 CA=
 CERT=
 KUBEADM_TOKEN="{{ kubeadm_token }}"
@@ -59,7 +59,7 @@ KUBEADM_TOKEN_CA_HASH="{{ kubeadm_token_ca_hash }}"
 SERVICE_CIDR="10.96.0.0/12" # kubeadm default
 
 downloadPkiBundle() {
-    if [ -z "$MASTER_PKI_BUNDLE_URL" ]; then
+    if [ -z "$PRIMARY_PKI_BUNDLE_URL" ]; then
         return
     fi
     logStep "Download Kubernetes PKI bundle"
@@ -70,14 +70,14 @@ downloadPkiBundle() {
         echo "$CA" | base64 -d > /tmp/replicated-ca.crt
         _opt="--cacert /tmp/replicated-ca.crt"
     fi
-    (set -x; curl --noproxy "*" --max-time 120 --connect-timeout 5 $_opt -qSsf "$MASTER_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
+    (set -x; curl --noproxy "*" --max-time 120 --connect-timeout 5 $_opt -qSsf "$PRIMARY_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
     (set -x; tar -C /etc/kubernetes/ -xvf /tmp/etc-kubernetes.tar)
     logSuccess "Kubernetes PKI downloaded successfully"
 }
 
 joinKubernetes() {
-    if [ "$MASTER" -eq "1" ]; then
-        logStep "Join Kubernetes master node"
+    if [ "$PRIMARY" -eq "1" ]; then
+        logStep "Join Kubernetes primary node"
 
         # this will stop all the control plane pods except etcd
         rm -f /etc/kubernetes/manifests/kube-*
@@ -100,10 +100,10 @@ joinKubernetes() {
         mkdir -p /opt/replicated
         makeKubeadmJoinConfig
         (set -x; kubeadm join --config /opt/replicated/kubeadm.conf --ignore-preflight-errors=all)
-        untaintMaster
+        untaintPrimary
     else
         (set -x; kubeadm join --discovery-token-ca-cert-hash "${KUBEADM_TOKEN_CA_HASH}" --token "${KUBEADM_TOKEN}" "${API_SERVICE_ADDRESS}")
-        untaintMaster
+        untaintPrimary
     fi
     _status=$?
     set -e
@@ -111,25 +111,25 @@ joinKubernetes() {
         printf "${RED}Failed to join the kubernetes cluster.${NC}\n" 1>&2
         exit $_status
     fi
-    if [ "$MASTER" -eq "1" ]; then
-        logStep "Master node joined successfully"
+    if [ "$PRIMARY" -eq "1" ]; then
+        logStep "Primary node joined successfully"
     else
         logStep "Node joined successfully"
     fi
 }
 
-promptForMasterAddress() {
-    if [ -n "$KUBERNETES_MASTER_ADDR" ]; then
+promptForPrimaryAddress() {
+    if [ -n "$KUBERNETES_PRIMARY_ADDR" ]; then
         return
     fi
 
-    printf "Please enter the Kubernetes master address.\n"
+    printf "Please enter the Kubernetes primary address.\n"
     printf "e.g. 10.128.0.4\n"
     while true; do
-        printf "Kubernetes master address: "
+        printf "Kubernetes primary address: "
         prompt
         if [ -n "$PROMPT_RESULT" ]; then
-            KUBERNETES_MASTER_ADDR="$PROMPT_RESULT"
+            KUBERNETES_PRIMARY_ADDR="$PROMPT_RESULT"
             return
         fi
     done
@@ -172,7 +172,7 @@ outro() {
     printf "\n"
     printf "\t\t${GREEN}Installation${NC}\n"
     printf "\t\t${GREEN}  Complete ✔${NC}\n"
-    if [ "$MASTER" -eq "1" ]; then
+    if [ "$PRIMARY" -eq "1" ]; then
         printf "\n"
         printf "To access the cluster with kubectl, reload your shell:\n"
         printf "\n"
@@ -227,15 +227,22 @@ while [ "$1" != "" ]; do
         no-proxy|no_proxy)
             NO_PROXY=1
             ;;
-        kubernetes-master-address|kubernetes_master_address)
-            KUBERNETES_MASTER_ADDR="$_value"
+        kubernetes-primary-address|kubernetes_primary_address)
+            KUBERNETES_PRIMARY_ADDR="$_value"
+            ;;
+        kubernetes-master-address|kubernetes_master_address) # deprecated
+            KUBERNETES_PRIMARY_ADDR="$_value"
             ;;
         api-service-address|api_service_address)
             API_SERVICE_ADDRESS="$_value"
             ;;
-        master-pki-bundle-url|master_pki_bundle_url)
-            MASTER_PKI_BUNDLE_URL="$_value"
-            MASTER=1
+        primary-pki-bundle-url|primary_pki_bundle_url)
+            PRIMARY_PKI_BUNDLE_URL="$_value"
+            PRIMARY=1
+            ;;
+        master-pki-bundle-url|master_pki_bundle_url) # deprecated
+            PRIMARY_PKI_BUNDLE_URL="$_value"
+            PRIMARY=1
             ;;
         insecure)
             INSECURE=1
@@ -326,20 +333,20 @@ checkFirewalld
 
 if [ -n "$API_SERVICE_ADDRESS" ]; then
     splitHostPort "$API_SERVICE_ADDRESS"
-    KUBERNETES_MASTER_ADDR="$HOST"
-    KUBERNETES_MASTER_PORT="$PORT"
+    KUBERNETES_PRIMARY_ADDR="$HOST"
+    KUBERNETES_PRIMARY_PORT="$PORT"
     LOAD_BALANCER_ADDRESS="$HOST"
     LOAD_BALANCER_PORT="$PORT"
 else
-    promptForMasterAddress
-    splitHostPort "$KUBERNETES_MASTER_ADDR"
+    promptForPrimaryAddress
+    splitHostPort "$KUBERNETES_PRIMARY_ADDR"
     if [ -n "$PORT" ]; then
-        KUBERNETES_MASTER_ADDR="$HOST"
-        KUBERNETES_MASTER_PORT="$PORT"
+        KUBERNETES_PRIMARY_ADDR="$HOST"
+        KUBERNETES_PRIMARY_PORT="$PORT"
     fi
-    LOAD_BALANCER_ADDRESS="$KUBERNETES_MASTER_ADDR"
-    LOAD_BALANCER_PORT="$KUBERNETES_MASTER_PORT"
-    API_SERVICE_ADDRESS="${KUBERNETES_MASTER_ADDR}:${KUBERNETES_MASTER_PORT}"
+    LOAD_BALANCER_ADDRESS="$KUBERNETES_PRIMARY_ADDR"
+    LOAD_BALANCER_PORT="$KUBERNETES_PRIMARY_PORT"
+    API_SERVICE_ADDRESS="${KUBERNETES_PRIMARY_ADDR}:${KUBERNETES_PRIMARY_PORT}"
 fi
 promptForToken
 promptForTokenCAHash
@@ -362,9 +369,9 @@ if [ "$NO_PROXY" != "1" ]; then
         if [ "$SERVICE_CIDR" = "10.96.0.0/12" ]; then
             # Docker < 19.03 does not support cidr addresses in the no_proxy variable.
             # This is a workaround to add support for http proxies until we upgrade docker.
-            getNoProxyAddresses "$KUBERNETES_MASTER_ADDR" "$SERVICE_CIDR" "10.100.100.100" "10.100.100.101"
+            getNoProxyAddresses "$KUBERNETES_PRIMARY_ADDR" "$SERVICE_CIDR" "10.100.100.100" "10.100.100.101"
         else
-            getNoProxyAddresses "$KUBERNETES_MASTER_ADDR" "$SERVICE_CIDR"
+            getNoProxyAddresses "$KUBERNETES_PRIMARY_ADDR" "$SERVICE_CIDR"
         fi
     fi
 fi
@@ -441,7 +448,7 @@ if [ "$AIRGAP" = "1" ]; then
         fi
     fi
     airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"
-    if [ "$MASTER" -eq "1" ]; then
+    if [ "$PRIMARY" -eq "1" ]; then
         airgapLoadKubernetesControlImages "$KUBERNETES_VERSION"
     fi
     addInsecureRegistry "$SERVICE_CIDR"
@@ -461,7 +468,7 @@ fi
 
 maybeTaintControlPlaneNodeJoin
 
-if [ "$MASTER" -eq "1" ]; then
+if [ "$PRIMARY" -eq "1" ]; then
     if [ "$AIRGAP" = "1" ]; then
         # delete the rek operator so that its anti-affinity with the docker-registry applies
         kubectl scale deployment rek-operator --replicas=0
@@ -471,7 +478,7 @@ fi
 
 purgeNative
 
-if [ "$MASTER" -eq "1" ]; then
+if [ "$PRIMARY" -eq "1" ]; then
     exportKubeconfig
 
     installCliFile \

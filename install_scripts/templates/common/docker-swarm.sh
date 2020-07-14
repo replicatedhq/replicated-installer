@@ -8,26 +8,26 @@
 #######################################
 
 #######################################
-# Prompts for swarm master address if not already set.
+# Prompts for swarm manager address if not already set.
 # Globals:
 #   None
 # Arguments:
 #   None
 # Returns:
-#   SWARM_MASTER_ADDRESS
+#   SWARM_MANAGER_ADDRESS
 #######################################
-SWARM_MASTER_ADDRESS=
-promptForSwarmMasterAddress() {
-    if [ -n "$SWARM_MASTER_ADDRESS" ]; then
+SWARM_MANAGER_ADDRESS=
+promptForSwarmManagerAddress() {
+    if [ -n "$SWARM_MANAGER_ADDRESS" ]; then
         return
     fi
 
-    printf "Please enter the Swarm master address.\n"
+    printf "Please enter the Swarm manager address.\n"
     while true; do
-        printf "Swarm master address: "
+        printf "Swarm manager address: "
         prompt
         if [ -n "$PROMPT_RESULT" ]; then
-            SWARM_MASTER_ADDRESS="$PROMPT_RESULT"
+            SWARM_MANAGER_ADDRESS="$PROMPT_RESULT"
             return
         fi
     done

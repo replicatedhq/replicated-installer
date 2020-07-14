@@ -33,12 +33,12 @@ REPLICATED_USERNAME="{{ replicated_username }}"
 CA="{{ ca }}"
 CERT="{{ cert }}"
 DAEMON_REGISTRY_ADDRESS="{{ daemon_registry_address }}"
-SWARM_MASTER_ADDRESS="{{ swarm_master_address }}"
+SWARM_MANAGER_ADDRESS="{{ swarm_manager_address }}"
 SWARM_TOKEN="{{ swarm_token }}"
 
 joinSwarm() {
     set +e
-    docker swarm join --token "${SWARM_TOKEN}" "${SWARM_MASTER_ADDRESS}"
+    docker swarm join --token "${SWARM_TOKEN}" "${SWARM_MANAGER_ADDRESS}"
     _status=$?
     set -e
     if [ "$_status" -ne "0" ]; then
@@ -100,8 +100,11 @@ while [ "$1" != "" ]; do
         swarm-listen-addr|swarm_listen_addr)
             SWARM_LISTEN_ADDR="$_value"
             ;;
-        swarm-master-address|swarm_master_address)
-            SWARM_MASTER_ADDRESS="$_value"
+        swarm-manager-address|swarm_manager_address)
+            SWARM_MANAGER_ADDRESS="$_value"
+            ;;
+        swarm-master-address|swarm_master_address) # deprecated
+            SWARM_MANAGER_ADDRESS="$_value"
             ;;
         swarm-token|swarm_token)
             SWARM_TOKEN="$_value"
@@ -168,10 +171,10 @@ else
     requireDocker
 fi
 
-promptForSwarmMasterAddress
+promptForSwarmManagerAddress
 
 if [ -n "$PROXY_ADDRESS" ]; then
-    getNoProxyAddresses "$SWARM_MASTER_ADDRESS"
+    getNoProxyAddresses "$SWARM_MANAGER_ADDRESS"
     requireDockerProxy
 fi
 
@@ -219,7 +222,7 @@ if [ -n "$DAEMON_REGISTRY_ADDRESS" ]; then
 fi
 
 # creating the Replicated user on workers is optional but gives nicer output in `ps` if the uid is
-# the same as on the master node
+# the same as on the manager node
 detectDockerGroupId
 maybeCreateReplicatedUser
 

@@ -603,9 +603,9 @@ def get_replicated_kubernetes(replicated_channel=None,
 @app.route('/<replicated_channel>/swarm-init')
 @app.route('/<app_slug>/<app_channel>/swarm-init')
 @app.route('/<replicated_channel>/<app_slug>/<app_channel>/swarm-init')
-def get_swarm_init_master(replicated_channel=None,
-                          app_slug=None,
-                          app_channel=None):
+def get_swarm_init_primary(replicated_channel=None,
+                           app_slug=None,
+                           app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
     print('Looking up tags for:', replicated_channel,
           app_slug, app_channel, file=sys.stderr)
@@ -681,14 +681,16 @@ def get_swarm_init_worker(replicated_channel=None,
 
     pinned_docker_version = helpers.get_pinned_docker_version(
         replicated_version, scheduler)
-    swarm_master_address = helpers.get_arg('swarm_master_address')
+    swarm_manager_address = helpers.get_arg('swarm_manager_address')
+    if swarm_manager_address == '':
+        swarm_manager_address = helpers.get_arg('swarm_master_address')
     swarm_token = helpers.get_arg('swarm_token')
     username = helpers.get_replicated_username_swarm(replicated_version)
     response = render_template(
         'swarm/worker-join.sh',
         **helpers.template_args(
             pinned_docker_version=pinned_docker_version,
-            swarm_master_address=swarm_master_address,
+            swarm_manager_address=swarm_manager_address,
             swarm_token=swarm_token,
             replicated_username=username,
         ))
@@ -698,7 +700,7 @@ def get_swarm_init_worker(replicated_channel=None,
 @app.route('/kubernetes-node-upgrade')
 @app.route('/kubernetes-node-upgrade.sh')
 @app.route('/<replicated_channel>/kubernetes-node-upgrade')
-def get_kubernetes_upgrade_worker(replicated_channel=None):
+def get_kubernetes_upgrade_secondary(replicated_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
 
     scheduler = constant.SCHEDULER_KUBERNETES
@@ -774,9 +776,9 @@ def get_kubernetes_migrate(replicated_channel=None,
 @app.route('/<replicated_channel>/kubernetes-init')
 @app.route('/<app_slug>/<app_channel>/kubernetes-init')
 @app.route('/<replicated_channel>/<app_slug>/<app_channel>/kubernetes-init')
-def get_kubernetes_init_master(replicated_channel=None,
-                               app_slug=None,
-                               app_channel=None):
+def get_kubernetes_init_primary(replicated_channel=None,
+                                app_slug=None,
+                                app_channel=None):
     replicated_channel = replicated_channel if replicated_channel else 'stable'
 
     scheduler = constant.SCHEDULER_KUBERNETES
@@ -872,15 +874,18 @@ def get_kubernetes_node_join(replicated_channel=None,
 
     kubeadm_token = helpers.get_arg('kubeadm_token', '')
     kubeadm_token_ca_hash = helpers.get_arg('kubeadm_token_ca_hash', '')
-    kubernetes_master_address = helpers.get_arg('kubernetes_master_address',
-                                                '')
+    kubernetes_primary_address = helpers.get_arg('kubernetes_primary_address',
+                                                 '')
+    if kubernetes_primary_address == '':
+        kubernetes_primary_address = helpers.get_arg(
+            'kubernetes_master_address', '')
 
     response = render_template(
         'kubernetes/node-join.sh',
         **helpers.template_args(
             pinned_docker_version=pinned_docker_version,
             kubernetes_version=kubernetes_version,
-            kubernetes_master_address=kubernetes_master_address,
+            kubernetes_primary_address=kubernetes_primary_address,
             kubeadm_token=kubeadm_token,
             kubeadm_token_ca_hash=kubeadm_token_ca_hash,
         ))

@@ -69,13 +69,13 @@ loadIPVSKubeProxyModules
 
 if [ "$AIRGAP" = "1" ]; then
     airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"
-    if isMasterNode; then
+    if isCurrentNodePrimaryNode; then
         airgapLoadKubernetesControlImages "$KUBERNETES_VERSION"
     fi
 
     # Pre-load images for the next version if the current upgrade is an even version.
     # This prevents CoreDNS and Kube-Proxy from getting into ImagePullBackoff state
-    # on this node when the upgrade to the next version begins on the primary master.
+    # on this node when the upgrade to the next version begins on the first primary.
     case "$KUBERNETES_VERSION" in
         "1.10.6")
             airgapLoadKubernetesCommonImages 1.11.5

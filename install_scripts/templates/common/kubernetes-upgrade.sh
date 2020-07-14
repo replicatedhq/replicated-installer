@@ -83,14 +83,14 @@ upgradeKubernetes() {
         if [ "$AIRGAP" = "1" ]; then
             airgapLoadKubernetesCommonImages 1.10.6
             airgapLoadKubernetesControlImages 1.10.6
-            airgapLoadReplicatedAddonImagesWorker
+            airgapLoadReplicatedAddonImagesSecondary
         fi
-        upgradeK8sMaster "1.10.6"
+        upgradeK8sPrimary "1.10.6"
         logSuccess "Kubernetes upgraded to version v1.10.6"
         DID_UPGRADE_KUBERNETES=1
     fi
 
-    upgradeK8sWorkers "1.10.6" "0"
+    upgradeK8sSecondaries "1.10.6" "0"
 
     kubeletVersion="$(getK8sNodeVersion)"
     semverParse "$kubeletVersion"
@@ -100,12 +100,12 @@ upgradeKubernetes() {
 
     if [ "$kubeletMinor" -eq "10" ] || ([ "$kubeletMinor" -eq "11" ] && [ "$KUBERNETES_TARGET_VERSION_MINOR" -eq "11" ] && [ "$kubeletPatch" -lt "$KUBERNETES_TARGET_VERSION_PATCH" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
         logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.11.5"
-        upgradeK8sMaster "1.11.5"
+        upgradeK8sPrimary "1.11.5"
         logSuccess "Kubernetes upgraded to version v1.11.5"
         DID_UPGRADE_KUBERNETES=1
     fi
 
-    upgradeK8sWorkers "1.11.5" "$K8S_UPGRADE_PATCH_VERSION"
+    upgradeK8sSecondaries "1.11.5" "$K8S_UPGRADE_PATCH_VERSION"
 
     if [ "$KUBERNETES_TARGET_VERSION_MINOR" -eq "11" ]; then
         return 0
@@ -122,16 +122,16 @@ upgradeKubernetes() {
         if [ "$AIRGAP" = "1" ]; then
             airgapLoadKubernetesCommonImages 1.12.3
             airgapLoadKubernetesControlImages 1.12.3
-            airgapLoadReplicatedAddonImagesWorker
+            airgapLoadReplicatedAddonImagesSecondary
         fi
         # must migrate alpha1 to alpha2 with kubeadm 1.11 while it's still available
         kubeadm config migrate --old-config /opt/replicated/kubeadm.conf --new-config /opt/replicated/kubeadm.conf
-        upgradeK8sMaster "1.12.3"
+        upgradeK8sPrimary "1.12.3"
         logSuccess "Kubernetes upgraded to version v1.12.3"
         DID_UPGRADE_KUBERNETES=1
     fi
 
-    upgradeK8sWorkers "1.12.3" "0"
+    upgradeK8sSecondaries "1.12.3" "0"
 
     kubeletVersion="$(getK8sNodeVersion)"
     semverParse "$kubeletVersion"
@@ -144,17 +144,17 @@ upgradeKubernetes() {
         if [ "$AIRGAP" = "1" ]; then
             airgapLoadKubernetesCommonImages 1.13.5
             airgapLoadKubernetesControlImages 1.13.5
-            airgapLoadReplicatedAddonImagesWorker
+            airgapLoadReplicatedAddonImagesSecondary
         fi
         : > /opt/replicated/kubeadm.conf
         makeKubeadmConfig "$KUBERNETES_VERSION"
-        upgradeK8sMaster "1.13.5"
+        upgradeK8sPrimary "1.13.5"
         logSuccess "Kubernetes upgraded to version v1.13.5"
         DID_UPGRADE_KUBERNETES=1
     fi
 
-    upgradeK8sRemoteMasters "1.13.5" "$K8S_UPGRADE_PATCH_VERSION"
-    upgradeK8sWorkers "1.13.5" "$K8S_UPGRADE_PATCH_VERSION"
+    upgradeK8sRemotePrimaries "1.13.5" "$K8S_UPGRADE_PATCH_VERSION"
+    upgradeK8sSecondaries "1.13.5" "$K8S_UPGRADE_PATCH_VERSION"
 
     if [ "$KUBERNETES_TARGET_VERSION_MINOR" -eq "13" ]; then
         return 0
@@ -177,15 +177,15 @@ upgradeKubernetes() {
         if [ "$AIRGAP" = "1" ]; then
             airgapLoadKubernetesCommonImages 1.14.3
             airgapLoadKubernetesControlImages 1.14.3
-            airgapLoadReplicatedAddonImagesWorker
+            airgapLoadReplicatedAddonImagesSecondary
         fi
-        upgradeK8sMaster "1.14.3"
+        upgradeK8sPrimary "1.14.3"
         logSuccess "Kubernetes upgraded to version 1.14.3"
         DID_UPGRADE_KUBERNETES=1
     fi
 
-    upgradeK8sRemoteMasters "1.14.3" "0"
-    upgradeK8sWorkers "1.14.3"
+    upgradeK8sRemotePrimaries "1.14.3" "0"
+    upgradeK8sSecondaries "1.14.3"
 
     enableRookCephOperator
     waitCephHealthy
@@ -202,20 +202,20 @@ upgradeKubernetes() {
         if [ "$AIRGAP" = "1" ]; then
             airgapLoadKubernetesCommonImages 1.15.3
             airgapLoadKubernetesControlImages 1.15.3
-            airgapLoadReplicatedAddonImagesWorker
+            airgapLoadReplicatedAddonImagesSecondary
         fi
         kubeadm config migrate --old-config /opt/replicated/kubeadm.conf --new-config /opt/replicated/kubeadm.conf
-        upgradeK8sMaster "1.15.3"
+        upgradeK8sPrimary "1.15.3"
         logSuccess "Kubernetes upgraded to version v1.15.3"
         DID_UPGRADE_KUBERNETES=1
     fi
 
-    upgradeK8sRemoteMasters "1.15.3" "$K8S_UPGRADE_PATCH_VERSION"
-    upgradeK8sWorkers "1.15.3" "$K8S_UPGRADE_PATCH_VERSION"
+    upgradeK8sRemotePrimaries "1.15.3" "$K8S_UPGRADE_PATCH_VERSION"
+    upgradeK8sSecondaries "1.15.3" "$K8S_UPGRADE_PATCH_VERSION"
 }
 
 #######################################
-# prompt user to run scripts to change load balancer address on remote masters and workers
+# prompt user to run scripts to change load balancer address on remote primary and secondary nodes
 # Globals:
 #   LOAD_BALANCER_ADDRESS
 #   LOAD_BALANCER_PORT
@@ -227,10 +227,10 @@ upgradeKubernetes() {
 #######################################
 runUpgradeScriptOnAllRemoteNodes() {
     local channelName="$2"
-    local numMasters="$(kubectl get nodes --selector='node-role.kubernetes.io/master' | sed '1d' | wc -l)"
-    local numWorkers="$(kubectl get nodes --selector='!node-role.kubernetes.io/master' | sed '1d' | wc -l)"
+    local numPrimaries="$(kubectl get nodes --selector='node-role.kubernetes.io/master' | sed '1d' | wc -l)"
+    local numSecondaries="$(kubectl get nodes --selector='!node-role.kubernetes.io/master' | sed '1d' | wc -l)"
 
-    if [ "$numMasters" -eq "0" ] && [ "$numWorkers" -eq "0" ]; then
+    if [ "$numPrimaries" -eq "0" ] && [ "$numSecondaries" -eq "0" ]; then
         return
     fi
 
@@ -238,13 +238,13 @@ runUpgradeScriptOnAllRemoteNodes() {
     logStep "Kubernetes control plane endpoint updated, upgrading control plane..."
     echo ""
 
-    if [ "$numMasters" -gt "1" ]; then
+    if [ "$numPrimaries" -gt "1" ]; then
         if [ -n "$LOAD_BALANCER_ADDRESS_CHANGED" ]; then
             BOOTSTRAP_TOKEN="$(kubeadm token create)"
             KUBEADM_TOKEN_CA_HASH="sha256:$(openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //')"
 
             echo ""
-            printf "Run the following script to regenerate the api server certificate on all remote master nodes before proceeding:\n\n${GREEN}"
+            printf "Run the following script to regenerate the api server certificate on all remote primary nodes before proceeding:\n\n${GREEN}"
             local prefix=""
             if [ -n "$channelName" ]; then
                 prefix="/$channelName"
@@ -272,7 +272,7 @@ runUpgradeScriptOnAllRemoteNodes() {
 
             while true; do
                 echo ""
-                printf "${YELLOW}Have all master nodes been updated?${NC} "
+                printf "${YELLOW}Have all primary nodes been updated?${NC} "
                 if confirmN " "; then
                     break
                 fi
@@ -284,24 +284,24 @@ runUpgradeScriptOnAllRemoteNodes() {
         bail "Replicated failed to report ready"
     fi
 
-    masterJoinArgs=" --master"
-    workerJoinArgs=""
+    primaryJoinArgs=" --master"
+    secondaryJoinArgs=""
 
     if [ "$UNSAFE_SKIP_CA_VERIFICATION" = "1" ]; then
         replicated2Version
         # --unsafe-skip-ca-verification support as of 2.42.0
         semverCompare "2.42.0" "$INSTALLED_REPLICATED_VERSION"
         if [ "$SEMVER_COMPARE_RESULT" -ge "0" ]; then
-            masterJoinArgs=$masterJoinArgs" --unsafe-skip-ca-verification"
-            workerJoinArgs=$workerJoinArgs" --unsafe-skip-ca-verification"
+            primaryJoinArgs=$primaryJoinArgs" --unsafe-skip-ca-verification"
+            secondaryJoinArgs=$secondaryJoinArgs" --unsafe-skip-ca-verification"
         fi
     fi
 
-    if [ "$numMasters" -gt "1" ]; then
-        local script="$(/usr/local/bin/replicatedctl cluster node-join-script${masterJoinArgs} | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/")"
+    if [ "$numPrimaries" -gt "1" ]; then
+        local script="$(/usr/local/bin/replicatedctl cluster node-join-script${primaryJoinArgs} | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/")"
 
         echo ""
-        printf "Run the upgrade script on all remote master nodes before proceeding:\n\n"
+        printf "Run the upgrade script on all remote primary nodes before proceeding:\n\n"
         printf "${GREEN}${script}${NC}\n\n"
         kubectl get nodes --selector='node-role.kubernetes.io/master' | grep -v "$(node_name)"
         echo ""
@@ -309,7 +309,7 @@ runUpgradeScriptOnAllRemoteNodes() {
 
         while true; do
             echo ""
-            printf "${YELLOW}Have all master nodes been updated?${NC} "
+            printf "${YELLOW}Have all primary nodes been updated?${NC} "
             if confirmN " "; then
                 break
             fi
@@ -318,18 +318,18 @@ runUpgradeScriptOnAllRemoteNodes() {
         spinnerNodesReady
     fi
 
-    local numWorkers="$(kubectl get nodes --selector='!node-role.kubernetes.io/master' | sed '1d' | wc -l)"
-    if [ "$numWorkers" -gt "0" ]; then
+    local numSecondaries="$(kubectl get nodes --selector='!node-role.kubernetes.io/master' | sed '1d' | wc -l)"
+    if [ "$numSecondaries" -gt "0" ]; then
         echo ""
-        printf "Run the upgrade script on all remote worker nodes before proceeding:\n\n${GREEN}"
-        /usr/local/bin/replicatedctl cluster node-join-script${workerJoinArgs} | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/"
+        printf "Run the upgrade script on all remote secondary nodes before proceeding:\n\n${GREEN}"
+        /usr/local/bin/replicatedctl cluster node-join-script${secondaryJoinArgs} | sed "s/api-service-address=[^ ]*/api-service-address=$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/"
         printf "${NC}\n\n"
         kubectl get nodes --selector='!node-role.kubernetes.io/master'
         echo ""
         echo ""
         while true; do
             echo ""
-            printf "${YELLOW}Have all worker nodes been updated?${NC} "
+            printf "${YELLOW}Have all secondary nodes been updated?${NC} "
             if confirmN " "; then
                 break
             fi
@@ -378,7 +378,7 @@ maybeUpgradeKubernetesNode() {
 
                 # correctly sets the --resolv-conf flag when systemd-resolver is running (Ubuntu 18)
                 # https://github.com/kubernetes/kubeadm/issues/273
-                if isMasterNode; then
+                if isCurrentNodePrimaryNode; then
                     kubeadm init phase kubelet-start
                 fi
 
@@ -395,7 +395,7 @@ maybeUpgradeKubernetesNode() {
             local envFile="KUBELET_KUBEADM_ARGS=--cgroup-driver=%s --cni-bin-dir=/opt/cni/bin --cni-conf-dir=/etc/cni/net.d --network-plugin=cni\n"
             printf "$envFile" "$cgroupDriver" > /var/lib/kubelet/kubeadm-flags.env
 
-            if isMasterNode; then
+            if isCurrentNodePrimaryNode; then
                 : > /opt/replicated/kubeadm.conf
                 makeKubeadmConfig "$KUBERNETES_VERSION"
                 local n=0
@@ -424,7 +424,7 @@ maybeUpgradeKubernetesNode() {
     elif [ "$KUBERNETES_TARGET_VERSION_MINOR" -eq 13 ]; then
         # Sync the config in case it changed.
         logStep "Sync Kubernetes node config"
-        if isMasterNode; then
+        if isCurrentNodePrimaryNode; then
             (set -x; kubeadm upgrade node experimental-control-plane)
             : > /opt/replicated/kubeadm.conf
             makeKubeadmConfig "$KUBERNETES_VERSION"
@@ -443,7 +443,7 @@ maybeUpgradeKubernetesNode() {
         rm -f /opt/replicated/kubeadm.conf
         makeKubeadmJoinConfigV1Beta2
 
-        if isMasterNode; then
+        if isCurrentNodePrimaryNode; then
             joinUpdateApiServerCerts
 
             updateKubeconfigs "https://$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
@@ -515,7 +515,7 @@ listNodes() {
 }
 
 #######################################
-# Upgrade Kubernetes on remote workers to version. Never downgrades a worker.
+# Upgrade Kubernetes on remote secondary nodes to version. Never downgrades a secondary node.
 # Globals:
 #   KUBERNETES_TARGET_VERSION_MAJOR
 #   KUBERNETES_TARGET_VERSION_MINOR
@@ -545,7 +545,7 @@ allNodesUpgraded() {
 }
 
 #######################################
-# Upgrade Kubernetes on remote workers to version. Never downgrades a worker.
+# Upgrade Kubernetes on remote secondary nodes to version. Never downgrades a secondary node.
 # Globals:
 #   AIRGAP
 # Arguments:
@@ -554,7 +554,7 @@ allNodesUpgraded() {
 # Returns:
 #   None
 #######################################
-upgradeK8sWorkers() {
+upgradeK8sSecondaries() {
     k8sVersion="$1"
     shouldUpgradePatch="$2"
 
@@ -573,9 +573,9 @@ upgradeK8sWorkers() {
         fi
         sleep 2
     done
-    # not an error if there are no workers
-    # TODO better master identification
-    local workers="$(echo "$nodes" | sed '1d' | grep -v " master " || :)"
+    # not an error if there are no secondaries
+    # TODO better primary identification
+    local secondaries="$(echo "$nodes" | sed '1d' | grep -v " master " || :)"
 
     while read -r node; do
         if [ -z "$node" ]; then
@@ -630,13 +630,13 @@ upgradeK8sWorkers() {
             fi
         done
         kubectl uncordon "$nodeName"
-    done <<< "$workers"
+    done <<< "$secondaries"
 
     spinnerNodesReady
 }
 
 #######################################
-# Upgrade Kubernetes on remote masters to version. Never downgrades.
+# Upgrade Kubernetes on remote primary nodes to version. Never downgrades.
 # Globals:
 #   AIRGAP
 # Arguments:
@@ -645,7 +645,7 @@ upgradeK8sWorkers() {
 # Returns:
 #   None
 #######################################
-upgradeK8sRemoteMasters() {
+upgradeK8sRemotePrimaries() {
     k8sVersion="$1"
     shouldUpgradePatch="$2"
 
@@ -664,8 +664,8 @@ upgradeK8sRemoteMasters() {
         fi
         sleep 2
     done
-    # not an error if there are no remote masters
-    local masters="$(echo "$nodes" | sed '1d' | grep "node-role.kubernetes.io/master" || :)"
+    # not an error if there are no remote primary nodes
+    local primaries="$(echo "$nodes" | sed '1d' | grep "node-role.kubernetes.io/master" || :)"
 
     while read -r node; do
         if [ -z "$node" ]; then
@@ -702,7 +702,7 @@ upgradeK8sRemoteMasters() {
             --pod-selector 'app notin (rook-ceph-mon,rook-ceph-osd,rook-ceph-osd-prepare,rook-ceph-operator,rook-ceph-agent)' || true
 
 
-        printf "\n\n\tRun the upgrade script on remote master node before proceeding: ${GREEN}$nodeName${NC}\n\n"
+        printf "\n\n\tRun the upgrade script on remote primary node before proceeding: ${GREEN}$nodeName${NC}\n\n"
         local upgradePatchFlag=""
         if [ "$shouldUpgradePatch" = "1" ]; then
             upgradePatchFlag=" kubernetes-upgrade-patch-version"
@@ -720,13 +720,13 @@ upgradeK8sRemoteMasters() {
             fi
         done
         kubectl uncordon "$nodeName"
-    done <<< "$masters"
+    done <<< "$primaries"
 
     spinnerNodesReady
 }
 
 #######################################
-# Upgrade Kubernetes on master node
+# Upgrade Kubernetes on primary node
 # Globals:
 #   LSB_DIST
 #   DIST_VERSION
@@ -735,7 +735,7 @@ upgradeK8sRemoteMasters() {
 # Returns:
 #   None
 #######################################
-upgradeK8sMaster() {
+upgradeK8sPrimary() {
     k8sVersion=$1
     local node=$(hostname | tr '[:upper:]' '[:lower:]')
 
