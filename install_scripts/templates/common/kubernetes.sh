@@ -583,7 +583,7 @@ airgapLoadKubernetesControlImages() {
     logSuccess "control plane images"
 }
 
-airgapLoadReplicatedAddonImagesWorker() {
+airgapLoadReplicatedAddonImagesSecondary() {
     semverCompare "{{ replicated_version }}" "2.34.0"
     if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
         return
@@ -708,7 +708,7 @@ function list_all_required_images() {
     case "$k8sVersion" in
         1.15.3)
             airgapListKubernetesCommonImages1153 | awk '{print $2}'
-            if is_master_node "$nodeName" ; then
+            if is_primary_node "$nodeName" ; then
                 airgapListKubernetesControlImages1153 | awk '{print $2}'
             fi
             ;;
@@ -840,16 +840,16 @@ prepareK8sPackageArchives() {
 # Arguments:
 #   None
 # Returns:
-#   master
+#   primary node names
 #######################################
-k8sMasterNodeNames() {
+k8sPrimaryNodeNames() {
     set +e
-    _master="$(kubectl get nodes --show-labels 2>/dev/null | grep 'node-role.kubernetes.io/master' | awk '{ print $1 }')"
-    until [ -n "$_master" ]; do
-        _master="$(kubectl get nodes --show-labels 2>/dev/null | grep 'node-role.kubernetes.io/master' | awk '{ print $1 }')"
+    _primary="$(kubectl get nodes --show-labels 2>/dev/null | grep 'node-role.kubernetes.io/master' | awk '{ print $1 }')"
+    until [ -n "$_primary" ]; do
+        _primary="$(kubectl get nodes --show-labels 2>/dev/null | grep 'node-role.kubernetes.io/master' | awk '{ print $1 }')"
     done
     set -e
-    printf "$_master"
+    printf "$_primary"
 }
 
 #######################################
@@ -1002,7 +1002,7 @@ waitForNodes()
 }
 
 #######################################
-# Display a spinner until the master node is ready
+# Display a spinner until the primary node is ready
 # Globals:
 #   None
 # Arguments:
@@ -1010,11 +1010,11 @@ waitForNodes()
 # Returns:
 #   None
 #######################################
-spinnerMasterNodeReady()
+spinnerPrimaryNodeReady()
 {
     logStep "Await node ready"
     spinnerNodesReady
-    logSuccess "Master Node Ready!"
+    logSuccess "Primary Node Ready!"
 }
 
 #######################################
@@ -1027,7 +1027,7 @@ spinnerMasterNodeReady()
 # Returns:
 #   None
 #######################################
-labelMasterNodeDeprecated()
+labelPrimaryNodeDeprecated()
 {
     semverCompare "$REPLICATED_VERSION" "2.26.0"
     if [ "$SEMVER_COMPARE_RESULT" -ge "0" ]; then
@@ -1036,19 +1036,19 @@ labelMasterNodeDeprecated()
     if kubectl get nodes --show-labels | grep -q "$DAEMON_NODE_KEY" ; then
         return
     fi
-    kubectl label nodes --overwrite "$(k8sMasterNodeNames)" "$DAEMON_NODE_KEY"=
+    kubectl label nodes --overwrite "$(k8sPrimaryNodeNames)" "$DAEMON_NODE_KEY"=
 }
 
 #######################################
-# Check if the node is a master
+# Check if the current node is a primary
 # Globals:
 #   None
 # Arguments:
 #   None
 # Returns:
-#   0 if master node, else 1
+#   0 if primary node, else 1
 #######################################
-isMasterNode()
+isCurrentNodePrimaryNode()
 {
     if [ -f /etc/kubernetes/manifests/kube-apiserver.yaml ]; then
         return 0
@@ -1059,23 +1059,23 @@ isMasterNode()
 
 
 #######################################
-# Check if the node is a master running in a non-HA cluster
+# Check if the node is a primary running in a non-HA cluster
 # Globals:
 #   None
 # Arguments:
 #   None
 # Returns:
-#   0 if single node master, else 1
+#   0 if single node primary, else 1
 #######################################
-isSingleNodeMaster()
+isSingleNodePrimary()
 {
-    if ! isMasterNode; then
+    if ! isCurrentNodePrimaryNode; then
         return 1
     fi
     if [ "$HA_CLUSTER" = "1" ]; then
         return 1
     fi
-    # joined masters do not have HA_CLUSTER set
+    # joined primary nodes do not have HA_CLUSTER set
     if cat /opt/replicated/kubeadm.conf | grep -q 'JoinConfiguration' && cat /opt/replicated/kubeadm.conf | grep -q 'controlPlane:'; then
         return 1
     fi
@@ -1596,7 +1596,7 @@ discovery:
     caCertHashes:
     - $KUBEADM_TOKEN_CA_HASH
 EOF
-    if [ "$MASTER" = "1" ]; then
+    if [ "$PRIMARY" = "1" ]; then
         cat << EOF >> /opt/replicated/kubeadm.conf
 controlPlane: {}
 EOF
@@ -1623,7 +1623,7 @@ kind: JoinConfiguration
 apiVersion: kubeadm.k8s.io/v1beta2
 nodeRegistration:
 EOF
-    if [ "$MASTER" != "1" ] || [ "$TAINT_CONTROL_PLANE" != "1" ]; then
+    if [ "$PRIMARY" != "1" ] || [ "$TAINT_CONTROL_PLANE" != "1" ]; then
         cat << EOF >> /opt/replicated/kubeadm.conf
   taints: []
 EOF
@@ -1646,7 +1646,7 @@ EOF
     - $KUBEADM_TOKEN_CA_HASH
 EOF
     fi
-    if [ "$MASTER" = "1" ]; then
+    if [ "$PRIMARY" = "1" ]; then
         cat << EOF >> /opt/replicated/kubeadm.conf
 controlPlane: {}
 EOF
@@ -1717,11 +1717,11 @@ EOF
 # Returns:
 #   None
 #######################################
-untaintMaster() {
-    logStep "remove NoSchedule taint from master node"
+untaintPrimary() {
+    logStep "remove node-role.kubernetes.io/master:NoSchedule taint from primary node"
     kubectl taint nodes --all node-role.kubernetes.io/master:NoSchedule- || \
         echo "Taint not found or already removed. The above error can be ignored."
-    logSuccess "master taint removed"
+    logSuccess "primary taint removed"
 }
 
 #######################################
@@ -2036,16 +2036,16 @@ KUBECONFIG=/etc/kubernetes/kubelet.conf kubectl cordon \$(hostname | tr '[:upper
 
 EOF
 
-    if isSingleNodeMaster; then
+    if isSingleNodePrimary; then
         cat >>/opt/replicated/shutdown.sh <<EOF
-# only on master of single-node clusters
+# only on primary of single-node clusters
 KUBECONFIG=/etc/kubernetes/admin.conf /usr/local/bin/replicatedctl app stop || true
 KUBECONFIG=/etc/kubernetes/admin.conf kubectl scale deploy replicated-shared-fs-snapshotter --replicas=0 || true
 
 EOF
     fi
 
-    if isMasterNode; then
+    if isCurrentNodePrimaryNode; then
         cat >>/opt/replicated/shutdown.sh <<EOF
 DAEMON_SELECTOR=\$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get deploy replicated -ojsonpath='{.spec.template.spec.nodeSelector.kubernetes\.io\/hostname }')
 if [ "\$DAEMON_SELECTOR" = "\$(hostname | tr '[:upper:]' '[:lower:]')" ]; then
@@ -2104,8 +2104,8 @@ writeAKAExecStart()
 #!/bin/bash
 
 # wait for Kubernets API
-master=\$(cat /etc/kubernetes/kubelet.conf | grep server | awk '{ print \$2 }')
-while [ "\$(curl --noproxy "*" -sk \$master/healthz)" != "ok" ]; do
+primary=\$(cat /etc/kubernetes/kubelet.conf | grep server | awk '{ print \$2 }')
+while [ "\$(curl --noproxy "*" -sk \$primary/healthz)" != "ok" ]; do
         sleep 1
 done
 
@@ -2177,7 +2177,7 @@ promptForLoadBalancerAddress() {
 
     if [ -z "$LOAD_BALANCER_ADDRESS" ]; then
         printf "Please enter a load balancer address to route external and internal traffic to the API servers.\n"
-        printf "In the absence of a load balancer address, all traffic will be routed to the first master.\n"
+        printf "In the absence of a load balancer address, all traffic will be routed to the first primary.\n"
         printf "Load balancer address: "
         prompt
         LOAD_BALANCER_ADDRESS="$PROMPT_RESULT"
@@ -2251,14 +2251,14 @@ maybeSetTaintControlPlane()
     if [ "$TAINT_CONTROL_PLANE" = "1" ]; then
         return
     fi
-    # is this a master node
-    if [ "$MASTER" != "1" ]; then
+    # is this a primary node
+    if [ "$PRIMARY" != "1" ]; then
         return
     fi
 
     waitForNodes
 
-    # do the other masters have NoSchedule taints
+    # do the other primary nodes have NoSchedule taints?
     if kubectl get nodes --selector=node-role.kubernetes.io/master -ojsonpath --template='{.items[*].spec.taints[?(@.key == "node-role.kubernetes.io/master")].effect}' | grep -q NoSchedule ; then
         TAINT_CONTROL_PLANE=1
     fi
@@ -2276,12 +2276,12 @@ maybeTaintControlPlaneNodeJoin()
 function k8s_load_images() {
     local k8sVersion="$1"
     airgapLoadKubernetesCommonImages "$k8sVersion"
-    if isMasterNode ; then
+    if isCurrentNodePrimaryNode; then
         airgapLoadKubernetesControlImages "$k8sVersion"
     fi
 }
 
-function is_master_node() {
+function is_primary_node() {
     local nodeName="$1"
     kubectl get nodes --no-headers --show-labels "$nodeName" 2>/dev/null | grep -q 'node-role.kubernetes.io/master'
 }
@@ -2349,7 +2349,7 @@ function kubernetes_node_has_image() {
     return 1
 }
 
-# exit 0 if there are any remote workers or masters
+# exit 0 if there are any remote primary or secondary nodes
 function kubernetes_has_remotes() {
     if ! kubernetes_api_is_healthy; then
         # assume this is a new install

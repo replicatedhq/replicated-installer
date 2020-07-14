@@ -50,7 +50,7 @@ REK_OPERATOR_YAML=0
 REPLICATED_REGISTRY_YAML=0
 CLUSTER_ROLE_BINDING_YAML=0
 NODELOCALDNS_YAML=0
-BIND_DAEMON_TO_MASTERS=0
+BIND_DAEMON_TO_PRIMARY=0
 BIND_DAEMON_HOSTNAME=
 API_SERVICE_ADDRESS="{{ api_service_address }}"
 HA_CLUSTER="{{ ha_cluster }}"
@@ -74,8 +74,11 @@ while [ "$1" != "" ]; do
         airgap)
             AIRGAP=1
             ;;
-        bind-daemon-to-masters|bind_daemon_to_masters)
-            BIND_DAEMON_TO_MASTERS=1
+        bind-daemon-to-primary|bind_daemon_to_primary)
+            BIND_DAEMON_TO_PRIMARY=1
+            ;;
+        bind-daemon-to-masters|bind_daemon_to_masters) # deprecated
+            BIND_DAEMON_TO_PRIMARY=1
             ;;
         bind-daemon-hostname|bind_daemon_hostname)
             BIND_DAEMON_HOSTNAME="$_value"
@@ -271,7 +274,7 @@ render_replicated_deployment() {
         kubernetes.io/hostname: "$BIND_DAEMON_HOSTNAME"
 EOF
         )
-    elif [ "$BIND_DAEMON_TO_MASTERS" = "1" ]; then
+    elif [ "$BIND_DAEMON_TO_PRIMARY" = "1" ]; then
         NODE_SELECTOR=$(cat <<-EOF
       nodeSelector:
         node-role.kubernetes.io/master: ""

@@ -441,7 +441,7 @@ initSwarm
 SWARM_TOKEN="$(docker swarm join-token -q worker)"
 SWARM_NODE_ID="$(docker info --format "{{ '{{.Swarm.NodeID}}' }}")"
 SWARM_NODE_ADDRESS="$(docker info --format "{{ '{{.Swarm.NodeAddr}}' }}")"
-SWARM_MASTER_ADDRESS="$(docker info --format "{{ '{{with index .Swarm.RemoteManagers 0}}{{.Addr}}{{end}}' }}")"
+SWARM_MANAGER_ADDRESS="$(docker info --format "{{ '{{with index .Swarm.RemoteManagers 0}}{{.Addr}}{{end}}' }}")"
 
 if [ "$NO_PROXY" != "1" ] && [ -n "$PROXY_ADDRESS" ]; then
     getNoProxyAddresses "$SWARM_NODE_ADDRESS"
@@ -522,7 +522,7 @@ installAliasFile
 
 # printf "${GREEN}To add a worker to this swarm, run the following command:\n"
 # printf "    curl -sSL {{ replicated_install_url }}/{{ swarm_worker_join_path }} | sudo bash -s \\ \n"
-# printf "        swarm-master-address=%s \\ \n" "$SWARM_MASTER_ADDRESS"
+# printf "        swarm-manager-address=%s \\ \n" "$SWARM_MANAGER_ADDRESS"
 # printf "        swarm-token=%s${NC}\n" "$SWARM_TOKEN"
 
 # TODO: wait for replicated services to come up

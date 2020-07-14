@@ -31,7 +31,7 @@ KUBERNETES_ONLY=0
 RESET=0
 FORCE_RESET=0
 LOAD_IMAGES=0
-BIND_DAEMON_TO_MASTERS=1
+BIND_DAEMON_TO_PRIMARY=1
 BIND_DAEMON_HOSTNAME=
 TLS_CERT_PATH=
 UI_BIND_PORT=8800
@@ -254,11 +254,11 @@ initKube15() {
 
     waitForNodes
 
-    # always label the first master as a storage node
+    # always label the first primary as a storage node
     label_node "$(node_name)" "$ROOK_STORAGE_NODES_LABEL"
 
     DID_INIT_KUBERNETES=1
-    logSuccess "Kubernetes Master Initialized"
+    logSuccess "Kubernetes Primary Initialized"
 
     if [ "$LOAD_BALANCER_ADDRESS_CHANGED" = "1" ]; then
         handleLoadBalancerAddressChangedPostInit
@@ -362,8 +362,8 @@ initKube() {
         loadIPVSKubeProxyModules
 
         local skipPhases=
-        local numMasters="$(kubectl get nodes --selector='node-role.kubernetes.io/master' 2>/dev/null | sed '1d' | wc -l)"
-        if [ "$numMasters" -gt "0" ]; then
+        local numPrimaries="$(kubectl get nodes --selector='node-role.kubernetes.io/master' 2>/dev/null | sed '1d' | wc -l)"
+        if [ "$numPrimaries" -gt "0" ]; then
             skipPhases="preflight,mark-control-plane"
         fi
 
@@ -407,9 +407,9 @@ initKube() {
 
     waitForNodes
 
-    untaintMaster
+    untaintPrimary
 
-    logSuccess "Kubernetes Master Initialized"
+    logSuccess "Kubernetes Primary Initialized"
 
     if [ "$LOAD_BALANCER_ADDRESS_CHANGED" = "1" ]; then
         handleLoadBalancerAddressChangedPostInit
@@ -529,8 +529,8 @@ getYAMLOpts() {
     if [ -n "$REGISTRY_ADDRESS_OVERRIDE" ]; then
         opts=$opts" registry-address-override=$REGISTRY_ADDRESS_OVERRIDE"
     fi
-    if [ "$BIND_DAEMON_TO_MASTERS" = "1" ]; then
-        opts=$opts" bind-daemon-to-masters"
+    if [ "$BIND_DAEMON_TO_PRIMARY" = "1" ]; then
+        opts=$opts" bind-daemon-to-primary"
     fi
     if [ -n "$BIND_DAEMON_HOSTNAME" ]; then
         opts=$opts" bind-daemon-hostname=$BIND_DAEMON_HOSTNAME"
@@ -910,20 +910,20 @@ registryDeploy() {
 
     addInsecureRegistry "$REGISTRY_ADDRESS_OVERRIDE"
 
-    # check if there are worker nodes that need to be configured for the insecure registry
-    local workers=$(kubectl get nodes --selector='!node-role.kubernetes.io/master' -o jsonpath='{.items[*].metadata.name}')
-    local numMasters=$(kubectl get nodes --selector='node-role.kubernetes.io/master' | sed '1d' | wc -l)
-    # check the ADDED_INSECURE_REGISTRY flag and the number of masters to ensure this is only shown once
-    if [ "$ADDED_INSECURE_REGISTRY" = "1" ] && [ -n "$workers" ] && [ "$numMasters" -eq "1" ]; then
+    # check if there are secondary nodes that need to be configured for the insecure registry
+    local secondaries=$(kubectl get nodes --selector='!node-role.kubernetes.io/master' -o jsonpath='{.items[*].metadata.name}')
+    local numPrimaries=$(kubectl get nodes --selector='node-role.kubernetes.io/master' | sed '1d' | wc -l)
+    # check the ADDED_INSECURE_REGISTRY flag and the number of primary nodes to ensure this is only shown once
+    if [ "$ADDED_INSECURE_REGISTRY" = "1" ] && [ -n "$secondaries" ] && [ "$numPrimaries" -eq "1" ]; then
         cat <<EOF
-Configure Docker on all worker nodes to use http when pulling from the in-cluster registry before proceeding.
+Configure Docker on all secondary nodes to use http when pulling from the in-cluster registry before proceeding.
 
 Example /etc/docker/daemon.json:
 {
     "insecure-registries": ["$SERVICE_CIDR"]
 }
 
-Continue after updating and restarting docker on nodes: $workers
+Continue after updating and restarting docker on nodes: $secondaries
 EOF
     prompt
     fi
@@ -950,12 +950,12 @@ waitForRegistry() {
 replicatedDeploy() {
     logStep "deploy replicated components"
 
-    # Multi-master airgap binds to the single master expected to have the canonical airgap bundle
-    # and license. Replicated >= 2.36.0 copies the airgap files to all masters, but binding to a
-    # single master prevents rescheduling before the copy has completed and also provides a fixed
+    # HA airgap binds to the single primary expected to have the canonical airgap bundle and
+    # license. Replicated >= 2.36.0 copies the airgap files to all primary nodes, but binding to a
+    # single primary prevents rescheduling before the copy has completed and also provides a fixed
     # destination to upload new release bundles when upgrading. In the event of loss of the bound
-    # master, the REK operator will remove the bind to the single-master and leave it bound to any
-    # master. Re-running this script will restore the single-master affinity.
+    # primary, the REK operator will remove the bind to the single-primary and leave it bound to
+    # any primary. Re-running this script will restore the single-primary affinity.
     if [ "$HA_CLUSTER" = "1" ] && [ "$AIRGAP" = "1" ]; then
         BIND_DAEMON_HOSTNAME=$(hostname | tr '[:upper:]' '[:lower:]')
     fi
@@ -1049,7 +1049,7 @@ outroKubeadm() {
 
     KUBEADM_TOKEN_CA_HASH=$(cat /tmp/kubeadm-init | grep 'kubeadm join' | awk '{ print $(NF) }')
 
-    local joinArgs="kubernetes-master-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=${KUBEADM_TOKEN_CA_HASH} kubernetes-version=${KUBERNETES_VERSION}"
+    local joinArgs="kubernetes-primary-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=${KUBEADM_TOKEN_CA_HASH} kubernetes-version=${KUBERNETES_VERSION}"
     if [ "$UNSAFE_SKIP_CA_VERIFICATION" = "1" ]; then
         joinArgs=$joinArgs" unsafe-skip-ca-verification"
     fi
@@ -1420,7 +1420,7 @@ installCNIPlugins
 
 if [ "$TAINT_CONTROL_PLANE" = "1" ]; then
     semverCompare "$REPLICATED_VERSION" "2.43.0"
-    # support for tainting masters added in 2.43.0
+    # support for tainting primary nodes added in 2.43.0
     if [ "$SEMVER_COMPARE_RESULT" -lt "0" ]; then
         logWarn "Will not taint contol plane, Replicated version 2.43.0+ required"
         TAINT_CONTROL_PLANE=0
@@ -1460,8 +1460,8 @@ fi
 
 weavenetDeploy
 
-spinnerMasterNodeReady
-labelMasterNodeDeprecated
+spinnerPrimaryNodeReady
+labelPrimaryNodeDeprecated
 
 if [ "$DID_INIT_KUBERNETES" = "0" ] || [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]; then
     maybeUpgradeKubernetes "$KUBERNETES_VERSION"
