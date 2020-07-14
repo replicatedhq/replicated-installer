@@ -6,9 +6,10 @@ all: deps update_k8s_manifest build retag push
 
 deps:
 	go get github.com/linuxkit/linuxkit/src/cmd/linuxkit
-	(cd $(GOPATH)/src/github.com/linuxkit/linuxkit; git checkout v0.7)
-	make -C $(GOPATH)/src/github.com/linuxkit/linuxkit local-build
-	cp $(GOPATH)/src/github.com/linuxkit/linuxkit/bin/linuxkit $(GOPATH)/bin/linuxkit
+	cd $(GOPATH)/src/github.com/linuxkit/linuxkit && \
+		git checkout v0.7 && \
+		make local-build && \
+		cp ./bin/linuxkit $(GOPATH)/bin/linuxkit
 	go get github.com/linuxkit/kubernetes || :
 
 update_k8s_manifest_%: clean deps
