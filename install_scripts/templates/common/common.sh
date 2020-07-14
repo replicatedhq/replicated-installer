@@ -247,7 +247,7 @@ insertOrReplaceJsonParam() {
 ######################################
 INSERT_JSON_ARRAY_SUCCESS=
 insertJSONArray() {
-	if ! [ -f "$1" ] || [ $(wc -c <"$1") -lt 5]; then
+	if ! [ -f "$1" ] || [ $(wc -c <"$1") -lt 5 ]; then
         mkdir -p "$(dirname "$1")"
 		cat > $1 <<EOF
 {
