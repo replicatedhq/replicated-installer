@@ -10,8 +10,9 @@ pull:
 	docker pull $(KUBE_CONTROLLER_MANAGER_V1153)
 
 .PHONY: build
+build: export BASEIMAGE = $(KUBE_BASE_V1153_20200713)
 build:
-	docker build --pull -t $(KUBE_CONTROLLER_MANAGER_V1153)-$(DATE) .
+	docker build --pull -t $(KUBE_CONTROLLER_MANAGER_V1153)-$(DATE) --build-arg BASEIMAGE .
 	docker tag $(KUBE_CONTROLLER_MANAGER_V1153)-$(DATE) $(KUBE_CONTROLLER_MANAGER_V1153)
 
 .PHONY: scan

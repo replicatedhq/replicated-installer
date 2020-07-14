@@ -10,8 +10,9 @@ pull:
 	docker pull $(KUBE_SCHEDULER_V1153)
 
 .PHONY: build
+build: export BASEIMAGE = $(KUBE_BASE_V1153_20200713)
 build:
-	docker build --pull -t $(KUBE_SCHEDULER_V1153)-$(DATE) .
+	docker build --pull -t $(KUBE_SCHEDULER_V1153)-$(DATE) --build-arg BASEIMAGE .
 	docker tag $(KUBE_SCHEDULER_V1153)-$(DATE) $(KUBE_SCHEDULER_V1153)
 
 .PHONY: scan

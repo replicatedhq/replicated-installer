@@ -510,14 +510,14 @@ airgapLoadKubernetesCommonImages1143() {
 }
 
 airgapListKubernetesCommonImages1153() {
-    echo "af41209a559f docker.io/replicated/kube-proxy:v1.15.3"
+    echo "6164687eb4c7 docker.io/replicated/kube-proxy:v1.15.3"
     echo "da86e6ba6ca1 docker.io/replicated/pause:3.1"
     echo "eb516548c180 k8s.gcr.io/coredns:1.3.1"
-    echo "a3cb8ab06265 docker.io/replicated/weave-kube:2.5.2-20200713"
-    echo "ae0e3813615e docker.io/replicated/weave-npc:2.5.2-20200713"
-    echo "2be53f0ed591 docker.io/replicated/weaveexec:2.5.2-20200713"
-    echo "8a7014fbf188 docker.io/replicated/docker-registry:2.6.2-20200713"
-    echo "209649db0758 docker.io/replicated/envoy:v1.10.0-20200713"
+    echo "9d7f294e9a16 docker.io/replicated/weave-kube:2.5.2-20200713"
+    echo "c155f3dbb56a docker.io/replicated/weave-npc:2.5.2-20200713"
+    echo "ec9414087345 docker.io/replicated/weaveexec:2.5.2-20200713"
+    echo "615b7e170361 docker.io/replicated/docker-registry:2.6.2-20200713"
+    echo "f5f6233f1788 docker.io/replicated/envoy:v1.10.0-20200713"
     echo "672aff19e6e4 gcr.io/heptio-images/contour:v0.13.0"
     echo "558cc68e86af docker.io/replicated/rook-ceph:v1.0.3-20200612"
     echo "dfa130aeec57 docker.io/replicated/rook-ceph:v1.0.6-20200612"
@@ -684,9 +684,9 @@ airgapLoadKubernetesControlImages1143() {
 }
 
 airgapListKubernetesControlImages1153() {
-    echo "4953a1998aa8 docker.io/replicated/kube-apiserver:v1.15.3"
-    echo "d091bb0ecf03 docker.io/replicated/kube-controller-manager:v1.15.3"
-    echo "2aae1cd664df docker.io/replicated/kube-scheduler:v1.15.3"
+    echo "0bfbc31739bd docker.io/replicated/kube-apiserver:v1.15.3"
+    echo "65da27da6d2c docker.io/replicated/kube-controller-manager:v1.15.3"
+    echo "623de2f04142 docker.io/replicated/kube-scheduler:v1.15.3"
     echo "3a9e5cce725f docker.io/replicated/etcd:3.3.10-20200512"
     echo "9eedcb1b6638 docker.io/replicated/etcd:3.4.7-20200602"
 }
