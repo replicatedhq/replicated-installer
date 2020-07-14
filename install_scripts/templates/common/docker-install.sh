@@ -378,16 +378,5 @@ _should_skip_docker_ee_install() {
 #   None
 #######################################
 changeCgroupDriverToSystemd() {
-    if [ -f /var/lib/kubelet/kubeadm-flags.env ] || [ -f /etc/docker/daemon.json ]; then
-        return
-    fi
-
-    mkdir -p /etc/docker
-    cat > /etc/docker/daemon.json <<EOF
-{
-    "exec-opts": ["native.cgroupdriver=systemd"]
-}
-EOF
-
-    mkdir -p /etc/systemd/system/docker.service.d
+    insertJSONArray "/etc/docker/daemon.json" "exec-opts" "native.cgroupdriver=systemd"
 }
