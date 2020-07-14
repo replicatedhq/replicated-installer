@@ -1681,31 +1681,15 @@ addInsecureRegistry() {
         return
     fi
 
-    # prefer to configure using /etc/docker/daemon.json since that does not require a docker restart
-    # but don't attempt to edit json if that file already exists.
-    if [ ! -f "/etc/docker/daemon.json" ]; then
-        cat <<EOF >/etc/docker/daemon.json
-{
-    "insecure-registries": ["$1"]
-}
-EOF
+    # configure using /etc/docker/daemon.json since that does not require a docker restart
+    insertJSONArray "/etc/docker/daemon.json" "insecure-registries" "$1"
+    if [ "$INSERT_JSON_ARRAY_SUCCESS" = "1" ]; then
         systemctl kill -s HUP --kill-who=main docker.service
         ADDED_INSECURE_REGISTRY=1
         return
     fi
-    mkdir -p /etc/systemd/system/docker.service.d
-    local execStart=$(cat /etc/systemd/system/multi-user.target.wants/docker.service | sed -n '/ExecStart/,$p' | sed -E '/[^\\]$/q')
 
-    cat <<EOF > /etc/systemd/system/docker.service.d/replicated-registry.conf
-[Service]
-ExecStart=
-$execStart --insecure-registry $1
-EOF
-    systemctl daemon-reload
-    systemctl restart docker
-    spinnerNodesReady
-
-    ADDED_INSECURE_REGISTRY=1
+    bail "Docker could not be configured to use in-cluster registry $1"
 }
 
 #######################################
