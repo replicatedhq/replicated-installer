@@ -243,6 +243,17 @@ initKube15() {
 
     loadIPVSKubeProxyModules
 
+    if [ "$AIRGAP" != "1" ]; then
+        docker pull replicated/kube-apiserver:v1.15.3-20200714
+        docker pull replicated/kube-controller-manager:v1.15.3-20200714
+        docker pull replicated/kube-scheduler:v1.15.3-20200714
+        docker pull replicated/kube-proxy:v1.15.3-20200714
+    fi
+    docker tag replicated/kube-apiserver:v1.15.3-20200714 replicated/kube-apiserver:v1.15.3
+    docker tag replicated/kube-controller-manager:v1.15.3-20200714 replicated/kube-controller-manager:v1.15.3
+    docker tag replicated/kube-scheduler:v1.15.3-20200714 replicated/kube-scheduler:v1.15.3
+    docker tag replicated/kube-proxy:v1.15.3-20200714 replicated/kube-proxy:v1.15.3
+
     set -o pipefail
     kubeadm init \
         --ignore-preflight-errors=all \
@@ -250,9 +261,16 @@ initKube15() {
         | tee /tmp/kubeadm-init
     set +o pipefail
 
+    # patch all control plane manifests and daemonset/kube-proxy with versioned images
+    sed -i 's/kube-apiserver:v1.15.3$/kube-apiserver:v1.15.3-20200714/' /etc/kubernetes/manifests/kube-apiserver.yaml
+    sed -i 's/kube-controller-manager:v1.15.3$/kube-controller-manager:v1.15.3-20200714/' /etc/kubernetes/manifests/kube-controller-manager.yaml
+    sed -i 's/kube-scheduler:v1.15.3$/kube-scheduler:v1.15.3-20200714/' /etc/kubernetes/manifests/kube-scheduler.yaml
+
     exportKubeconfig
 
     waitForNodes
+
+    kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"docker.io/replicated/kube-proxy:v1.15.3-20200714"}]}}}}'
 
     # always label the first primary as a storage node
     label_node "$(node_name)" "$ROOK_STORAGE_NODES_LABEL"
@@ -296,7 +314,7 @@ handleLoadBalancerAddressChangedPostInit() {
 
 discoverCurrentKubernetesVersion() {
     set +e
-    CURRENT_KUBERNETES_VERSION=$(cat /etc/kubernetes/manifests/kube-apiserver.yaml 2>/dev/null | grep image: | grep -oE '[0-9]+.[0-9]+.[0-9]')
+    CURRENT_KUBERNETES_VERSION=$(cat /opt/replicated/kubeadm.conf 2>/dev/null | grep kubernetesVersion: | grep -oE '[0-9]+.[0-9]+.[0-9]')
     set -e
 
     if [ -n "$CURRENT_KUBERNETES_VERSION" ]; then

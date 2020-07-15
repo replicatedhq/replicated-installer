@@ -510,7 +510,7 @@ airgapLoadKubernetesCommonImages1143() {
 }
 
 airgapListKubernetesCommonImages1153() {
-    echo "6164687eb4c7 docker.io/replicated/kube-proxy:v1.15.3"
+    echo "6164687eb4c7 docker.io/replicated/kube-proxy:v1.15.3-20200714"
     echo "da86e6ba6ca1 docker.io/replicated/pause:3.1"
     echo "eb516548c180 k8s.gcr.io/coredns:1.3.1"
     echo "9d7f294e9a16 docker.io/replicated/weave-kube:2.5.2-20200713"
@@ -530,7 +530,7 @@ airgapListKubernetesCommonImages1153() {
 airgapLoadKubernetesCommonImages1153() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "replicated/k8s-images-common:v1.15.3-20200612"
+        "replicated/k8s-images-common:v1.15.3-20200714"
 
     while read -r image; do
         (set -x; docker tag $image)
@@ -684,9 +684,9 @@ airgapLoadKubernetesControlImages1143() {
 }
 
 airgapListKubernetesControlImages1153() {
-    echo "0bfbc31739bd docker.io/replicated/kube-apiserver:v1.15.3"
-    echo "65da27da6d2c docker.io/replicated/kube-controller-manager:v1.15.3"
-    echo "623de2f04142 docker.io/replicated/kube-scheduler:v1.15.3"
+    echo "0bfbc31739bd docker.io/replicated/kube-apiserver:v1.15.3-20200714"
+    echo "65da27da6d2c docker.io/replicated/kube-controller-manager:v1.15.3-20200714"
+    echo "623de2f04142 docker.io/replicated/kube-scheduler:v1.15.3-20200714"
     echo "3a9e5cce725f docker.io/replicated/etcd:3.3.10-20200512"
     echo "9eedcb1b6638 docker.io/replicated/etcd:3.4.7-20200602"
 }
@@ -694,7 +694,7 @@ airgapListKubernetesControlImages1153() {
 airgapLoadKubernetesControlImages1153() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "replicated/k8s-images-control:v1.15.3-20200603"
+        "replicated/k8s-images-control:v1.15.3-20200714"
 
     while read -r image; do
         (set -x; docker tag $image)
