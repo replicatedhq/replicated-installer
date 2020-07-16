@@ -254,6 +254,16 @@ initKube15() {
     docker tag "{{ images.kube_scheduler_v1153.name }}" replicated/kube-scheduler:v1.15.3
     docker tag "{{ images.kube_proxy_v1153.name }}" replicated/kube-proxy:v1.15.3
 
+    # if we have already patched these files kubeadm init will fail cause the control plane pods will restart
+    if kubectl get nodes >/dev/null 2>&1 ; then
+        kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"replicated/kube-proxy:v1.15.3"}]}}}}'
+        sed -i 's/{{ images.kube_apiserver_v1153.name.split("/")[1] }}/kube-apiserver:v1.15.3/' /etc/kubernetes/manifests/kube-apiserver.yaml
+        sed -i 's/{{ images.kube_controller_manager_v1153.name.split("/")[1] }}/kube-controller-manager:v1.15.3/' /etc/kubernetes/manifests/kube-controller-manager.yaml
+        sed -i 's/{{ images.kube_scheduler_v1153.name.split("/")[1] }}/kube-scheduler:v1.15.3/' /etc/kubernetes/manifests/kube-scheduler.yaml
+
+        waitForNodes
+    fi
+
     set -o pipefail
     kubeadm init \
         --ignore-preflight-errors=all \
@@ -261,7 +271,10 @@ initKube15() {
         | tee /tmp/kubeadm-init
     set +o pipefail
 
-    # patch all control plane manifests and daemonset/kube-proxy with versioned images
+    # patch daemonset/kube-proxy with versioned image
+    kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"{{ images.kube_proxy_v1153.name }}"}]}}}}'
+
+    # patch all control plane manifests with versioned images
     sed -i 's/kube-apiserver:v1.15.3$/{{ images.kube_apiserver_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-apiserver.yaml
     sed -i 's/kube-controller-manager:v1.15.3$/{{ images.kube_controller_manager_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-controller-manager.yaml
     sed -i 's/kube-scheduler:v1.15.3$/{{ images.kube_scheduler_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-scheduler.yaml
@@ -269,8 +282,6 @@ initKube15() {
     exportKubeconfig
 
     waitForNodes
-
-    kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"{{ images.kube_proxy_v1153.name }}"}]}}}}'
 
     # always label the first primary as a storage node
     label_node "$(node_name)" "$ROOK_STORAGE_NODES_LABEL"
