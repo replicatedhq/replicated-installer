@@ -205,6 +205,18 @@ upgradeKubernetes() {
             airgapLoadReplicatedAddonImagesSecondary
         fi
         kubeadm config migrate --old-config /opt/replicated/kubeadm.conf --new-config /opt/replicated/kubeadm.conf
+
+        if [ "$AIRGAP" != "1" ]; then
+            docker pull "{{ images.kube_apiserver_v1153.name }}"
+            docker pull "{{ images.kube_controller_manager_v1153.name }}"
+            docker pull "{{ images.kube_scheduler_v1153.name }}"
+            docker pull "{{ images.kube_proxy_v1153.name }}"
+        fi
+        docker tag "{{ images.kube_apiserver_v1153.name }}" replicated/kube-apiserver:v1.15.3
+        docker tag "{{ images.kube_controller_manager_v1153.name }}" replicated/kube-controller-manager:v1.15.3
+        docker tag "{{ images.kube_scheduler_v1153.name }}" replicated/kube-scheduler:v1.15.3
+        docker tag "{{ images.kube_proxy_v1153.name }}" replicated/kube-proxy:v1.15.3
+
         upgradeK8sPrimary "1.15.3"
         logSuccess "Kubernetes upgraded to version v1.15.3"
         DID_UPGRADE_KUBERNETES=1
@@ -748,7 +760,19 @@ upgradeK8sPrimary() {
 
     spinnerK8sAPIHealthy
     kubeadm upgrade apply "v$k8sVersion" --yes --config /opt/replicated/kubeadm.conf --force
+
+    if [ "$k8sVersion" = "1.15.3" ]; then
+        # patch all control plane manifests and daemonset/kube-proxy with versioned images
+        sed -i 's/kube-apiserver:v1.15.3$/{{ images.kube_apiserver_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-apiserver.yaml
+        sed -i 's/kube-controller-manager:v1.15.3$/{{ images.kube_controller_manager_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-controller-manager.yaml
+        sed -i 's/kube-scheduler:v1.15.3$/{{ images.kube_scheduler_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-scheduler.yaml
+    fi
+
     waitForNodes
+
+    if [ "$k8sVersion" = "1.15.3" ]; then
+        kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"{{ images.kube_proxy_v1153.name }}"}]}}}}'
+    fi
 
     kubectl drain "$node" \
         --delete-local-data \
