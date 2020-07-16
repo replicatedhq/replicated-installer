@@ -142,7 +142,7 @@ spec:
         operator: "Exists"
       containers:
       - name: node-cache
-        image: replicated/k8s-dns-node-cache:1.15.13-20200612
+        image: "{{ images.k8s_dns_node_cache_11513.name }}"
         resources:
           requests:
             cpu: 25m

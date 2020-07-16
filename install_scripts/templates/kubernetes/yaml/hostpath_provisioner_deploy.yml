@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: replicated-hostpath-provisioner
-        image: replicated/replicated-hostpath-provisioner:cd1d272
+        image: "{{ images.replicated_hostpath_provisioner_cd1d272.name }}"
         imagePullPolicy: IfNotPresent
         env:
         - name: NODE_NAME

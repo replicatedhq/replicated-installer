@@ -453,7 +453,7 @@ if [ "$AIRGAP" = "1" ]; then
     fi
     addInsecureRegistry "$SERVICE_CIDR"
 else
-    docker pull replicated/docker-registry:2.6.2-20200713
+    docker pull "{{ images.registry_262.name }}"
 fi
 
 loadIPVSKubeProxyModules

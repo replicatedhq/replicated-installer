@@ -8,15 +8,18 @@ import yaml
 import semver
 from flask import request, render_template, Response
 
-from . import db, param
+from . import db, param, images
 
 _default_docker_version = '19.03.8'
 _default_kubernetes_version = '1.15.3'
+
+_images = images.get_images()
 
 
 def template_args(**kwargs):
     env = param.lookup('ENVIRONMENT', default='production')
     args = {
+        'images': _images,
         'pinned_docker_version': get_default_docker_version(),
         'min_docker_version':
         param.lookup('MIN_DOCKER_VERSION', default='1.7.1'),

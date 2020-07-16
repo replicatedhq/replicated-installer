@@ -510,21 +510,21 @@ airgapLoadKubernetesCommonImages1143() {
 }
 
 airgapListKubernetesCommonImages1153() {
-    echo "6164687eb4c7 docker.io/replicated/kube-proxy:v1.15.3-20200714"
-    echo "da86e6ba6ca1 docker.io/replicated/pause:3.1"
-    echo "eb516548c180 k8s.gcr.io/coredns:1.3.1"
-    echo "9d7f294e9a16 docker.io/replicated/weave-kube:2.5.2-20200713"
-    echo "c155f3dbb56a docker.io/replicated/weave-npc:2.5.2-20200713"
-    echo "ec9414087345 docker.io/replicated/weaveexec:2.5.2-20200713"
-    echo "615b7e170361 docker.io/replicated/docker-registry:2.6.2-20200713"
-    echo "f5f6233f1788 docker.io/replicated/envoy:v1.10.0-20200713"
-    echo "672aff19e6e4 gcr.io/heptio-images/contour:v0.13.0"
-    echo "558cc68e86af docker.io/replicated/rook-ceph:v1.0.3-20200612"
-    echo "dfa130aeec57 docker.io/replicated/rook-ceph:v1.0.6-20200612"
-    echo "43e751735008 docker.io/replicated/ceph:v14.2.0-20200612"
-    echo "757dcef88ce2 docker.io/replicated/ceph:v14.2.2-20200612"
-    echo "376cb7e8748c replicated/replicated-hostpath-provisioner:cd1d272"
-    echo "d7324507154a docker.io/replicated/k8s-dns-node-cache:1.15.13-20200612"
+    echo "{{ images.kube_proxy_v1153.id }} {{ images.kube_proxy_v1153.name }}"
+    echo "{{ images.pause_31.id }} {{ images.pause_31.name }}"
+    echo "{{ images.coredns_131.id }} {{ images.coredns_131.name }}"
+    echo "{{ images.weave_kube_252.id }} {{ images.weave_kube_252.name }}"
+    echo "{{ images.weave_npc_252.id }} {{ images.weave_npc_252.name }}"
+    echo "{{ images.weaveexec_252.id }} {{ images.weaveexec_252.name }}"
+    echo "{{ images.registry_262.id }} {{ images.registry_262.name }}"
+    echo "{{ images.envoy_v1100.id }} {{ images.envoy_v1100.name }}"
+    echo "{{ images.contour_v0130.id }} {{ images.contour_v0130.name }}"
+    echo "{{ images.rook_ceph_103.id }} {{ images.rook_ceph_103.name }}"
+    echo "{{ images.rook_ceph_106.id }} {{ images.rook_ceph_106.name }}"
+    echo "{{ images.ceph_1420.id }} {{ images.ceph_1420.name }}"
+    echo "{{ images.ceph_1422.id }} {{ images.ceph_1422.name }}"
+    echo "{{ images.replicated_hostpath_provisioner_cd1d272.id }} {{ images.replicated_hostpath_provisioner_cd1d272.name }}"
+    echo "{{ images.k8s_dns_node_cache_11513.id }} {{ images.k8s_dns_node_cache_11513.name }}"
 }
 
 airgapLoadKubernetesCommonImages1153() {
@@ -684,11 +684,11 @@ airgapLoadKubernetesControlImages1143() {
 }
 
 airgapListKubernetesControlImages1153() {
-    echo "0bfbc31739bd docker.io/replicated/kube-apiserver:v1.15.3-20200714"
-    echo "65da27da6d2c docker.io/replicated/kube-controller-manager:v1.15.3-20200714"
-    echo "623de2f04142 docker.io/replicated/kube-scheduler:v1.15.3-20200714"
-    echo "3a9e5cce725f docker.io/replicated/etcd:3.3.10-20200512"
-    echo "9eedcb1b6638 docker.io/replicated/etcd:3.4.7-20200602"
+    echo "{{ images.kube_apiserver_v1153.id }} {{ images.kube_apiserver_v1153.name }}"
+    echo "{{ images.kube_controller_manager_v1153.id }} {{ images.kube_controller_manager_v1153.name }}"
+    echo "{{ images.kube_scheduler_v1153.id }} {{ images.kube_scheduler_v1153.name }}"
+    echo "{{ images.etcd_3310.id }} {{ images.etcd_3310.name }}"
+    echo "{{ images.etcd_347.id }} {{ images.etcd_347.name }}"
 }
 
 airgapLoadKubernetesControlImages1153() {
@@ -1494,8 +1494,8 @@ appendKubeadmClusterConfigV1Beta2() {
     etcdVersion=$2
     local etcdImageTag=
     case $etcdVersion in
-        3.3) etcdImageTag="3.3.10-20200512" ;;
-        *)   etcdImageTag="3.4.7-20200602" ;;
+        3.3) etcdImageTag='{{ images.etcd_3310.name.split(":")[1] }}' ;;
+        *)   etcdImageTag='{{ images.etcd_347.name.split(":")[1] }}' ;;
     esac
 
     cat <<EOF >> /opt/replicated/kubeadm.conf
@@ -2325,6 +2325,7 @@ function kubernetes_node_has_image() {
     local image=$(echo $2 | sed 's/^docker.io\///')
 
     while read -r nodeImage; do
+        nodeImage=$(echo $nodeImage | sed 's/^docker.io\///')
         if [ "$nodeImage" = "$image" ]; then
             return 0
         fi

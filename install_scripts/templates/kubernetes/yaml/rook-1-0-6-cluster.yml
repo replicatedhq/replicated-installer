@@ -157,7 +157,7 @@ metadata:
   namespace: rook-ceph
 spec:
   cephVersion:
-    image: replicated/ceph:v14.2.2-20200612
+    image: "{{ images.ceph_1422.name }}"
     # Whether to allow unsupported versions of Ceph.
     # Do not set to true in production.
     allowUnsupported: false

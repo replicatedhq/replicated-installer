@@ -20,6 +20,7 @@ ADD ./uwsgi.ini /home/docker/code/
 
 ADD ./install_scripts /home/docker/code/install_scripts/
 ADD ./main.py /home/docker/code/
+ADD Manifest /home/docker/code/
 ADD LICENSE /home/docker/code/
 
 EXPOSE 80

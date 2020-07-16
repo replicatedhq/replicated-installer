@@ -244,15 +244,15 @@ initKube15() {
     loadIPVSKubeProxyModules
 
     if [ "$AIRGAP" != "1" ]; then
-        docker pull replicated/kube-apiserver:v1.15.3-20200714
-        docker pull replicated/kube-controller-manager:v1.15.3-20200714
-        docker pull replicated/kube-scheduler:v1.15.3-20200714
-        docker pull replicated/kube-proxy:v1.15.3-20200714
+        docker pull "{{ images.kube_apiserver_v1153.name }}"
+        docker pull "{{ images.kube_controller_manager_v1153.name }}"
+        docker pull "{{ images.kube_scheduler_v1153.name }}"
+        docker pull "{{ images.kube_proxy_v1153.name }}"
     fi
-    docker tag replicated/kube-apiserver:v1.15.3-20200714 replicated/kube-apiserver:v1.15.3
-    docker tag replicated/kube-controller-manager:v1.15.3-20200714 replicated/kube-controller-manager:v1.15.3
-    docker tag replicated/kube-scheduler:v1.15.3-20200714 replicated/kube-scheduler:v1.15.3
-    docker tag replicated/kube-proxy:v1.15.3-20200714 replicated/kube-proxy:v1.15.3
+    docker tag "{{ images.kube_apiserver_v1153.name }}" replicated/kube-apiserver:v1.15.3
+    docker tag "{{ images.kube_controller_manager_v1153.name }}" replicated/kube-controller-manager:v1.15.3
+    docker tag "{{ images.kube_scheduler_v1153.name }}" replicated/kube-scheduler:v1.15.3
+    docker tag "{{ images.kube_proxy_v1153.name }}" replicated/kube-proxy:v1.15.3
 
     set -o pipefail
     kubeadm init \
@@ -262,15 +262,15 @@ initKube15() {
     set +o pipefail
 
     # patch all control plane manifests and daemonset/kube-proxy with versioned images
-    sed -i 's/kube-apiserver:v1.15.3$/kube-apiserver:v1.15.3-20200714/' /etc/kubernetes/manifests/kube-apiserver.yaml
-    sed -i 's/kube-controller-manager:v1.15.3$/kube-controller-manager:v1.15.3-20200714/' /etc/kubernetes/manifests/kube-controller-manager.yaml
-    sed -i 's/kube-scheduler:v1.15.3$/kube-scheduler:v1.15.3-20200714/' /etc/kubernetes/manifests/kube-scheduler.yaml
+    sed -i 's/kube-apiserver:v1.15.3$/{{ images.kube_apiserver_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-apiserver.yaml
+    sed -i 's/kube-controller-manager:v1.15.3$/{{ images.kube_controller_manager_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-controller-manager.yaml
+    sed -i 's/kube-scheduler:v1.15.3$/{{ images.kube_scheduler_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-scheduler.yaml
 
     exportKubeconfig
 
     waitForNodes
 
-    kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"docker.io/replicated/kube-proxy:v1.15.3-20200714"}]}}}}'
+    kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"{{ images.kube_proxy_v1153.name }}"}]}}}}'
 
     # always label the first primary as a storage node
     label_node "$(node_name)" "$ROOK_STORAGE_NODES_LABEL"
@@ -1432,7 +1432,7 @@ if [ "$AIRGAP" = "1" ]; then
     airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"
     airgapLoadKubernetesControlImages "$KUBERNETES_VERSION"
 else
-    docker pull replicated/docker-registry:2.6.2-20200713
+    docker pull "{{ images.registry_262.name }}"
 fi
 
 installCNIPlugins
