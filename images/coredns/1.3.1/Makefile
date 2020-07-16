@@ -1,11 +1,12 @@
 SHELL := /bin/bash
 
 include ../../common.mk
-include ../../manifest.mk
+
+IMAGE := k8s.gcr.io/coredns:1.3.1
 
 .PHONY: pull
 pull:
-	docker pull $(COREDNS_131)
+	docker pull $(IMAGE)
 
 .PHONY: build
 build:
@@ -15,7 +16,7 @@ build:
 scan: export POLICY_FAILURE = true
 scan: export TIMEOUT = 300
 scan: export POLICY_BUNDLE_PATH = ../../policy-bundle.json
-scan: export IMAGE_NAME = $(COREDNS_131)
+scan: export IMAGE_NAME = $(IMAGE)
 scan:
 	bash ../../scripts/inline_scan.sh
 

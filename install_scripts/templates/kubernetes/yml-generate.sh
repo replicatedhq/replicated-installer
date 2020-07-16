@@ -960,9 +960,9 @@ items:
                 - name: EXTRA_ARGS
                   value: "--log-level=info" # default log level is debug
                 - name: EXEC_IMAGE
-                  value: replicated/weaveexec:2.5.2-20200713
+                  value: "{{ images.weaveexec_252.name }}"
 $weave_passwd_env
-              image: replicated/weave-kube:2.5.2-20200713
+              image: "{{ images.weave_kube_252.name }}"
               livenessProbe:
                 httpGet:
                   host: 127.0.0.1
@@ -999,8 +999,8 @@ $weave_passwd_env
                       apiVersion: v1
                       fieldPath: spec.nodeName
                 - name: EXEC_IMAGE
-                  value: replicated/weaveexec:2.5.2-20200713
-              image: replicated/weave-npc:2.5.2-20200713
+                  value: "{{ images.weaveexec_252.name }}"
+              image: "{{ images.weave_npc_252.name }}"
               # https://www.weave.works/docs/net/latest/kubernetes/kube-addon/#cpu-and-memory-requirements
               resources:
                 requests:
@@ -1211,7 +1211,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
       - name: docker-registry
-        image: replicated/docker-registry:2.6.2-20200713
+        image: "{{ images.registry_262.name }}"
         imagePullPolicy: IfNotPresent
         command:
         - /bin/registry
@@ -1319,7 +1319,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
       - name: docker-registry
-        image: replicated/docker-registry:2.6.2-20200713
+        image: "{{ images.registry_262.name }}"
         imagePullPolicy: IfNotPresent
         command:
         - /bin/registry

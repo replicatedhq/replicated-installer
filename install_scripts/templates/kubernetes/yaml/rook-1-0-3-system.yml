@@ -415,7 +415,7 @@ spec:
       serviceAccountName: rook-ceph-system
       containers:
       - name: rook-ceph-operator
-        image: replicated/rook-ceph:v1.0.3-20200612
+        image: "{{ images.rook_ceph_103.name }}"
         args: ["ceph", "operator"]
         volumeMounts:
         - mountPath: /var/lib/rook

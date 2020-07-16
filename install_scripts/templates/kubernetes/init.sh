@@ -243,12 +243,41 @@ initKube15() {
 
     loadIPVSKubeProxyModules
 
+    if [ "$AIRGAP" != "1" ]; then
+        docker pull "{{ images.kube_apiserver_v1153.name }}"
+        docker pull "{{ images.kube_controller_manager_v1153.name }}"
+        docker pull "{{ images.kube_scheduler_v1153.name }}"
+        docker pull "{{ images.kube_proxy_v1153.name }}"
+    fi
+    docker tag "{{ images.kube_apiserver_v1153.name }}" replicated/kube-apiserver:v1.15.3
+    docker tag "{{ images.kube_controller_manager_v1153.name }}" replicated/kube-controller-manager:v1.15.3
+    docker tag "{{ images.kube_scheduler_v1153.name }}" replicated/kube-scheduler:v1.15.3
+    docker tag "{{ images.kube_proxy_v1153.name }}" replicated/kube-proxy:v1.15.3
+
+    # if we have already patched these files kubeadm init will fail because the control plane pods will restart
+    if kubectl get nodes >/dev/null 2>&1 ; then
+        kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"replicated/kube-proxy:v1.15.3"}]}}}}'
+        sed -i 's/{{ images.kube_apiserver_v1153.name.split("/")[1] }}/kube-apiserver:v1.15.3/' /etc/kubernetes/manifests/kube-apiserver.yaml
+        sed -i 's/{{ images.kube_controller_manager_v1153.name.split("/")[1] }}/kube-controller-manager:v1.15.3/' /etc/kubernetes/manifests/kube-controller-manager.yaml
+        sed -i 's/{{ images.kube_scheduler_v1153.name.split("/")[1] }}/kube-scheduler:v1.15.3/' /etc/kubernetes/manifests/kube-scheduler.yaml
+
+        waitForNodes
+    fi
+
     set -o pipefail
     kubeadm init \
         --ignore-preflight-errors=all \
         --config /opt/replicated/kubeadm.conf \
         | tee /tmp/kubeadm-init
     set +o pipefail
+
+    # patch daemonset/kube-proxy with versioned image
+    kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"{{ images.kube_proxy_v1153.name }}"}]}}}}'
+
+    # patch all control plane manifests with versioned images
+    sed -i 's/kube-apiserver:v1.15.3$/{{ images.kube_apiserver_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-apiserver.yaml
+    sed -i 's/kube-controller-manager:v1.15.3$/{{ images.kube_controller_manager_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-controller-manager.yaml
+    sed -i 's/kube-scheduler:v1.15.3$/{{ images.kube_scheduler_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-scheduler.yaml
 
     exportKubeconfig
 
@@ -296,7 +325,7 @@ handleLoadBalancerAddressChangedPostInit() {
 
 discoverCurrentKubernetesVersion() {
     set +e
-    CURRENT_KUBERNETES_VERSION=$(cat /etc/kubernetes/manifests/kube-apiserver.yaml 2>/dev/null | grep image: | grep -oE '[0-9]+.[0-9]+.[0-9]')
+    CURRENT_KUBERNETES_VERSION=$(cat /opt/replicated/kubeadm.conf 2>/dev/null | grep kubernetesVersion: | grep -oE '[0-9]+.[0-9]+.[0-9]')
     set -e
 
     if [ -n "$CURRENT_KUBERNETES_VERSION" ]; then
@@ -1414,7 +1443,7 @@ if [ "$AIRGAP" = "1" ]; then
     airgapLoadKubernetesCommonImages "$KUBERNETES_VERSION"
     airgapLoadKubernetesControlImages "$KUBERNETES_VERSION"
 else
-    docker pull replicated/docker-registry:2.6.2-20200713
+    docker pull "{{ images.registry_262.name }}"
 fi
 
 installCNIPlugins
