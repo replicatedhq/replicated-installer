@@ -254,7 +254,7 @@ initKube15() {
     docker tag "{{ images.kube_scheduler_v1153.name }}" replicated/kube-scheduler:v1.15.3
     docker tag "{{ images.kube_proxy_v1153.name }}" replicated/kube-proxy:v1.15.3
 
-    # if we have already patched these files kubeadm init will fail cause the control plane pods will restart
+    # if we have already patched these files kubeadm init will fail because the control plane pods will restart
     if kubectl get nodes >/dev/null 2>&1 ; then
         kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"replicated/kube-proxy:v1.15.3"}]}}}}'
         sed -i 's/{{ images.kube_apiserver_v1153.name.split("/")[1] }}/kube-apiserver:v1.15.3/' /etc/kubernetes/manifests/kube-apiserver.yaml
