@@ -530,7 +530,7 @@ airgapListKubernetesCommonImages1153() {
 airgapLoadKubernetesCommonImages1153() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "replicated/k8s-images-common:v1.15.3-20200612"
+        "replicated/k8s-images-common:v1.15.3-20200716"
 
     while read -r image; do
         (set -x; docker tag $image)
@@ -694,7 +694,7 @@ airgapListKubernetesControlImages1153() {
 airgapLoadKubernetesControlImages1153() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "replicated/k8s-images-control:v1.15.3-20200603"
+        "replicated/k8s-images-control:v1.15.3-20200716"
 
     while read -r image; do
         (set -x; docker tag $image)
