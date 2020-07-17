@@ -29,4 +29,4 @@ def get_default_images():
       image['image'] = values[1]
       images.append(image)
     file.close()
-    return images
+    return {'images': images}
