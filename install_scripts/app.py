@@ -9,10 +9,11 @@ import sys
 import traceback
 import urllib
 
-from . import db, helpers, param
+from . import db, helpers, param, images
 
 app = Flask(__name__)
 
+_images = images.get_default_images()
 
 @app.teardown_appcontext
 def teardown_db(exception):
@@ -318,6 +319,9 @@ def get_kubernetes_compatibility(replicated_channel=None,
 
     return jsonify(body)
 
+@app.route('/kubernetes-images.json')
+def get_kubernetes_images():
+    return jsonify(_images)
 
 @app.route('/kubernetes/deploy.yml')
 @app.route('/<replicated_channel>/kubernetes/deploy.yml')
