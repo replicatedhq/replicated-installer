@@ -1,21 +1,21 @@
-CEPH_1420 replicated/ceph:v14.2.0-20200612 43e751735008
-CEPH_1422 replicated/ceph:v14.2.2-20200612 757dcef88ce2
-CONTOUR_V0130 gcr.io/heptio-images/contour:v0.13.0 672aff19e6e4
-COREDNS_131 k8s.gcr.io/coredns:1.3.1 eb516548c180
-ENVOY_V1100 replicated/envoy:v1.10.0-20200713 f5f6233f1788
-ETCD_3310 replicated/etcd:3.3.10-20200512 3a9e5cce725f
-ETCD_347 replicated/etcd:3.4.7-20200602 9eedcb1b6638
-K8S_DNS_NODE_CACHE_11513 replicated/k8s-dns-node-cache:1.15.13-20200612 d7324507154a
-KUBE_APISERVER_V1153 replicated/kube-apiserver:v1.15.3-20200714 0bfbc31739bd
-KUBE_BASE_V1153 replicated/kube-base:v1.15.3-20200713
-KUBE_CONTROLLER_MANAGER_V1153 replicated/kube-controller-manager:v1.15.3-20200714 65da27da6d2c
-KUBE_SCHEDULER_V1153 replicated/kube-scheduler:v1.15.3-20200714 623de2f04142
-KUBE_PROXY_V1153 replicated/kube-proxy:v1.15.3-20200716 6164687eb4c7
-PAUSE_31 replicated/pause:3.1 da86e6ba6ca1
-REGISTRY_262 replicated/docker-registry:2.6.2-20200713 615b7e170361
-REPLICATED_HOSTPATH_PROVISIONER_CD1D272 replicated/replicated-hostpath-provisioner:cd1d272 376cb7e8748c
-ROOK_CEPH_103 replicated/rook-ceph:v1.0.3-20200612 558cc68e86af
-ROOK_CEPH_106 replicated/rook-ceph:v1.0.6-20200612 dfa130aeec57
-WEAVEEXEC_252 replicated/weaveexec:2.5.2-20200713 ec9414087345
-WEAVE_KUBE_252 replicated/weave-kube:2.5.2-20200713 9d7f294e9a16
-WEAVE_NPC_252 replicated/weave-npc:2.5.2-20200713 c155f3dbb56a
+CEPH_1420 replicated/ceph:v14.2.0-20200612 43e751735008 false
+CEPH_1422 replicated/ceph:v14.2.2-20200612 757dcef88ce2 true
+CONTOUR_V0130 gcr.io/heptio-images/contour:v0.13.0 672aff19e6e4 true
+COREDNS_131 k8s.gcr.io/coredns:1.3.1 eb516548c180 true
+ENVOY_V1100 replicated/envoy:v1.10.0-20200713 f5f6233f1788 true
+ETCD_3310 replicated/etcd:3.3.10-20200512 3a9e5cce725f false
+ETCD_347 replicated/etcd:3.4.7-20200602 9eedcb1b6638 true
+K8S_DNS_NODE_CACHE_11513 replicated/k8s-dns-node-cache:1.15.13-20200612 d7324507154a true
+KUBE_APISERVER_V1153 replicated/kube-apiserver:v1.15.3-20200714 0bfbc31739bd true
+KUBE_BASE_V1153 replicated/kube-base:v1.15.3-20200713 false
+KUBE_CONTROLLER_MANAGER_V1153 replicated/kube-controller-manager:v1.15.3-20200714 65da27da6d2c true
+KUBE_SCHEDULER_V1153 replicated/kube-scheduler:v1.15.3-20200714 623de2f04142 true
+KUBE_PROXY_V1153 replicated/kube-proxy:v1.15.3-20200716 6164687eb4c7 true
+PAUSE_31 replicated/pause:3.1 da86e6ba6ca1 true
+REGISTRY_262 replicated/docker-registry:2.6.2-20200713 615b7e170361 true
+REPLICATED_HOSTPATH_PROVISIONER_CD1D272 replicated/replicated-hostpath-provisioner:cd1d272 376cb7e8748c false
+ROOK_CEPH_103 replicated/rook-ceph:v1.0.3-20200612 558cc68e86af false
+ROOK_CEPH_106 replicated/rook-ceph:v1.0.6-20200612 dfa130aeec57 true
+WEAVEEXEC_252 replicated/weaveexec:2.5.2-20200713 ec9414087345 true
+WEAVE_KUBE_252 replicated/weave-kube:2.5.2-20200713 9d7f294e9a16 true
+WEAVE_NPC_252 replicated/weave-npc:2.5.2-20200713 c155f3dbb56a true
