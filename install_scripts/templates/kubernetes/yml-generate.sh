@@ -972,7 +972,8 @@ $weave_passwd_env
               # https://www.weave.works/docs/net/latest/kubernetes/kube-addon/#cpu-and-memory-requirements
               resources:
                 requests:
-                  cpu: 10m
+                  cpu: 50m
+                  memory: 200Mi
               securityContext:
                 privileged: true
               volumeMounts:
@@ -1004,7 +1005,8 @@ $weave_passwd_env
               # https://www.weave.works/docs/net/latest/kubernetes/kube-addon/#cpu-and-memory-requirements
               resources:
                 requests:
-                  cpu: 10m
+                  cpu: 50m
+                  memory: 200Mi
               securityContext:
                 privileged: true
               volumeMounts:
