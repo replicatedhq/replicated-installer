@@ -4,4 +4,8 @@ FROM ceph/ceph:v14.2.0
 
 RUN yum install -y \
     bind-license \
+    \
+    \
+    dbus \
+    dbus-libs \
   && yum clean all

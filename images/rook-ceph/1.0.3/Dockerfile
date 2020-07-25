@@ -6,6 +6,10 @@ FROM ceph/ceph:v14.2.1
 
 RUN yum install -y \
     bind-license \
+    \
+    \
+    dbus \
+    dbus-libs \
   && yum clean all
 
 COPY --from=base /tini /tini
