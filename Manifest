@@ -10,7 +10,7 @@ KUBE_APISERVER_V1153 replicated/kube-apiserver:v1.15.3-20200714 0bfbc31739bd tru
 KUBE_BASE_V1153 replicated/kube-base:v1.15.3-20200713 false
 KUBE_CONTROLLER_MANAGER_V1153 replicated/kube-controller-manager:v1.15.3-20200714 65da27da6d2c true
 KUBE_SCHEDULER_V1153 replicated/kube-scheduler:v1.15.3-20200714 623de2f04142 true
-KUBE_PROXY_V1153 replicated/kube-proxy:v1.15.3-20200716 6164687eb4c7 true
+KUBE_PROXY_V1153 replicated/kube-proxy:v1.15.3-20200716 4a3334cf2c97 true
 PAUSE_31 replicated/pause:3.1 da86e6ba6ca1 true
 REGISTRY_262 replicated/docker-registry:2.6.2-20200713 615b7e170361 true
 REPLICATED_HOSTPATH_PROVISIONER_CD1D272 replicated/replicated-hostpath-provisioner:cd1d272 376cb7e8748c false
