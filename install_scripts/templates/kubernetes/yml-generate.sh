@@ -960,9 +960,9 @@ items:
                 - name: EXTRA_ARGS
                   value: "--log-level=info" # default log level is debug
                 - name: EXEC_IMAGE
-                  value: "{{ images.weaveexec_252.name }}"
+                  value: "{{ images.weaveexec_270.name }}"
 $weave_passwd_env
-              image: "{{ images.weave_kube_252.name }}"
+              image: "{{ images.weave_kube_270.name }}"
               livenessProbe:
                 httpGet:
                   host: 127.0.0.1
@@ -1000,8 +1000,8 @@ $weave_passwd_env
                       apiVersion: v1
                       fieldPath: spec.nodeName
                 - name: EXEC_IMAGE
-                  value: "{{ images.weaveexec_252.name }}"
-              image: "{{ images.weave_npc_252.name }}"
+                  value: "{{ images.weaveexec_270.name }}"
+              image: "{{ images.weave_npc_270.name }}"
               # https://www.weave.works/docs/net/latest/kubernetes/kube-addon/#cpu-and-memory-requirements
               resources:
                 requests:
@@ -1012,17 +1012,18 @@ $weave_passwd_env
               volumeMounts:
                 - name: xtables-lock
                   mountPath: /run/xtables.lock
+          dnsPolicy: ClusterFirstWithHostNet
           hostNetwork: true
           hostPID: true
+          priorityClassName: system-node-critical
           restartPolicy: Always
           securityContext:
             seLinuxOptions: {}
           serviceAccountName: weave-net
           tolerations:
-            - key: node.kubernetes.io/not-ready
+            - effect: NoSchedule
               operator: Exists
-            - key: node-role.kubernetes.io/master
-              effect: NoSchedule
+            - effect: NoExecute
               operator: Exists
           volumes:
             - name: weavedb

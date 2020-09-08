@@ -52,10 +52,10 @@ steps:
       - make -C images/rook-ceph/1.0.6/ pull scan
 
   - commands:
-      - make -C images/weave-kube/2.5.2/ pull scan
+      - make -C images/weave-kube/2.7.0/ pull scan
 
   - commands:
-      - make -C images/weave-npc/2.5.2/ pull scan
+      - make -C images/weave-npc/2.7.0/ pull scan
 
   - commands:
-      - make -C images/weaveexec/2.5.2/ pull scan
+      - make -C images/weaveexec/2.7.0/ pull scan
