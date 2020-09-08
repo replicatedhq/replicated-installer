@@ -17,7 +17,7 @@ spec:
             - name: REPLICATED_INSTALL_URL
               value: http://localhost:8090
             - name: GRAPHQL_PREM_ENDPOINT
-              value: http://docker.for.mac.host.internal:8033/graphql
+              value: "http://graphql-api-prem:8033/graphql"
             - name: REGISTRY_ENDPOINT
               value: 'registry.staging.replicated.com' # TODO
             - name: MYSQL_HOST
@@ -25,10 +25,7 @@ spec:
             - name: MYSQL_USER
               value: replicated
             - name: MYSQL_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mysql
-                  key: mysql-root-password
+              value: password
             - name: MYSQL_PORT
               value: "3306"
             - name: MYSQL_DATABASE
