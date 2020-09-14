@@ -1682,8 +1682,7 @@ addInsecureRegistry() {
     fi
 
     # configure using /etc/docker/daemon.json since that does not require a docker restart
-    insertJSONArray "/etc/docker/daemon.json" "insecure-registries" "$1"
-    if [ "$INSERT_JSON_ARRAY_SUCCESS" = "1" ]; then
+    if insertJSONArray "/etc/docker/daemon.json" "insecure-registries" "$1" ; then
         systemctl kill -s HUP --kill-who=main docker.service
         ADDED_INSECURE_REGISTRY=1
         return

@@ -243,9 +243,8 @@ insertOrReplaceJsonParam() {
 # Arguments:
 #   path, key, value[0]
 # Returns:
-#   INSERT_JSON_ARRAY_SUCCESS
+#   1 if there are errors
 ######################################
-INSERT_JSON_ARRAY_SUCCESS=
 insertJSONArray() {
 	if ! [ -f "$1" ] || [ $(wc -c <"$1") -lt 5 ]; then
         mkdir -p "$(dirname "$1")"
@@ -254,18 +253,15 @@ insertJSONArray() {
   "$2": ["$3"]
 }
 EOF
-		INSERT_JSON_ARRAY_SUCCESS=1
 		return 0
 	fi
 
 	if grep -q "$2" "$1"; then
-		INSERT_JSON_ARRAY_SUCCESS=0
 		return 1
 	fi
 
 	_commonJsonReplaceTmp="$(awk "NR==1,/^{/{sub(/^{/, \"{\\\"$2\\\": [\\\"$3\\\"], \")} 1" "$1")"
 	echo "$_commonJsonReplaceTmp" > "$1"
-	INSERT_JSON_ARRAY_SUCCESS=1
 	return 0
 }
 
