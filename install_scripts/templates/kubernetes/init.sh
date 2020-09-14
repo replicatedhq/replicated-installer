@@ -1479,6 +1479,10 @@ if ! upgradeInProgress; then
     enableRookCephOperator
 fi
 
+# wait for init
+sleep 5
+spinnerK8sAPIHealthy
+
 kubectl cluster-info
 logSuccess "Cluster Initialized"
 
