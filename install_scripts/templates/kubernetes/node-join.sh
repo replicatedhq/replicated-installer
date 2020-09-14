@@ -386,7 +386,7 @@ if isDockerInstalled ; then
 fi
 if [ "$SKIP_DOCKER_INSTALL" != "1" ]; then
     maybeOverridePinnedDockerVersion
-    changeCgroupDriverToSystemd
+    changeCgroupDriverToSystemd || true
     if [ "$OFFLINE_DOCKER_INSTALL" != "1" ]; then
         installDocker "$PINNED_DOCKER_VERSION" "$MIN_DOCKER_VERSION"
 

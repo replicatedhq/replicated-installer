@@ -39,15 +39,18 @@ testInsertJSONArray()
     local tmp=$(mktemp)
 
     insertJSONArray "$tmp" "exec-opts" "native.cgroupdriver=systemd"
+    ret=$?
     assertTrue "File was not created" "[ -r $tmp ]"
-    assertTrue "Insert was not successful" "[ $INSERT_JSON_ARRAY_SUCCESS = 1 ]"
+    assertTrue "Insert was not successful" "[ $ret = 0 ]"
     assertTrue "File does not have exec-opts" "cat $tmp | grep 'exec-opts' | grep '\[\"native.cgroupdriver=systemd\"\]'"
 
     insertJSONArray "$tmp" "exec-opts" "native.cgroupdriver=cgroupfs"
-    assertTrue "Parameter was overwritten" "[ $INSERT_JSON_ARRAY_SUCCESS = 0 ]"
+    ret=$?
+    assertTrue "Parameter was overwritten" "[ $ret = 1 ]"
 
     insertJSONArray "$tmp" "insecure-registries" "10.100.100.100"
-    assertTrue "Insert was not successful" "[ $INSERT_JSON_ARRAY_SUCCESS = 1 ]"
+    ret=$?
+    assertTrue "Insert was not successful" "[ $ret = 0 ]"
     assertTrue "File lost exec-opts" "cat $tmp | grep 'exec-opts' | grep '\[\"native.cgroupdriver=systemd\"\]'"
     assertTrue "File does not have insecure-registries" "cat $tmp | grep 'insecure-registries' | grep '\[\"10.100.100.100\"\]'"
 
