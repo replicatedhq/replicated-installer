@@ -40,7 +40,7 @@ Update the Ubuntu image tags [in this repo](https://github.com/replicatedhq/repl
 ```
 curl -u ${CIRCLE_CI_TOKEN}: \
      -d build_parameters[CIRCLE_JOB]=build_rhel_k8s_packages \
-     -d build_parameters[K8S_VERSION]=v1.11.5 \
+     -d build_parameters[K8S_VERSION]=v1.15.3 \
      https://circleci.com/api/v1.1/project/github/replicatedhq/replicated-installer/tree/master
 ```
 
@@ -55,7 +55,7 @@ This should only be needed when adding a new supported version of K8s.
 ```
 curl -u ${CIRCLE_CI_TOKEN}: \
      -d build_parameters[CIRCLE_JOB]=build_k8s_bundles \
-     -d build_parameters[K8S_VERSION]=v1.11.5 \
+     -d build_parameters[K8S_VERSION]=v1.15.3 \
      https://circleci.com/api/v1.1/project/github/replicatedhq/replicated-installer/tree/master
 ```
 

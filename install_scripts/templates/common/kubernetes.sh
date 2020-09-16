@@ -530,7 +530,7 @@ airgapListKubernetesCommonImages1153() {
 airgapLoadKubernetesCommonImages1153() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "replicated/k8s-images-common:v1.15.3-20200724"
+        "replicated/k8s-images-common:v1.15.3-20200916"
 
     while read -r image; do
         (set -x; docker tag $image)
@@ -589,13 +589,14 @@ airgapLoadReplicatedAddonImagesSecondary() {
         return
     fi
 
-    airgapLoadReplicatedAddonImages
-}
-
-airgapLoadReplicatedAddonImages() {
     logStep "replicated addons"
     docker load < replicated-sidecar-controller.tar
     docker load < replicated-operator.tar
+
+    if [ -f volume-mount-checker.tar ]; then
+        docker load < volume-mount-checker.tar
+    fi
+
     logSuccess "replicated addons"
 }
 
@@ -694,7 +695,7 @@ airgapListKubernetesControlImages1153() {
 airgapLoadKubernetesControlImages1153() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "replicated/k8s-images-control:v1.15.3-20200716"
+        "replicated/k8s-images-control:v1.15.3-20200916"
 
     while read -r image; do
         (set -x; docker tag $image)
@@ -727,11 +728,20 @@ airgapPushReplicatedImagesToRegistry() {
     dockerGetRepoTagFromTar replicated-ui.tar
     dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
 
-    dockerGetRepoTagFromTar replicated-operator.tar
-    dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+    if [ -f replicated-operator.tar ]; then
+        dockerGetRepoTagFromTar replicated-operator.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+    fi
 
-    dockerGetRepoTagFromTar replicated-sidecar-controller.tar
-    dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+    if [ -f replicated-sidecar-controller.tar ]; then
+        dockerGetRepoTagFromTar replicated-sidecar-controller.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+    fi
+
+    if [ -f volume-mount-checker.tar ]; then
+        dockerGetRepoTagFromTar volume-mount-checker.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+    fi
 
     dockerGetRepoTagFromTar cmd.tar
     dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
