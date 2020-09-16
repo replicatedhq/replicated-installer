@@ -589,13 +589,14 @@ airgapLoadReplicatedAddonImagesSecondary() {
         return
     fi
 
-    airgapLoadReplicatedAddonImages
-}
-
-airgapLoadReplicatedAddonImages() {
     logStep "replicated addons"
     docker load < replicated-sidecar-controller.tar
     docker load < replicated-operator.tar
+
+    if [ -f volume-mount-checker.tar ]; then
+        docker load < volume-mount-checker.tar
+    fi
+
     logSuccess "replicated addons"
 }
 
@@ -727,11 +728,20 @@ airgapPushReplicatedImagesToRegistry() {
     dockerGetRepoTagFromTar replicated-ui.tar
     dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
 
-    dockerGetRepoTagFromTar replicated-operator.tar
-    dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+    if [ -f replicated-operator.tar ]; then
+        dockerGetRepoTagFromTar replicated-operator.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+    fi
 
-    dockerGetRepoTagFromTar replicated-sidecar-controller.tar
-    dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+    if [ -f replicated-sidecar-controller.tar ]; then
+        dockerGetRepoTagFromTar replicated-sidecar-controller.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+    fi
+
+    if [ -f volume-mount-checker.tar ]; then
+        dockerGetRepoTagFromTar volume-mount-checker.tar
+        dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
+    fi
 
     dockerGetRepoTagFromTar cmd.tar
     dockerRetagAndPushImageToRegistry "$REPO_TAG" "$1"
