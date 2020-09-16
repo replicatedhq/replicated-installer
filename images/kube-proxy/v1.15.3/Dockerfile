@@ -1,21 +1,23 @@
-# https://github.com/kubernetes/kubernetes/blob/v1.18.5/build/debian-iptables/Dockerfile
+# https://github.com/kubernetes/release/blob/e9c035ea20e43797b11b863d716b865c6f559390/images/build/debian-iptables/buster/Dockerfile
 
 ARG BASEIMAGE
 
 FROM k8s.gcr.io/kube-proxy-amd64:v1.15.3 AS base
-FROM k8s.gcr.io/kube-proxy-amd64:v1.18.5 AS base-buster
+FROM k8s.gcr.io/kube-proxy-amd64:v1.18.8 AS base-buster
 
 FROM $BASEIMAGE
 
-# Install latest iptables package from buster-backports
-RUN echo deb http://deb.debian.org/debian buster-backports main >> /etc/apt/sources.list; \
-    apt-get update; \
-    apt-get -t buster-backports -y --no-install-recommends install iptables
+# Install iptables and ebtables packages from buster-backports
+ARG IPTABLES_VERSION=1.8.5
+RUN echo deb http://deb.debian.org/debian buster-backports main >> /etc/apt/sources.list \
+    && apt-get update \
+    && apt-get -t buster-backports -y --no-install-recommends install \
+        iptables=${IPTABLES_VERSION}* \
+        ebtables
 
 # Install other dependencies and then clean up apt caches
 RUN clean-install \
     conntrack \
-    ebtables \
     ipset \
     kmod \
     netbase

@@ -4,8 +4,10 @@ FROM registry:2.6.2 AS base
 
 FROM alpine:3.12
 
-RUN set -ex \
-    && apk add --no-cache ca-certificates apache2-utils
+RUN apk add --update \
+    ca-certificates \
+    apache2-utils \
+  && rm -rf /var/cache/apk/*
 
 COPY --from=base /bin/registry /bin/registry
 COPY --from=base /etc/docker/registry/config.yml /etc/docker/registry/config.yml
