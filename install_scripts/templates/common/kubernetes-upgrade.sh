@@ -388,6 +388,8 @@ maybeUpgradeKubernetesNode() {
             15)
                 kubeadm upgrade node
 
+                patch_control_plane_images "$KUBERNETES_VERSION"
+
                 # correctly sets the --resolv-conf flag when systemd-resolver is running (Ubuntu 18)
                 # https://github.com/kubernetes/kubeadm/issues/273
                 if isCurrentNodePrimaryNode; then
@@ -463,8 +465,9 @@ maybeUpgradeKubernetesNode() {
             sed -i "s/server: https.*/server: https:\/\/$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT/" /etc/kubernetes/kubelet.conf
         fi
 
-
         kubeadm upgrade node
+
+        patch_control_plane_images "$KUBERNETES_VERSION"
     fi
 }
 
@@ -761,12 +764,7 @@ upgradeK8sPrimary() {
     spinnerK8sAPIHealthy
     kubeadm upgrade apply "v$k8sVersion" --yes --config /opt/replicated/kubeadm.conf --force
 
-    if [ "$k8sVersion" = "1.15.3" ]; then
-        # patch all control plane manifests and daemonset/kube-proxy with versioned images
-        sed -i 's/kube-apiserver:v1.15.3$/{{ images.kube_apiserver_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-apiserver.yaml
-        sed -i 's/kube-controller-manager:v1.15.3$/{{ images.kube_controller_manager_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-controller-manager.yaml
-        sed -i 's/kube-scheduler:v1.15.3$/{{ images.kube_scheduler_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-scheduler.yaml
-    fi
+    patch_control_plane_images "$k8sVersion"
 
     waitForNodes
 

@@ -723,6 +723,23 @@ function list_all_required_images() {
     esac
 }
 
+function patch_control_plane_images() {
+    local k8sVersion="$1"
+
+    case "$k8sVersion" in
+        1.15.3)
+            patch_control_plane_images_1153
+            ;;
+    esac
+}
+
+function patch_control_plane_images_1153() {
+    # patch all control plane manifests with versioned images
+    sed -i 's/kube-apiserver:v1.15.3$/{{ images.kube_apiserver_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-apiserver.yaml
+    sed -i 's/kube-controller-manager:v1.15.3$/{{ images.kube_controller_manager_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-controller-manager.yaml
+    sed -i 's/kube-scheduler:v1.15.3$/{{ images.kube_scheduler_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-scheduler.yaml
+}
+
 airgapPushReplicatedImagesToRegistry() {
     logStep "Pushing images to registry at $1"
 
