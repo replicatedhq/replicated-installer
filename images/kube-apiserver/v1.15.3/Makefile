@@ -15,7 +15,7 @@ pull:
 
 .PHONY: build
 build:
-	docker build --pull -t $(IMAGE)-$(DATE) --build-arg BASEIMAGE=$(BASEIMAGE) .
+	docker build --no-cache --pull -t $(IMAGE)-$(DATE) --build-arg BASEIMAGE=$(BASEIMAGE) .
 	docker tag $(IMAGE)-$(DATE) $(IMAGE)
 
 .PHONY: scan

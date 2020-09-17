@@ -14,7 +14,7 @@ pull:
 
 .PHONY: build
 build:
-	docker build --pull -t $(IMAGE)-$(DATE) .
+	docker build --no-cache --pull -t $(IMAGE)-$(DATE) .
 	docker tag $(IMAGE)-$(DATE) $(IMAGE)
 
 .PHONY: scan
