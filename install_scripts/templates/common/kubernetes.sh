@@ -589,6 +589,10 @@ airgapLoadReplicatedAddonImagesSecondary() {
         return
     fi
 
+    airgapLoadReplicatedAddonImages
+}
+
+airgapLoadReplicatedAddonImages() {
     logStep "replicated addons"
     docker load < replicated-sidecar-controller.tar
     docker load < replicated-operator.tar
