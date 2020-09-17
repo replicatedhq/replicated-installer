@@ -91,6 +91,8 @@ if [ "$AIRGAP" = "1" ]; then
     addInsecureRegistry "$SERVICE_CIDR"
 fi
 
+k8s_pull_and_retag_control_images "$KUBERNETES_VERSION"
+
 installAKAService
 
 maybeUpgradeKubernetesNode "$KUBERNETES_VERSION"

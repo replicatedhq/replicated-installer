@@ -456,6 +456,8 @@ else
     docker pull "{{ images.registry_262.name }}"
 fi
 
+k8s_pull_and_retag_control_images "$KUBERNETES_VERSION"
+
 loadIPVSKubeProxyModules
 
 if ! docker ps | grep -q '/pause:'; then
