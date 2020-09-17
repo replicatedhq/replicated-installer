@@ -113,12 +113,13 @@ joinKubernetes() {
         exit $_status
     fi
     if [ "$PRIMARY" -eq "1" ]; then
+        patch_control_plane_images "$KUBERNETES_VERSION"
+
         logStep "Primary node joined successfully"
     else
         logStep "Node joined successfully"
     fi
 
-    patch_control_plane_images "$KUBERNETES_VERSION"
 }
 
 promptForPrimaryAddress() {

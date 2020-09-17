@@ -388,11 +388,11 @@ maybeUpgradeKubernetesNode() {
             15)
                 kubeadm upgrade node
 
-                patch_control_plane_images "$KUBERNETES_VERSION"
-
-                # correctly sets the --resolv-conf flag when systemd-resolver is running (Ubuntu 18)
-                # https://github.com/kubernetes/kubeadm/issues/273
                 if isCurrentNodePrimaryNode; then
+                    patch_control_plane_images "$KUBERNETES_VERSION"
+
+                    # correctly sets the --resolv-conf flag when systemd-resolver is running (Ubuntu 18)
+                    # https://github.com/kubernetes/kubeadm/issues/273
                     kubeadm init phase kubelet-start
                 fi
 
@@ -467,7 +467,9 @@ maybeUpgradeKubernetesNode() {
 
         kubeadm upgrade node
 
-        patch_control_plane_images "$KUBERNETES_VERSION"
+        if isCurrentNodePrimaryNode; then
+            patch_control_plane_images "$KUBERNETES_VERSION"
+        fi
     fi
 }
 
