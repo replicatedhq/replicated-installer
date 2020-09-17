@@ -90,6 +90,7 @@ joinKubernetes() {
     else
         logStep "Join Kubernetes node"
     fi
+
     semverParse "$KUBERNETES_VERSION"
     set +e
     if [ "$minor" -ge 15 ]; then
@@ -116,6 +117,8 @@ joinKubernetes() {
     else
         logStep "Node joined successfully"
     fi
+
+    patch_control_plane_images "$KUBERNETES_VERSION"
 }
 
 promptForPrimaryAddress() {
