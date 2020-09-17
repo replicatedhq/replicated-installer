@@ -206,16 +206,7 @@ upgradeKubernetes() {
         fi
         kubeadm config migrate --old-config /opt/replicated/kubeadm.conf --new-config /opt/replicated/kubeadm.conf
 
-        if [ "$AIRGAP" != "1" ]; then
-            docker pull "{{ images.kube_apiserver_v1153.name }}"
-            docker pull "{{ images.kube_controller_manager_v1153.name }}"
-            docker pull "{{ images.kube_scheduler_v1153.name }}"
-            docker pull "{{ images.kube_proxy_v1153.name }}"
-        fi
-        docker tag "{{ images.kube_apiserver_v1153.name }}" replicated/kube-apiserver:v1.15.3
-        docker tag "{{ images.kube_controller_manager_v1153.name }}" replicated/kube-controller-manager:v1.15.3
-        docker tag "{{ images.kube_scheduler_v1153.name }}" replicated/kube-scheduler:v1.15.3
-        docker tag "{{ images.kube_proxy_v1153.name }}" replicated/kube-proxy:v1.15.3
+        k8s_pull_and_retag_control_images 1.15.3
 
         upgradeK8sPrimary "1.15.3"
         logSuccess "Kubernetes upgraded to version v1.15.3"
