@@ -724,6 +724,8 @@ function list_all_required_images() {
 }
 
 function patch_control_plane_images() {
+    local k8sVersion="$1"
+
     case "$k8sVersion" in
         1.15.3)
             patch_control_plane_images_1153
