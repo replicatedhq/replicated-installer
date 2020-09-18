@@ -207,6 +207,7 @@ upgradeKubernetes() {
         kubeadm config migrate --old-config /opt/replicated/kubeadm.conf --new-config /opt/replicated/kubeadm.conf
 
         k8s_pull_and_retag_control_images 1.15.3
+        k8s_pull_and_retag_kubeproxy_image 1.15.3
 
         upgradeK8sPrimary "1.15.3"
         logSuccess "Kubernetes upgraded to version v1.15.3"
@@ -370,6 +371,12 @@ maybeUpgradeKubernetesNode() {
         printf "Cannot upgrade from %s to %s\n" "$kubeletVersion" "$KUBERNETES_VERSION"
         return 1
     fi
+
+    if isCurrentNodePrimaryNode; then
+        k8s_pull_and_retag_control_images "$KUBERNETES_VERSION"
+    fi
+    k8s_pull_and_retag_kubeproxy_image "$KUBERNETES_VERSION"
+
     if [ "$kubeletMinor" -lt "$KUBERNETES_TARGET_VERSION_MINOR" ] || ([ "$kubeletMinor" -eq "$KUBERNETES_TARGET_VERSION_MINOR" ] && [ "$kubeletPatch" -lt "$KUBERNETES_TARGET_VERSION_PATCH" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
         logStep "Kubernetes version v$kubeletVersion detected, upgrading node to version v$KUBERNETES_VERSION"
 

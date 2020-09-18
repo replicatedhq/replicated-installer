@@ -91,6 +91,11 @@ joinKubernetes() {
         logStep "Join Kubernetes node"
     fi
 
+    if [ "$PRIMARY" -eq "1" ]; then
+        k8s_pull_and_retag_control_images "$KUBERNETES_VERSION"
+    fi
+    k8s_pull_and_retag_kubeproxy_image "$KUBERNETES_VERSION"
+
     semverParse "$KUBERNETES_VERSION"
     set +e
     if [ "$minor" -ge 15 ]; then
@@ -459,8 +464,6 @@ if [ "$AIRGAP" = "1" ]; then
 else
     docker pull "{{ images.registry_262.name }}"
 fi
-
-k8s_pull_and_retag_control_images "$KUBERNETES_VERSION"
 
 loadIPVSKubeProxyModules
 
