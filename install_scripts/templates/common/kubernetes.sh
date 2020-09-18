@@ -2294,6 +2294,10 @@ function k8s_load_images() {
         airgapLoadKubernetesControlImages "$k8sVersion"
 
         retag_control_images "$k8sVersion"
+
+        # technically this is not just loading images but this will upgrade images in control plane
+        # components which we cant do from the first primary
+        patch_control_plane_images "$k8sVersion"
     fi
 }
 
