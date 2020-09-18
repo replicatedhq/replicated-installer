@@ -1,4 +1,15 @@
 steps:
   - commands:
+      - if [ $IMAGE_TARGET = "" ]; then echo "IMAGE_TARGET required"; exit 1; fi
+  - wait
+
+  - commands:
       - make -C images/$IMAGE_TARGET build scan push
-    if: build.env("IMAGE_TARGET") != ""
+
+  - block: "Release to production"
+    branches: master
+    if: build.env("IMAGE_TARGET") =~ /^kube-/
+
+  - commands:
+      - make -C images/$IMAGE_TARGET push-unversioned
+    if: build.env("IMAGE_TARGET") =~ /^kube-/
