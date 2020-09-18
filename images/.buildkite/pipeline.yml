@@ -10,5 +10,5 @@ steps:
     if: build.env("IMAGE_TARGET") =~ /^kube-/
 
   - commands:
-      - make -C images/$IMAGE_TARGET push-unversioned
+      - make -C images/$IMAGE_TARGET pull push-unversioned
     if: build.env("IMAGE_TARGET") =~ /^kube-/
