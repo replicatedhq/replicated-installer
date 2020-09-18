@@ -30,3 +30,7 @@ scan:
 .PHONY: push
 push:
 	docker push $(IMAGE)-$(DATE)
+
+.PHONY: push-unversioned
+push-unversioned:
+	docker push $(IMAGE)
