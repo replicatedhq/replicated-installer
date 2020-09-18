@@ -244,6 +244,7 @@ initKube15() {
     loadIPVSKubeProxyModules
 
     k8s_pull_and_retag_control_images "$k8sVersion"
+    k8s_pull_and_retag_kubeproxy_image "$k8sVersion"
 
     # if we have already patched these files kubeadm init will fail because the control plane pods will restart
     if kubectl get nodes >/dev/null 2>&1 ; then

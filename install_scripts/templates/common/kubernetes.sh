@@ -2299,6 +2299,7 @@ function k8s_load_images() {
         # components which we cant do from the first primary
         patch_control_plane_images "$k8sVersion"
     fi
+    retag_kubeproxy_image "$k8sVersion"
 }
 
 function k8s_pull_and_retag_control_images() {
@@ -2310,9 +2311,21 @@ function k8s_pull_and_retag_control_images() {
                 docker pull "{{ images.kube_apiserver_v1153.name }}"
                 docker pull "{{ images.kube_controller_manager_v1153.name }}"
                 docker pull "{{ images.kube_scheduler_v1153.name }}"
-                docker pull "{{ images.kube_proxy_v1153.name }}"
             fi
             retag_control_images "$k8sVersion"
+            ;;
+    esac
+}
+
+function k8s_pull_and_retag_kubeproxy_image() {
+    local k8sVersion="$1"
+
+    case "$k8sVersion" in
+        1.15.3)
+            if [ "$AIRGAP" != "1" ]; then
+                docker pull "{{ images.kube_proxy_v1153.name }}"
+            fi
+            retag_kubeproxy_image "$k8sVersion"
             ;;
     esac
 }
@@ -2325,6 +2338,15 @@ function retag_control_images() {
             docker tag "{{ images.kube_apiserver_v1153.name }}" replicated/kube-apiserver:v1.15.3
             docker tag "{{ images.kube_controller_manager_v1153.name }}" replicated/kube-controller-manager:v1.15.3
             docker tag "{{ images.kube_scheduler_v1153.name }}" replicated/kube-scheduler:v1.15.3
+            ;;
+    esac
+}
+
+function retag_kubeproxy_image() {
+    local k8sVersion="$1"
+
+    case "$k8sVersion" in
+        1.15.3)
             docker tag "{{ images.kube_proxy_v1153.name }}" replicated/kube-proxy:v1.15.3
             ;;
     esac
