@@ -7,7 +7,6 @@ steps:
       - make -C images/$IMAGE_TARGET build scan push
 
   - block: "Release to production"
-    branches: master
     if: build.env("IMAGE_TARGET") =~ /^kube-/
 
   - commands:
