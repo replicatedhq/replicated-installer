@@ -200,7 +200,7 @@ check_forked() {
 # courtesy of replicated
 check_ce_on_ee() {
 	case "$lsb_dist" in
-		rhel|ol)
+		ol)
 			lsb_dist="centos"
 			dist_version="$(echo $dist_version | cut -d. -f1)"
 		;;
@@ -220,6 +220,33 @@ semverParse() {
 	minor="${minor%%.*}"
 	patch="${1#$major.$minor.}"
 	patch="${patch%%[-.]*}"
+}
+
+# on RHEL machines, the $releasever yum/dnf variable may have a Server or Client
+# suffix. Our .repo files use $releasever to switch between repositories for
+# CentOS/RHEL 7 and 8, but (currently) don't have separate repositories for
+# Client/Server variants.
+#
+# adjust_repo_releasever substitutes ${releasever} with 7 or 8
+adjust_repo_releasever() {
+	case $1 in
+	7*)
+		releasever=7
+		;;
+	8*)
+		releasever=8
+		;;
+	*)
+		# fedora, or unsupported
+		return
+		;;
+	esac
+
+	for channel in "stable" "test" "nightly"; do
+		$sh_c "$config_manager --save --setopt=\"docker-ce-${channel}.baseurl=${DOWNLOAD_URL}/linux/centos/${releasever}/\\\$basearch/${channel}\" --save" 1>/dev/null
+		$sh_c "$config_manager --setopt=\"docker-ce-${channel}-debuginfo.baseurl=${DOWNLOAD_URL}/linux/centos/${releasever}/debug-\\\$basearch/${channel}\" --save" 1>/dev/null
+		$sh_c "$config_manager --save --setopt=\"docker-ce-${channel}-source.baseurl=${DOWNLOAD_URL}/linux/centos/${releasever}/source/${channel}\" --save" 1>/dev/null
+	done
 }
 
 ee_notice() {
@@ -328,17 +355,11 @@ do_install() {
 			esac
 		;;
 
-		centos)
+		centos|rhel|ol|sles)
 			if [ -z "$dist_version" ] && [ -r /etc/os-release ]; then
 				dist_version="$(. /etc/os-release && echo "$VERSION_ID")"
 			fi
 		;;
-
-		rhel|ol|sles)
-			check_ce_on_ee
-			# ee_notice "$lsb_dist"
-			# exit 1
-			;;
 
 		*)
 			if command_exists lsb_release; then
@@ -353,6 +374,7 @@ do_install() {
 
 	# Check if this is a forked Linux distro
 	check_forked
+	check_ce_on_ee
 
 	# Run setup for each distro accordingly
 	case "$lsb_dist" in
@@ -414,7 +436,7 @@ do_install() {
 			echo_docker_as_nonroot
 			exit 0
 			;;
-		centos|fedora)
+		centos|fedora|rhel)
 			yum_repo="$DOWNLOAD_URL/linux/$lsb_dist/$REPO_FILE"
 			if ! curl -Ifs "$yum_repo" > /dev/null; then
 				echo "Error: Unable to curl repository file $yum_repo, is it valid?"
@@ -441,6 +463,9 @@ do_install() {
 				fi
 				$sh_c "$pkg_manager install -y -q $pre_reqs"
 				$sh_c "$config_manager --add-repo $yum_repo"
+
+				# FIXME adjusting ${releasever} to account for RHEL "xServer"/"xClient"
+				adjust_repo_releasever "$dist_version"
 
 				if [ "$CHANNEL" != "stable" ]; then
 					$sh_c "$config_manager $disable_channel_flag docker-ce-*"
