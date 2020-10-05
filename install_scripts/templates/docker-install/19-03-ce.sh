@@ -229,6 +229,10 @@ semverParse() {
 #
 # adjust_repo_releasever substitutes ${releasever} with 7 or 8
 adjust_repo_releasever() {
+	if ! $sh_c "$config_manager | grep -q 7Server" ; then
+		return
+	fi
+
 	case $1 in
 	7*)
 		releasever=7
