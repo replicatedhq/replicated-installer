@@ -247,9 +247,9 @@ adjust_repo_releasever() {
 	esac
 
 	for channel in "stable" "test" "nightly"; do
-		$sh_c "$config_manager --save --setopt=\"docker-ce-${channel}.baseurl=${DOWNLOAD_URL}/linux/centos/${releasever}/\\\$basearch/${channel}\" --save" 1>/dev/null
+		$sh_c "$config_manager --setopt=\"docker-ce-${channel}.baseurl=${DOWNLOAD_URL}/linux/centos/${releasever}/\\\$basearch/${channel}\" --save" 1>/dev/null
 		$sh_c "$config_manager --setopt=\"docker-ce-${channel}-debuginfo.baseurl=${DOWNLOAD_URL}/linux/centos/${releasever}/debug-\\\$basearch/${channel}\" --save" 1>/dev/null
-		$sh_c "$config_manager --save --setopt=\"docker-ce-${channel}-source.baseurl=${DOWNLOAD_URL}/linux/centos/${releasever}/source/${channel}\" --save" 1>/dev/null
+		$sh_c "$config_manager --setopt=\"docker-ce-${channel}-source.baseurl=${DOWNLOAD_URL}/linux/centos/${releasever}/source/${channel}\" --save" 1>/dev/null
 	done
 }
 
