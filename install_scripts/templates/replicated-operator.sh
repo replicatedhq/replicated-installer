@@ -206,7 +206,7 @@ write_upstart_services() {
 {% include 'upstart/replicated-operator.conf' %}
 EOF
     cat > /etc/init/replicated-operator-stop.conf <<-EOF
-{% include 'upstart/replicated-ui-stop.conf' %}
+{% include 'upstart/replicated-operator-stop.conf' %}
 EOF
 }
 

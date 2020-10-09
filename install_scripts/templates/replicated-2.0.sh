@@ -39,6 +39,7 @@ SKIP_PREFLIGHTS="{{ '1' if skip_preflights else '' }}"
 IGNORE_PREFLIGHTS="{{ '1' if ignore_preflights else '' }}"
 REGISTRY_ADDRESS_OVERRIDE=
 REGISTRY_PATH_PREFIX=
+DISABLE_REPLICATED_UI=0
 RELEASE_SEQUENCE="{{ release_sequence }}"
 RELEASE_PATCH_SEQUENCE="{{ release_patch_sequence }}"
 
@@ -355,9 +356,11 @@ write_systemd_services() {
 {% include 'systemd/replicated.service' %}
 EOF
 
-    cat > /etc/systemd/system/replicated-ui.service <<-EOF
+    if [ "$DISABLE_REPLICATED_UI" != "1" ]; then
+        cat > /etc/systemd/system/replicated-ui.service <<-EOF
 {% include 'systemd/replicated-ui.service' %}
 EOF
+    fi
 
     systemctl daemon-reload
 }
@@ -379,12 +382,14 @@ EOF
 {% include 'upstart/replicated-stop.conf' %}
 EOF
 
-    cat > /etc/init/replicated-ui.conf <<-EOF
+    if [ "$DISABLE_REPLICATED_UI" != "1" ]; then
+        cat > /etc/init/replicated-ui.conf <<-EOF
 {% include 'upstart/replicated-ui.conf' %}
 EOF
-    cat > /etc/init/replicated-ui-stop.conf <<-EOF
+        cat > /etc/init/replicated-ui-stop.conf <<-EOF
 {% include 'upstart/replicated-ui-stop.conf' %}
 EOF
+    fi
 }
 
 write_sysvinit_services() {
@@ -393,10 +398,12 @@ write_sysvinit_services() {
 EOF
     chmod +x /etc/init.d/replicated
 
-    cat > /etc/init.d/replicated-ui <<-EOF
+    if [ "$DISABLE_REPLICATED_UI" != "1" ]; then
+        cat > /etc/init.d/replicated-ui <<-EOF
 {% include 'sysvinit/replicated-ui' %}
 EOF
-    chmod +x /etc/init.d/replicated-ui
+        chmod +x /etc/init.d/replicated-ui
+    fi
 }
 
 stop_systemd_services() {
@@ -410,9 +417,12 @@ stop_systemd_services() {
 
 start_systemd_services() {
     systemctl enable replicated
-    systemctl enable replicated-ui
     systemctl start replicated
-    systemctl start replicated-ui
+
+    if [ "$DISABLE_REPLICATED_UI" != "1" ]; then
+        systemctl enable replicated-ui
+        systemctl start replicated-ui
+    fi
 }
 
 stop_upstart_services() {
@@ -441,11 +451,14 @@ stop_sysvinit_services() {
 start_sysvinit_services() {
     # TODO: what about chkconfig
     update-rc.d replicated stop 20 0 1 6 . start 20 2 3 4 5 .
-    update-rc.d replicated-ui stop 20 0 1 6 . start 20 2 3 4 5 .
     update-rc.d replicated enable
-    update-rc.d replicated-ui enable
     service replicated start
-    service replicated-ui start
+
+    if [ "$DISABLE_REPLICATED_UI" != "1" ]; then
+        update-rc.d replicated-ui stop 20 0 1 6 . start 20 2 3 4 5 .
+        update-rc.d replicated-ui enable
+        service replicated-ui start
+    fi
 }
 
 install_operator() {
@@ -512,10 +525,12 @@ install_operator() {
 
 outro() {
     warn_if_selinux
-    if [ -z "$PUBLIC_ADDRESS" ]; then
-        PUBLIC_ADDRESS="<this_server_address>"
+    if [ "$DISABLE_REPLICATED_UI" != "1" ]; then
+        if [ -z "$PUBLIC_ADDRESS" ]; then
+            PUBLIC_ADDRESS="<this_server_address>"
+        fi
+        printf "To continue the installation, visit the following URL in your browser:\n\n  http://%s:$UI_BIND_PORT\n" "$PUBLIC_ADDRESS"
     fi
-    printf "To continue the installation, visit the following URL in your browser:\n\n  http://%s:$UI_BIND_PORT\n" "$PUBLIC_ADDRESS"
     if ! commandExists "replicated"; then
         printf "\nTo create an alias for the replicated cli command run the following in your current shell or log out and log back in:\n\n  source /etc/replicated.alias\n"
     fi
@@ -693,6 +708,9 @@ while [ "$1" != "" ]; do
             ;;
         registry-path-prefix|registry_path_prefix)
             REGISTRY_PATH_PREFIX="$_value"
+            ;;
+        disable-replicated-ui|disable_replicated_ui)
+            DISABLE_REPLICATED_UI=1
             ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
