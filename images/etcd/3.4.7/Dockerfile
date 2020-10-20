@@ -1,4 +1,4 @@
-# https://github.com/kubernetes/kubernetes/blob/v1.15.3/cluster/images/etcd/Dockerfile
+# https://github.com/kubernetes/kubernetes/blob/v1.15.12/cluster/images/etcd/Dockerfile
 
 FROM k8s.gcr.io/etcd-amd64:3.4.7 AS base
 

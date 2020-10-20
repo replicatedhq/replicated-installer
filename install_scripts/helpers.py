@@ -11,7 +11,7 @@ from flask import request, render_template, Response
 from . import db, param, images
 
 _default_docker_version = '19.03.8'
-_default_kubernetes_version = '1.15.3'
+_default_kubernetes_version = '1.15.12'
 
 _images = images.get_images()
 

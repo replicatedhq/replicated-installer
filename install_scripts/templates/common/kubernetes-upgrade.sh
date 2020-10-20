@@ -198,24 +198,24 @@ upgradeKubernetes() {
     kubeletPatch="$patch"
 
     if [ "$kubeletMinor" -eq "14" ] || ([ "$kubeletMinor" -eq "15" ] && [ "$KUBERNETES_TARGET_VERSION_MINOR" -eq "15" ] && [ "$kubeletPatch" -lt "$KUBERNETES_TARGET_VERSION_PATCH" ] && [ "$K8S_UPGRADE_PATCH_VERSION" = "1" ]); then
-        logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.15.3"
+        logStep "Kubernetes version v$kubeletVersion detected, upgrading to version v1.15.12"
         if [ "$AIRGAP" = "1" ]; then
-            airgapLoadKubernetesCommonImages 1.15.3
-            airgapLoadKubernetesControlImages 1.15.3
+            airgapLoadKubernetesCommonImages 1.15.12
+            airgapLoadKubernetesControlImages 1.15.12
             airgapLoadReplicatedAddonImagesSecondary
         fi
         kubeadm config migrate --old-config /opt/replicated/kubeadm.conf --new-config /opt/replicated/kubeadm.conf
 
-        k8s_pull_and_retag_control_images 1.15.3
-        k8s_pull_and_retag_kubeproxy_image 1.15.3
+        k8s_pull_and_retag_control_images 1.15.12
+        k8s_pull_and_retag_kubeproxy_image 1.15.12
 
-        upgradeK8sPrimary "1.15.3"
-        logSuccess "Kubernetes upgraded to version v1.15.3"
+        upgradeK8sPrimary "1.15.12"
+        logSuccess "Kubernetes upgraded to version v1.15.12"
         DID_UPGRADE_KUBERNETES=1
     fi
 
-    upgradeK8sRemotePrimaries "1.15.3" "$K8S_UPGRADE_PATCH_VERSION"
-    upgradeK8sSecondaries "1.15.3" "$K8S_UPGRADE_PATCH_VERSION"
+    upgradeK8sRemotePrimaries "1.15.12" "$K8S_UPGRADE_PATCH_VERSION"
+    upgradeK8sSecondaries "1.15.12" "$K8S_UPGRADE_PATCH_VERSION"
 }
 
 #######################################
@@ -396,7 +396,7 @@ maybeUpgradeKubernetesNode() {
 
                 upgradeK8sNodeHostPackages "$KUBERNETES_VERSION"
 
-                logSuccess "Kubernetes node upgraded to version v1.15.3"
+                logSuccess "Kubernetes node upgraded to version v1.15.12"
                 return
                 ;;
         esac
@@ -768,8 +768,8 @@ upgradeK8sPrimary() {
 
     waitForNodes
 
-    if [ "$k8sVersion" = "1.15.3" ]; then
-        kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"{{ images.kube_proxy_v1153.name }}"}]}}}}'
+    if [ "$k8sVersion" = "1.15.12" ]; then
+        kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"{{ images.kube_proxy_V11512.name }}"}]}}}}'
     fi
 
     kubectl drain "$node" \

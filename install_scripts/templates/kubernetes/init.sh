@@ -250,12 +250,11 @@ initKube15() {
     if kubectl get nodes >/dev/null 2>&1 ; then
         # its possible kubeadm init will fail before phase addon kube-proxy
         set +e
-        kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"replicated/kube-proxy:v1.15.3"}]}}}}'
+        kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"'"$(kubeadm config images list 2>/dev/null | grep kube-proxy)"'"}]}}}}'
         set -e
-        sed -i 's/{{ images.kube_apiserver_v1153.name.split("/")[1] }}/kube-apiserver:v1.15.3/' /etc/kubernetes/manifests/kube-apiserver.yaml
-        sed -i 's/{{ images.kube_controller_manager_v1153.name.split("/")[1] }}/kube-controller-manager:v1.15.3/' /etc/kubernetes/manifests/kube-controller-manager.yaml
-        sed -i 's/{{ images.kube_scheduler_v1153.name.split("/")[1] }}/kube-scheduler:v1.15.3/' /etc/kubernetes/manifests/kube-scheduler.yaml
-
+        sed -i "s/image:.*kube-apiserver:.*$/image: $(kubeadm config images list 2>/dev/null | grep kube-apiserver | sed 's/\//\\\//')/" /etc/kubernetes/manifests/kube-apiserver.yaml
+        sed -i "s/image:.*kube-controller-manager:.*$/image: $(kubeadm config images list 2>/dev/null | grep kube-controller-manager | sed 's/\//\\\//')/" /etc/kubernetes/manifests/kube-controller-manager.yaml
+        sed -i "s/image:.*kube-scheduler:.*$/image: $(kubeadm config images list 2>/dev/null | grep kube-scheduler | sed 's/\//\\\//')/" /etc/kubernetes/manifests/kube-scheduler.yaml
         waitForNodes
     fi
 
@@ -267,9 +266,9 @@ initKube15() {
     set +o pipefail
 
     # patch daemonset/kube-proxy with versioned image
-    kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"{{ images.kube_proxy_v1153.name }}"}]}}}}'
+    kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"{{ images.kube_proxy_V11512.name }}"}]}}}}'
 
-    patch_control_plane_images "1.15.3"
+    patch_control_plane_images "1.15.12"
 
     exportKubeconfig
 
