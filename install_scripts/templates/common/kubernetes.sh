@@ -735,9 +735,13 @@ function patch_control_plane_images() {
 
 function patch_control_plane_images_11512() {
     # patch all control plane manifests with versioned images
-    sed -i "s/image:.*kube-apiserver:.*$/image: $(echo {{ images.kube_apiserver_v11512.name }} | sed 's/\//\\\//')/" /etc/kubernetes/manifests/kube-apiserver.yaml
-    sed -i "s/image:.*kube-controller-manager:.*$/image: $(echo {{ images.kube_controller_manager_v11512.name }} | sed 's/\//\\\//')/" /etc/kubernetes/manifests/kube-controller-manager.yaml
-    sed -i "s/image:.*kube-scheduler:.*$/image: $(echo {{ images.kube_scheduler_v11512.name }} | sed 's/\//\\\//')/" /etc/kubernetes/manifests/kube-scheduler.yaml
+    sed -i "s/image:.*kube-apiserver:.*$/image: $(echo {{ images.kube_apiserver_v11512.name }} | sed 's/\//\\\//g')/" /etc/kubernetes/manifests/kube-apiserver.yaml
+    sed -i "s/image:.*kube-controller-manager:.*$/image: $(echo {{ images.kube_controller_manager_v11512.name }} | sed 's/\//\\\//g')/" /etc/kubernetes/manifests/kube-controller-manager.yaml
+    sed -i "s/image:.*kube-scheduler:.*$/image: $(echo {{ images.kube_scheduler_v11512.name }} | sed 's/\//\\\//g')/" /etc/kubernetes/manifests/kube-scheduler.yaml
+}
+
+function get_kubeadm_config_image() {
+    kubeadm config images list --config=/opt/replicated/kubeadm.conf 2>/dev/null | grep "$1"
 }
 
 airgapPushReplicatedImagesToRegistry() {

@@ -250,11 +250,11 @@ initKube15() {
     if kubectl get nodes >/dev/null 2>&1 ; then
         # its possible kubeadm init will fail before phase addon kube-proxy
         set +e
-        kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"'"$(kubeadm config images list 2>/dev/null | grep kube-proxy)"'"}]}}}}'
+        kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"'"$(get_kubeadm_config_image kube-proxy)"'"}]}}}}'
         set -e
-        sed -i "s/image:.*kube-apiserver:.*$/image: $(kubeadm config images list 2>/dev/null | grep kube-apiserver | sed 's/\//\\\//')/" /etc/kubernetes/manifests/kube-apiserver.yaml
-        sed -i "s/image:.*kube-controller-manager:.*$/image: $(kubeadm config images list 2>/dev/null | grep kube-controller-manager | sed 's/\//\\\//')/" /etc/kubernetes/manifests/kube-controller-manager.yaml
-        sed -i "s/image:.*kube-scheduler:.*$/image: $(kubeadm config images list 2>/dev/null | grep kube-scheduler | sed 's/\//\\\//')/" /etc/kubernetes/manifests/kube-scheduler.yaml
+        sed -i "s/image:.*kube-apiserver:.*$/image: $(get_kubeadm_config_image kube-apiserver | sed 's/\//\\\//g')/" /etc/kubernetes/manifests/kube-apiserver.yaml
+        sed -i "s/image:.*kube-controller-manager:.*$/image: $(get_kubeadm_config_image kube-controller-manager | sed 's/\//\\\//g')/" /etc/kubernetes/manifests/kube-controller-manager.yaml
+        sed -i "s/image:.*kube-scheduler:.*$/image: $(get_kubeadm_config_image kube-scheduler | sed 's/\//\\\//g')/" /etc/kubernetes/manifests/kube-scheduler.yaml
         waitForNodes
     fi
 
