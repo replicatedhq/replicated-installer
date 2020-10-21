@@ -7,7 +7,16 @@ When this happens we need to rebuild the Docker bundle for Ubuntu.
 First use CircleCI's API to trigger a new build and push
 ```
 curl -u ${CIRCLE_CI_TOKEN}: \
-     -d build_parameters[CIRCLE_JOB]=build_ubuntu_docker_package \
+     -d build_parameters[CIRCLE_JOB]=build_ubuntu1604_docker_package \
+     https://circleci.com/api/v1.1/project/github/replicatedhq/replicated-installer/tree/master \
+```
+
+
+## Build a new Docker bundle for Ubuntu 18.04
+
+```
+curl -u ${CIRCLE_CI_TOKEN}: \
+     -d build_parameters[CIRCLE_JOB]=build_ubuntu1804_docker_package \
      https://circleci.com/api/v1.1/project/github/replicatedhq/replicated-installer/tree/master \
 ```
 
