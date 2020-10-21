@@ -12,11 +12,11 @@ UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.5-20181204
 UBUNTU_1604_K8S_12=ubuntu-1604-v1.12.3-20181211
 UBUNTU_1604_K8S_13=ubuntu-1604-v1.13.5-20190411
 UBUNTU_1604_K8S_14=ubuntu-1604-v1.14.3-20190702
-UBUNTU_1604_K8S_15=ubuntu-1604-v1.15.3-20190820
+UBUNTU_1604_K8S_15=ubuntu-1604-v1.15.12-20201021
 
 UBUNTU_1804_K8S_13=ubuntu-1804-v1.13.5-20190411
 UBUNTU_1804_K8S_14=ubuntu-1804-v1.14.3-20190702
-UBUNTU_1804_K8S_15=ubuntu-1804-v1.15.3-20190820
+UBUNTU_1804_K8S_15=ubuntu-1804-v1.15.12-20201021
 
 RHEL7_K8S_9=rhel7-v1.9.3-20180806
 RHEL7_K8S_10=rhel7-v1.10.6-20180806
@@ -24,7 +24,7 @@ RHEL7_K8S_11=rhel7-v1.11.5-20181204
 RHEL7_K8S_12=rhel7-v1.12.3-20181211
 RHEL7_K8S_13=rhel7-v1.13.5-20190411
 RHEL7_K8S_14=rhel7-v1.14.3-20190702
-RHEL7_K8S_15=rhel7-v1.15.3-20200703
+RHEL7_K8S_15=rhel7-v1.15.12-20201021
 
 DAEMON_NODE_KEY=replicated.com/daemon
 
@@ -57,8 +57,8 @@ setK8sPatchVersion() {
             k8sPatch="5"
             ;;
         15)
-            # 1.15.3
-            k8sPatch="3"
+            # 1.15.12
+            k8sPatch="12"
     esac
     KUBERNETES_VERSION="$k8sMajor.$k8sMinor.$k8sPatch"
 }
@@ -172,7 +172,7 @@ k8sPackageTag() {
                 1.14.3)
                     echo "$UBUNTU_1604_K8S_14"
                     ;;
-                1.15.3)
+                1.15.12)
                     echo "$UBUNTU_1604_K8S_15"
                     ;;
                 *)
@@ -188,7 +188,7 @@ k8sPackageTag() {
                 1.14.3)
                     echo "$UBUNTU_1804_K8S_14"
                     ;;
-                1.15.3)
+                1.15.12)
                     echo "$UBUNTU_1804_K8S_15"
                     ;;
                 *)
@@ -216,7 +216,7 @@ k8sPackageTag() {
                 1.14.3)
                     echo "$RHEL7_K8S_14"
                     ;;
-                1.15.3)
+                1.15.12)
                     echo "$RHEL7_K8S_15"
                     ;;
                 *)
@@ -390,8 +390,8 @@ airgapLoadKubernetesCommonImages() {
         1.14.3)
             airgapLoadKubernetesCommonImages1143
             ;;
-        1.15.3)
-            airgapLoadKubernetesCommonImages1153
+        1.15.12)
+            airgapLoadKubernetesCommonImages11512
             ;;
         *)
             bail "Unsupported Kubernetes version $k8sVersion"
@@ -509,8 +509,8 @@ airgapLoadKubernetesCommonImages1143() {
     )
 }
 
-airgapListKubernetesCommonImages1153() {
-    echo "{{ images.kube_proxy_v1153.id }} {{ images.kube_proxy_v1153.name }}"
+airgapListKubernetesCommonImages11512() {
+    echo "{{ images.kube_proxy_v11512.id }} {{ images.kube_proxy_v11512.name }}"
     echo "{{ images.pause_31.id }} {{ images.pause_31.name }}"
     echo "{{ images.coredns_131.id }} {{ images.coredns_131.name }}"
     echo "{{ images.weave_kube_270.id }} {{ images.weave_kube_270.name }}"
@@ -527,14 +527,14 @@ airgapListKubernetesCommonImages1153() {
     echo "{{ images.k8s_dns_node_cache_11513.id }} {{ images.k8s_dns_node_cache_11513.name }}"
 }
 
-airgapLoadKubernetesCommonImages1153() {
+airgapLoadKubernetesCommonImages11512() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "replicated/k8s-images-common:v1.15.3-20200917"
+        "replicated/k8s-images-common:v1.15.12-20201021"
 
     while read -r image; do
         (set -x; docker tag $image)
-    done <<< "$(airgapListKubernetesCommonImages1153)"
+    done <<< "$(airgapListKubernetesCommonImages11512)"
 }
 
 #######################################
@@ -572,8 +572,8 @@ airgapLoadKubernetesControlImages() {
         1.14.3)
             airgapLoadKubernetesControlImages1143
             ;;
-        1.15.3)
-            airgapLoadKubernetesControlImages1153
+        1.15.12)
+            airgapLoadKubernetesControlImages11512
             ;;
         *)
             bail "Unsupported Kubernetes version $k8sVersion"
@@ -688,22 +688,22 @@ airgapLoadKubernetesControlImages1143() {
     )
 }
 
-airgapListKubernetesControlImages1153() {
-    echo "{{ images.kube_apiserver_v1153.id }} {{ images.kube_apiserver_v1153.name }}"
-    echo "{{ images.kube_controller_manager_v1153.id }} {{ images.kube_controller_manager_v1153.name }}"
-    echo "{{ images.kube_scheduler_v1153.id }} {{ images.kube_scheduler_v1153.name }}"
+airgapListKubernetesControlImages11512() {
+    echo "{{ images.kube_apiserver_v11512.id }} {{ images.kube_apiserver_v11512.name }}"
+    echo "{{ images.kube_controller_manager_v11512.id }} {{ images.kube_controller_manager_v11512.name }}"
+    echo "{{ images.kube_scheduler_v11512.id }} {{ images.kube_scheduler_v11512.name }}"
     echo "{{ images.etcd_3310.id }} {{ images.etcd_3310.name }}"
     echo "{{ images.etcd_347.id }} {{ images.etcd_347.name }}"
 }
 
-airgapLoadKubernetesControlImages1153() {
+airgapLoadKubernetesControlImages11512() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "replicated/k8s-images-control:v1.15.3-20200916"
+        "replicated/k8s-images-control:v1.15.12-20201021"
 
     while read -r image; do
         (set -x; docker tag $image)
-    done <<< "$(airgapListKubernetesControlImages1153)"
+    done <<< "$(airgapListKubernetesControlImages11512)"
 }
 
 function list_all_required_images() {
@@ -711,10 +711,10 @@ function list_all_required_images() {
     local nodeName="$2"
 
     case "$k8sVersion" in
-        1.15.3)
-            airgapListKubernetesCommonImages1153 | awk '{print $2}'
+        1.15.12)
+            airgapListKubernetesCommonImages11512 | awk '{print $2}'
             if is_primary_node "$nodeName" ; then
-                airgapListKubernetesControlImages1153 | awk '{print $2}'
+                airgapListKubernetesControlImages11512 | awk '{print $2}'
             fi
             ;;
         *)
@@ -727,17 +727,21 @@ function patch_control_plane_images() {
     local k8sVersion="$1"
 
     case "$k8sVersion" in
-        1.15.3)
-            patch_control_plane_images_1153
+        1.15.12)
+            patch_control_plane_images_11512
             ;;
     esac
 }
 
-function patch_control_plane_images_1153() {
+function patch_control_plane_images_11512() {
     # patch all control plane manifests with versioned images
-    sed -i 's/kube-apiserver:v1.15.3$/{{ images.kube_apiserver_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-apiserver.yaml
-    sed -i 's/kube-controller-manager:v1.15.3$/{{ images.kube_controller_manager_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-controller-manager.yaml
-    sed -i 's/kube-scheduler:v1.15.3$/{{ images.kube_scheduler_v1153.name.split("/")[1] }}/' /etc/kubernetes/manifests/kube-scheduler.yaml
+    sed -i "s/image:.*kube-apiserver:.*$/image: $(echo {{ images.kube_apiserver_v11512.name }} | sed 's/\//\\\//g')/" /etc/kubernetes/manifests/kube-apiserver.yaml
+    sed -i "s/image:.*kube-controller-manager:.*$/image: $(echo {{ images.kube_controller_manager_v11512.name }} | sed 's/\//\\\//g')/" /etc/kubernetes/manifests/kube-controller-manager.yaml
+    sed -i "s/image:.*kube-scheduler:.*$/image: $(echo {{ images.kube_scheduler_v11512.name }} | sed 's/\//\\\//g')/" /etc/kubernetes/manifests/kube-scheduler.yaml
+}
+
+function get_kubeadm_config_image() {
+    kubeadm config images list --config=/opt/replicated/kubeadm.conf 2>/dev/null | grep "$1"
 }
 
 airgapPushReplicatedImagesToRegistry() {
@@ -2306,11 +2310,11 @@ function k8s_pull_and_retag_control_images() {
     local k8sVersion="$1"
 
     case "$k8sVersion" in
-        1.15.3)
+        1.15.12)
             if [ "$AIRGAP" != "1" ]; then
-                docker pull "{{ images.kube_apiserver_v1153.name }}"
-                docker pull "{{ images.kube_controller_manager_v1153.name }}"
-                docker pull "{{ images.kube_scheduler_v1153.name }}"
+                docker pull "{{ images.kube_apiserver_v11512.name }}"
+                docker pull "{{ images.kube_controller_manager_v11512.name }}"
+                docker pull "{{ images.kube_scheduler_v11512.name }}"
             fi
             retag_control_images "$k8sVersion"
             ;;
@@ -2321,9 +2325,9 @@ function k8s_pull_and_retag_kubeproxy_image() {
     local k8sVersion="$1"
 
     case "$k8sVersion" in
-        1.15.3)
+        1.15.12)
             if [ "$AIRGAP" != "1" ]; then
-                docker pull "{{ images.kube_proxy_v1153.name }}"
+                docker pull "{{ images.kube_proxy_v11512.name }}"
             fi
             retag_kubeproxy_image "$k8sVersion"
             ;;
@@ -2334,10 +2338,10 @@ function retag_control_images() {
     local k8sVersion="$1"
 
     case "$k8sVersion" in
-        1.15.3)
-            docker tag "{{ images.kube_apiserver_v1153.name }}" replicated/kube-apiserver:v1.15.3
-            docker tag "{{ images.kube_controller_manager_v1153.name }}" replicated/kube-controller-manager:v1.15.3
-            docker tag "{{ images.kube_scheduler_v1153.name }}" replicated/kube-scheduler:v1.15.3
+        1.15.12)
+            docker tag "{{ images.kube_apiserver_v11512.name }}" replicated/kube-apiserver:v1.15.12
+            docker tag "{{ images.kube_controller_manager_v11512.name }}" replicated/kube-controller-manager:v1.15.12
+            docker tag "{{ images.kube_scheduler_v11512.name }}" replicated/kube-scheduler:v1.15.12
             ;;
     esac
 }
@@ -2346,8 +2350,8 @@ function retag_kubeproxy_image() {
     local k8sVersion="$1"
 
     case "$k8sVersion" in
-        1.15.3)
-            docker tag "{{ images.kube_proxy_v1153.name }}" replicated/kube-proxy:v1.15.3
+        1.15.12)
+            docker tag "{{ images.kube_proxy_v11512.name }}" replicated/kube-proxy:v1.15.12
             ;;
     esac
 }

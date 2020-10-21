@@ -250,12 +250,11 @@ initKube15() {
     if kubectl get nodes >/dev/null 2>&1 ; then
         # its possible kubeadm init will fail before phase addon kube-proxy
         set +e
-        kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"replicated/kube-proxy:v1.15.3"}]}}}}'
+        kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"'"$(get_kubeadm_config_image kube-proxy)"'"}]}}}}'
         set -e
-        sed -i 's/{{ images.kube_apiserver_v1153.name.split("/")[1] }}/kube-apiserver:v1.15.3/' /etc/kubernetes/manifests/kube-apiserver.yaml
-        sed -i 's/{{ images.kube_controller_manager_v1153.name.split("/")[1] }}/kube-controller-manager:v1.15.3/' /etc/kubernetes/manifests/kube-controller-manager.yaml
-        sed -i 's/{{ images.kube_scheduler_v1153.name.split("/")[1] }}/kube-scheduler:v1.15.3/' /etc/kubernetes/manifests/kube-scheduler.yaml
-
+        sed -i "s/image:.*kube-apiserver:.*$/image: $(get_kubeadm_config_image kube-apiserver | sed 's/\//\\\//g')/" /etc/kubernetes/manifests/kube-apiserver.yaml
+        sed -i "s/image:.*kube-controller-manager:.*$/image: $(get_kubeadm_config_image kube-controller-manager | sed 's/\//\\\//g')/" /etc/kubernetes/manifests/kube-controller-manager.yaml
+        sed -i "s/image:.*kube-scheduler:.*$/image: $(get_kubeadm_config_image kube-scheduler | sed 's/\//\\\//g')/" /etc/kubernetes/manifests/kube-scheduler.yaml
         waitForNodes
     fi
 
@@ -267,9 +266,9 @@ initKube15() {
     set +o pipefail
 
     # patch daemonset/kube-proxy with versioned image
-    kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"{{ images.kube_proxy_v1153.name }}"}]}}}}'
+    kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"{{ images.kube_proxy_v11512.name }}"}]}}}}'
 
-    patch_control_plane_images "1.15.3"
+    patch_control_plane_images "1.15.12"
 
     exportKubeconfig
 
@@ -317,7 +316,7 @@ handleLoadBalancerAddressChangedPostInit() {
 
 discoverCurrentKubernetesVersion() {
     set +e
-    CURRENT_KUBERNETES_VERSION=$(cat /opt/replicated/kubeadm.conf 2>/dev/null | grep kubernetesVersion: | grep -oE '[0-9]+.[0-9]+.[0-9]')
+    CURRENT_KUBERNETES_VERSION=$(cat /opt/replicated/kubeadm.conf 2>/dev/null | grep kubernetesVersion: | grep -oE '[0-9]+.[0-9]+.[0-9]+')
     set -e
 
     if [ -n "$CURRENT_KUBERNETES_VERSION" ]; then

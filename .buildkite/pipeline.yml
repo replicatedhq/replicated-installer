@@ -28,16 +28,16 @@ steps:
       - make -C images/k8s-dns-node-cache/1.15.13/ pull scan
 
   - commands:
-      - make -C images/kube-apiserver/v1.15.3/ pull scan
+      - make -C images/kube-apiserver/v1.15.12/ pull scan
 
   - commands:
-      - make -C images/kube-controller-manager/v1.15.3/ pull scan
+      - make -C images/kube-controller-manager/v1.15.12/ pull scan
 
   - commands:
-      - make -C images/kube-proxy/v1.15.3/ pull scan
+      - make -C images/kube-proxy/v1.15.12/ pull scan
 
   - commands:
-      - make -C images/kube-scheduler/v1.15.3/ pull scan
+      - make -C images/kube-scheduler/v1.15.12/ pull scan
 
   - commands:
       - make -C images/pause/3.1/ pull scan

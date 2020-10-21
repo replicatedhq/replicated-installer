@@ -71,7 +71,7 @@ jobs:
             cd bundles/docker-ubuntu1804
             make build push
 
-  build_ubuntu_k8s_packages:
+  build_ubuntu1604_k8s_packages:
     <<: *defaults
     steps:
       - checkout
@@ -82,6 +82,19 @@ jobs:
           name: build & push
           command: |
             cd bundles/k8s-ubuntu1604
+            make $K8S_VERSION
+
+  build_ubuntu1804_k8s_packages:
+    <<: *defaults
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - run:
+          name: build & push
+          command: |
+            cd bundles/k8s-ubuntu1804
             make $K8S_VERSION
 
   build_k8s_cni:

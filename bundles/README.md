@@ -7,7 +7,16 @@ When this happens we need to rebuild the Docker bundle for Ubuntu.
 First use CircleCI's API to trigger a new build and push
 ```
 curl -u ${CIRCLE_CI_TOKEN}: \
-     -d build_parameters[CIRCLE_JOB]=build_ubuntu_docker_package \
+     -d build_parameters[CIRCLE_JOB]=build_ubuntu1604_docker_package \
+     https://circleci.com/api/v1.1/project/github/replicatedhq/replicated-installer/tree/master \
+```
+
+
+## Build a new Docker bundle for Ubuntu 18.04
+
+```
+curl -u ${CIRCLE_CI_TOKEN}: \
+     -d build_parameters[CIRCLE_JOB]=build_ubuntu1804_docker_package \
      https://circleci.com/api/v1.1/project/github/replicatedhq/replicated-installer/tree/master \
 ```
 
@@ -27,8 +36,17 @@ Then update chatops deployer with the new image tag. No code changes are require
 
 ```
 curl -u ${CIRCLE_CI_TOKEN}: \
-     -d build_parameters[CIRCLE_JOB]=build_ubuntu_k8s_packages \
-     -d build_parameters[K8S_VERSION]=v1.11.5 \
+     -d build_parameters[CIRCLE_JOB]=build_ubuntu1604_k8s_packages \
+     -d build_parameters[K8S_VERSION]=v1.15.12 \
+     https://circleci.com/api/v1.1/project/github/replicatedhq/replicated-installer/tree/master
+```
+
+## Build new K8s package for Ubuntu 18.04
+
+```
+curl -u ${CIRCLE_CI_TOKEN}: \
+     -d build_parameters[CIRCLE_JOB]=build_ubuntu1804_k8s_packages \
+     -d build_parameters[K8S_VERSION]=v1.15.12 \
      https://circleci.com/api/v1.1/project/github/replicatedhq/replicated-installer/tree/master
 ```
 
@@ -40,7 +58,7 @@ Update the Ubuntu image tags [in this repo](https://github.com/replicatedhq/repl
 ```
 curl -u ${CIRCLE_CI_TOKEN}: \
      -d build_parameters[CIRCLE_JOB]=build_rhel_k8s_packages \
-     -d build_parameters[K8S_VERSION]=v1.15.3 \
+     -d build_parameters[K8S_VERSION]=v1.15.12 \
      https://circleci.com/api/v1.1/project/github/replicatedhq/replicated-installer/tree/master
 ```
 
@@ -55,7 +73,7 @@ This should only be needed when adding a new supported version of K8s.
 ```
 curl -u ${CIRCLE_CI_TOKEN}: \
      -d build_parameters[CIRCLE_JOB]=build_k8s_bundles \
-     -d build_parameters[K8S_VERSION]=v1.15.3 \
+     -d build_parameters[K8S_VERSION]=v1.15.12 \
      https://circleci.com/api/v1.1/project/github/replicatedhq/replicated-installer/tree/master
 ```
 

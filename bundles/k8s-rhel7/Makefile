@@ -30,7 +30,7 @@ v1.14.3:
 		-t replicated/k8s-packages:rhel7-v1.14.3-${DATE} .
 	docker push replicated/k8s-packages:rhel7-v1.14.3-${DATE}
 
-v1.15.3:
-	docker build --pull --build-arg VERSION=1.15.3 \
-		-t replicated/k8s-packages:rhel7-v1.15.3-${DATE} .
-	docker push replicated/k8s-packages:rhel7-v1.15.3-${DATE}
+v1.15.12:
+	docker build --pull --build-arg VERSION=1.15.12 \
+		-t replicated/k8s-packages:rhel7-v1.15.12-${DATE} .
+	docker push replicated/k8s-packages:rhel7-v1.15.12-${DATE}
