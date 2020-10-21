@@ -27,8 +27,17 @@ Then update chatops deployer with the new image tag. No code changes are require
 
 ```
 curl -u ${CIRCLE_CI_TOKEN}: \
-     -d build_parameters[CIRCLE_JOB]=build_ubuntu_k8s_packages \
-     -d build_parameters[K8S_VERSION]=v1.11.5 \
+     -d build_parameters[CIRCLE_JOB]=build_ubuntu1604_k8s_packages \
+     -d build_parameters[K8S_VERSION]=v1.15.12 \
+     https://circleci.com/api/v1.1/project/github/replicatedhq/replicated-installer/tree/master
+```
+
+## Build new K8s package for Ubuntu 18.04
+
+```
+curl -u ${CIRCLE_CI_TOKEN}: \
+     -d build_parameters[CIRCLE_JOB]=build_ubuntu1804_k8s_packages \
+     -d build_parameters[K8S_VERSION]=v1.15.12 \
      https://circleci.com/api/v1.1/project/github/replicatedhq/replicated-installer/tree/master
 ```
 

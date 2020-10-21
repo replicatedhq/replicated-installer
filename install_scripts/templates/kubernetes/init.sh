@@ -266,7 +266,7 @@ initKube15() {
     set +o pipefail
 
     # patch daemonset/kube-proxy with versioned image
-    kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"{{ images.kube_proxy_V11512.name }}"}]}}}}'
+    kubectl -n kube-system patch daemonset/kube-proxy -p '{"spec":{"template":{"spec":{"containers":[{"name":"kube-proxy","image":"{{ images.kube_proxy_v11512.name }}"}]}}}}'
 
     patch_control_plane_images "1.15.12"
 

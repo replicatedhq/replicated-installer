@@ -510,7 +510,7 @@ airgapLoadKubernetesCommonImages1143() {
 }
 
 airgapListKubernetesCommonImages11512() {
-    echo "{{ images.kube_proxy_V11512.id }} {{ images.kube_proxy_V11512.name }}"
+    echo "{{ images.kube_proxy_v11512.id }} {{ images.kube_proxy_v11512.name }}"
     echo "{{ images.pause_31.id }} {{ images.pause_31.name }}"
     echo "{{ images.coredns_131.id }} {{ images.coredns_131.name }}"
     echo "{{ images.weave_kube_270.id }} {{ images.weave_kube_270.name }}"
@@ -689,9 +689,9 @@ airgapLoadKubernetesControlImages1143() {
 }
 
 airgapListKubernetesControlImages11512() {
-    echo "{{ images.kube_apiserver_V11512.id }} {{ images.kube_apiserver_V11512.name }}"
-    echo "{{ images.kube_controller_manager_V11512.id }} {{ images.kube_controller_manager_V11512.name }}"
-    echo "{{ images.kube_scheduler_V11512.id }} {{ images.kube_scheduler_V11512.name }}"
+    echo "{{ images.kube_apiserver_v11512.id }} {{ images.kube_apiserver_v11512.name }}"
+    echo "{{ images.kube_controller_manager_v11512.id }} {{ images.kube_controller_manager_v11512.name }}"
+    echo "{{ images.kube_scheduler_v11512.id }} {{ images.kube_scheduler_v11512.name }}"
     echo "{{ images.etcd_3310.id }} {{ images.etcd_3310.name }}"
     echo "{{ images.etcd_347.id }} {{ images.etcd_347.name }}"
 }
@@ -735,9 +735,9 @@ function patch_control_plane_images() {
 
 function patch_control_plane_images_11512() {
     # patch all control plane manifests with versioned images
-    sed -i 's/image:.*kube-apiserver:.*$/image: {{ images.kube_apiserver_V11512.name }}/' /etc/kubernetes/manifests/kube-apiserver.yaml
-    sed -i 's/image:.*kube-controller-manager:.*$/image: {{ images.kube_controller_manager_V11512.name }}/' /etc/kubernetes/manifests/kube-controller-manager.yaml
-    sed -i 's/image:.*kube-scheduler:.*$/image: {{ images.kube_scheduler_V11512.name }}/' /etc/kubernetes/manifests/kube-scheduler.yaml
+    sed -i 's/image:.*kube-apiserver:.*$/image: {{ images.kube_apiserver_v11512.name }}/' /etc/kubernetes/manifests/kube-apiserver.yaml
+    sed -i 's/image:.*kube-controller-manager:.*$/image: {{ images.kube_controller_manager_v11512.name }}/' /etc/kubernetes/manifests/kube-controller-manager.yaml
+    sed -i 's/image:.*kube-scheduler:.*$/image: {{ images.kube_scheduler_v11512.name }}/' /etc/kubernetes/manifests/kube-scheduler.yaml
 }
 
 airgapPushReplicatedImagesToRegistry() {
@@ -2308,9 +2308,9 @@ function k8s_pull_and_retag_control_images() {
     case "$k8sVersion" in
         1.15.12)
             if [ "$AIRGAP" != "1" ]; then
-                docker pull "{{ images.kube_apiserver_V11512.name }}"
-                docker pull "{{ images.kube_controller_manager_V11512.name }}"
-                docker pull "{{ images.kube_scheduler_V11512.name }}"
+                docker pull "{{ images.kube_apiserver_v11512.name }}"
+                docker pull "{{ images.kube_controller_manager_v11512.name }}"
+                docker pull "{{ images.kube_scheduler_v11512.name }}"
             fi
             retag_control_images "$k8sVersion"
             ;;
@@ -2323,7 +2323,7 @@ function k8s_pull_and_retag_kubeproxy_image() {
     case "$k8sVersion" in
         1.15.12)
             if [ "$AIRGAP" != "1" ]; then
-                docker pull "{{ images.kube_proxy_V11512.name }}"
+                docker pull "{{ images.kube_proxy_v11512.name }}"
             fi
             retag_kubeproxy_image "$k8sVersion"
             ;;
@@ -2335,9 +2335,9 @@ function retag_control_images() {
 
     case "$k8sVersion" in
         1.15.12)
-            docker tag "{{ images.kube_apiserver_V11512.name }}" replicated/kube-apiserver:v1.15.12
-            docker tag "{{ images.kube_controller_manager_V11512.name }}" replicated/kube-controller-manager:v1.15.12
-            docker tag "{{ images.kube_scheduler_V11512.name }}" replicated/kube-scheduler:v1.15.12
+            docker tag "{{ images.kube_apiserver_v11512.name }}" replicated/kube-apiserver:v1.15.12
+            docker tag "{{ images.kube_controller_manager_v11512.name }}" replicated/kube-controller-manager:v1.15.12
+            docker tag "{{ images.kube_scheduler_v11512.name }}" replicated/kube-scheduler:v1.15.12
             ;;
     esac
 }
@@ -2347,7 +2347,7 @@ function retag_kubeproxy_image() {
 
     case "$k8sVersion" in
         1.15.12)
-            docker tag "{{ images.kube_proxy_V11512.name }}" replicated/kube-proxy:v1.15.12
+            docker tag "{{ images.kube_proxy_v11512.name }}" replicated/kube-proxy:v1.15.12
             ;;
     esac
 }
