@@ -735,9 +735,9 @@ function patch_control_plane_images() {
 
 function patch_control_plane_images_11512() {
     # patch all control plane manifests with versioned images
-    sed -i 's/image:.*kube-apiserver:.*$/image: {{ images.kube_apiserver_v11512.name }}/' /etc/kubernetes/manifests/kube-apiserver.yaml
-    sed -i 's/image:.*kube-controller-manager:.*$/image: {{ images.kube_controller_manager_v11512.name }}/' /etc/kubernetes/manifests/kube-controller-manager.yaml
-    sed -i 's/image:.*kube-scheduler:.*$/image: {{ images.kube_scheduler_v11512.name }}/' /etc/kubernetes/manifests/kube-scheduler.yaml
+    sed -i "s/image:.*kube-apiserver:.*$/image: $(echo {{ images.kube_apiserver_v11512.name }} | sed 's/\//\\\//')/" /etc/kubernetes/manifests/kube-apiserver.yaml
+    sed -i "s/image:.*kube-controller-manager:.*$/image: $(echo {{ images.kube_controller_manager_v11512.name }} | sed 's/\//\\\//')/" /etc/kubernetes/manifests/kube-controller-manager.yaml
+    sed -i "s/image:.*kube-scheduler:.*$/image: $(echo {{ images.kube_scheduler_v11512.name }} | sed 's/\//\\\//')/" /etc/kubernetes/manifests/kube-scheduler.yaml
 }
 
 airgapPushReplicatedImagesToRegistry() {

@@ -316,7 +316,7 @@ handleLoadBalancerAddressChangedPostInit() {
 
 discoverCurrentKubernetesVersion() {
     set +e
-    CURRENT_KUBERNETES_VERSION=$(cat /opt/replicated/kubeadm.conf 2>/dev/null | grep kubernetesVersion: | grep -oE '[0-9]+.[0-9]+.[0-9]')
+    CURRENT_KUBERNETES_VERSION=$(cat /opt/replicated/kubeadm.conf 2>/dev/null | grep kubernetesVersion: | grep -oE '[0-9]+.[0-9]+.[0-9]+')
     set -e
 
     if [ -n "$CURRENT_KUBERNETES_VERSION" ]; then
