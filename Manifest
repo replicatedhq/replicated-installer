@@ -6,11 +6,11 @@ ENVOY_V1100 replicated/envoy:v1.10.0-20200713 f5f6233f1788 true
 ETCD_3310 replicated/etcd:3.3.10-20200512 3a9e5cce725f false
 ETCD_347 replicated/etcd:3.4.7-20200602 9eedcb1b6638 true
 K8S_DNS_NODE_CACHE_11513 replicated/k8s-dns-node-cache:1.15.13-20200916 4dfbf1f62c1c true
-KUBE_APISERVER_V11512 replicated/kube-apiserver:v1.15.12-20201020 TODO true
-KUBE_BASE_V11512 replicated/kube-base:v1.15.12-20201020 TODO false
-KUBE_CONTROLLER_MANAGER_V11512 replicated/kube-controller-manager:v1.15.12-20201020 TODO true
-KUBE_SCHEDULER_V11512 replicated/kube-scheduler:v1.15.12-20201020 TODO true
-KUBE_PROXY_V11512 replicated/kube-proxy:v1.15.12-20201020 TODO true
+KUBE_APISERVER_V11512 replicated/kube-apiserver:v1.15.12-20201021 TODO true
+KUBE_BASE_V11512 replicated/kube-base:v1.15.12-20201021 TODO false
+KUBE_CONTROLLER_MANAGER_V11512 replicated/kube-controller-manager:v1.15.12-20201021 TODO true
+KUBE_SCHEDULER_V11512 replicated/kube-scheduler:v1.15.12-20201021 TODO true
+KUBE_PROXY_V11512 replicated/kube-proxy:v1.15.12-20201021 TODO true
 PAUSE_31 replicated/pause:3.1 da86e6ba6ca1 true
 REGISTRY_262 replicated/docker-registry:2.6.2-20200916 b3a7c5440e0a true
 REPLICATED_HOSTPATH_PROVISIONER_CD1D272 replicated/replicated-hostpath-provisioner:cd1d272 376cb7e8748c false
