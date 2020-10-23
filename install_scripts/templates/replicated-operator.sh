@@ -34,6 +34,7 @@ SKIP_PREFLIGHTS="{{ '1' if skip_preflights else '' }}"
 IGNORE_PREFLIGHTS="{{ '1' if ignore_preflights else '' }}"
 REGISTRY_ADDRESS_OVERRIDE=
 REGISTRY_PATH_PREFIX=
+DAEMON_REGISTRY_ADDRESS=
 
 {% include 'common/common.sh' %}
 {% include 'common/log.sh' %}
@@ -128,12 +129,16 @@ REPLICATED_OPERATOR_OPTS=
 build_replicated_operator_opts() {
     if [ -n "$REPLICATED_OPERATOR_OPTS" ]; then
         if [ -n "$PUBLIC_ADDRESS" ]; then
-            REPLICATED_OPERATOR_OPTS=$(echo "$REPLICATED_OPERATOR_OPTS" | sed -e 's/-e[[:blank:]]*PUBLIC_ADDRESS=[^[:blank:]]*//')
+            REPLICATED_OPERATOR_OPTS=$(echo "$REPLICATED_OPERATOR_OPTS" | sed -e 's/-e[[:blank:]]*PUBLIC_ADDRESS=[^[:blank:]]*//g')
             REPLICATED_OPERATOR_OPTS="$REPLICATED_OPERATOR_OPTS -e PUBLIC_ADDRESS=$PUBLIC_ADDRESS"
         fi
-        REPLICATED_OPERATOR_OPTS=$(echo "$REPLICATED_OPERATOR_OPTS" | sed -e 's/-e[[:blank:]]*NO_PROXY=[^[:blank:]]*//')
+        REPLICATED_OPERATOR_OPTS=$(echo "$REPLICATED_OPERATOR_OPTS" | sed -e 's/-e[[:blank:]]*NO_PROXY=[^[:blank:]]*//g')
         if [ -n "$NO_PROXY_ADDRESSES" ]; then
            REPLICATED_OPERATOR_OPTS="$REPLICATED_OPERATOR_OPTS -e NO_PROXY=$NO_PROXY_ADDRESSES"
+        fi
+        REPLICATED_OPERATOR_OPTS=$(echo "$REPLICATED_OPERATOR_OPTS" | sed -e 's/-e[[:blank:]]*DAEMON_REGISTRY_ENDPOINT=[^[:blank:]]*//g')
+        if [ -n "$DAEMON_REGISTRY_ADDRESS" ]; then
+           REPLICATED_OPERATOR_OPTS="$REPLICATED_OPERATOR_OPTS -e DAEMON_REGISTRY_ENDPOINT=$DAEMON_REGISTRY_ADDRESS"
         fi
         return
     fi
@@ -169,6 +174,10 @@ build_replicated_operator_opts() {
     dockerGetLoggingDriver
     if [ "$DOCKER_LOGGING_DRIVER" = "json-file" ]; then
         REPLICATED_OPERATOR_OPTS="$REPLICATED_OPERATOR_OPTS --log-opt max-size=50m --log-opt max-file=3"
+    fi
+
+    if [ -n "$DAEMON_REGISTRY_ADDRESS" ]; then
+        REPLICATED_OPERATOR_OPTS="$REPLICATED_OPERATOR_OPTS -e DAEMON_REGISTRY_ENDPOINT=$DAEMON_REGISTRY_ADDRESS"
     fi
 }
 
@@ -307,6 +316,9 @@ while [ "$1" != "" ]; do
             ;;
         daemon-token|daemon_token)
             DAEMON_TOKEN="$_value"
+            ;;
+        daemon-registry-address|daemon_registry_address)
+            DAEMON_REGISTRY_ADDRESS="$_value"
             ;;
         operator-id)
             OPERATOR_ID="$_value"

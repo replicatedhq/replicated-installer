@@ -39,7 +39,8 @@ SKIP_PREFLIGHTS="{{ '1' if skip_preflights else '' }}"
 IGNORE_PREFLIGHTS="{{ '1' if ignore_preflights else '' }}"
 REGISTRY_ADDRESS_OVERRIDE=
 REGISTRY_PATH_PREFIX=
-DISABLE_REPLICATED_UI=0
+DISABLE_REPLICATED_UI="{{ '1' if disable_replicated_ui else '' }}"
+DISABLE_REPLICATED_HOST_NETWORKING="{{ '1' if disable_replicated_host_networking else '' }}"
 RELEASE_SEQUENCE="{{ release_sequence }}"
 RELEASE_PATCH_SEQUENCE="{{ release_patch_sequence }}"
 
@@ -270,17 +271,21 @@ build_replicated_opts() {
     done
 
     if [ -n "$REPLICATED_OPTS" ]; then
-        REPLICATED_OPTS=$(echo "$REPLICATED_OPTS" | sed -e 's/-e[[:blank:]]*HTTP_PROXY=[^[:blank:]]*//')
+        REPLICATED_OPTS=$(echo "$REPLICATED_OPTS" | sed -e 's/-e[[:blank:]]*HTTP_PROXY=[^[:blank:]]*//g')
         if [ -n "$PROXY_ADDRESS" ]; then
             REPLICATED_OPTS="$REPLICATED_OPTS -e HTTP_PROXY=$PROXY_ADDRESS"
         fi
-        REPLICATED_OPTS=$(echo "$REPLICATED_OPTS" | sed -e 's/-e[[:blank:]]*NO_PROXY=[^[:blank:]]*//')
+        REPLICATED_OPTS=$(echo "$REPLICATED_OPTS" | sed -e 's/-e[[:blank:]]*NO_PROXY=[^[:blank:]]*//g')
         if [ -n "$NO_PROXY_ADDRESSES" ]; then
            REPLICATED_OPTS="$REPLICATED_OPTS -e NO_PROXY=$NO_PROXY_ADDRESSES"
         fi
-        REPLICATED_OPTS=$(echo "$REPLICATED_OPTS" | sed -e 's/-e[[:blank:]]*REGISTRY_ADVERTISE_ADDRESS=[^[:blank:]]*//')
+        REPLICATED_OPTS=$(echo "$REPLICATED_OPTS" | sed -e 's/-e[[:blank:]]*REGISTRY_ADVERTISE_ADDRESS=[^[:blank:]]*//g')
         if [ -n "$REGISTRY_ADVERTISE_ADDRESS" ]; then
             REPLICATED_OPTS="$REPLICATED_OPTS -e REGISTRY_ADVERTISE_ADDRESS=$REGISTRY_ADVERTISE_ADDRESS"
+        fi
+        REPLICATED_OPTS=$(echo "$REPLICATED_OPTS" | sed -e 's/-e[[:blank:]]*DISABLE_HOST_NETWORKING=[^[:blank:]]*//g')
+        if [ "$DISABLE_REPLICATED_HOST_NETWORKING" = "1" ]; then
+            REPLICATED_OPTS="$REPLICATED_OPTS -e DISABLE_HOST_NETWORKING=true"
         fi
         return
     fi
@@ -338,6 +343,10 @@ build_replicated_opts() {
     if [ "$DOCKER_LOGGING_DRIVER" = "json-file" ]; then
         REPLICATED_OPTS="$REPLICATED_OPTS --log-opt max-size=50m --log-opt max-file=3"
         REPLICATED_UI_OPTS="$REPLICATED_UI_OPTS --log-opt max-size=50m --log-opt max-file=3"
+    fi
+
+    if [ "$DISABLE_REPLICATED_HOST_NETWORKING" = "1" ]; then
+        REPLICATED_OPTS="$REPLICATED_OPTS -e DISABLE_HOST_NETWORKING=true"
     fi
 }
 
@@ -470,6 +479,9 @@ install_operator() {
         ${URLGET_CMD} "{{ replicated_install_url }}${prefix}/operator?replicated_operator_tag={{ replicated_operator_tag }}" > /tmp/operator_install.sh
     fi
     _private_address_with_brackets="$PRIVATE_ADDRESS"
+    if [ "$DISABLE_REPLICATED_HOST_NETWORKING" = "1" ]; then
+        _private_address_with_brackets="$DOCKER0_GATEWAY_IP"
+    fi
     if isValidIpv6 "$_private_address_with_brackets"; then
         _private_address_with_brackets="[$_private_address_with_brackets]"
     fi
@@ -514,6 +526,11 @@ install_operator() {
     if [ -n "$REGISTRY_PATH_PREFIX" ]; then
         opts=$opts" registry-path-prefix=$REGISTRY_PATH_PREFIX"
     fi
+    if [ "$DISABLE_REPLICATED_HOST_NETWORKING" = "1" ]; then
+        # we still bind the registry to the host network
+        opts=$opts" daemon-registry-address=$PRIVATE_ADDRESS:9874"
+    fi
+
     # When this script is piped into bash as stdin, apt-get will eat the remaining parts of this script,
     # preventing it from being executed.  So using /dev/null here to change stdin for the docker script.
     if [ "$AIRGAP" = "1" ]; then
@@ -712,6 +729,10 @@ while [ "$1" != "" ]; do
         disable-replicated-ui|disable_replicated_ui)
             DISABLE_REPLICATED_UI=1
             ;;
+        disable-replicated-host-networking|disable_replicated_host_networking)
+            # DISABLE_REPLICATED_HOST_NETWORKING supported in replicated 2.49.0+
+            DISABLE_REPLICATED_HOST_NETWORKING=1
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -802,6 +823,8 @@ else
     requireDocker
 fi
 
+get_docker0_gateway_ip
+
 if [ -n "$PROXY_ADDRESS" ]; then
     requireDockerProxy
 fi
@@ -883,6 +906,13 @@ get_selinux_replicated_domain
 get_selinux_replicated_domain_label
 build_replicated_opts
 write_replicated_configuration
+
+REPLICATED_PORT_RANGE="-p {{ replicated_port_range }}"
+if [ "$DISABLE_REPLICATED_HOST_NETWORKING" = "1" ]; then
+    # we still bind the registry to the host network
+    REPLICATED_PORT_RANGE="-p $DOCKER0_GATEWAY_IP:9875-9879:9875-9879/tcp -p 9874:9874"
+fi
+
 case "$INIT_SYSTEM" in
     systemd)
         write_systemd_services

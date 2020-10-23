@@ -64,6 +64,10 @@ def template_args(**kwargs):
         args['use_rook_nodes_label'] = True
     if get_arg('rook_storage_node') is not None:
         args['rook_storage_node'] = True
+    if get_arg('disable_replicated_ui') is not None:
+        args['disable_replicated_ui'] = True
+    if get_arg('disable_replicated_host_networking') is not None:
+        args['disable_replicated_host_networking'] = True
     if kwargs:
         args.update(kwargs)
     return args

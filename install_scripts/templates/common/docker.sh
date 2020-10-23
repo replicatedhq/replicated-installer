@@ -264,3 +264,19 @@ DOCKER_LOGGING_DRIVER=
 dockerGetLoggingDriver() {
     DOCKER_LOGGING_DRIVER="$(docker info 2>/dev/null | grep -i "Logging Driver:" | sed 's/[Ll]ogging [Dd]river: *//')"
 }
+
+#######################################
+# Gets the docker0 bridge network gateway ip.
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   DOCKER0_GATEWAY_IP
+#######################################
+get_docker0_gateway_ip() {
+    DOCKER0_GATEWAY_IP=$(ip -o -4 address | grep docker0 | awk '{ print $4 }' | cut -d'/' -f1)
+    if [ -z "$DOCKER0_GATEWAY_IP" ]; then
+        DOCKER0_GATEWAY_IP=172.17.0.1
+    fi
+}
