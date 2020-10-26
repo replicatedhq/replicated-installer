@@ -3,7 +3,7 @@
 #
 # proxy.sh
 #
-# require prompt.sh, system.sh, replicated.sh
+# require prompt.sh, system.sh, docker.sh, replicated.sh
 #
 #######################################
 
@@ -297,12 +297,9 @@ exportProxy() {
 #######################################
 NO_PROXY_ADDRESSES=
 getNoProxyAddresses() {
-    DOCKER0_IP=$(ip -o -4 address | grep docker0 | awk '{ print $4 }' | cut -d'/' -f1)
-    if [ -z "$DOCKER0_IP" ]; then
-        DOCKER0_IP=172.17.0.1
-    fi
+    get_docker0_gateway_ip
 
-    NO_PROXY_ADDRESSES="localhost,127.0.0.1,$DOCKER0_IP"
+    NO_PROXY_ADDRESSES="localhost,127.0.0.1,$DOCKER0_GATEWAY_IP"
 
     if [ -n "$ADDITIONAL_NO_PROXY" ]; then
         NO_PROXY_ADDRESSES="$NO_PROXY_ADDRESSES,$ADDITIONAL_NO_PROXY"

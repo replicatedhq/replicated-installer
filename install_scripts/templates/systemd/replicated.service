@@ -15,7 +15,7 @@ ExecStartPre=/bin/mkdir -p /var/run/replicated /var/lib/replicated /var/lib/repl
 ExecStartPre=/bin/chown -R ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} /var/run/replicated /var/lib/replicated {{ premkit_data_dir }}
 ExecStartPre=-/bin/chmod -R 755 /var/lib/replicated/tmp
 ExecStart=/usr/bin/docker run --name=replicated \\
-    -p {{ replicated_port_range }} \\
+    ${REPLICATED_PORT_RANGE} \\
     -u ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} \\{% if replicated_root_volume_mount %}
     {{ replicated_root_volume_mount }} \\
 {%- endif %}

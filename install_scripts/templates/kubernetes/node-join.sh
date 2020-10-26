@@ -57,6 +57,7 @@ CERT=
 KUBEADM_TOKEN="{{ kubeadm_token }}"
 KUBEADM_TOKEN_CA_HASH="{{ kubeadm_token_ca_hash }}"
 SERVICE_CIDR="10.96.0.0/12" # kubeadm default
+DAEMON_REGISTRY_ADDRESS=
 
 downloadPkiBundle() {
     if [ -z "$PRIMARY_PKI_BUNDLE_URL" ]; then
