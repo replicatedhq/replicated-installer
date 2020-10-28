@@ -14,7 +14,7 @@
       "repository": "*",
       "image": { "type": "tag", "value": "*" },
       "policy_ids": [ "platform_default_policy01" ],
-      "whitelist_ids": [ "whitelist_ignore_python3_pip" ]
+      "whitelist_ids": [ "whitelist_ignore_python3_pip", "whitelist_ignore_rhsa_feed_on_centos" ]
     }
   ],
   "whitelists": [
@@ -47,6 +47,464 @@
           "gate": "vulnerabilities",
           "trigger": "package",
           "trigger_id": "CVE-2019-11324+python3-pip"
+        }
+      ]
+    },
+    {
+      "id": "whitelist_ignore_rhsa_feed_on_centos",
+      "name": "Whitelist ignore RHSA feed on centos",
+      "version": "1_0",
+      "comment": "Work around https://docs.anchore.com/current/docs/releasenotes/2.3.0/centos_to_rhel_upgrade/",
+      "items": [
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff11",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-14866+cpio"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff12",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-8675+cups-libs"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff13",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-8696+cups-libs"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff14",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2017-18190+cups-libs"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff15",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-5482+curl"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff16",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-12749+dbus"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff17",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-12749+dbus-libs"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff18",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-5094+e2fsprogs"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff19",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-5188+e2fsprogs"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff20",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-5094+e2fsprogs-libs"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff21",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-5188+e2fsprogs-libs"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff22",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-15903+expat"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff23",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2018-20843+expat"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff24",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-12450+glib2"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff25",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-19126+glibc"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff26",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-19126+glibc-common"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff27",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-5094+libcom_err"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff28",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-5188+libcom_err"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff29",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-5482+libcurl"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff30",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-18609+librabbitmq"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff31",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-5094+libss"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff32",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-5188+libss"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff33",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-17498+libssh2"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff34",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-14907+libwbclient"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff35",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-20388+libxml2"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff36",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-19956+libxml2"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff37",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-7595+libxml2"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff38",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-20388+libxml2-python"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff39",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-19956+libxml2-python"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff40",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-7595+libxml2-python"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff41",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-12402+nss"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff42",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-17023+nss"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff43",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-12403+nss"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff44",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-17006+nss"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff45",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-6829+nss"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff46",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-12401+nss"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff47",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-11727+nss"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff48",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-12400+nss"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff49",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-11756+nss"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff50",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-11719+nss"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff51",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-12402+nss-sysinit"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff52",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-17023+nss-sysinit"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff53",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-12403+nss-sysinit"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff54",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-17006+nss-sysinit"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff55",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-6829+nss-sysinit"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff56",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-12401+nss-sysinit"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff57",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-11727+nss-sysinit"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff58",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-12400+nss-sysinit"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff59",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-11756+nss-sysinit"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff60",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-11719+nss-sysinit"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff61",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-12402+nss-tools"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff62",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-17023+nss-tools"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff63",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-12403+nss-tools"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff64",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-17006+nss-tools"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff65",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-6829+nss-tools"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff66",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-12401+nss-tools"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff67",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-11727+nss-tools"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff68",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-12400+nss-tools"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff69",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-11756+nss-tools"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff70",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-11719+nss-tools"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff71",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-12243+openldap"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff72",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-16935+python"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff73",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-16935+python-devel"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff74",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-16935+python-libs"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff75",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-16935+python3"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff76",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-8492+python3"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff77",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-16935+python3-libs"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff78",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2020-8492+python3-libs"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff79",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-14907+samba-client-libs"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff80",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-14907+samba-common"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff81",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-14907+samba-common-libs"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff82",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-14907+samba-libs"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff83",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-20386+systemd"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff84",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-20386+systemd-libs"
+        },
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-ffffffffff85",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2019-20386+systemd-sysv"
         }
       ]
     }
