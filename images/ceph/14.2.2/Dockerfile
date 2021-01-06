@@ -6,6 +6,17 @@ RUN yum install -y \
     bind-license \
     \
     \
-    dbus \
-    dbus-libs \
+    curl \
+    libcurl \
+    libwbclient \
+    openssl \
+    openssl-libs \
+    python \
+    python-devel \
+    python-libs \
+    python-rtslib \
+    python3 \
+    samba-client-libs \
+    samba-common \
+    samba-common-libs \
   && yum clean all

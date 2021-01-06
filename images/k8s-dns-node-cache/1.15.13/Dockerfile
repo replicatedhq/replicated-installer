@@ -10,6 +10,9 @@ FROM debian:buster-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     iproute2 \
     iptables \
+    \
+    \
+    libp11-kit0 \
   && update-alternatives --set iptables /usr/sbin/iptables-legacy \
   && update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy \
   && rm -rf /var/lib/apt/lists/*
