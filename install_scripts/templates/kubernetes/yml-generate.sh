@@ -960,9 +960,9 @@ items:
                 - name: EXTRA_ARGS
                   value: "--log-level=info" # default log level is debug
                 - name: EXEC_IMAGE
-                  value: "{{ images.weaveexec_270.name }}"
+                  value: "{{ images.weaveexec_265.name }}"
 $weave_passwd_env
-              image: "{{ images.weave_kube_270.name }}"
+              image: "{{ images.weave_kube_265.name }}"
               livenessProbe:
                 httpGet:
                   host: 127.0.0.1
@@ -1000,8 +1000,8 @@ $weave_passwd_env
                       apiVersion: v1
                       fieldPath: spec.nodeName
                 - name: EXEC_IMAGE
-                  value: "{{ images.weaveexec_270.name }}"
-              image: "{{ images.weave_npc_270.name }}"
+                  value: "{{ images.weaveexec_265.name }}"
+              image: "{{ images.weave_npc_265.name }}"
               # https://www.weave.works/docs/net/latest/kubernetes/kube-addon/#cpu-and-memory-requirements
               resources:
                 requests:

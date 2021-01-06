@@ -5,6 +5,14 @@ FROM envoyproxy/envoy-alpine:v1.10.0 AS base
 
 FROM frolvlad/alpine-glibc:alpine-3.12
 
+RUN apk add --no-cache --upgrade \
+	\
+	\
+	libcrypto1.1 \
+	libssl1.1 \
+	musl \
+	musl-utils
+
 RUN mkdir -p /etc/envoy
 
 COPY --from=base /usr/local/bin/envoy /usr/local/bin/envoy

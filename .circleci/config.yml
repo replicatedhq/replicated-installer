@@ -33,7 +33,10 @@ jobs:
       - run: make test
 
   build_k8s_bundles:
-    <<: *defaults
+    docker:
+    - image: cimg/go:1.13
+    working_directory: ~/repo
+    <<: *environment
     steps:
       - checkout
       - setup_remote_docker:

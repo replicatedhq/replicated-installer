@@ -12,11 +12,11 @@ UBUNTU_1604_K8S_11=ubuntu-1604-v1.11.5-20181204
 UBUNTU_1604_K8S_12=ubuntu-1604-v1.12.3-20181211
 UBUNTU_1604_K8S_13=ubuntu-1604-v1.13.5-20190411
 UBUNTU_1604_K8S_14=ubuntu-1604-v1.14.3-20190702
-UBUNTU_1604_K8S_15=ubuntu-1604-v1.15.12-20201021
+UBUNTU_1604_K8S_15=ubuntu-1604-v1.15.12-20210106
 
 UBUNTU_1804_K8S_13=ubuntu-1804-v1.13.5-20190411
 UBUNTU_1804_K8S_14=ubuntu-1804-v1.14.3-20190702
-UBUNTU_1804_K8S_15=ubuntu-1804-v1.15.12-20201021
+UBUNTU_1804_K8S_15=ubuntu-1804-v1.15.12-20210106
 
 RHEL7_K8S_9=rhel7-v1.9.3-20180806
 RHEL7_K8S_10=rhel7-v1.10.6-20180806
@@ -24,7 +24,7 @@ RHEL7_K8S_11=rhel7-v1.11.5-20181204
 RHEL7_K8S_12=rhel7-v1.12.3-20181211
 RHEL7_K8S_13=rhel7-v1.13.5-20190411
 RHEL7_K8S_14=rhel7-v1.14.3-20190702
-RHEL7_K8S_15=rhel7-v1.15.12-20201021
+RHEL7_K8S_15=rhel7-v1.15.12-20210106
 
 DAEMON_NODE_KEY=replicated.com/daemon
 
@@ -513,9 +513,9 @@ airgapListKubernetesCommonImages11512() {
     echo "{{ images.kube_proxy_v11512.id }} {{ images.kube_proxy_v11512.name }}"
     echo "{{ images.pause_31.id }} {{ images.pause_31.name }}"
     echo "{{ images.coredns_131.id }} {{ images.coredns_131.name }}"
-    echo "{{ images.weave_kube_270.id }} {{ images.weave_kube_270.name }}"
-    echo "{{ images.weave_npc_270.id }} {{ images.weave_npc_270.name }}"
-    echo "{{ images.weaveexec_270.id }} {{ images.weaveexec_270.name }}"
+    echo "{{ images.weave_kube_265.id }} {{ images.weave_kube_265.name }}"
+    echo "{{ images.weave_npc_265.id }} {{ images.weave_npc_265.name }}"
+    echo "{{ images.weaveexec_265.id }} {{ images.weaveexec_265.name }}"
     echo "{{ images.registry_262.id }} {{ images.registry_262.name }}"
     echo "{{ images.envoy_v1100.id }} {{ images.envoy_v1100.name }}"
     echo "{{ images.contour_v0130.id }} {{ images.contour_v0130.name }}"
@@ -530,7 +530,7 @@ airgapListKubernetesCommonImages11512() {
 airgapLoadKubernetesCommonImages11512() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "replicated/k8s-images-common:v1.15.12-20201028"
+        "replicated/k8s-images-common:v1.15.12-20210106"
 
     while read -r image; do
         (set -x; docker tag $image)
@@ -699,7 +699,7 @@ airgapListKubernetesControlImages11512() {
 airgapLoadKubernetesControlImages11512() {
     docker run \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        "replicated/k8s-images-control:v1.15.12-20201028"
+        "replicated/k8s-images-control:v1.15.12-20210106"
 
     while read -r image; do
         (set -x; docker tag $image)
@@ -1304,8 +1304,8 @@ weave_reset()
     DATAPATH=datapath
     CONTAINER_IFNAME=ethwe
 
-    WEAVEKUBE_IMAGE="{{ images.weave_kube_270.name }}"
-    WEAVEEXEC_IMAGE="{{ images.weaveexec_270.name }}"
+    WEAVEKUBE_IMAGE="{{ images.weave_kube_265.name }}"
+    WEAVEEXEC_IMAGE="{{ images.weaveexec_265.name }}"
     DOCKER_BRIDGE=docker0
 
     # if we never unpacked/pulled the weave image, its unlikely we need to do any of this
