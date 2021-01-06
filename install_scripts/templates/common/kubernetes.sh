@@ -513,9 +513,9 @@ airgapListKubernetesCommonImages11512() {
     echo "{{ images.kube_proxy_v11512.id }} {{ images.kube_proxy_v11512.name }}"
     echo "{{ images.pause_31.id }} {{ images.pause_31.name }}"
     echo "{{ images.coredns_131.id }} {{ images.coredns_131.name }}"
-    echo "{{ images.weave_kube_270.id }} {{ images.weave_kube_270.name }}"
-    echo "{{ images.weave_npc_270.id }} {{ images.weave_npc_270.name }}"
-    echo "{{ images.weaveexec_270.id }} {{ images.weaveexec_270.name }}"
+    echo "{{ images.weave_kube_265.id }} {{ images.weave_kube_265.name }}"
+    echo "{{ images.weave_npc_265.id }} {{ images.weave_npc_265.name }}"
+    echo "{{ images.weaveexec_265.id }} {{ images.weaveexec_265.name }}"
     echo "{{ images.registry_262.id }} {{ images.registry_262.name }}"
     echo "{{ images.envoy_v1100.id }} {{ images.envoy_v1100.name }}"
     echo "{{ images.contour_v0130.id }} {{ images.contour_v0130.name }}"
@@ -1304,8 +1304,8 @@ weave_reset()
     DATAPATH=datapath
     CONTAINER_IFNAME=ethwe
 
-    WEAVEKUBE_IMAGE="{{ images.weave_kube_270.name }}"
-    WEAVEEXEC_IMAGE="{{ images.weaveexec_270.name }}"
+    WEAVEKUBE_IMAGE="{{ images.weave_kube_265.name }}"
+    WEAVEEXEC_IMAGE="{{ images.weaveexec_265.name }}"
     DOCKER_BRIDGE=docker0
 
     # if we never unpacked/pulled the weave image, its unlikely we need to do any of this

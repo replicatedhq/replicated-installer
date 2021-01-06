@@ -16,6 +16,6 @@ REGISTRY_262 replicated/docker-registry:2.6.2-20200916 b3a7c5440e0a true
 REPLICATED_HOSTPATH_PROVISIONER_CD1D272 replicated/replicated-hostpath-provisioner:cd1d272 376cb7e8748c false
 ROOK_CEPH_103 replicated/rook-ceph:v1.0.3-20200724 8ccdea358576 false
 ROOK_CEPH_106 replicated/rook-ceph:v1.0.6-20200724 6d25af25591c true
-WEAVEEXEC_270 replicated/weaveexec:2.7.0-20201026 346fe78d9f3d true
-WEAVE_KUBE_270 replicated/weave-kube:2.7.0-20201026 057b3ef23b1e true
-WEAVE_NPC_270 replicated/weave-npc:2.7.0-20200908 5e9b56bfda69 true
+WEAVEEXEC_265 replicated/weaveexec:2.6.5-20210105 346fe78d9f3d true
+WEAVE_KUBE_265 replicated/weave-kube:2.6.5-20210105 057b3ef23b1e true
+WEAVE_NPC_265 replicated/weave-npc:2.6.5-20210105 5e9b56bfda69 true
