@@ -1302,6 +1302,7 @@ fi
 discoverCurrentKubernetesVersion
 parseKubernetesTargetVersion
 setK8sPatchVersion
+checkReplicatedK8sVersion
 
 if [ "$RESET" == "1" ]; then
     k8s_reset "$FORCE_RESET"
