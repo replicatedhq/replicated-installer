@@ -2045,6 +2045,26 @@ checkDockerK8sVersion()
     esac
 }
 
+#######################################
+# bail if airgapped and attempting to upgrade from K8s 1.11 to Replicated 2.49.1+
+# Globals:
+#   KUBERNETES_TARGET_VESION_MINOR
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+checkReplicatedK8sVersion()
+{
+    if [ -z "$KUBERNETES_CURRENT_VERSION_MINOR" ] || [ "$KUBERNETES_CURRENT_VERSION_MINOR" -ge "13" ] || [ "$AIRGAP" != "1" ]; then
+        return 0
+    fi
+    semverCompare "$REPLICATED_VERSION" "2.49.1"
+    if [ "$SEMVER_COMPARE_RESULT" -ge "0" ]; then
+        bail "Upgrade to Replicated 2.49.0 with Kubernetes 1.15 prior to installing replicated $REPLICATED_VERSION"
+    fi
+}
+
 writeAKAExecStop()
 {
     cat >/opt/replicated/shutdown.sh <<EOF
