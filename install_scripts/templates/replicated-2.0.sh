@@ -528,7 +528,7 @@ install_operator() {
     fi
     if [ "$DISABLE_REPLICATED_HOST_NETWORKING" = "1" ]; then
         # we still bind the registry to the host network
-        opts=$opts" daemon-registry-address=$PRIVATE_ADDRESS:9874"
+        opts=$opts" daemon-registry-address=$DOCKER0_GATEWAY_IP:9874"
     fi
 
     # When this script is piped into bash as stdin, apt-get will eat the remaining parts of this script,
@@ -902,16 +902,19 @@ esac
 remove_docker_containers
 
 printf "Installing replicated and replicated-ui service\n"
+
+REPLICATED_PORT_RANGE="-p {{ replicated_port_range }}"
+if [ "$DISABLE_REPLICATED_HOST_NETWORKING" = "1" ]; then
+    if [ -z "$REGISTRY_ADVERTISE_ADDRESS" ]; then
+        REGISTRY_ADVERTISE_ADDRESS="$DOCKER0_GATEWAY_IP:9874"
+    fi
+    REPLICATED_PORT_RANGE="-p $DOCKER0_GATEWAY_IP:9874-9879:9874-9879/tcp"
+fi
+
 get_selinux_replicated_domain
 get_selinux_replicated_domain_label
 build_replicated_opts
 write_replicated_configuration
-
-REPLICATED_PORT_RANGE="-p {{ replicated_port_range }}"
-if [ "$DISABLE_REPLICATED_HOST_NETWORKING" = "1" ]; then
-    # we still bind the registry to the host network
-    REPLICATED_PORT_RANGE="-p $DOCKER0_GATEWAY_IP:9875-9879:9875-9879/tcp -p 9874:9874"
-fi
 
 case "$INIT_SYSTEM" in
     systemd)
