@@ -95,7 +95,7 @@ bailIfUnsupportedOS() {
     case "$LSB_DIST$DIST_VERSION" in
         ubuntu16.04|ubuntu18.04)
             ;;
-        centos7.4|centos7.5|centos7.6|centos7.7|centos7.8|rhel7.4|rhel7.5|rhel7.6|rhel7.7|rhel7.8)
+        centos7.4|centos7.5|centos7.6|centos7.7|centos7.8|centos7.9|rhel7.4|rhel7.5|rhel7.6|rhel7.7|rhel7.8|rhel7.9)
             ;;
         *)
             bail "Kubernetes install is not supported on ${LSB_DIST} ${DIST_VERSION}"
@@ -196,7 +196,7 @@ k8sPackageTag() {
                     ;;
             esac
             ;;
-        centos7.4|centos7.5|centos7.6|centos7.7|centos7.8|rhel7.4|rhel7.5|rhel7.6|rhel7.7|rhel7.8)
+        centos7.4|centos7.5|centos7.6|centos7.7|centos7.8|centos7.9|rhel7.4|rhel7.5|rhel7.6|rhel7.7|rhel7.8|rhel7.9)
             case "$k8sVersion" in
                 1.9.3)
                     echo "$RHEL7_K8S_9"
@@ -259,7 +259,7 @@ installKubernetesComponents() {
             dpkg -i --force-depends-version archives/*.deb
             ;;
 
-        centos7.4|centos7.5|centos7.6|centos7.7|centos7.8|rhel7.4|rhel7.5|rhel7.6|rhel7.7|rhel7.8)
+        centos7.4|centos7.5|centos7.6|centos7.7|centos7.8|centos7.9|rhel7.4|rhel7.5|rhel7.6|rhel7.7|rhel7.8|rhel7.9)
             # This needs to be run on Linux 3.x nodes for Rook
             modprobe rbd
             echo 'rbd' > /etc/modules-load.d/replicated-rook.conf
