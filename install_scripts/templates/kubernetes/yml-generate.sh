@@ -340,6 +340,8 @@ spec:
         tier: master
     spec:
 $NODE_SELECTOR
+      imagePullSecrets:
+        - name: replicateddockerhubkey
       containers:
       - name: replicated
         image: "${DOCKER_REGISTRY_PREFIX}/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
@@ -1105,6 +1107,8 @@ spec:
                   - docker-registry
               topologyKey: "kubernetes.io/hostname"
             weight: 100
+      imagePullSecrets:
+        - name: replicateddockerhubkey
       containers:
       - name: rek
         image: "${DOCKER_REGISTRY_PREFIX}/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}"
