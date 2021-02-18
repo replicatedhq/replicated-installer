@@ -212,7 +212,7 @@ stackDeploy() {
     fi
 
     # Update replicated to the new version.
-    docker stack deploy -c /tmp/replicated-docker-compose.yml "$SWARM_STACK_NAMESPACE"
+    docker stack deploy --with-registry-auth -c /tmp/replicated-docker-compose.yml "$SWARM_STACK_NAMESPACE"
     waitStackServices
 }
 
