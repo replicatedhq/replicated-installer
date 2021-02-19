@@ -2,7 +2,7 @@ FROM centos:7
 ARG VERSION
 COPY ./kubernetes.repo /etc/yum.repos.d/kubernetes.repo
 RUN mkdir -p /packages/archives
-RUN yumdownloader --resolve --destdir=/packages/archives -y kubelet-$VERSION kubeadm-$VERSION kubectl-$VERSION kubernetes-cni
+RUN yumdownloader --resolve --destdir=/packages/archives -y kubelet-$VERSION kubeadm-$VERSION kubectl-$VERSION kubernetes-cni openssl
 
 # First upgrade step requires upgraded kubeadm binary before kubeadm package is upgraded
 # https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade-1-11/
