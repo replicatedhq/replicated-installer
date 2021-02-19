@@ -21,6 +21,7 @@ RUN yum install -y \
     samba-client-libs \
     samba-common \
     samba-common-libs \
+    sudo \
   && yum clean all
 
 COPY --from=base /tini /tini
