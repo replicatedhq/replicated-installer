@@ -12,7 +12,8 @@ User=${REPLICATED_USER_ID}
 Group=${DOCKER_GROUP_ID}
 ExecStartPre=-/usr/bin/docker rm -f replicated-operator
 ExecStartPre=/bin/mkdir -p /var/run/replicated-operator /var/lib/replicated-operator
-ExecStartPre=/bin/chown -R ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} /var/run/replicated-operator /var/lib/replicated-operator
+ExecStartPre=/bin/chown -R ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} /var/run/replicated-operator
+ExecStartPre=/bin/chown ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} /var/lib/replicated-operator
 ExecStart=/usr/bin/docker run --name=replicated-operator \\
     -u ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} \\{% if replicated_root_volume_mount %}
     {{ replicated_root_volume_mount }} \\
