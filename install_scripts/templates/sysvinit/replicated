@@ -26,7 +26,8 @@ fi
 
 run_container() {
     /bin/mkdir -p /var/run/replicated /var/lib/replicated /var/lib/replicated/statsd {{ premkit_data_dir }}
-    /bin/chown -R ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} /var/run/replicated /var/lib/replicated {{ premkit_data_dir }}
+    /bin/chown -R ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} /var/run/replicated
+    /bin/chown ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} /var/lib/replicated {{ premkit_data_dir }}
     /bin/chmod -R 755 /var/lib/replicated/tmp 2>/dev/null || true
     /usr/bin/docker rm -f replicated 2>/dev/null || true
     exec su -s /bin/sh -c 'exec "\$0" "\$@"' ${REPLICATED_USERNAME} -- \${DOCKER} run -d --name=\${REPLICATED} \\
