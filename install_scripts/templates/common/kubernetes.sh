@@ -1376,6 +1376,8 @@ weave_reset()
 #   None
 #######################################
 k8s_reset() {
+    set +e
+
     # if FORCE_RESET is set, skip this
     if [ "$1" != 1 ]; then
         printf "${YELLOW}"
@@ -1419,13 +1421,16 @@ k8s_reset() {
 
     weave_reset
 
-    rm -rf /opt/replicated
-    rm -rf /opt/cni
+    rm -rf /etc/cni
     rm -rf /etc/kubernetes
-    rm -rf /var/lib/replicated
-    rm -rf /var/lib/rook
-    rm -rf /var/lib/etcd
+    rm -rf /opt/cni
+    rm -rf /opt/replicated
     rm -f /usr/bin/kubeadm /usr/bin/kubelet /usr/bin/kubectl
+    rm -rf /var/lib/etcd
+    rm -rf /var/lib/kubelet
+    rm -rf /var/lib/rook
+    rm -rf /var/lib/weave
+    rm -rf /var/lib/replicated
     kill $(ps aux | grep '[k]ubelet' | awk '{print $2}') 2> /dev/null
 }
 
