@@ -230,9 +230,9 @@ remove_docker_containers() {
 tag_docker_images() {
     printf "Tagging replicated and replicated-ui images\n"
     # older docker versions require -f flag to move a tag from one image to another
-    docker tag "$REPLICATED_REGISTRY_PREFIX/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}" "$REPLICATED_REGISTRY_PREFIX/replicated:current" 2>/dev/null \
+    docker tag "$REPLICATED_REGISTRY_PREFIX/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}" "$REPLICATED_REGISTRY_PREFIX/replicated:current" \
         || docker tag -f "$REPLICATED_REGISTRY_PREFIX/replicated:{{ replicated_tag }}{{ environment_tag_suffix }}" "$REPLICATED_REGISTRY_PREFIX/replicated:current"
-    docker tag "$REPLICATED_REGISTRY_PREFIX/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}" "$REPLICATED_REGISTRY_PREFIX/replicated-ui:current" 2>/dev/null \
+    docker tag "$REPLICATED_REGISTRY_PREFIX/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}" "$REPLICATED_REGISTRY_PREFIX/replicated-ui:current" \
         || docker tag -f "$REPLICATED_REGISTRY_PREFIX/replicated-ui:{{ replicated_ui_tag }}{{ environment_tag_suffix }}" "$REPLICATED_REGISTRY_PREFIX/replicated-ui:current"
 }
 
