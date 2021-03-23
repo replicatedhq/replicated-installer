@@ -88,7 +88,7 @@ remove_docker_containers() {
 tag_docker_images() {
     printf "Tagging replicated-operator image\n"
     # older docker versions require -f flag to move a tag from one image to another
-    docker tag "${REPLICATED_REGISTRY_PREFIX}/replicated-operator:{{ replicated_operator_tag }}{{ environment_tag_suffix }}" "${REPLICATED_REGISTRY_PREFIX}/replicated-operator:current" 2>/dev/null \
+    docker tag "${REPLICATED_REGISTRY_PREFIX}/replicated-operator:{{ replicated_operator_tag }}{{ environment_tag_suffix }}" "${REPLICATED_REGISTRY_PREFIX}/replicated-operator:current" \
         || docker tag -f "${REPLICATED_REGISTRY_PREFIX}/replicated-operator:{{ replicated_operator_tag }}{{ environment_tag_suffix }}" "${REPLICATED_REGISTRY_PREFIX}/replicated-operator:current"
 }
 
