@@ -12,10 +12,10 @@ KUBE_CONTROLLER_MANAGER_V11512 replicated/kube-controller-manager:v1.15.12-20210
 KUBE_SCHEDULER_V11512 replicated/kube-scheduler:v1.15.12-20210106 680b1f95f442 true
 KUBE_PROXY_V11512 replicated/kube-proxy:v1.15.12-20210106 3fbe4f8938bc true
 PAUSE_31 replicated/pause:3.1 da86e6ba6ca1 true
-REGISTRY_262 replicated/docker-registry:2.6.2-20210106 c9053707165a true
+REGISTRY_262 replicated/docker-registry:2.6.2-20210323 0ee16948032a true
 REPLICATED_HOSTPATH_PROVISIONER_CD1D272 replicated/replicated-hostpath-provisioner:cd1d272 376cb7e8748c false
 ROOK_CEPH_103 replicated/rook-ceph:v1.0.3-20210218 049e37c4c051 false
 ROOK_CEPH_106 replicated/rook-ceph:v1.0.6-20210218 6d4071c1e52c true
-WEAVEEXEC_265 replicated/weaveexec:2.6.5-20210106 1621e44b18f1 true
-WEAVE_KUBE_265 replicated/weave-kube:2.6.5-20210106 c2dd5b14b0d6 true
-WEAVE_NPC_265 replicated/weave-npc:2.6.5-20210106 c18310345ae0 true
+WEAVEEXEC_265 replicated/weaveexec:2.6.5-20210323 8acc088ec626 true
+WEAVE_KUBE_265 replicated/weave-kube:2.6.5-20210323 4c06547b5734 true
+WEAVE_NPC_265 replicated/weave-npc:2.6.5-20210323 78e44ef4a2f5 true

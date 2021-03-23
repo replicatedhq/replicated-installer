@@ -2,7 +2,7 @@
 
 FROM registry:2.6.2 AS base
 
-FROM alpine:3.12
+FROM alpine:3.13
 
 RUN apk add --update \
     ca-certificates \
