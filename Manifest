@@ -2,7 +2,7 @@ CEPH_1420 replicated/ceph:v14.2.0-20210218 f25dc08dda44 false
 CEPH_1422 replicated/ceph:v14.2.2-20210218 7b2d0d7bcb12 true
 CONTOUR_V0130 gcr.io/heptio-images/contour:v0.13.0 672aff19e6e4 true
 COREDNS_131 k8s.gcr.io/coredns:1.3.1 eb516548c180 true
-ENVOY_V1100 replicated/envoy:v1.10.0-20210106 3e745bf2c9cf true
+ENVOY_V1100 replicated/envoy:v1.10.0-20210324 3b6181cda73c true
 ETCD_3310 replicated/etcd:3.3.10-20200512 3a9e5cce725f false
 ETCD_347 replicated/etcd:3.4.7-20200602 9eedcb1b6638 true
 K8S_DNS_NODE_CACHE_11513 replicated/k8s-dns-node-cache:1.15.13-20210106 7cf2bbee69f9 true
@@ -12,7 +12,7 @@ KUBE_CONTROLLER_MANAGER_V11512 replicated/kube-controller-manager:v1.15.12-20210
 KUBE_SCHEDULER_V11512 replicated/kube-scheduler:v1.15.12-20210106 680b1f95f442 true
 KUBE_PROXY_V11512 replicated/kube-proxy:v1.15.12-20210106 3fbe4f8938bc true
 PAUSE_31 replicated/pause:3.1 da86e6ba6ca1 true
-REGISTRY_262 replicated/docker-registry:2.6.2-20210323 0ee16948032a true
+REGISTRY_262 replicated/docker-registry:2.6.2-20210324 e768258cc306 true
 REPLICATED_HOSTPATH_PROVISIONER_CD1D272 replicated/replicated-hostpath-provisioner:cd1d272 376cb7e8748c false
 ROOK_CEPH_103 replicated/rook-ceph:v1.0.3-20210218 049e37c4c051 false
 ROOK_CEPH_106 replicated/rook-ceph:v1.0.6-20210218 6d4071c1e52c true
