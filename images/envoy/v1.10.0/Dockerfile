@@ -3,7 +3,7 @@
 
 FROM envoyproxy/envoy-alpine:v1.10.0 AS base
 
-FROM frolvlad/alpine-glibc:alpine-3.12
+FROM frolvlad/alpine-glibc:alpine-3.13
 
 RUN apk add --no-cache --upgrade \
 	\
