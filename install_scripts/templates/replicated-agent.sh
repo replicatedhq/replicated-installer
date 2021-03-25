@@ -88,6 +88,10 @@ command_exists() {
     command -v "$@" > /dev/null 2>&1
 }
 
+if [ -z "$REPLICATED_TEMP_DIR" ]; then
+    REPLICATED_TEMP_DIR="$(mktemp -d --suffix=replicated)"
+fi
+
 case "$(uname -m)" in
     *64)
         ;;
@@ -211,8 +215,8 @@ baseurl={{ replicated_install_url }}/yum/{{ channel_name }}
 EOF
 
         gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 822819BB
-        gpg --export -a 822819BB > /tmp/replicated_pub.asc
-        rpm --import /tmp/replicated_pub.asc
+        gpg --export -a 822819BB > "$REPLICATED_TEMP_DIR/replicated_pub.asc"
+        rpm --import "$REPLICATED_TEMP_DIR/replicated_pub.asc"
 
         # Enable secondary repos and install deps.
         yum install -y yum-utils

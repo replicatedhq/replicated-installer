@@ -285,6 +285,7 @@ outro() {
 
 export DEBIAN_FRONTEND=noninteractive
 
+maybeCreateTempDir
 require64Bit
 requireRootUser
 detectLsbDist

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+
 AIRGAP=0
 K8S_UPGRADE_PATCH_VERSION="{{ k8s_upgrade_patch_version }}"
 HOSTNAME_CHECK=
@@ -18,6 +19,7 @@ TAINT_CONTROL_PLANE="{{ '1' if taint_control_plane else '0' }}"
 # Execution starts here
 ################################################################################
 
+maybeCreateTempDir
 require64Bit
 requireRootUser
 detectLsbDist

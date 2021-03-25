@@ -462,7 +462,7 @@ start_replicated_v2() {
         cmd=$cmd" $REPLICATED_INSTALL_URL/$RELEASE_CHANNEL/docker"
     fi
 
-    $cmd > /tmp/replicated_install.sh
+    $cmd > "$REPLICATED_TEMP_DIR/replicated_install.sh"
 
     opts="is-migration daemon-token=$DAEMON_TOKEN"
     if [ "$SKIP_DOCKER_INSTALL" -eq "1" ]; then
@@ -481,7 +481,7 @@ start_replicated_v2() {
         opts=$opts" no-auto"
     fi
 
-    bash /tmp/replicated_install.sh $opts < /dev/null
+    bash "$REPLICATED_TEMP_DIR/replicated_install.sh" $opts < /dev/null
 
     for i in {1..10}; do
         if is_replicated_v2_started; then
@@ -537,7 +537,7 @@ get_operator_install_script_cmd() {
 }
 
 get_operator_install_script() {
-    $OPERATOR_INSTALL_SCRIPT_CMD > /tmp/operator_install.sh
+    $OPERATOR_INSTALL_SCRIPT_CMD > "$REPLICATED_TEMP_DIR/operator_install.sh"
 }
 
 install_operator_opts() {
@@ -568,7 +568,7 @@ start_replicated_v2_local_operator() {
     if [ -z "$READ_TIMEOUT" ]; then
         INSTALL_OPERATOR_OPTS=$INSTALL_OPERATOR_OPTS" no-auto"
     fi
-    bash /tmp/operator_install.sh $INSTALL_OPERATOR_OPTS < /dev/null
+    bash "$REPLICATED_TEMP_DIR/operator_install.sh" $INSTALL_OPERATOR_OPTS < /dev/null
 
     for i in {1..10}; do
         if is_operator_v2_initialized $_id; then
@@ -690,6 +690,10 @@ is_app_started_v2() {
 ################################################################################
 # Execution starts here
 ################################################################################
+
+if [ -z "$REPLICATED_TEMP_DIR" ]; then
+    REPLICATED_TEMP_DIR="$(mktemp -d --suffix=replicated)"
+fi
 
 case "$(uname -m)" in
     *64)

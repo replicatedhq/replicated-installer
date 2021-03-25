@@ -114,7 +114,7 @@ bailIfUnsupportedOS() {
 #######################################
 installCNIPlugins() {
     logStep "configure CNI"
-    mkdir -p /tmp/cni-plugins
+    mkdir -p "$REPLICATED_TEMP_DIR/cni-plugins"
     mkdir -p /opt/cni/bin
 
 
@@ -133,7 +133,7 @@ installCNIPlugins() {
             ;;
     esac
 
-    tar zxfv /tmp/cni.tar.gz -C /opt/cni/bin
+    tar zxfv "$REPLICATED_TEMP_DIR/cni.tar.gz" -C /opt/cni/bin
     mkdir -p /etc/cni/net.d
     logSuccess "CNI configured"
 }

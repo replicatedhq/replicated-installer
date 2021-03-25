@@ -192,13 +192,13 @@ stackDeploy() {
 
     if [ "$AIRGAP" = "1" ]; then
         bash ./docker-compose-generate.sh $opts < /dev/null \
-            > /tmp/replicated-docker-compose.yml
+            > "$REPLICATED_TEMP_DIR/replicated-docker-compose.yml"
     else
         getUrlCmd
         $URLGET_CMD "{{ replicated_install_url }}/{{ docker_compose_path }}?{{ docker_compose_query }}" \
-            > /tmp/docker-compose-generate.sh
-        bash /tmp/docker-compose-generate.sh $opts < /dev/null \
-            > /tmp/replicated-docker-compose.yml
+            > "$REPLICATED_TEMP_DIR/docker-compose-generate.sh"
+        bash "$REPLICATED_TEMP_DIR/docker-compose-generate.sh" $opts < /dev/null \
+            > "$REPLICATED_TEMP_DIR/replicated-docker-compose.yml"
     fi
 
     semverCompare "$REPLICATED_VERSION" "2.29.0"
@@ -212,7 +212,7 @@ stackDeploy() {
     fi
 
     # Update replicated to the new version.
-    docker stack deploy --with-registry-auth -c /tmp/replicated-docker-compose.yml "$SWARM_STACK_NAMESPACE"
+    docker stack deploy --with-registry-auth -c "$REPLICATED_TEMP_DIR/replicated-docker-compose.yml" "$SWARM_STACK_NAMESPACE"
     waitStackServices
 }
 
@@ -226,10 +226,10 @@ waitStackServices() {
 
 includeBranding() {
     if [ -n "$CHANNEL_CSS" ]; then
-        echo "$CHANNEL_CSS" | base64 --decode > /tmp/channel.css
+        echo "$CHANNEL_CSS" | base64 --decode > "$REPLICATED_TEMP_DIR/channel.css"
     fi
     if [ -n "$TERMS" ]; then
-        echo "$TERMS" | base64 --decode > /tmp/terms.json
+        echo "$TERMS" | base64 --decode > "$REPLICATED_TEMP_DIR/terms.json"
     fi
 
     # wait until replicated container is running
@@ -244,11 +244,11 @@ includeBranding() {
     # then copy in the branding file
     if [ -n "$REPLICATED_CONTAINER_ID" ]; then
         docker exec "${REPLICATED_CONTAINER_ID}" mkdir -p /var/lib/replicated/branding/
-        if [ -f /tmp/channel.css ]; then
-            docker cp /tmp/channel.css "${REPLICATED_CONTAINER_ID}:/var/lib/replicated/branding/channel.css"
+        if [ -f "$REPLICATED_TEMP_DIR/channel.css" ]; then
+            docker cp "$REPLICATED_TEMP_DIR/channel.css" "${REPLICATED_CONTAINER_ID}:/var/lib/replicated/branding/channel.css"
         fi
-        if [ -f /tmp/terms.json ]; then
-            docker cp /tmp/terms.json "${REPLICATED_CONTAINER_ID}:/var/lib/replicated/branding/terms.json"
+        if [ -f "$REPLICATED_TEMP_DIR/terms.json" ]; then
+            docker cp "$REPLICATED_TEMP_DIR/terms.json" "${REPLICATED_CONTAINER_ID}:/var/lib/replicated/branding/terms.json"
         fi
     else
         printf "${YELLOW}Unable to find replicated container to copy branding css to.${NC}\n"
@@ -274,6 +274,7 @@ outro() {
 
 export DEBIAN_FRONTEND=noninteractive
 
+maybeCreateTempDir
 require64Bit
 requireRootUser
 detectLsbDist
