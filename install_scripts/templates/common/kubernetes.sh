@@ -123,13 +123,13 @@ installCNIPlugins() {
             if [ "$AIRGAP" = "1" ]; then
                 docker load < k8s-cni-0-7-5.tar
             fi
-            docker run -v /tmp:/out replicated/k8s-cni:0.7.5
+            docker run -v "$REPLICATED_TEMP_DIR:/out" replicated/k8s-cni:0.7.5
             ;;
         *)
             if [ "$AIRGAP" = "1" ]; then
                 docker load < k8s-cni.tar
             fi
-            docker run -v /tmp:/out replicated/k8s-cni:0.6.0
+            docker run -v "$REPLICATED_TEMP_DIR:/out" replicated/k8s-cni:0.6.0
             ;;
     esac
 
