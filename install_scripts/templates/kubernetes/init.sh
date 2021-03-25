@@ -262,7 +262,7 @@ initKube15() {
     kubeadm init \
         --ignore-preflight-errors=all \
         --config /opt/replicated/kubeadm.conf \
-        | tee /tmp/kubeadm-init
+        | tee "$REPLICATED_TEMP_DIR/kubeadm-init"
     set +o pipefail
 
     # patch daemonset/kube-proxy with versioned image
@@ -295,9 +295,9 @@ handleLoadBalancerAddressChangedPreInit() {
     # kubectl must communicate with the local API server until all servers are upgraded to
     # serve certs with the new load balancer address in their SANs
     if [ -f /etc/kubernetes/admin.conf ]; then
-        mv /etc/kubernetes/admin.conf /tmp/kube.conf
-        sed -i "s/server: https.*/server: https:\/\/$PRIVATE_ADDRESS:6443/" /tmp/kube.conf
-        export KUBECONFIG=/tmp/kube.conf
+        mv /etc/kubernetes/admin.conf "$REPLICATED_TEMP_DIR/kube.conf"
+        sed -i "s/server: https.*/server: https:\/\/$PRIVATE_ADDRESS:6443/" "$REPLICATED_TEMP_DIR/kube.conf"
+        export KUBECONFIG="$REPLICATED_TEMP_DIR/kube.conf"
     fi
 
     # delete files that need to be regenerated
@@ -367,9 +367,9 @@ initKube() {
                 # kubectl must communicate with the local API server until all servers are upgraded to
                 # serve certs with the new load balancer address in their SANs
                 if [ -f /etc/kubernetes/admin.conf ]; then
-                    mv /etc/kubernetes/admin.conf /tmp/kube.conf
-                    sed -i "s/server: https.*/server: https:\/\/$PRIVATE_ADDRESS:6443/" /tmp/kube.conf
-                    export KUBECONFIG=/tmp/kube.conf
+                    mv /etc/kubernetes/admin.conf "$REPLICATED_TEMP_DIR/kube.conf"
+                    sed -i "s/server: https.*/server: https:\/\/$PRIVATE_ADDRESS:6443/" "$REPLICATED_TEMP_DIR/kube.conf"
+                    export KUBECONFIG="$REPLICATED_TEMP_DIR/kube.conf"
                 fi
             fi
             # delete files that need to be regenerated in case of load balancer address change
@@ -391,13 +391,13 @@ initKube() {
             ( set -exo pipefail; kubeadm init \
                 --skip-preflight-checks \
                 --config /opt/replicated/kubeadm.conf \
-                | tee /tmp/kubeadm-init
+                | tee "$REPLICATED_TEMP_DIR/kubeadm-init"
             )
         elif [ "$kubeV" = "v1.11.5" ]; then
             ( set -exo pipefail; kubeadm init \
                 --ignore-preflight-errors=all \
                 --config /opt/replicated/kubeadm.conf \
-                | tee /tmp/kubeadm-init
+                | tee "$REPLICATED_TEMP_DIR/kubeadm-init"
             )
             patchCoreDNS
         else
@@ -406,7 +406,7 @@ initKube() {
                 --config /opt/replicated/kubeadm.conf \
                 --skip-phases "$skipPhases" \
                 --skip-token-print \
-                | tee /tmp/kubeadm-init
+                | tee "$REPLICATED_TEMP_DIR/kubeadm-init"
             )
         fi
 
@@ -574,9 +574,9 @@ getK8sYmlGenerator() {
     getUrlCmd
     if [ "$AIRGAP" -ne "1" ]; then
         $URLGET_CMD "{{ replicated_install_url }}/{{ kubernetes_generate_path }}?{{ kubernetes_manifests_query }}" \
-            > /tmp/kubernetes-yml-generate.sh
+            > "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh"
     else
-        cp kubernetes-yml-generate.sh /tmp/kubernetes-yml-generate.sh
+        cp kubernetes-yml-generate.sh "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh"
     fi
 
     getYAMLOpts
@@ -611,18 +611,18 @@ weavenetDeploy() {
         fi
     fi
 
-    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS weave_yaml=1 weave_secret=$secret > /tmp/weave.yml
+    bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS weave_yaml=1 weave_secret=$secret > "$REPLICATED_TEMP_DIR/weave.yml"
 
-    kubectl apply -f /tmp/weave.yml -n kube-system
+    kubectl apply -f "$REPLICATED_TEMP_DIR/weave.yml" -n kube-system
     logSuccess "weave network deployed"
 }
 
 clusterAdminDeploy() {
     logStep "deploy cluster admin role"
 
-    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS cluster_role_binding_yaml=1 > /tmp/cluster-admin-role.yml
+    bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS cluster_role_binding_yaml=1 > "$REPLICATED_TEMP_DIR/cluster-admin-role.yml"
 
-    kubectl apply -f /tmp/cluster-admin-role.yml
+    kubectl apply -f "$REPLICATED_TEMP_DIR/cluster-admin-role.yml"
     logSuccess "Cluster admin role deployed"
 }
 
@@ -634,15 +634,15 @@ nodelocaldnsDeploy() {
     local domain="cluster.local"
     local localdns="$1"
 
-    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS nodelocaldns_yaml=1 > /tmp/nodelocaldns.yml
+    bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS nodelocaldns_yaml=1 > "$REPLICATED_TEMP_DIR/nodelocaldns.yml"
 
     if [ "$IPVS" != "1" ]; then
-        sed -i "s/__PILLAR__LOCAL__DNS__/$localdns/g; s/__PILLAR__DNS__DOMAIN__/$domain/g; s/__PILLAR__DNS__SERVER__/$kubedns/g" /tmp/nodelocaldns.yml
+        sed -i "s/__PILLAR__LOCAL__DNS__/$localdns/g; s/__PILLAR__DNS__DOMAIN__/$domain/g; s/__PILLAR__DNS__SERVER__/$kubedns/g" "$REPLICATED_TEMP_DIR/nodelocaldns.yml"
     else
-        sed -i "s/__PILLAR__LOCAL__DNS__/$localdns/g; s/__PILLAR__DNS__DOMAIN__/$domain/g; s/,*__PILLAR__DNS__SERVER__//g; s/__PILLAR__CLUSTER__DNS__/$kubedns/g" /tmp/nodelocaldns.yml
+        sed -i "s/__PILLAR__LOCAL__DNS__/$localdns/g; s/__PILLAR__DNS__DOMAIN__/$domain/g; s/,*__PILLAR__DNS__SERVER__//g; s/__PILLAR__CLUSTER__DNS__/$kubedns/g" "$REPLICATED_TEMP_DIR/nodelocaldns.yml"
     fi
 
-    kubectl apply -f /tmp/nodelocaldns.yml
+    kubectl apply -f "$REPLICATED_TEMP_DIR/nodelocaldns.yml"
     logSuccess "NodeLocal DNSCache deployed"
 }
 
@@ -687,18 +687,18 @@ rookDeploy() {
 
     if [ "$use_rook_103" = "1" ]; then
         # do not upgrade rook/ceph
-        bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_103_system_yaml=1 > /tmp/rook-ceph-system.yml
-        bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_103_cluster_yaml=1 > /tmp/rook-ceph.yml
+        bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS rook_103_system_yaml=1 > "$REPLICATED_TEMP_DIR/rook-ceph-system.yml"
+        bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS rook_103_cluster_yaml=1 > "$REPLICATED_TEMP_DIR/rook-ceph.yml"
     else
-        bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_106_system_yaml=1 > /tmp/rook-ceph-system.yml
-        bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_106_cluster_yaml=1 > /tmp/rook-ceph.yml
+        bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS rook_106_system_yaml=1 > "$REPLICATED_TEMP_DIR/rook-ceph-system.yml"
+        bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS rook_106_cluster_yaml=1 > "$REPLICATED_TEMP_DIR/rook-ceph.yml"
     fi
 
-    kubectl apply -f /tmp/rook-ceph-system.yml
+    kubectl apply -f "$REPLICATED_TEMP_DIR/rook-ceph-system.yml"
 
     spinnerRookReady # creating the cluster before the operator is ready fails
 
-    kubectl apply -f /tmp/rook-ceph.yml
+    kubectl apply -f "$REPLICATED_TEMP_DIR/rook-ceph.yml"
     storageClassDeploy
  
     # wait for ceph dashboard password to be generated
@@ -716,15 +716,15 @@ rookDeploy() {
 }
 
 rookDeploy08() {
-    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_system_yaml=1 > /tmp/rook-ceph-system.yml
-    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_08_cluster_yaml=1 > /tmp/rook-ceph.yml
+    bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS rook_08_system_yaml=1 > "$REPLICATED_TEMP_DIR/rook-ceph-system.yml"
+    bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS rook_08_cluster_yaml=1 > "$REPLICATED_TEMP_DIR/rook-ceph.yml"
 
-    kubectl apply -f /tmp/rook-ceph-system.yml
+    kubectl apply -f "$REPLICATED_TEMP_DIR/rook-ceph-system.yml"
 
     spinnerRookReady # creating the cluster before the operator is ready fails
     sudo systemctl restart kubelet
 
-    kubectl apply -f /tmp/rook-ceph.yml
+    kubectl apply -f "$REPLICATED_TEMP_DIR/rook-ceph.yml"
     storageClassDeploy
 
     logSuccess "Rook deployed"
@@ -746,17 +746,17 @@ maybeDefaultRookStorageClass() {
 hostpathProvisionerDeploy() {
     logStep "deploy hostpath provisioner"
 
-    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS hostpath_provisioner_yaml=1 > /tmp/hostpath-provisioner.yml
+    bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS hostpath_provisioner_yaml=1 > "$REPLICATED_TEMP_DIR/hostpath-provisioner.yml"
 
-    kubectl apply -f /tmp/hostpath-provisioner.yml
+    kubectl apply -f "$REPLICATED_TEMP_DIR/hostpath-provisioner.yml"
     spinnerHostpathProvisionerReady
     storageClassDeploy
     logSuccess "Hostpath provisioner deployed"
 }
 
 storageClassDeploy() {
-    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS storage_class_yaml=1 > /tmp/storage-class.yml
-    kubectl apply -f /tmp/storage-class.yml
+    bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS storage_class_yaml=1 > "$REPLICATED_TEMP_DIR/storage-class.yml"
+    kubectl apply -f "$REPLICATED_TEMP_DIR/storage-class.yml"
 }
 
 contourDeploy() {
@@ -774,8 +774,8 @@ contourDeploy() {
     # prior to 2.31.0 this was a DaemonSet but now is a Deployment
     kubectl -n heptio-contour delete daemonset contour 2>/dev/null || true
 
-    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS contour_yaml=1 > /tmp/contour.yml
-    kubectl apply -f /tmp/contour.yml
+    bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS contour_yaml=1 > "$REPLICATED_TEMP_DIR/contour.yml"
+    kubectl apply -f "$REPLICATED_TEMP_DIR/contour.yml"
     logSuccess "Contour deployed"
 }
 
@@ -798,8 +798,8 @@ rekOperatorDeploy() {
     fi
     getYAMLOpts
 
-    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rek_operator_yaml=1 > /tmp/rek-operator.yml
-    kubectl apply -f /tmp/rek-operator.yml -n $KUBERNETES_NAMESPACE
+    bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS rek_operator_yaml=1 > "$REPLICATED_TEMP_DIR/rek-operator.yml"
+    kubectl apply -f "$REPLICATED_TEMP_DIR/rek-operator.yml" -n $KUBERNETES_NAMESPACE
 }
 
 appRegistryServiceDeploy() {
@@ -816,10 +816,10 @@ appRegistryServiceDeploy() {
         fi
     fi
 
-    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS \
+    bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS \
         replicated_registry_yaml=1 \
-        replicated-registry-cluster-ip=$clusterIp > /tmp/replicated-registry.yml
-    kubectl apply -f /tmp/replicated-registry.yml
+        replicated-registry-cluster-ip=$clusterIp > "$REPLICATED_TEMP_DIR/replicated-registry.yml"
+    kubectl apply -f "$REPLICATED_TEMP_DIR/replicated-registry.yml"
 
     local replicatedRegistryIP=$(kubectl get service replicated-registry -o jsonpath='{.spec.clusterIP}')
     while [ -z "$replicatedRegistryIP" ]; do
@@ -841,18 +841,18 @@ objectStoreDeploy() {
     getYAMLOpts
 
     if isRook106Plus; then
-        bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_106_object_store_yaml=1 > /tmp/rook-object-store.yml
+        bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS rook_106_object_store_yaml=1 > "$REPLICATED_TEMP_DIR/rook-object-store.yml"
     else
         # do not render limits and requests
-        bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_103_object_store_yaml=1 > /tmp/rook-object-store.yml
+        bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS rook_103_object_store_yaml=1 > "$REPLICATED_TEMP_DIR/rook-object-store.yml"
     fi
-    kubectl apply -f /tmp/rook-object-store.yml
+    kubectl apply -f "$REPLICATED_TEMP_DIR/rook-object-store.yml"
 
     # wait for the object store gateway before creating the user
     spinnerPodRunning rook-ceph rook-ceph-rgw-replicated
 
-    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS rook_object_store_user_yaml=1 > /tmp/rook-object-store-user.yml
-    kubectl apply -f /tmp/rook-object-store-user.yml
+    bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS rook_object_store_user_yaml=1 > "$REPLICATED_TEMP_DIR/rook-object-store-user.yml"
+    kubectl apply -f "$REPLICATED_TEMP_DIR/rook-object-store-user.yml"
 
     # Rook operator creates this secret from the user CRD just applied 
     while ! kubectl -n rook-ceph get secret rook-ceph-object-user-replicated-replicated 2>/dev/null; do
@@ -914,10 +914,10 @@ registryDeploy() {
 
     getYAMLOpts
 
-    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS \
+    bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS \
         registry_yaml=1 \
-        registry-cluster-ip=$clusterIp > /tmp/registry.yml
-    kubectl apply -f /tmp/registry.yml
+        registry-cluster-ip=$clusterIp > "$REPLICATED_TEMP_DIR/registry.yml"
+    kubectl apply -f "$REPLICATED_TEMP_DIR/registry.yml"
 
     logStep "Waiting for registry..."
     local registryIP=$(kubectl get service docker-registry -o jsonpath='{.spec.clusterIP}')
@@ -982,9 +982,9 @@ replicatedDeploy() {
 
     logStep "generate manifests"
     getYAMLOpts
-    bash /tmp/kubernetes-yml-generate.sh $YAML_GENERATE_OPTS > /tmp/kubernetes.yml
+    bash "$REPLICATED_TEMP_DIR/kubernetes-yml-generate.sh" $YAML_GENERATE_OPTS > "$REPLICATED_TEMP_DIR/kubernetes.yml"
 
-    kubectl apply -f /tmp/kubernetes.yml -n $KUBERNETES_NAMESPACE
+    kubectl apply -f "$REPLICATED_TEMP_DIR/kubernetes.yml" -n $KUBERNETES_NAMESPACE
     kubectl -n $KUBERNETES_NAMESPACE get pods,svc
     rekOperatorDeploy
     logSuccess "Replicated Daemon"
@@ -992,10 +992,10 @@ replicatedDeploy() {
 
 includeBranding() {
     if [ -n "$CHANNEL_CSS" ]; then
-        echo "$CHANNEL_CSS" | base64 --decode > /tmp/channel.css
+        echo "$CHANNEL_CSS" | base64 --decode > "$REPLICATED_TEMP_DIR/channel.css"
     fi
     if [ -n "$TERMS" ]; then
-        echo "$TERMS" | base64 --decode > /tmp/terms.json
+        echo "$TERMS" | base64 --decode > "$REPLICATED_TEMP_DIR/terms.json"
     fi
 
     REPLICATED_POD_ID="$(kubectl get pods 2>/dev/null | grep -E "^replicated-[^-]+-[^-]+$" | awk '{ print $1}')"
@@ -1003,13 +1003,13 @@ includeBranding() {
     # then copy in the branding file
     if [ -n "$REPLICATED_POD_ID" ]; then
         kubectl exec "${REPLICATED_POD_ID}" -c replicated -- mkdir -p /var/lib/replicated/branding/
-        if [ -f /tmp/channel.css ]; then
+        if [ -f "$REPLICATED_TEMP_DIR/channel.css" ]; then
             logStep "Uploading branding to Replicated."
-            kubectl cp /tmp/channel.css "${REPLICATED_POD_ID}:/var/lib/replicated/branding/channel.css" -c replicated
+            kubectl cp "$REPLICATED_TEMP_DIR/channel.css" "${REPLICATED_POD_ID}:/var/lib/replicated/branding/channel.css" -c replicated
         fi
-        if [ -f /tmp/terms.json ]; then
+        if [ -f "$REPLICATED_TEMP_DIR/terms.json" ]; then
             logStep "Uploading terms to Replicated."
-            kubectl cp /tmp/terms.json "${REPLICATED_POD_ID}:/var/lib/replicated/branding/terms.json" -c replicated
+            kubectl cp "$REPLICATED_TEMP_DIR/terms.json" "${REPLICATED_POD_ID}:/var/lib/replicated/branding/terms.json" -c replicated
         fi
     else
         logFail "Unable to find replicated pod to copy branding css to."
@@ -1067,7 +1067,7 @@ outroKubeadm() {
       fi
     fi
 
-    KUBEADM_TOKEN_CA_HASH=$(cat /tmp/kubeadm-init | grep 'kubeadm join' | awk '{ print $(NF) }')
+    KUBEADM_TOKEN_CA_HASH=$(cat "$REPLICATED_TEMP_DIR/kubeadm-init" | grep 'kubeadm join' | awk '{ print $(NF) }')
 
     local joinArgs="kubernetes-primary-address=${PRIVATE_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=${KUBEADM_TOKEN_CA_HASH} kubernetes-version=${KUBERNETES_VERSION}"
     if [ "$UNSAFE_SKIP_CA_VERIFICATION" = "1" ]; then
@@ -1122,6 +1122,7 @@ outroLoadImages() {
 
 export DEBIAN_FRONTEND=noninteractive
 
+maybeCreateTempDir
 require64Bit
 requireRootUser
 detectLsbDist

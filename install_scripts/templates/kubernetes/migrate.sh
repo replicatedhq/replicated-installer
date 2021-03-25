@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-TMP_DIR=/tmp/migrate-k8s
+TMP_DIR="$(mktemp -d --suffix=migrate-k8s)"
 LOG_LEVEL=info
 PRIVATE_ADDRESS=
 AIRGAP=0
@@ -70,9 +70,9 @@ getK8sInitScript() {
     getUrlCmd
     if [ "$AIRGAP" != "1" ]; then
         $URLGET_CMD "{{ replicated_install_url }}/{{ kubernetes_init_path }}?{{ kubernetes_init_query }}" \
-            > /tmp/kubernetes-init.sh
+            > "$REPLICATED_TEMP_DIR/kubernetes-init.sh"
     else
-        cp kubernetes-init.sh /tmp/kubernetes-init.sh
+        cp kubernetes-init.sh "$REPLICATED_TEMP_DIR/kubernetes-init.sh"
     fi
 }
 
@@ -144,7 +144,7 @@ startK8sScheduler() {
         INIT_FLAGS="additional-no-proxy=$noProxyAddresses $INIT_FLAGS"
     fi
     getK8sInitScript
-    bash /tmp/kubernetes-init.sh $INIT_FLAGS
+    bash "$REPLICATED_TEMP_DIR/kubernetes-init.sh" $INIT_FLAGS
     logSuccess "Kubernetes scheduler installed"
 }
 
@@ -259,9 +259,9 @@ restoreSecrets() {
         echo "Cannot restore secrets: Replicated pod not found"
         return
     fi
-    kubectl cp "${TMP_DIR}/secrets.tar" "$replPod":/tmp/secrets.tar -c replicated
+    kubectl cp "${TMP_DIR}/secrets.tar" "$replPod":"$REPLICATED_TEMP_DIR/secrets.tar" -c replicated
     kubectl exec "$replPod" -c replicated -- rm -rf /var/lib/replicated/secrets
-    kubectl exec "$replPod" -c replicated -- tar -xf /tmp/secrets.tar -C /var/lib/replicated 
+    kubectl exec "$replPod" -c replicated -- tar -xf "$REPLICATED_TEMP_DIR/secrets.tar" -C /var/lib/replicated 
 }
 
 startAppOnK8s() {
@@ -357,6 +357,7 @@ validate() {
 # Execution starts here
 ################################################################################
 
+maybeCreateTempDir
 requireRootUser
 detectLsbDist
 

@@ -476,7 +476,7 @@ install_operator() {
         getUrlCmd
         echo -e "${GREEN}Installing local operator with command:"
         echo -e "${URLGET_CMD} {{ replicated_install_url }}${prefix}/operator?replicated_operator_tag={{ replicated_operator_tag }}${NC}"
-        ${URLGET_CMD} "{{ replicated_install_url }}${prefix}/operator?replicated_operator_tag={{ replicated_operator_tag }}" > /tmp/operator_install.sh
+        ${URLGET_CMD} "{{ replicated_install_url }}${prefix}/operator?replicated_operator_tag={{ replicated_operator_tag }}" > "$REPLICATED_TEMP_DIR/operator_install.sh"
     fi
     _private_address_with_brackets="$PRIVATE_ADDRESS"
     if [ "$DISABLE_REPLICATED_HOST_NETWORKING" = "1" ]; then
@@ -536,7 +536,7 @@ install_operator() {
     if [ "$AIRGAP" = "1" ]; then
         bash ./operator_install.sh $opts < /dev/null
     else
-        bash /tmp/operator_install.sh $opts < /dev/null
+        bash "$REPLICATED_TEMP_DIR/operator_install.sh" $opts < /dev/null
     fi
 }
 
@@ -559,14 +559,15 @@ outro() {
 # Execution starts here
 ################################################################################
 
+export DEBIAN_FRONTEND=noninteractive
+
 if replicated12Installed; then
     echo -e >&2 "${RED}Existing 1.2 install detected; please back up and run migration script before installing.${NC}"
     echo -e >&2 "${RED}Instructions at https://help.replicated.com/docs/native/customer-installations/upgrading/${NC}"
     exit 1
 fi
 
-export DEBIAN_FRONTEND=noninteractive
-
+maybeCreateTempDir
 require64Bit
 requireRootUser
 detectLsbDist

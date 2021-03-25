@@ -182,6 +182,8 @@ outro() {
 }
 
 do_install() {
+    maybeCreateTempDir
+
     case "$(uname -m)" in
         *64)
             ;;
@@ -239,8 +241,8 @@ EOF
             yum install -y gpg
 
             gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 822819BB
-            gpg --export -a 822819BB > /tmp/replicated_pub.asc
-            rpm --import /tmp/replicated_pub.asc
+            gpg --export -a 822819BB > "$REPLICATED_TEMP_DIR/replicated_pub.asc"
+            rpm --import "$REPLICATED_TEMP_DIR/replicated_pub.asc"
 
             cat > /etc/yum.repos.d/replicated.repo <<-EOF
 [replicated]

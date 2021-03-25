@@ -68,11 +68,11 @@ downloadPkiBundle() {
     if [ "$INSECURE" -eq "1" ]; then
         _opt="-k"
     elif [ -n "$CA" ]; then
-        echo "$CA" | base64 -d > /tmp/replicated-ca.crt
-        _opt="--cacert /tmp/replicated-ca.crt"
+        echo "$CA" | base64 -d > "$REPLICATED_TEMP_DIR/replicated-ca.crt"
+        _opt="--cacert "$REPLICATED_TEMP_DIR/replicated-ca.crt""
     fi
-    (set -x; curl --noproxy "*" --max-time 120 --connect-timeout 5 $_opt -qSsf "$PRIMARY_PKI_BUNDLE_URL" > /tmp/etc-kubernetes.tar)
-    (set -x; tar -C /etc/kubernetes/ -xvf /tmp/etc-kubernetes.tar)
+    (set -x; curl --noproxy "*" --max-time 120 --connect-timeout 5 $_opt -qSsf "$PRIMARY_PKI_BUNDLE_URL" > "$REPLICATED_TEMP_DIR/etc-kubernetes.tar")
+    (set -x; tar -C /etc/kubernetes/ -xvf "$REPLICATED_TEMP_DIR/etc-kubernetes.tar")
     logSuccess "Kubernetes PKI downloaded successfully"
 }
 
@@ -197,6 +197,7 @@ outro() {
 
 export DEBIAN_FRONTEND=noninteractive
 
+maybeCreateTempDir
 require64Bit
 requireRootUser
 detectLsbDist

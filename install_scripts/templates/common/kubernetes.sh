@@ -114,7 +114,7 @@ bailIfUnsupportedOS() {
 #######################################
 installCNIPlugins() {
     logStep "configure CNI"
-    mkdir -p /tmp/cni-plugins
+    mkdir -p "$REPLICATED_TEMP_DIR/cni-plugins"
     mkdir -p /opt/cni/bin
 
 
@@ -123,17 +123,17 @@ installCNIPlugins() {
             if [ "$AIRGAP" = "1" ]; then
                 docker load < k8s-cni-0-7-5.tar
             fi
-            docker run -v /tmp:/out replicated/k8s-cni:0.7.5
+            docker run -v "$REPLICATED_TEMP_DIR:/out" replicated/k8s-cni:0.7.5
             ;;
         *)
             if [ "$AIRGAP" = "1" ]; then
                 docker load < k8s-cni.tar
             fi
-            docker run -v /tmp:/out replicated/k8s-cni:0.6.0
+            docker run -v "$REPLICATED_TEMP_DIR:/out" replicated/k8s-cni:0.6.0
             ;;
     esac
 
-    tar zxfv /tmp/cni.tar.gz -C /opt/cni/bin
+    tar zxfv "$REPLICATED_TEMP_DIR/cni.tar.gz" -C /opt/cni/bin
     mkdir -p /etc/cni/net.d
     logSuccess "CNI configured"
 }

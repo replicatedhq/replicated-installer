@@ -67,6 +67,8 @@ REPLICATED_VERSION="{{ replicated_version }}"
 {% include 'common/replicated.sh' %}
 {% include 'common/kubernetes.sh' %}
 
+maybeCreateTempDir
+
 while [ "$1" != "" ]; do
     _param="$(echo "$1" | cut -d= -f1)"
     _value="$(echo "$1" | grep '=' | cut -d= -f2-)"

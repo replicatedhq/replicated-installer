@@ -34,6 +34,7 @@ outro() {
 
 export DEBIAN_FRONTEND=noninteractive
 
+maybeCreateTempDir
 requireRootUser
 
 while [ "$1" != "" ]; do
@@ -80,9 +81,9 @@ promptForLoadBalancerAddress
 API_SERVICE_ADDRESS="$LOAD_BALANCER_ADDRESS:$LOAD_BALANCER_PORT"
 
 if [ "$TAINT_CONTROL_PLANE" != "1" ]; then
-    cp /etc/kubernetes/admin.conf /tmp/kube.conf
-    sed -i "s/server: https.*/server: https:\/\/$PRIVATE_ADDRESS:6443/" /tmp/kube.conf
-    export KUBECONFIG=/tmp/kube.conf
+    cp /etc/kubernetes/admin.conf "$REPLICATED_TEMP_DIR/kube.conf"
+    sed -i "s/server: https.*/server: https:\/\/$PRIVATE_ADDRESS:6443/" "$REPLICATED_TEMP_DIR/kube.conf"
+    export KUBECONFIG="$REPLICATED_TEMP_DIR/kube.conf"
 
     maybeSetTaintControlPlane
 fi

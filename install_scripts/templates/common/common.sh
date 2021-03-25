@@ -291,3 +291,18 @@ splitHostPort() {
 isDockerInstalled() {
     commandExists "docker" && ps aux | grep -q '[d]ockerd'
 }
+
+#######################################
+# Creates and sets REPLICATED_TEMP_DIR variable if not set.
+# Globals:
+#   None
+# Arguments:
+#   adNonedress
+# Returns:
+#   REPLICATED_TEMP_DIR
+#######################################
+maybeCreateTempDir() {
+    if [ -z "$REPLICATED_TEMP_DIR" ]; then
+        REPLICATED_TEMP_DIR="$(mktemp -d --suffix=replicated)"
+    fi
+}
