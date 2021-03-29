@@ -576,6 +576,7 @@ detectInitSystemConfDir
 getReplicatedRegistryPrefix "$REPLICATED_VERSION"
 
 mkdir -p /var/lib/replicated/branding
+chmod a+x /var/lib/replicated/branding
 if [ -n "$CHANNEL_CSS" ]; then
     echo "$CHANNEL_CSS" | base64 --decode > /var/lib/replicated/branding/channel.css
 fi
