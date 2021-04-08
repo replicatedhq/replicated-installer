@@ -2178,12 +2178,14 @@ EOF
 
 installAKAService()
 {
+    logStep "Install aka-reboot service"
     writeAKAExecStop
     writeAKAExecStart
     writeAKAService
     systemctl daemon-reload
     systemctl enable aka-reboot.service
     systemctl start aka-reboot.service
+    logSuccess "aka-reboot service installed"
 }
 
 LOAD_BALANCER_ADDRESS_CHANGED=0
