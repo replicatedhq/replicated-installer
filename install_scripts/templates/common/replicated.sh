@@ -24,6 +24,21 @@ readReplicatedConf() {
 }
 
 #######################################
+# Adds word-readable permission to conf file so the replicated container can read it
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+ensureReplicatedConfReadable() {
+    if [ -f /etc/replicated.conf ]; then
+        chmod a+r /etc/replicated.conf
+    fi
+}
+
+#######################################
 # Reads a value from REPLICATED_OPTS variable in the /etc/default/replicated file
 # Globals:
 #   REPLICATED_OPTS
