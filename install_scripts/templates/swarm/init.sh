@@ -437,6 +437,8 @@ maybeCreateReplicatedUser
 USER_ID="$REPLICATED_USER_ID"
 GROUP_ID="$DOCKER_GROUP_ID"
 
+ensureReplicatedConfReadable
+
 initSwarm
 
 SWARM_TOKEN="$(docker swarm join-token -q worker)"

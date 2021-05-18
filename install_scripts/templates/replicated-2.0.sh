@@ -870,6 +870,8 @@ fi
 detectDockerGroupId
 maybeCreateReplicatedUser
 
+ensureReplicatedConfReadable
+
 get_daemon_token
 
 if [ "$SKIP_DOCKER_PULL" = "1" ]; then
