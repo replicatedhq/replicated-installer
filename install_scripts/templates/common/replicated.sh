@@ -202,7 +202,7 @@ pullReplicatedImages() {
 pullOperatorImage() {
     if [ -n "$REGISTRY_ADDRESS_OVERRIDE" ]; then
         docker pull "${REGISTRY_ADDRESS_OVERRIDE}/${REGISTRY_PATH_PREFIX}replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}"
-        (set -x; docker tag "${REGISTRY_ADDRESS_OVERRIDE}/${REGISTRY_PATH_PREFIX}replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}" "${REPLICATED_REGISTRY_PREFIX}/replicated-operator:{{ replicated_tag|default('stable', true) }}{{ environment_tag_suffix }}")
+        (set -x; docker tag "${REGISTRY_ADDRESS_OVERRIDE}/${REGISTRY_PATH_PREFIX}replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}" "${REPLICATED_REGISTRY_PREFIX}/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}")
     else
         docker pull "${REPLICATED_REGISTRY_PREFIX}/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}"
     fi
