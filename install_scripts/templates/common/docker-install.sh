@@ -211,6 +211,17 @@ _installDocker() {
         fi
     fi
 
+    # docker-ce 20.10+ includes docker-ce-rootless-extras, which has some depenendencies not
+    # found in any of the yum repos available on RHEL on Azure
+    compareDockerVersions "20.10.0" "${1}"
+    if [ "$LSB_DIST" = "rhel" ] && [ "$COMPARE_DOCKER_VERSIONS_RESULT" -le "0" ]; then
+        yum-config-manager --add-repo=http://mirror.centos.org/centos/7/extras/x86_64
+        getUrlCmd
+        $URLGET_CMD "https://www.centos.org/keys/RPM-GPG-KEY-CentOS-7" > EXTRAS_KEY
+        rpm --import EXTRAS_KEY
+        rm EXTRAS_KEY
+    fi
+
     _docker_install_url="{{ replicated_install_url }}/docker-install.sh"
     printf "${GREEN}Installing docker version ${1} from ${_docker_install_url}${NC}\n"
     getUrlCmd
