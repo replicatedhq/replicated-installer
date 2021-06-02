@@ -11,9 +11,9 @@ EnvironmentFile=${CONFDIR}/replicated
 User=${REPLICATED_USER_ID}
 Group=${DOCKER_GROUP_ID}
 ExecStartPre=-/usr/bin/docker rm -f replicated
-ExecStartPre=/bin/mkdir -p /var/run/replicated /var/lib/replicated /var/lib/replicated/statsd {{ premkit_data_dir }}
+ExecStartPre=/bin/mkdir -p /var/run/replicated /var/lib/replicated /var/lib/replicated/statsd /var/lib/replicated/retraced {{ premkit_data_dir }}
 ExecStartPre=/bin/chown -R ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} /var/run/replicated /var/lib/replicated/branding
-ExecStartPre=/bin/chown ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} /var/lib/replicated /var/lib/replicated/retraced {{ premkit_data_dir }}
+ExecStartPre=/bin/chown ${REPLICATED_USER_ID}:${DOCKER_GROUP_ID} /var/lib/replicated /var/lib/replicated/statsd /var/lib/replicated/retraced {{ premkit_data_dir }}
 ExecStartPre=-/bin/chmod -R 755 /var/lib/replicated/tmp
 ExecStart=/usr/bin/docker run --name=replicated \\
     ${REPLICATED_PORT_RANGE} \\
