@@ -215,6 +215,9 @@ _installDocker() {
     # found in any of the yum repos available on RHEL on Azure
     compareDockerVersions "20.10.0" "${1}"
     if [ "$LSB_DIST" = "rhel" ] && [ "$COMPARE_DOCKER_VERSIONS_RESULT" -le "0" ]; then
+        if ! yum list installed "yum-utils" >/dev/null 2>&1; then
+            yum install -y -q yum-utils
+        fi
         yum-config-manager --add-repo=http://mirror.centos.org/centos/7/extras/x86_64
         getUrlCmd
         $URLGET_CMD "https://www.centos.org/keys/RPM-GPG-KEY-CentOS-7" > EXTRAS_KEY
