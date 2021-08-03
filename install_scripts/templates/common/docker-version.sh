@@ -137,6 +137,8 @@ compareDockerVersions() {
 # Get max docker version for lsb dist/version.
 # Globals:
 #   LSB_DIST
+#   DIST_VERSION_MAJOR
+#   DIST_VERSION
 # Arguments:
 #   None
 # Returns:
@@ -200,6 +202,8 @@ getMaxDockerVersion() {
 # Get min docker version for lsb dist/version.
 # Globals:
 #   LSB_DIST
+#   DIST_VERSION_MAJOR
+#   DIST_VERSION
 # Arguments:
 #   None
 # Returns:
@@ -215,4 +219,12 @@ getMinDockerVersion() {
             MIN_DOCKER_VERSION_RESULT="19.03.11"
         fi
     fi
+
+    if [ "$LSB_DIST" = "centos" ] || [ "$LSB_DIST" = "rhel" ] || [ "$LSB_DIST" = "ol" ]; then
+        # Min Docker version on RHEL/CentOS/OL 8.x is 20.10.7
+        if [ "$DIST_VERSION_MAJOR" = "8" ]; then
+            MIN_DOCKER_VERSION_RESULT="20.10.7"
+        fi
+    fi
+
 }
