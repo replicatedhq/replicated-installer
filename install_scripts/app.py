@@ -51,6 +51,8 @@ def get_docker():
             tmpl_file = 'docker-install/1-12.sh'
         else:
             tmpl_file = 'docker-install/1-13.sh'
+    elif major >= 20:
+        tmpl_file = 'docker-install/20-10-ce.sh'
     elif major >= 19:
         tmpl_file = 'docker-install/19-03-ce.sh'
     elif major == 18:
