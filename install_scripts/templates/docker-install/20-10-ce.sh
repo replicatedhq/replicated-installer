@@ -270,7 +270,7 @@ check_forked() {
 # courtesy of replicated
 check_ce_on_ee() {
 	case "$lsb_dist" in
-		ol)
+		rhel|ol)
 			lsb_dist="centos"
 			dist_version="$(echo $dist_version | cut -d. -f1)"
 		;;
@@ -369,7 +369,7 @@ do_install() {
 			esac
 		;;
 
-		centos|rhel)
+		centos|rhel|ol|sles)
 			if [ -z "$dist_version" ] && [ -r /etc/os-release ]; then
 				dist_version="$(. /etc/os-release && echo "$VERSION_ID")"
 			fi
