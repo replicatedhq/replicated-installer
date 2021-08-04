@@ -219,9 +219,14 @@ _installDocker() {
             yum install -y -q yum-utils
             logSuccess "Installed yum-utils"
         fi
-        yum-config-manager --add-repo=http://mirror.centos.org/centos/$DIST_VERSION_MAJOR/extras/x86_64 || true
         getUrlCmd
-        $URLGET_CMD "https://www.centos.org/keys/RPM-GPG-KEY-CentOS-7" > EXTRAS_KEY
+        if [ "$DIST_VERSION_MAJOR" -eq 7 ]; then
+            yum-config-manager --add-repo=http://mirror.centos.org/centos/7/extras/x86_64 || true
+            $URLGET_CMD "https://www.centos.org/keys/RPM-GPG-KEY-CentOS-7" > EXTRAS_KEY
+        else
+            yum-config-manager --add-repo=http://mirror.centos.org/centos/8/extras/x86_64/os || true
+            $URLGET_CMD "https://www.centos.org/keys/RPM-GPG-KEY-CentOS-Official" > EXTRAS_KEY
+        fi
         rpm --import EXTRAS_KEY
         rm EXTRAS_KEY
     fi
