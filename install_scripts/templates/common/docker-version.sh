@@ -174,10 +174,12 @@ getMaxDockerVersion() {
         # Max Docker version on Debian 7 is 18.03.1
         if [ "$DIST_VERSION" = "7" ]; then
             MAX_DOCKER_VERSION_RESULT="18.03.1"
-        fi
         # Max Docker version on Debian 8 is 18.06.2.
-        if [ "$DIST_VERSION" = "8" ]; then
+        elif [ "$DIST_VERSION" = "8" ]; then
             MAX_DOCKER_VERSION_RESULT="18.06.2"
+        # Max Docker version on Debian 9 is 19.03.8.
+        elif [ "$DIST_VERSION" = "9" ]; then
+            MAX_DOCKER_VERSION_RESULT="19.03.8"
         fi
     fi
     # 2019-01-07
