@@ -2,7 +2,7 @@
 
 FROM weaveworks/weave-npc:2.6.5 AS base
 
-FROM alpine:3.13
+FROM alpine:3.14
 
 RUN apk add --update \
     iptables \
