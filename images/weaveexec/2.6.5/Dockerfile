@@ -5,7 +5,7 @@ FROM weaveworks/weaveexec:2.6.5 AS base
 
 FROM alpine:3.14
 
-RUN apk add --update \
+RUN apk add --update --update \
     curl \
     iptables \
     ipset \
