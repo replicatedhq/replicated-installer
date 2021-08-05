@@ -7,6 +7,7 @@ FROM alpine:3.14
 RUN apk add --update \
     ca-certificates \
     apache2-utils \
+    apk-tools \
   && rm -rf /var/cache/apk/*
 
 COPY --from=base /bin/registry /bin/registry

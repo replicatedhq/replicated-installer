@@ -11,7 +11,8 @@ RUN apk add --no-cache --upgrade \
 	libcrypto1.1 \
 	libssl1.1 \
 	musl \
-	musl-utils
+	musl-utils \
+	apk-tools
 
 RUN mkdir -p /etc/envoy
 

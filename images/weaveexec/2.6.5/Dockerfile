@@ -13,6 +13,7 @@ RUN apk add --update \
     conntrack-tools \
     bind-tools \
     ca-certificates \
+    apk-tools \
   && rm -rf /var/cache/apk/*
 
 ENTRYPOINT ["/home/weave/sigproxy", "/home/weave/weave"]
