@@ -20,4 +20,7 @@ RUN yum install -y \
     samba-common \
     samba-common-libs \
     sudo \
+    \
+    glib2 \
+    libldb \
   && yum clean all

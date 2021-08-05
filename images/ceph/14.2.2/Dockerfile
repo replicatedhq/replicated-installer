@@ -20,4 +20,16 @@ RUN yum install -y \
     samba-common \
     samba-common-libs \
     sudo \
+    \
+    glib2 \
+    glibc \
+    glibc-common \
+    libldb \
+    nettle \
+    nss-sysinit \
+    nss-tools \
+    openldap \
+    perl \
+    perl-libs \
+    perl-macros \
   && yum clean all
