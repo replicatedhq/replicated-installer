@@ -9,10 +9,22 @@ RUN yum install -y \
     \
     \
     curl \
+    glib2 \
+    glibc \
+    glibc-common \
     libcurl \
+    libldb \
     libwbclient \
+    nettle \
+    nss \
+    nss-sysinit \
+    nss-tools \
+    openldap \
     openssl \
     openssl-libs \
+    perl \
+    perl-libs \
+    perl-macros \
     python \
     python-devel \
     python-libs \
