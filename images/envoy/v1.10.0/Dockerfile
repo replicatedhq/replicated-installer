@@ -5,13 +5,14 @@ FROM envoyproxy/envoy-alpine:v1.10.0 AS base
 
 FROM frolvlad/alpine-glibc:alpine-3.14
 
-RUN apk add --no-cache --upgrade \
+RUN apk add --no-cache --update --upgrade \
 	\
 	\
 	libcrypto1.1 \
 	libssl1.1 \
 	musl \
-	musl-utils
+	musl-utils \
+	apk-tools
 
 RUN mkdir -p /etc/envoy
 

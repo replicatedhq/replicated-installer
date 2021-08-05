@@ -4,9 +4,10 @@ FROM registry:2.6.2 AS base
 
 FROM alpine:3.14
 
-RUN apk add --update \
+RUN apk add --update --upgrade \
     ca-certificates \
     apache2-utils \
+    apk-tools \
   && rm -rf /var/cache/apk/*
 
 COPY --from=base /bin/registry /bin/registry

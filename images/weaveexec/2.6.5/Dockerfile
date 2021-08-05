@@ -5,7 +5,7 @@ FROM weaveworks/weaveexec:2.6.5 AS base
 
 FROM alpine:3.14
 
-RUN apk add --update \
+RUN apk add --update --upgrade \
     curl \
     iptables \
     ipset \
@@ -13,6 +13,7 @@ RUN apk add --update \
     conntrack-tools \
     bind-tools \
     ca-certificates \
+    apk-tools \
   && rm -rf /var/cache/apk/*
 
 ENTRYPOINT ["/home/weave/sigproxy", "/home/weave/weave"]
