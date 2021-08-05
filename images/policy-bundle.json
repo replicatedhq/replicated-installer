@@ -14,7 +14,7 @@
       "repository": "*",
       "image": { "type": "tag", "value": "*" },
       "policy_ids": [ "platform_default_policy01" ],
-      "whitelist_ids": [ "whitelist_ignore_python3_pip", "whitelist_ignore_rhsa_feed_on_centos" ]
+      "whitelist_ids": [ "whitelist_ignore_python3_pip", "whitelist_ignore_rhsa_feed_on_centos", "whitelist_ignore_libldb" ]
     }
   ],
   "whitelists": [
@@ -505,6 +505,20 @@
           "gate": "vulnerabilities",
           "trigger": "package",
           "trigger_id": "CVE-2019-20386+systemd-sysv"
+        }
+      ]
+    },
+    {
+      "id": "whitelist_ignore_libldb",
+      "name": "Whitelist Ignore libldb false positive",
+      "version": "1_0",
+      "comment": "",
+      "items": [
+        {
+          "id": "c200ce15-a6cd-4f48-b3a1-efffffffff01",
+          "gate": "vulnerabilities",
+          "trigger": "package",
+          "trigger_id": "CVE-2021-20277+libldb"
         }
       ]
     }
