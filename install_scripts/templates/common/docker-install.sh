@@ -184,7 +184,7 @@ _installDocker() {
         else
             # Install container-selinux from official source, ignoring errors
             logStep "Installing container-selinux"
-            yum install -y -q container-selinux 2> /dev/null || true
+            yum install -y container-selinux 2> /dev/null || true
             # verify installation success
             if yum list installed "container-selinux" >/dev/null 2>&1; then
                 logSuccess "Installed container-selinux from existing sources"
