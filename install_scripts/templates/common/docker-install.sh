@@ -191,7 +191,7 @@ _installDocker() {
             else
                 if [ "$DIST_VERSION" = "7.6" ]; then
                     # Install container-selinux from mirror.centos.org
-                    yum install -y -q "http://mirror.centos.org/centos/7/extras/x86_64/Packages/container-selinux-2.107-1.el7_6.noarch.rpm"
+                    yum install -y "http://mirror.centos.org/centos/7/extras/x86_64/Packages/container-selinux-2.107-1.el7_6.noarch.rpm"
                     if yum list installed "container-selinux" >/dev/null 2>&1; then
                         logWarn "Installed package required by docker container-selinux from fallback source of mirror.centos.org"
                     else
@@ -199,7 +199,7 @@ _installDocker() {
                     fi
                 else
                     # Install container-selinux from mirror.centos.org
-                    yum install -y -q "http://mirror.centos.org/centos/7/extras/x86_64/Packages/container-selinux-2.107-3.el7.noarch.rpm"
+                    yum install -y "http://mirror.centos.org/centos/7/extras/x86_64/Packages/container-selinux-2.107-3.el7.noarch.rpm"
                     if yum list installed "container-selinux" >/dev/null 2>&1; then
                         logWarn "Installed package required by docker container-selinux from fallback source of mirror.centos.org"
                     else
@@ -217,7 +217,7 @@ _installDocker() {
     if { [ "$LSB_DIST" = "rhel" ] || [ "$LSB_DIST" = "ol" ] ; } && [ "$COMPARE_DOCKER_VERSIONS_RESULT" -le "0" ]; then
         if ! yum list installed "yum-utils" >/dev/null 2>&1; then
             logStep "Installing yum-utils"
-            yum install -y -q yum-utils
+            yum install -y yum-utils
             logSuccess "Installed yum-utils"
         fi
         getUrlCmd
