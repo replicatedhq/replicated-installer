@@ -8,6 +8,7 @@ import subprocess
 import sys
 import traceback
 import urllib
+from shellescape import quote
 
 from . import db, helpers, param, images
 
@@ -93,7 +94,8 @@ def get_replicated_version(replicated_channel=None,
 
 @app.route('/<path:path>')
 def catch_all(path):
-    kwargs = helpers.template_args(path=path)
+    clean_path = quote(path)
+    kwargs = helpers.template_args(path=clean_path)
     response = render_template('resolve-route.sh', **kwargs)
     return Response(response, mimetype='text/x-shellscript')
 
