@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PATH="{{ path }}"
+PATH={{ path }}
 
 {% include 'common/common.sh' %}
 
