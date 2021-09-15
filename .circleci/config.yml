@@ -14,7 +14,7 @@ defaults: &defaults
 jobs:
   is_upstream:
     docker:
-      - image: circleci/python:3
+      - image: cimg/python:3.9
     steps:
       - run: |
           set -veuo pipefail
