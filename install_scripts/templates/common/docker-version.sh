@@ -182,11 +182,6 @@ getMaxDockerVersion() {
             MAX_DOCKER_VERSION_RESULT="19.03.8"
         fi
     fi
-    # 2019-01-07
-    # Max Docker version on Amazon Linux 2 is 18.09.9.
-    if [ "$LSB_DIST" = "amzn" ]; then
-        MAX_DOCKER_VERSION_RESULT="18.09.9"
-    fi
     # 2020-05-11
     # Max Docker version on SUSE Linux Enterprise Server 12 and 15 is 19.03.5.
     if [ "$LSB_DIST" = "sles" ]; then
