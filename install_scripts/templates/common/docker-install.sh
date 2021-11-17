@@ -121,24 +121,31 @@ _installDocker() {
         printf "${YELLOW}Pinning Docker version not supported on Amazon Linux${NC}\n"
         printf "${GREEN}Installing Docker from Yum repository${NC}\n"
 
-        # 2020-05-11
-        # Amazon Linux has Docker 17.12.1ce, 18.06.1ce and Docker 18.09.9ce available.
+        # 2021-11-16
+        # Amazon Linux has very specific Docker versions available.
+        # We support 17.12.1, 18.06.1, 18.09.9 and 20.10.7-3.
         compareDockerVersions "18.0.0" "${1}"
         if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -eq "-1" ]; then
-            compareDockerVersions "18.09.0" "${1}"
+            compareDockerVersions "19.0.0" "${1}"
             if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -le "0" ]; then
-                if commandExists "amazon-linux-extras"; then
-                    ( set -x; amazon-linux-extras install -y -q docker=18.09.9 || amazon-linux-extras install docker=18.09.9 || \
-                        amazon-linux-extras install -y -q docker || amazon-linux-extras install docker )
-                else
-                    ( set -x; yum install -y -q docker-18.09.9ce || yum install -y -q docker )
-                fi
+                ( set -x; yum install -y -q docker-20.10.7-3.amzn2 || yum install -y docker-20.10.7-3.amzn2 || \
+                    yum install -y -q docker || yum install -y -q docker )
             else
-                if commandExists "amazon-linux-extras"; then
-                    ( set -x; amazon-linux-extras install -y -q docker=18.06.1 || amazon-linux-extras install docker=18.06.1 || \
-                        amazon-linux-extras install -y -q docker || amazon-linux-extras install docker )
+                compareDockerVersions "18.09.0" "${1}"
+                if [ "$COMPARE_DOCKER_VERSIONS_RESULT" -le "0" ]; then
+                    if commandExists "amazon-linux-extras"; then
+                        ( set -x; amazon-linux-extras install -y -q docker=18.09.9 || amazon-linux-extras install -y docker=18.09.9 || \
+                            amazon-linux-extras install -y -q docker || amazon-linux-extras install -y docker )
+                    else
+                        ( set -x; yum install -y -q docker-18.09.9ce || yum install -y -q docker )
+                    fi
                 else
-                    ( set -x; yum install -y -q docker-18.06.1ce || yum install -y -q docker )
+                    if commandExists "amazon-linux-extras"; then
+                        ( set -x; amazon-linux-extras install -y -q docker=18.06.1 || amazon-linux-extras install -y docker=18.06.1 || \
+                            amazon-linux-extras install -y -q docker || amazon-linux-extras install -y docker )
+                    else
+                        ( set -x; yum install -y -q docker-18.06.1ce || yum install -y -q docker )
+                    fi
                 fi
             fi
         else
