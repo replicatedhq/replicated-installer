@@ -188,11 +188,15 @@ _configureDockerProxySystemd() {
         echo "Environment=" >> "$1"
     fi
 
-    sed -i'' -e "s/\"*HTTP_PROXY=[^[:blank:]]*//" "$1" # remove new no proxy address
+    sed -i'' -e "s/\"*HTTP_PROXY=[^[:blank:]]*//" "$1" # remove old http proxy address
+    sed -i'' -e "s/\"*HTTPS_PROXY=[^[:blank:]]*//" "$1" # remove old https proxy address
     sed -i'' -e "s/\"*NO_PROXY=[^[:blank:]]*//" "$1" # remove old no proxy address
     sed -i'' -e "s/^\(Environment=\) */\1/" "$1" # remove space after equals sign
     sed -i'' -e "s/ $//" "$1" # remove trailing space
-    sed -i'' -e "s#^\(Environment=.*$\)#\1 \"HTTP_PROXY=${2}\" \"NO_PROXY=${3}\"#" "$1"
+
+    sed -i'' -e "s#^\(Environment=.*$\)#\1 \"HTTP_PROXY=${2}\"#" "$1"
+    sed -i'' -e "s#^\(Environment=.*$\)#\1 \"HTTPS_PROXY=${2}\"#" "$1"
+    sed -i'' -e "s#^\(Environment=.*$\)#\1 \"NO_PROXY=${3}\"#" "$1"
 }
 
 #######################################
