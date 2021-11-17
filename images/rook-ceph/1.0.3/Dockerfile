@@ -8,23 +8,16 @@ RUN yum install -y \
     bind-license \
     \
     \
+    binutils \
     curl \
     glib2 \
-    glibc \
-    glibc-common \
     libcurl \
     libldb \
     libwbclient \
-    nettle \
-    nss \
-    nss-sysinit \
-    nss-tools \
-    openldap \
+    libxml2 \
+    libxml2-python \
     openssl \
     openssl-libs \
-    perl \
-    perl-libs \
-    perl-macros \
     python \
     python-devel \
     python-libs \
@@ -34,6 +27,18 @@ RUN yum install -y \
     samba-common \
     samba-common-libs \
     sudo \
+    \
+    glib2 \
+    glibc \
+    glibc-common \
+    libldb \
+    nettle \
+    nss-sysinit \
+    nss-tools \
+    openldap \
+    perl \
+    perl-libs \
+    perl-macros \
   && yum clean all
 
 COPY --from=base /tini /tini

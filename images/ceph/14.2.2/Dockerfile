@@ -6,9 +6,14 @@ RUN yum install -y \
     bind-license \
     \
     \
+    binutils \
     curl \
+    glib2 \
     libcurl \
+    libldb \
     libwbclient \
+    libxml2 \
+    libxml2-python \
     openssl \
     openssl-libs \
     python \
