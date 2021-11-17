@@ -6,9 +6,14 @@ RUN yum install -y \
     bind-license \
     \
     \
+    binutils \
     curl \
+    glib2 \
     libcurl \
+    libldb \
     libwbclient \
+    libxml2 \
+    libxml2-python \
     openssl \
     openssl-libs \
     python \
@@ -20,7 +25,4 @@ RUN yum install -y \
     samba-common \
     samba-common-libs \
     sudo \
-    \
-    glib2 \
-    libldb \
   && yum clean all

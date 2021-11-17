@@ -8,11 +8,12 @@ FROM frolvlad/alpine-glibc:alpine-3.14
 RUN apk add --no-cache --update --upgrade \
 	\
 	\
+	apk-tools \
+	busybox \
 	libcrypto1.1 \
 	libssl1.1 \
 	musl \
-	musl-utils \
-	apk-tools
+	musl-utils
 
 RUN mkdir -p /etc/envoy
 
