@@ -1,29 +1,25 @@
 DATE=$(shell date +%Y%m%d)
 
-all: deps update_k8s_manifest build retag push
-
 deps:
-	go get github.com/linuxkit/linuxkit/src/cmd/linuxkit
-	cd $(GOPATH)/src/github.com/linuxkit/linuxkit && \
-		git checkout v0.7 && \
-		make local-build && \
-		cp ./bin/linuxkit $(GOPATH)/bin/linuxkit
-	go get github.com/linuxkit/kubernetes || :
+	curl -Lo /tmp/linuxkit-linux-amd64 https://github.com/linuxkit/linuxkit/releases/download/v0.7/linuxkit-linux-amd64
+	cp /tmp/linuxkit-linux-amd64 $(GOPATH)/bin/linuxkit
+	chmod +x $(GOPATH)/bin/linuxkit
 
 update_k8s_manifest_%: clean deps
-	mkdir -p ./kubernetes-tmp-$*
+	git clone https://github.com/linuxkit/kubernetes.git /tmp/kubernetes
+	mkdir -p /tmp/kubernetes-tmp-$*
 	# CircleCI GOPATH is two paths separated by :
-	cp -r $(GOPATH)/src/github.com/linuxkit/kubernetes/pkg ./kubernetes-tmp-$*/
-	cp -r $(GOPATH)/src/github.com/linuxkit/kubernetes/.git ./kubernetes-tmp-$*/
-	./mk-image-cache-lst-$* common > ./kubernetes-tmp-$*/pkg/kubernetes-docker-image-cache-common/images.lst
-	./mk-image-cache-lst-$* control-plane > ./kubernetes-tmp-$*/pkg/kubernetes-docker-image-cache-control-plane/images.lst
+	cp -r /tmp/kubernetes/pkg /tmp/kubernetes-tmp-$*/
+	cp -r /tmp/kubernetes/.git /tmp/kubernetes-tmp-$*/
+	./mk-image-cache-lst-$* common > /tmp/kubernetes-tmp-$*/pkg/kubernetes-docker-image-cache-common/images.lst
+	./mk-image-cache-lst-$* control-plane > /tmp/kubernetes-tmp-$*/pkg/kubernetes-docker-image-cache-control-plane/images.lst
 
 build_%:
-	linuxkit pkg build ./kubernetes-tmp-$*/pkg/kubernetes-docker-image-cache-common
-	$(eval common_image = $(shell linuxkit pkg show-tag ./kubernetes-tmp-$*/pkg/kubernetes-docker-image-cache-common))
+	linuxkit pkg build /tmp/kubernetes-tmp-$*/pkg/kubernetes-docker-image-cache-common
+	$(eval common_image = $(shell linuxkit pkg show-tag /tmp/kubernetes-tmp-$*/pkg/kubernetes-docker-image-cache-common))
 	docker tag ${common_image} replicated/k8s-images-common:$*-${DATE}
-	linuxkit pkg build ./kubernetes-tmp-$*/pkg/kubernetes-docker-image-cache-control-plane
-	$(eval control_image = $(shell linuxkit pkg show-tag ./kubernetes-tmp-$*/pkg/kubernetes-docker-image-cache-control-plane))
+	linuxkit pkg build /tmp/kubernetes-tmp-$*/pkg/kubernetes-docker-image-cache-control-plane
+	$(eval control_image = $(shell linuxkit pkg show-tag /tmp/kubernetes-tmp-$*/pkg/kubernetes-docker-image-cache-control-plane))
 	docker tag ${control_image} replicated/k8s-images-control:$*-${DATE}
 
 push_%:
