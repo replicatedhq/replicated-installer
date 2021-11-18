@@ -37,8 +37,9 @@ preflightDockerHttpProxy()
 
     if [ -n "$proxy" ]; then
         info "Docker is set with http proxy \"$proxy\" and no proxy \"$no_proxy\""
+    else
+        info "Docker http proxy not set"
     fi
-    info "Docker http proxy not set"
     return 0
 }
 

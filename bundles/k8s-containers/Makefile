@@ -27,4 +27,4 @@ push_%:
 	docker push replicated/k8s-images-control:$*-${DATE}
 
 clean:
-	rm -rf ./kubernetes-tmp*
+	rm -rf /tmp/kubernetes-tmp* /tmp/kubernetes
