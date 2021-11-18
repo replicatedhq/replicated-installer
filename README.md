@@ -34,5 +34,5 @@ Tags should match the target Replicated version. Optionally a pre-release versio
 Releases can then be deployed to production by releasing the CircleCI hold.
 
 ```
-git tag -a v2.39.1 -m "Release 2.39.1" && git push origin v2.39.1
+git tag -a v2.53.2-20211117-0 -m "Release v2.53.2-20211117-0" && git push origin v2.53.2-20211117-0
 ```
