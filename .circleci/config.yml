@@ -225,14 +225,14 @@ workflows:
       - test:
           filters:
             branches:
-              ignore: master
+              ignore: main
 
-  master:
+  main:
     jobs:
       - is_upstream:
           filters:
             branches:
-              only: master
+              only: main
 
       - test:
           requires:
