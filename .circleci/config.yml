@@ -8,7 +8,7 @@ defaults: &defaults
     PROJECT_NAME: install-scripts
     ECR_REPO: 923411875752.dkr.ecr.us-east-1.amazonaws.com
     OVERLAY_PATH: kustomize/overlays/staging
-    GITOPS_BRANCH: master
+    GITOPS_BRANCH: main
     DOCKERFILE: deploy/Dockerfile.prod
 
 jobs:
