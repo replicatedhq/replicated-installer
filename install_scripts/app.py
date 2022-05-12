@@ -275,6 +275,7 @@ def get_replicated_compose_v3(replicated_channel=None,
 
     script = render_template(
         'swarm/docker-compose-generate.sh', suppress_runtime=1, **kwargs)
+    kwargs = {k: quote(v) for k, v in kwargs.items()}
     p = subprocess.Popen(
         ['bash', '-'],
         shell=False,
@@ -338,6 +339,7 @@ def get_replicated_kubernetes_yml(replicated_channel=None,
 
     script = render_template(
         'kubernetes/yml-generate.sh', suppress_runtime=1, **kwargs)
+    kwargs = {k: quote(v) for k, v in kwargs.items()}
     p = subprocess.Popen(
         ['bash -s deployment-yaml=1', '-'],
         shell=False,
@@ -364,6 +366,7 @@ def get_kubernetes_operator_yml(replicated_channel=None,
 
     script = render_template(
         'kubernetes/yml-generate.sh', suppress_runtime=1, **kwargs)
+    kwargs = {k: quote(v) for k, v in kwargs.items()}
     p = subprocess.Popen(
         ['bash -s rek-operator-yaml=1', '-'],
         shell=False,
