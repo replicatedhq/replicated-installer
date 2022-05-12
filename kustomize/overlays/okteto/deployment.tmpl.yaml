@@ -1,0 +1,31 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: install-scripts
+spec:
+  template:
+    spec:
+      containers:
+        - name: install-scripts
+          livenessProbe: ~
+          readinessProbe: ~
+          env:
+            - name: ENVIRONMENT
+              value: dev
+            - name: REPLICATED_INSTALL_URL
+              name: https://install-scripts-${OKTETO_NAMESPACE}.replicated.okteto.dev`,
+            - name: GRAPHQL_PREM_ENDPOINT
+              value: http://graphql-api-prem:3000/graphql
+            - name: REGISTRY_ENDPOINT
+              value: 'registry.staging.replicated.com' # TODO
+            - name: MYSQL_HOST
+              value: mysql
+            - name: MYSQL_USER
+              value: replicated
+            - name: MYSQL_PASSWORD
+              value: password
+            - name: MYSQL_PORT
+              value: "3306"
+            - name: MYSQL_DATABASE
+              value: replicated
