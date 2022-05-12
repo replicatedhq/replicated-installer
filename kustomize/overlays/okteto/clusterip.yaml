@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: install-scripts
+  labels:
+    app: install-scripts
+  annotations:
+    dev.okteto.com/auto-ingress: "true"            
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5000
+      name: install-scripts
+      targetPort: install-scripts
+  selector:
+    app: install-scripts

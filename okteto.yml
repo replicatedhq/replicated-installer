@@ -1,0 +1,9 @@
+name: install-scripts
+command: bash
+workdir: /go/src/github.com/replicatedhq/install-scripts
+sync:
+  - .:/go/src/github.com/replicatedhq/install-scripts
+resources:
+  limits:
+    cpu: "2"
+    memory: 4Gi

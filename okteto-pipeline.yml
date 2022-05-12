@@ -1,0 +1,15 @@
+icon: https://github.com/okteto/polling/raw/master/icon.png
+deploy:
+  - envsubst < kustomize/overlays/okteto/deployment.tmpl.yaml > kustomize/overlays/okteto/deployment.yaml
+
+  - okteto build
+      -f ./okteto.Dockerfile 
+      -t okteto.dev/install-scripts:${OKTETO_GIT_COMMIT}
+      --build-arg DD_API_KEY=${DD_API_KEY}
+      .
+
+  - cd kustomize/overlays/okteto && kustomize edit set image replicated/install-scripts=okteto.dev/install-scripts:${OKTETO_GIT_COMMIT}
+
+  - kubectl apply -k kustomize/overlays/okteto
+devs:
+  - okteto.yml
