@@ -275,6 +275,7 @@ def get_replicated_compose_v3(replicated_channel=None,
 
     script = render_template(
         'swarm/docker-compose-generate.sh', suppress_runtime=1, **kwargs)
+    print(kwargs)
     kwargs = {k: (quote(v) if v else v) for k, v in kwargs.items()}
     p = subprocess.Popen(
         ['bash', '-'],
