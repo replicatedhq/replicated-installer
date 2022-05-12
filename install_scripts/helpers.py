@@ -74,7 +74,7 @@ def template_args(**kwargs):
 
 
 def get_arg(name, dflt=None):
-    return request.args.get(name) if request.args.get(name) else dflt
+    return make_shell_safe(request.args.get(name)) if request.args.get(name) else dflt
 
 
 def get_pinned_docker_version(replicated_version, scheduler):
@@ -524,3 +524,8 @@ def snapshots_use_overlay(replicated_version):
     if semver.lt(replicated_version, '2.22.0', loose=False):
         return False
     return True
+
+def make_shell_safe(s):
+    if type(s) == str or type(s) == unicode:
+        return s.replace('$', '_').replace('`', '\'')
+    return s
