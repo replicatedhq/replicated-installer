@@ -9,23 +9,31 @@
 
 set -e
 
-AIRGAP="{{ airgap|default('0', true) }}"
-GROUP_ID="{{ group_id }}"
-LOG_LEVEL="{{ log_level|default('info', true) }}"
-PUBLIC_ADDRESS="{{ public_address }}"
-REGISTRY_BIND_PORT="{{ registry_bind_port|default('9874', true) }}"
-SUPPRESS_RUNTIME="{{ suppress_runtime }}"
-SWARM_NODE_ADDRESS="{{ swarm_node_address }}"
-SWARM_STACK_NAMESPACE="{{ swarm_stack_namespace }}"
-TLS_CERT_PATH="{{ tls_cert_path }}"
-UI_BIND_PORT="{{ ui_bind_port|default('8800', true) }}"
-USER_ID="{{ user_id }}"
-HTTP_PROXY="{{ http_proxy }}"
-NO_PROXY_ADDRESSES="{{ no_proxy_addresses }}"
-RELEASE_SEQUENCE="{{ release_sequence }}"
-RELEASE_PATCH_SEQUENCE="{{ release_patch_sequence }}"
+REPLICATED_INSTALL_URL={{ replicated_install_url }}
+AIRGAP={{ airgap|default('0', true) }}
+GROUP_ID={{ group_id }}
+LOG_LEVEL={{ log_level|default('info', true) }}
+PUBLIC_ADDRESS={{ public_address }}
+REGISTRY_BIND_PORT={{ registry_bind_port|default('9874', true) }}
+SUPPRESS_RUNTIME={{ suppress_runtime }}
+SWARM_NODE_ADDRESS={{ swarm_node_address }}
+SWARM_STACK_NAMESPACE={{ swarm_stack_namespace }}
+TLS_CERT_PATH={{ tls_cert_path }}
+UI_BIND_PORT={{ ui_bind_port|default('8800', true) }}
+USER_ID={{ user_id }}
+HTTP_PROXY={{ http_proxy }}
+NO_PROXY_ADDRESSES={{ no_proxy_addresses }}
+RELEASE_SEQUENCE={{ release_sequence }}
+RELEASE_PATCH_SEQUENCE={{ release_patch_sequence }}
 REPLICATED_REGISTRY_PREFIX=
-REPLICATED_VERSION="{{ replicated_version }}"
+REPLICATED_VERSION={{ replicated_version }}
+REPLICATED_ENV={{ replicated_env }}
+REPLICATED_TAG={{ replicated_tag|default('stable', true) }}{{ environment_tag_suffix }}
+REPLICATED_UI_TAG={{ replicated_ui_tag|default('stable', true) }}{{ environment_tag_suffix }}
+REPLICATED_OPERATOR_TAG={{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}
+RELEASE_CHANNEL={{ channel_name|default('stable', true) }}
+CUSTOMER_BASE_URL_OVERRIDE={{ customer_base_url_override }}
+SNAPSHOTS_USE_OVERLAY={{ snapshots_use_overlay|default('0', true) }}
 
 {% include 'common/common.sh' %}
 {% include 'common/replicated.sh' %}
@@ -127,20 +135,20 @@ echo ""
 echo "services:"
 echo ""
 echo "  replicated:"
-echo "    image: ${REPLICATED_REGISTRY_PREFIX}/replicated:{{ replicated_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+echo "    image: ${REPLICATED_REGISTRY_PREFIX}/replicated:"
 echo "    ports:"
 echo "      - ${REGISTRY_BIND_PORT}:9874"
 echo "      - 9878:9878"
 echo "    environment:"
-echo "      - RELEASE_CHANNEL={{ channel_name|default('stable', true) }}"
+echo "      - RELEASE_CHANNEL=${RELEASE_CHANNEL}"
 echo "      - LOG_LEVEL=${LOG_LEVEL}"
 if [ "$AIRGAP" = "1" ]; then
     echo "      - AIRGAP=true"
 fi
 echo "      - SCHEDULER_ENGINE=swarm"
-{% if snapshots_use_overlay %}
+if [ "$SNAPSHOTS_USE_OVERLAY" = "1" ]; then
     echo "      - SNAPSHOTS_ADVERTISE_ADDRESS=replicated_replicated:9878"
-{% endif %}
+fi
 echo "      - LOCAL_ADDRESS=${SWARM_NODE_ADDRESS}"
 if [ -n "$SWARM_STACK_NAMESPACE" ]; then
     echo "      - STACK_NAMESPACE=${SWARM_STACK_NAMESPACE}"
@@ -160,19 +168,19 @@ fi
 if [ -n "$NO_PROXY_ADDRESSES" ]; then
     echo "      - NO_PROXY=${NO_PROXY_ADDRESSES}"
 fi
-{% if customer_base_url_override %}
-    echo "      - MARKET_BASE_URL={{ customer_base_url_override }}"
-{% elif replicated_env == "staging" %}
+if [ -n "$CUSTOMER_BASE_URL_OVERRIDE" ]; then
+    echo "      - MARKET_BASE_URL=$CUSTOMER_BASE_URL_OVERRIDE"
+else
     echo "      - MARKET_BASE_URL=https://api.staging.replicated.com/market"
-{% endif %}
-{% if replicated_env == "staging" %}
+fi
+if [ "$REPLICATED_ENV" = "staging" ]; then
     echo "      - DATA_BASE_URL=https://data.staging.replicated.com/market"
     echo "      - VENDOR_REGISTRY=registry.staging.replicated.com"
     echo "      - REPLICATED_IMAGE_TAG_SUFFIX=.staging"
-{% endif %}
-{% if replicated_install_url != "https://get.replicated.com" %}
-    echo "      - INSTALLER_URL={{ replicated_install_url }}"
-{%- endif %}
+fi
+if [ "$REPLICATED_INSTALL_URL" != "https://get.replicated.com" ]; then
+    echo "      - INSTALLER_URL=$REPLICATED_INSTALL_URL"
+fi
 echo "    volumes:"
 echo "      - replicated-data-volume:/var/lib/replicated"
 echo "      - replicated-sock-volume:/var/run/replicated"
@@ -215,11 +223,11 @@ fi
 echo "        mode: 0440"
 echo ""
 echo "  replicated-ui:"
-echo "    image: ${REPLICATED_REGISTRY_PREFIX}/replicated-ui:{{ replicated_ui_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+echo "    image: ${REPLICATED_REGISTRY_PREFIX}/replicated-ui:$REPLICATED_UI_TAG"
 echo "    ports:"
 echo "      - ${UI_BIND_PORT}:8800"
 echo "    environment:"
-echo "      - RELEASE_CHANNEL={{ channel_name|default('stable', true) }}"
+echo "      - RELEASE_CHANNEL=${RELEASE_CHANNEL}"
 echo "      - LOG_LEVEL=${LOG_LEVEL}"
 echo "    depends_on:"
 echo "      - replicated"
@@ -248,12 +256,12 @@ echo "        delay: 5s"
 echo ""
 echo "  replicated-operator:"
 if [ "$AIRGAP" = "1" ]; then
-    echo "    image: ${SWARM_NODE_ADDRESS}:${REGISTRY_BIND_PORT}/replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+    echo "    image: ${SWARM_NODE_ADDRESS}:${REGISTRY_BIND_PORT}/replicated/replicated-operator:$REPLICATED_OPERATOR_TAG"
 else
-    echo "    image: ${REPLICATED_REGISTRY_PREFIX}/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}"
+    echo "    image: ${REPLICATED_REGISTRY_PREFIX}/replicated-operator:$REPLICATED_OPERATOR_TAG"
 fi
 echo "    environment:"
-echo "      - RELEASE_CHANNEL={{ channel_name|default('stable', true) }}"
+echo "      - RELEASE_CHANNEL=${RELEASE_CHANNEL}"
 echo "      - LOG_LEVEL=${LOG_LEVEL}"
 if [ "$AIRGAP" = "1" ]; then
     echo "      - AIRGAP=true"

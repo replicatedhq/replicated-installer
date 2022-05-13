@@ -7,6 +7,7 @@ import yaml
 
 import semver
 from flask import request, render_template, Response
+from shellescape import quote
 
 from . import db, param, images
 
@@ -527,5 +528,5 @@ def snapshots_use_overlay(replicated_version):
 
 def make_shell_safe(s):
     if type(s) == str or type(s) == unicode:
-        return s.replace('$', '_').replace('`', '\'')
+        return quote(s.replace('$', '_').replace('`', '\''))
     return s
