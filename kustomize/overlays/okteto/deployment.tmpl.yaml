@@ -14,7 +14,7 @@ spec:
             - name: ENVIRONMENT
               value: dev
             - name: REPLICATED_INSTALL_URL
-              value: https://install-scripts-${OKTETO_NAMESPACE}.replicated.okteto.dev`,
+              value: https://install-scripts-${OKTETO_NAMESPACE}.replicated.okteto.dev
             - name: GRAPHQL_PREM_ENDPOINT
               value: http://graphql-api-prem:3000/graphql
             - name: REGISTRY_ENDPOINT

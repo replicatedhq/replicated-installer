@@ -259,7 +259,10 @@ def get_replicated_compose_generate(replicated_channel=None,
     kwargs = get_replicated_compose_v3_template_args(replicated_channel,
                                                      app_slug, app_channel)
 
-    response = render_template('swarm/docker-compose-generate.sh', **kwargs)
+    response = '{}\n{}'.format(
+        render_template('swarm/docker-compose-generate-header.tmpl.sh', **kwargs),
+        render_template('swarm/docker-compose-generate.sh'),
+    )
     return Response(response, mimetype='text/x-shellscript')
 
 
@@ -273,8 +276,10 @@ def get_replicated_compose_v3(replicated_channel=None,
     kwargs = get_replicated_compose_v3_template_args(replicated_channel,
                                                      app_slug, app_channel)
 
-    script = render_template(
-        'swarm/docker-compose-generate.sh', suppress_runtime=1, **kwargs)
+    script = '{}\n{}'.format(
+        render_template('swarm/docker-compose-generate-header.tmpl.sh', suppress_runtime=1, **kwargs),
+        render_template('swarm/docker-compose-generate.sh'),
+    )
     p = subprocess.Popen(
         ['bash', '-'],
         shell=False,
