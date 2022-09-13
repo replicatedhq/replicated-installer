@@ -272,8 +272,9 @@ build_replicated_opts() {
 
     if [ -n "$REPLICATED_OPTS" ]; then
         REPLICATED_OPTS=$(echo "$REPLICATED_OPTS" | sed -e 's/-e[[:blank:]]*HTTP_PROXY=[^[:blank:]]*//g')
+        REPLICATED_OPTS=$(echo "$REPLICATED_OPTS" | sed -e 's/-e[[:blank:]]*HTTPS_PROXY=[^[:blank:]]*//g')
         if [ -n "$PROXY_ADDRESS" ]; then
-            REPLICATED_OPTS="$REPLICATED_OPTS -e HTTP_PROXY=$PROXY_ADDRESS"
+            REPLICATED_OPTS="$REPLICATED_OPTS -e HTTP_PROXY=$PROXY_ADDRESS -e HTTPS_PROXY=$PROXY_ADDRESS"
         fi
         REPLICATED_OPTS=$(echo "$REPLICATED_OPTS" | sed -e 's/-e[[:blank:]]*NO_PROXY=[^[:blank:]]*//g')
         if [ -n "$NO_PROXY_ADDRESSES" ]; then
@@ -305,7 +306,7 @@ build_replicated_opts() {
 {%- endif %}
 
     if [ -n "$PROXY_ADDRESS" ]; then
-        REPLICATED_OPTS="$REPLICATED_OPTS -e HTTP_PROXY=$PROXY_ADDRESS -e NO_PROXY=$NO_PROXY_ADDRESSES"
+        REPLICATED_OPTS="$REPLICATED_OPTS -e HTTP_PROXY=$PROXY_ADDRESS -e HTTPS_PROXY=$PROXY_ADDRESS -e NO_PROXY=$NO_PROXY_ADDRESSES"
     fi
     if [ -n "$REGISTRY_ADVERTISE_ADDRESS" ]; then
         REPLICATED_OPTS="$REPLICATED_OPTS -e REGISTRY_ADVERTISE_ADDRESS=$REGISTRY_ADVERTISE_ADDRESS"

@@ -156,6 +156,7 @@ if [ -n "$RELEASE_PATCH_SEQUENCE" ]; then
 fi
 if [ -n "$HTTP_PROXY" ]; then
     echo "      - HTTP_PROXY=${HTTP_PROXY}"
+    echo "      - HTTPS_PROXY=${HTTP_PROXY}"
 fi
 if [ -n "$NO_PROXY_ADDRESSES" ]; then
     echo "      - NO_PROXY=${NO_PROXY_ADDRESSES}"
@@ -260,6 +261,7 @@ if [ "$AIRGAP" = "1" ]; then
 fi
 if [ -n "$HTTP_PROXY" ]; then
     echo "      - HTTP_PROXY=${HTTP_PROXY}"
+    echo "      - HTTPS_PROXY=${HTTP_PROXY}"
 fi
 if [ -n "$NO_PROXY_ADDRESSES" ]; then
     echo "      - NO_PROXY=${NO_PROXY_ADDRESSES}"
