@@ -289,6 +289,8 @@ EOF
         PROXY_ENVS=$(cat <<-EOF
         - name: HTTP_PROXY
           value: $PROXY_ADDRESS
+        - name: HTTPS_PROXY
+          value: $PROXY_ADDRESS
         - name: NO_PROXY
           value: $NO_PROXY_ADDRESSES
 EOF
