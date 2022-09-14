@@ -23,7 +23,14 @@ jobs:
             exit 1
           fi
 
-  test:
+  test_go:
+    docker:
+      - image: golang:1.17
+    steps:
+      - checkout
+      - run: make -C util/docker-compose-generate test
+
+  test_python:
     <<: *defaults
     steps:
       - checkout
@@ -222,7 +229,11 @@ workflows:
 
   pull-request:
     jobs:
-      - test:
+      - test_go:
+          filters:
+            branches:
+              ignore: main
+      - test_python:
           filters:
             branches:
               ignore: main
@@ -234,7 +245,10 @@ workflows:
             branches:
               only: main
 
-      - test:
+      - test_go:
+          requires:
+            - is_upstream
+      - test_python:
           requires:
             - is_upstream
       - build_staging_docker_image:
@@ -243,7 +257,8 @@ workflows:
 
       - deploy_staging_eks:
           requires:
-            - test
+            - test_go
+            - test_python
             - build_staging_docker_image
 
   release:
@@ -255,7 +270,11 @@ workflows:
             branches:
               ignore: /.*/
 
-      - test:
+      - test_go:
+          <<: *tags_filter
+          requires:
+            - is_upstream
+      - test_python:
           <<: *tags_filter
           requires:
             - is_upstream
@@ -272,7 +291,8 @@ workflows:
           type: approval
           <<: *tags_filter
           requires:
-            - test
+            - test_go
+            - test_python
             - build_staging_docker_image
 
       - deploy_staging_eks:
@@ -284,7 +304,8 @@ workflows:
           type: approval
           <<: *tags_filter
           requires:
-            - test
+            - test_go
+            - test_python
             - build_production_docker_image
 
       - deploy_production_eks:

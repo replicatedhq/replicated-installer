@@ -1,0 +1,149 @@
+# optional query parameters:
+# - group_id
+# - log_level
+# - public_address
+# - registry_bind_port
+# - swarm_node_address
+# - swarm_stack_namespace
+# - tls_cert_path
+# - ui_bind_port
+# - user_id
+
+# secrets:
+# - daemon_token (external, required)
+
+version: '3.1'
+
+services:
+
+  replicated:
+    image: quay.io/replicated/replicated:stable-2.13.7staging
+    ports:
+      - 1234:9874
+      - 9878:9878
+    environment:
+      - RELEASE_CHANNEL=stable
+      - LOG_LEVEL=debug
+      - AIRGAP=true
+      - SCHEDULER_ENGINE=swarm
+      - LOCAL_ADDRESS=1.1.1.1
+      - STACK_NAMESPACE=replicatedns
+      - SWARM_INGRESS_ADDRESS=10.10.10.20
+      - RELEASE_SEQUENCE=246
+      - RELEASE_PATCH_SEQUENCE=1
+      - HTTP_PROXY=1.2.3.4
+      - HTTPS_PROXY=1.2.3.4
+      - NO_PROXY=127.0.0.1,localhost
+      - MARKET_BASE_URL=https://api.staging.replicated.com/market
+      - DATA_BASE_URL=https://data.staging.replicated.com/market
+      - VENDOR_REGISTRY=registry.staging.replicated.com
+      - REPLICATED_IMAGE_TAG_SUFFIX=.staging
+      - INSTALLER_URL=https://get.staging.replicated.com
+    volumes:
+      - replicated-data-volume:/var/lib/replicated
+      - replicated-sock-volume:/var/run/replicated
+      - /some/cert/path.pem:/etc/ssl/certs/ca-certificates.crt:ro
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - /etc:/host/etc:ro
+      - /etc/os-release:/host/etc/os-release:ro
+    user: "999:1001"
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+          - node.labels.replicated-role == master
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 15
+        window: 20s
+      update_config:
+        delay: 5s
+#         failure_action: continue
+    secrets:
+      - source: daemon_token
+        target: daemon_token
+        uid: "999"
+        gid: "1001"
+        mode: 0440
+
+  replicated-ui:
+    image: quay.io/replicated/replicated-ui:stable-2.13.7staging
+    ports:
+      - 8899:8800
+    environment:
+      - RELEASE_CHANNEL=stable
+      - LOG_LEVEL=debug
+    depends_on:
+      - replicated
+    volumes:
+      - replicated-sock-volume:/var/run/replicated
+    user: "999:1001"
+
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+          - node.labels.replicated-role == master
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 15
+        window: 20s
+      update_config:
+        delay: 5s
+#         failure_action: continue
+
+  replicated-operator:
+    image: 1.1.1.1:1234/replicated/replicated-operator:stable-2.13.7staging
+    environment:
+      - RELEASE_CHANNEL=stable
+      - LOG_LEVEL=debug
+      - AIRGAP=true
+      - HTTP_PROXY=1.2.3.4
+      - HTTPS_PROXY=1.2.3.4
+      - NO_PROXY=127.0.0.1,localhost
+      - SCHEDULER_ENGINE=swarm
+      - DAEMON_ENDPOINT=replicated:9879
+      - DAEMON_REGISTRY_ENDPOINT=1.1.1.1:1234
+      - DAEMON_HOST=replicated
+    volumes:
+      - replicated-operator-data-volume:/var/lib/replicated-operator
+      - replicated-operator-sock-volume:/var/run/replicated-operator
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - /etc:/host/etc:ro
+      - /etc/os-release:/host/etc/os-release:ro
+    user: "999:1001"
+
+    deploy:
+      mode: global
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 15
+        window: 20s
+      update_config:
+        delay: 5s
+#         failure_action: continue
+    secrets:
+      - source: daemon_token
+        target: daemon_token
+        uid: "999"
+        gid: "1001"
+        mode: 0440
+
+volumes:
+  replicated-data-volume:
+  replicated-sock-volume:
+  replicated-operator-data-volume: # TODO: how does this work with global service?
+  replicated-operator-sock-volume: # TODO: how does this work with global service?
+
+secrets:
+  daemon_token:
+    external: true

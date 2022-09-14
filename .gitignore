@@ -6,3 +6,4 @@
 /src
 /venv
 /kustomize/overlays/local/
+/install_scripts/templates/swarm/docker-compose-generate-safe.sh

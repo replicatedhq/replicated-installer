@@ -117,4 +117,5 @@ test:
 	./test.sh
 
 run:
+	/dcg --raw > install_scripts/templates/swarm/docker-compose-generate-safe.sh
 	python main.py

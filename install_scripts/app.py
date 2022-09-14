@@ -6,9 +6,12 @@ from flask import Flask, Response, abort, redirect, render_template, request, \
 import semver
 import subprocess
 import sys
+import os
+import json
 import traceback
 import urllib
 from shellescape import quote
+import tempfile
 
 from . import db, helpers, param, images
 
@@ -274,17 +277,24 @@ def get_replicated_compose_v3(replicated_channel=None,
                                                      app_slug, app_channel)
 
     script = render_template(
-        'swarm/docker-compose-generate.sh', suppress_runtime=1, **kwargs)
-    p = subprocess.Popen(
-        ['bash', '-'],
-        shell=False,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE)
-    p.stdin.write(script)
-    p.stdin.close()
-    p.wait()
-    response = p.stdout.read()
-    p.stdout.close()
+        'swarm/docker-compose-generate-safe.sh', suppress_runtime=1, **kwargs)
+
+
+    with tempfile.NamedTemporaryFile(delete=False) as tmpTemplateConfig:
+        json.dump(kwargs, tmpTemplateConfig)
+        tmpTemplateConfig.flush()
+
+        p = subprocess.Popen(
+            ['/dcg', '--config', tmpTemplateConfig.name],
+            shell=False,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE)
+        p.stdin.write(script)
+        p.stdin.close()
+        p.wait()
+        response = p.stdout.read()
+        p.stdout.close()
+
     if helpers.get_arg('accept', None) == 'text':
         return Response(response, mimetype='text/plain')
     return Response(response, mimetype='application/x-yaml')
