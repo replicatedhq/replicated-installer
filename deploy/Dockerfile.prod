@@ -29,7 +29,7 @@ ADD ./main.py /home/docker/code/
 ADD Manifest /home/docker/code/
 ADD LICENSE /home/docker/code/
 
-RUN /dcg --raw /home/docker/code/install_scripts/templates/swarm/docker-compose-generate-safe.sh
+RUN /dcg --raw > /home/docker/code/install_scripts/templates/swarm/docker-compose-generate-safe.sh
 
 EXPOSE 80
 
