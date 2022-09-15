@@ -1,0 +1,206 @@
+# optional query parameters:
+# - group_id
+# - log_level
+# - public_address
+# - registry_bind_port
+# - swarm_node_address
+# - swarm_stack_namespace
+# - tls_cert_path
+# - ui_bind_port
+# - user_id
+
+# secrets:
+# - daemon_token (external, required)
+
+version: '3.1'
+
+services:
+
+  replicated:
+    image: repl[[ getReplicatedRegistryPrefix .replicated_version ]]/replicated:repl[[ or .replicated_tag "stable" ]]repl[[ .environment_tag_suffix ]]
+    ports:
+      - repl[[ or .registry_bind_port 9874 ]]:9874
+      - 9878:9878
+    environment:
+      - RELEASE_CHANNEL=repl[[ or .channel_name "stable" ]]
+      - LOG_LEVEL=repl[[ or .log_level "info" ]]
+repl[[- if .airgap ]]
+      - AIRGAP=true
+repl[[- end ]]
+      - SCHEDULER_ENGINE=swarm
+repl[[- if .snapshots_use_overlay ]]
+      - SNAPSHOTS_ADVERTISE_ADDRESS=replicated_replicated:9878
+repl[[- end ]]
+      - LOCAL_ADDRESS=repl[[ .swarm_node_address ]]
+repl[[- if (isSet . "swarm_stack_namespace") ]]
+      - STACK_NAMESPACE=repl[[ .swarm_stack_namespace ]]
+repl[[- end ]]
+repl[[- if (isSet . "public_address") ]]
+      - SWARM_INGRESS_ADDRESS=repl[[ .public_address ]]
+repl[[- end ]]
+repl[[- if (isSet . "release_sequence") ]]
+      - RELEASE_SEQUENCE=repl[[ .release_sequence ]]
+repl[[- end ]]
+repl[[- if (isSet . "release_patch_sequence") ]]
+      - RELEASE_PATCH_SEQUENCE=repl[[ .release_patch_sequence ]]
+repl[[- end ]]
+repl[[- if (isSet . "http_proxy") ]]
+      - HTTP_PROXY=repl[[ .http_proxy ]]
+      - HTTPS_PROXY=repl[[ .http_proxy ]]
+repl[[- end ]]
+repl[[- if (isSet . "no_proxy_addresses") ]]
+      - NO_PROXY=repl[[ .no_proxy_addresses ]]
+repl[[- end ]]
+repl[[- if (isSet . "customer_base_url_override") ]]
+      - MARKET_BASE_URL=repl[[ .customer_base_url_override ]]
+repl[[- else if (eq .replicated_env "staging") ]]
+      - MARKET_BASE_URL=https://api.staging.replicated.com/market
+repl[[- end ]]
+repl[[- if (eq .replicated_env "staging") ]]
+      - DATA_BASE_URL=https://data.staging.replicated.com/market
+      - VENDOR_REGISTRY=registry.staging.replicated.com
+      - REPLICATED_IMAGE_TAG_SUFFIX=.staging
+repl[[- end ]]
+repl[[- if (ne .replicated_install_url "https://get.replicated.com") ]]
+      - INSTALLER_URL=repl[[ .replicated_install_url ]]
+repl[[- end ]]
+    volumes:
+      - replicated-data-volume:/var/lib/replicated
+      - replicated-sock-volume:/var/run/replicated
+repl[[- if (isSet . "tls_cert_path") ]]
+      - repl[[ .tls_cert_path]]:/etc/ssl/certs/ca-certificates.crt:ro
+repl[[- end ]]
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - /etc:/host/etc:ro
+      - /etc/os-release:/host/etc/os-release:ro
+repl[[- if (and (isSet . "user_id") (isSet . "group_id")) ]]
+    user: "repl[[ .user_id ]]:repl[[ .group_id ]]"
+repl[[- else if (isSet . "user_id") ]]
+    user: "repl[[ .user_id ]]"
+repl[[- end ]]
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+          - node.labels.replicated-role == master
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 15
+        window: 20s
+      update_config:
+        delay: 5s
+#         failure_action: continue
+    secrets:
+      - source: daemon_token
+        target: daemon_token
+repl[[- if (isSet . "user_id") ]]
+        uid: "repl[[ .user_id ]]"
+repl[[- end ]]
+repl[[- if (isSet . "group_id") ]]
+        gid: "repl[[ .group_id ]]"
+repl[[- end ]]
+        mode: 0440
+
+  replicated-ui:
+    image: repl[[ getReplicatedRegistryPrefix .replicated_version ]]/replicated-ui:repl[[ or .replicated_ui_tag "stable" ]]repl[[ .environment_tag_suffix ]]
+    ports:
+      - repl[[ or .ui_bind_port 8800 ]]:8800
+    environment:
+      - RELEASE_CHANNEL=repl[[ or .channel_name "stable" ]]
+      - LOG_LEVEL=repl[[ or .log_level "info" ]]
+    depends_on:
+      - replicated
+    volumes:
+      - replicated-sock-volume:/var/run/replicated
+repl[[- if (and (isSet . "user_id") (isSet . "group_id")) ]]
+    user: "repl[[ .user_id ]]:repl[[ .group_id ]]"
+repl[[- else if (isSet . "user_id") ]]
+    user: "repl[[ .user_id ]]"
+repl[[- end ]]
+
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+          - node.labels.replicated-role == master
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 15
+        window: 20s
+      update_config:
+        delay: 5s
+#         failure_action: continue
+
+  replicated-operator:
+repl[[- if .airgap ]]
+    image: repl[[ .swarm_node_address ]]:repl[[ or .registry_bind_port 9874 ]]/replicated/replicated-operator:repl[[ or .replicated_operator_tag "stable" ]]repl[[ .environment_tag_suffix ]]
+repl[[- else ]]
+    image: repl[[ getReplicatedRegistryPrefix .replicated_version ]]/replicated-operator:repl[[ or .replicated_operator_tag "stable" ]]repl[[ .environment_tag_suffix ]]
+repl[[- end ]]
+    environment:
+      - RELEASE_CHANNEL=repl[[ or .channel_name "stable" ]]
+      - LOG_LEVEL=repl[[ or .log_level "info" ]]
+repl[[- if .airgap ]]
+      - AIRGAP=true
+repl[[- end ]]
+repl[[- if (isSet . "http_proxy") ]]
+      - HTTP_PROXY=repl[[ .http_proxy ]]
+      - HTTPS_PROXY=repl[[ .http_proxy ]]
+repl[[- end ]]
+repl[[- if (isSet . "no_proxy_addresses") ]]
+      - NO_PROXY=repl[[ .no_proxy_addresses ]]
+repl[[- end ]]
+      - SCHEDULER_ENGINE=swarm
+      - DAEMON_ENDPOINT=replicated:9879
+      - DAEMON_REGISTRY_ENDPOINT=repl[[ .swarm_node_address ]]:repl[[ or .registry_bind_port 9874 ]]
+      - DAEMON_HOST=replicated
+    volumes:
+      - replicated-operator-data-volume:/var/lib/replicated-operator
+      - replicated-operator-sock-volume:/var/run/replicated-operator
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - /etc:/host/etc:ro
+      - /etc/os-release:/host/etc/os-release:ro
+repl[[- if (and (isSet . "user_id") (isSet . "group_id")) ]]
+    user: "repl[[ .user_id ]]:repl[[ .group_id ]]"
+repl[[- else if (isSet . "user_id") ]]
+    user: "repl[[ .user_id ]]"
+repl[[- end ]]
+
+    deploy:
+      mode: global
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 15
+        window: 20s
+      update_config:
+        delay: 5s
+#         failure_action: continue
+    secrets:
+      - source: daemon_token
+        target: daemon_token
+repl[[- if (isSet . "user_id") ]]
+        uid: "repl[[ .user_id ]]"
+repl[[- end ]]
+repl[[- if (isSet . "group_id") ]]
+        gid: "repl[[ .group_id ]]"
+repl[[- end ]]
+        mode: 0440
+
+volumes:
+  replicated-data-volume:
+  replicated-sock-volume:
+  replicated-operator-data-volume: # TODO: how does this work with global service?
+  replicated-operator-sock-volume: # TODO: how does this work with global service?
+
+secrets:
+  daemon_token:
+    external: true

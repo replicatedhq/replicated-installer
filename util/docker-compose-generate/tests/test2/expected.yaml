@@ -1,0 +1,126 @@
+# optional query parameters:
+# - group_id
+# - log_level
+# - public_address
+# - registry_bind_port
+# - swarm_node_address
+# - swarm_stack_namespace
+# - tls_cert_path
+# - ui_bind_port
+# - user_id
+
+# secrets:
+# - daemon_token (external, required)
+
+version: '3.1'
+
+services:
+
+  replicated:
+    image: replicated/replicated:stable-2.53.7
+    ports:
+      - 9874:9874
+      - 9878:9878
+    environment:
+      - RELEASE_CHANNEL=stable
+      - LOG_LEVEL=info
+      - SCHEDULER_ENGINE=swarm
+      - SNAPSHOTS_ADVERTISE_ADDRESS=replicated_replicated:9878
+      - LOCAL_ADDRESS=
+      - INSTALLER_URL=https://get.staging.replicated.com
+    volumes:
+      - replicated-data-volume:/var/lib/replicated
+      - replicated-sock-volume:/var/run/replicated
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - /etc:/host/etc:ro
+      - /etc/os-release:/host/etc/os-release:ro
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+          - node.labels.replicated-role == master
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 15
+        window: 20s
+      update_config:
+        delay: 5s
+#         failure_action: continue
+    secrets:
+      - source: daemon_token
+        target: daemon_token
+        mode: 0440
+
+  replicated-ui:
+    image: replicated/replicated-ui:stable-2.53.7
+    ports:
+      - 8800:8800
+    environment:
+      - RELEASE_CHANNEL=stable
+      - LOG_LEVEL=info
+    depends_on:
+      - replicated
+    volumes:
+      - replicated-sock-volume:/var/run/replicated
+
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+          - node.labels.replicated-role == master
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 15
+        window: 20s
+      update_config:
+        delay: 5s
+#         failure_action: continue
+
+  replicated-operator:
+    image: replicated/replicated-operator:stable-2.53.7
+    environment:
+      - RELEASE_CHANNEL=stable
+      - LOG_LEVEL=info
+      - SCHEDULER_ENGINE=swarm
+      - DAEMON_ENDPOINT=replicated:9879
+      - DAEMON_REGISTRY_ENDPOINT=:9874
+      - DAEMON_HOST=replicated
+    volumes:
+      - replicated-operator-data-volume:/var/lib/replicated-operator
+      - replicated-operator-sock-volume:/var/run/replicated-operator
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - /etc:/host/etc:ro
+      - /etc/os-release:/host/etc/os-release:ro
+
+    deploy:
+      mode: global
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 15
+        window: 20s
+      update_config:
+        delay: 5s
+#         failure_action: continue
+    secrets:
+      - source: daemon_token
+        target: daemon_token
+        mode: 0440
+
+volumes:
+  replicated-data-volume:
+  replicated-sock-volume:
+  replicated-operator-data-volume: # TODO: how does this work with global service?
+  replicated-operator-sock-volume: # TODO: how does this work with global service?
+
+secrets:
+  daemon_token:
+    external: true
