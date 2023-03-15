@@ -140,10 +140,14 @@ build_replicated_operator_opts() {
         if [ -n "$DAEMON_REGISTRY_ADDRESS" ]; then
            REPLICATED_OPERATOR_OPTS="$REPLICATED_OPERATOR_OPTS -e DAEMON_REGISTRY_ENDPOINT=$DAEMON_REGISTRY_ADDRESS"
         fi
+        # if '--read-only' is not present, add it
+        if ! echo "$REPLICATED_OPERATOR_OPTS" | grep -q -- '--read-only'; then
+            REPLICATED_OPERATOR_OPTS="$REPLICATED_OPERATOR_OPTS --read-only"
+        fi
         return
     fi
 
-    REPLICATED_OPERATOR_OPTS=""
+    REPLICATED_OPERATOR_OPTS=" --read-only"
     if [ -n "$OPERATOR_ID" ]; then
         REPLICATED_OPERATOR_OPTS=$REPLICATED_OPERATOR_OPTS" -e OPERATOR_ID=$OPERATOR_ID"
     fi
