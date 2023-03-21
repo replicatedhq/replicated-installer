@@ -520,6 +520,12 @@ def compose_500():
     return Response(response, status=500, mimetype='text/x-docker-compose')
 
 
+def error_script(status, error_message):
+    response = render_template('error/error.sh',
+                               **template_args(error_message=error_message, ))
+    return Response(response, status=status, mimetype='text/x-shellscript')
+
+
 def snapshots_use_overlay(replicated_version):
     if semver.lt(replicated_version, '2.22.0', loose=False):
         return False

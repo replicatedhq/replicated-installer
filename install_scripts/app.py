@@ -626,60 +626,8 @@ def get_replicated_kubernetes(replicated_channel=None,
 def get_swarm_init_primary(replicated_channel=None,
                            app_slug=None,
                            app_channel=None):
-    replicated_channel = replicated_channel if replicated_channel else 'stable'
-    print('Looking up tags for:', replicated_channel,
-          app_slug, app_channel, file=sys.stderr)
-
-    scheduler = constant.SCHEDULER_SWARM
-    replicated_version = helpers.get_replicated_version(
-        replicated_channel, app_slug, app_channel, scheduler=scheduler)
-    replicated_ui_version = helpers.get_replicated_ui_version(
-        replicated_channel, app_slug, app_channel, scheduler=scheduler)
-    replicated_operator_version = helpers.get_replicated_operator_version(
-        replicated_channel, app_slug, app_channel, scheduler=scheduler)
-
-    replicated_tag = '{}-{}'.format(replicated_channel, replicated_version)
-    replicated_ui_tag = '{}-{}'.format(replicated_channel,
-                                       replicated_ui_version)
-    replicated_operator_tag = '{}-{}'.format(replicated_channel,
-                                             replicated_operator_version)
-
-    pinned_docker_version = helpers.get_pinned_docker_version(
-        replicated_version, scheduler)
-
-    compose_path = 'docker-compose-generate'
-    worker_path = 'swarm-worker-join'
-    channel_css = ''
-    terms = ''
-    if app_slug and app_channel:
-        compose_path = app_slug + '/' + app_channel + '/' + compose_path
-        worker_path = app_slug + '/' + app_channel + '/' + worker_path
-        channel_css = helpers.get_channel_css(app_slug, app_channel)
-        terms = helpers.get_terms(app_slug, app_channel)
-    if replicated_channel != 'stable':
-        compose_path = replicated_channel + '/' + compose_path
-        worker_path = replicated_channel + '/' + worker_path
-
-    query = urllib.urlencode(request.args)
-
-    username = helpers.get_replicated_username_swarm(replicated_version)
-
-    response = render_template(
-        'swarm/init.sh',
-        **helpers.template_args(
-            replicated_version=replicated_version,
-            pinned_docker_version=pinned_docker_version,
-            replicated_tag=replicated_tag,
-            replicated_ui_tag=replicated_ui_tag,
-            replicated_operator_tag=replicated_operator_tag,
-            docker_compose_path=compose_path,
-            swarm_worker_join_path=worker_path,
-            app_channel_css=helpers.base64_encode(channel_css),
-            terms=helpers.base64_encode(terms),
-            docker_compose_query=query,
-            replicated_username=username,
-        ))
-    return Response(response, mimetype='text/x-shellscript')
+    return helpers.error_script(status=404,
+        error_message="Swarm is no longer supported. For more information see https://docs.replicated.com/vendor/distributing-workflow")
 
 
 @app.route('/swarm-worker-join')
@@ -799,76 +747,8 @@ def get_kubernetes_migrate(replicated_channel=None,
 def get_kubernetes_init_primary(replicated_channel=None,
                                 app_slug=None,
                                 app_channel=None):
-    replicated_channel = replicated_channel if replicated_channel else 'stable'
-
-    scheduler = constant.SCHEDULER_KUBERNETES
-    replicated_version = helpers.get_replicated_version(
-        replicated_channel, app_slug, app_channel, scheduler=scheduler)
-    replicated_ui_version = helpers.get_replicated_ui_version(
-        replicated_channel, app_slug, app_channel, scheduler=scheduler)
-    replicated_operator_version = helpers.get_replicated_operator_version(
-        replicated_channel, app_slug, app_channel, scheduler=scheduler)
-
-    pinned_docker_version = helpers.get_pinned_docker_version(
-        replicated_version, scheduler)
-
-    pinned_kubernetes_version = helpers.get_pinned_kubernetes_version(
-        replicated_version)
-    kubernetes_version = helpers.get_arg('kubernetes_version',
-                                         pinned_kubernetes_version)
-
-    replicated_tag = '{}-{}'.format(replicated_channel, replicated_version)
-    replicated_ui_tag = '{}-{}'.format(replicated_channel,
-                                       replicated_ui_version)
-    replicated_operator_tag = '{}-{}'.format(replicated_channel,
-                                             replicated_operator_version)
-
-    storage_provisioner = helpers.get_arg('storage_provisioner', 'rook')
-    storage_class = helpers.get_arg('storage_class', 'default')
-
-    generate_path = 'kubernetes-yml-generate'
-    node_path = 'kubernetes-node-join'
-    if app_slug and app_channel:
-        generate_path = app_slug + '/' + app_channel + '/' + generate_path
-        node_path = app_slug + '/' + app_channel + '/' + node_path
-    if replicated_channel and replicated_channel != 'stable':
-        generate_path = replicated_channel + '/' + generate_path
-        node_path = replicated_channel + '/' + node_path
-    query_args = dict(request.args)
-
-    # unpack list args because otherwise we get weird stuff in YAML like
-    #    value: '[u'/data/stuff']'
-    query_args = {
-        k: v[0] if isinstance(v, list) and len(v) > 0 else v
-        for k, v in query_args.items()
-    }
-
-    channel_css = ''
-    terms = ''
-    if app_slug and app_channel:
-        channel_css = helpers.get_channel_css(app_slug, app_channel)
-        terms = helpers.get_terms(app_slug, app_channel)
-
-    query = urllib.urlencode(query_args)
-    response = render_template(
-        'kubernetes/init.sh',
-        **helpers.template_args(
-            channel_name=replicated_channel,
-            pinned_docker_version=pinned_docker_version,
-            kubernetes_version=kubernetes_version,
-            replicated_version=replicated_version,
-            replicated_tag=replicated_tag,
-            replicated_ui_tag=replicated_ui_tag,
-            replicated_operator_tag=replicated_operator_tag,
-            storage_provisioner=storage_provisioner,
-            storage_class=storage_class,
-            kubernetes_generate_path=generate_path,
-            kubernetes_node_join_path=node_path,
-            kubernetes_manifests_query=query,
-            channel_css=helpers.base64_encode(channel_css),
-            terms=helpers.base64_encode(terms),
-        ))
-    return Response(response, mimetype='text/x-shellscript')
+    return helpers.error_script(status=404,
+        error_message="This installation method is no longer supported. For ditributing applications using Kubernetes see https://docs.replicated.com/vendor/distributing-workflow")
 
 
 @app.route('/kubernetes-node-join')

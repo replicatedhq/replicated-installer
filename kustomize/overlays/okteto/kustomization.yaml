@@ -5,5 +5,5 @@ bases:
 resources:
   - ./clusterip.yaml
 
-patches:
+patchesStrategicMerge:
   - ./deployment.yaml
