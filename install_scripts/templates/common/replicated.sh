@@ -223,3 +223,22 @@ tagAndPushOperatorImage()  {
         "${1}/replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}"
     docker push "${1}/replicated/replicated-operator:{{ replicated_operator_tag|default('stable', true) }}{{ environment_tag_suffix }}"
 }
+
+#######################################
+# Gets the replicated readonly docker flag if the version is greater than 2.54.1
+# Globals:
+#   None
+# Arguments:
+#   Replicated version
+# Returns:
+#   REPLICATED_DOCKER_READONLY_FLAG
+#######################################
+REPLICATED_DOCKER_READONLY_FLAG=
+getReplicatedReadonlyDockerFlag() {
+    REPLICATED_DOCKER_READONLY_FLAG=""
+    local replicated_version="$1"
+    semverCompare "$replicated_version" "2.54.1"
+    if [ "$SEMVER_COMPARE_RESULT" -gt "0" ]; then
+        REPLICATED_DOCKER_READONLY_FLAG="--read-only"
+    fi
+}
