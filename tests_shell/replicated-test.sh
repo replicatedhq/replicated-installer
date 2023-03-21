@@ -18,4 +18,19 @@ test_getReplicatedRegistryPrefix()
     assertEquals "replicated" "$REPLICATED_REGISTRY_PREFIX"
 }
 
+test_getReplicatedReadonlyDockerFlag()
+{
+    getReplicatedReadonlyDockerFlag "2.0.0"
+    assertEquals "" "$REPLICATED_DOCKER_READONLY_FLAG"
+
+    getReplicatedReadonlyDockerFlag "2.54.1"
+    assertEquals "" "$REPLICATED_DOCKER_READONLY_FLAG"
+
+    getReplicatedReadonlyDockerFlag "2.54.2"
+    assertEquals "--read-only" "$REPLICATED_DOCKER_READONLY_FLAG"
+
+    getReplicatedReadonlyDockerFlag "2.55.0"
+    assertEquals "--read-only" "$REPLICATED_DOCKER_READONLY_FLAG"
+}
+
 . shunit2

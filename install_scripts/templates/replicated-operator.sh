@@ -142,12 +142,12 @@ build_replicated_operator_opts() {
         fi
         # if '--read-only' is not present, add it
         if ! echo "$REPLICATED_OPERATOR_OPTS" | grep -q -- '--read-only'; then
-            REPLICATED_OPERATOR_OPTS="$REPLICATED_OPERATOR_OPTS --read-only"
+            REPLICATED_OPERATOR_OPTS="$REPLICATED_OPERATOR_OPTS $REPLICATED_DOCKER_READONLY_FLAG"
         fi
         return
     fi
 
-    REPLICATED_OPERATOR_OPTS=" --read-only"
+    REPLICATED_OPERATOR_OPTS=" $REPLICATED_DOCKER_READONLY_FLAG"
     if [ -n "$OPERATOR_ID" ]; then
         REPLICATED_OPERATOR_OPTS=$REPLICATED_OPERATOR_OPTS" -e OPERATOR_ID=$OPERATOR_ID"
     fi
@@ -296,6 +296,7 @@ detectLsbDist
 detectInitSystem
 detectInitSystemConfDir
 getReplicatedRegistryPrefix "$REPLICATED_VERSION"
+getReplicatedReadonlyDockerFlag "$REPLICATED_VERSION"
 
 # read existing replicated opts values
 if [ -f $CONFDIR/replicated-operator ]; then

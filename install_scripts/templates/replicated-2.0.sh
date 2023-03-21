@@ -290,12 +290,12 @@ build_replicated_opts() {
         fi
         # if '--read-only' is not present, add it
         if ! echo "$REPLICATED_OPTS" | grep -q -- '--read-only'; then
-            REPLICATED_OPTS="$REPLICATED_OPTS --read-only"
+            REPLICATED_OPTS="$REPLICATED_OPTS $REPLICATED_DOCKER_READONLY_FLAG"
         fi
         return
     fi
 
-    REPLICATED_OPTS=" --read-only"
+    REPLICATED_OPTS=" $REPLICATED_DOCKER_READONLY_FLAG"
 
 {% if customer_base_url_override %}
     REPLICATED_OPTS="$REPLICATED_OPTS -e MARKET_BASE_URL={{ customer_base_url_override }}"
@@ -339,7 +339,7 @@ build_replicated_opts() {
     find_hostname
     REPLICATED_OPTS="$REPLICATED_OPTS -e NODENAME=$SYS_HOSTNAME"
 
-    REPLICATED_UI_OPTS=" --read-only"
+    REPLICATED_UI_OPTS=" $REPLICATED_DOCKER_READONLY_FLAG"
     if [ -n "$LOG_LEVEL" ]; then
         REPLICATED_UI_OPTS="$REPLICATED_UI_OPTS -e LOG_LEVEL=$LOG_LEVEL"
     fi
@@ -579,6 +579,7 @@ detectLsbDist
 detectInitSystem
 detectInitSystemConfDir
 getReplicatedRegistryPrefix "$REPLICATED_VERSION"
+getReplicatedReadonlyDockerFlag "$REPLICATED_VERSION"
 
 mkdir -p /var/lib/replicated/branding
 chmod a+x /var/lib/replicated/branding
