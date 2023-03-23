@@ -290,7 +290,18 @@ build_replicated_opts() {
         fi
         # if '--read-only' is not present, add it
         if ! echo "$REPLICATED_OPTS" | grep -q -- '--read-only'; then
-            REPLICATED_OPTS="$REPLICATED_OPTS $REPLICATED_DOCKER_READONLY_FLAG"
+            if [ -n "$REPLICATED_DOCKER_READONLY_FLAG" ]; then
+                REPLICATED_OPTS="$REPLICATED_OPTS $REPLICATED_DOCKER_READONLY_FLAG"
+            fi
+        fi
+
+        if [ -n "$REPLICATED_UI_OPTS" ]; then
+            # if '--read-only' is not present, add it
+            if ! echo "$REPLICATED_UI_OPTS" | grep -q -- '--read-only'; then
+                if [ -n "$REPLICATED_DOCKER_READONLY_FLAG" ]; then
+                    REPLICATED_UI_OPTS="$REPLICATED_UI_OPTS $REPLICATED_DOCKER_READONLY_FLAG"
+                fi
+            fi
         fi
         return
     fi

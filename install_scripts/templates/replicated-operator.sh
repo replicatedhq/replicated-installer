@@ -142,7 +142,9 @@ build_replicated_operator_opts() {
         fi
         # if '--read-only' is not present, add it
         if ! echo "$REPLICATED_OPERATOR_OPTS" | grep -q -- '--read-only'; then
-            REPLICATED_OPERATOR_OPTS="$REPLICATED_OPERATOR_OPTS $REPLICATED_DOCKER_READONLY_FLAG"
+            if [ -n "$REPLICATED_DOCKER_READONLY_FLAG" ]; then
+                REPLICATED_OPERATOR_OPTS="$REPLICATED_OPERATOR_OPTS $REPLICATED_DOCKER_READONLY_FLAG"
+            fi
         fi
         return
     fi
