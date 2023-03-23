@@ -289,7 +289,7 @@ build_replicated_opts() {
             REPLICATED_OPTS="$REPLICATED_OPTS -e DISABLE_HOST_NETWORKING=true"
         fi
         # if '--read-only' is not present, add it
-        if ! echo "$REPLICATED_OPTS" | grep -q -- '--read-only'; then
+        if ! echo "$REPLICATED_OPTS" | grep -q '--read-only'; then
             if [ -n "$REPLICATED_DOCKER_READONLY_FLAG" ]; then
                 REPLICATED_OPTS="$REPLICATED_OPTS $REPLICATED_DOCKER_READONLY_FLAG"
             fi
@@ -297,7 +297,7 @@ build_replicated_opts() {
 
         if [ -n "$REPLICATED_UI_OPTS" ]; then
             # if '--read-only' is not present, add it
-            if ! echo "$REPLICATED_UI_OPTS" | grep -q -- '--read-only'; then
+            if ! echo "$REPLICATED_UI_OPTS" | grep -q '--read-only'; then
                 if [ -n "$REPLICATED_DOCKER_READONLY_FLAG" ]; then
                     REPLICATED_UI_OPTS="$REPLICATED_UI_OPTS $REPLICATED_DOCKER_READONLY_FLAG"
                 fi
