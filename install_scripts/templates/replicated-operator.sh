@@ -141,7 +141,7 @@ build_replicated_operator_opts() {
            REPLICATED_OPERATOR_OPTS="$REPLICATED_OPERATOR_OPTS -e DAEMON_REGISTRY_ENDPOINT=$DAEMON_REGISTRY_ADDRESS"
         fi
         # if '--read-only' is not present, add it
-        if ! echo "$REPLICATED_OPERATOR_OPTS" | grep -q '--read-only'; then
+        if ! echo "$REPLICATED_OPERATOR_OPTS" | grep -q -- '--read-only'; then # -- in grep because otherwise the search string is interpreted as a flag
             if [ -n "$REPLICATED_DOCKER_READONLY_FLAG" ]; then
                 REPLICATED_OPERATOR_OPTS="$REPLICATED_OPERATOR_OPTS $REPLICATED_DOCKER_READONLY_FLAG"
             fi
