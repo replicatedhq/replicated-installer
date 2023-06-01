@@ -302,6 +302,8 @@ build_replicated_opts() {
                     REPLICATED_UI_OPTS="$REPLICATED_UI_OPTS $REPLICATED_DOCKER_READONLY_FLAG"
                 fi
             fi
+        else
+            REPLICATED_UI_OPTS=" $REPLICATED_DOCKER_READONLY_FLAG"
         fi
         return
     fi
