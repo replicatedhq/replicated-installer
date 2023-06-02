@@ -10,7 +10,7 @@ from flask import request, render_template, Response
 
 from . import db, param, images
 
-_default_docker_version = '20.10.17'
+_default_docker_version = '24.0.2'
 _default_kubernetes_version = '1.15.12'
 
 _images = images.get_images()
