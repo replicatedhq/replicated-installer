@@ -452,7 +452,7 @@ def base64_encode(data):
 
 def get_docker_deb_pkg_version(docker_version, lsb_dist, dist_version):
     major, minor, patch = map(int, docker_version.split('.'))
-    if major == 18 or major == 19 or major == 20:
+    if major == 18 or major == 19 or major == 20 or major == 24:
         return ''  # unused
     elif major == 1:
         if minor < 12 or (minor == 12 and patch <= 3):
