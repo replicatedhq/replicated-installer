@@ -113,9 +113,9 @@ shell_composer_linux:
 		install-scripts-dev \
 		/bin/bash
 test:
-	python -m pytest -v tests
+	python2 -m pytest -v tests
 	./test.sh
 
 run:
 	/dcg --raw > install_scripts/templates/swarm/docker-compose-generate-safe.sh
-	python main.py
+	python2 main.py

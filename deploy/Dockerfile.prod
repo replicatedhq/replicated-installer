@@ -1,4 +1,4 @@
-FROM golang:1.17 as builder
+FROM golang:1.20 as builder
 WORKDIR /docker-compose-generate
 COPY ./util/docker-compose-generate /docker-compose-generate
 RUN make build

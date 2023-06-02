@@ -2,7 +2,7 @@ version: 2
 
 defaults: &defaults
   docker:
-  - image: replicated/gitops-builder:node8-go11
+  - image: replicated/gitops-builder:node16-go20
   working_directory: ~/repo
   environment: &environment
     PROJECT_NAME: install-scripts
@@ -14,7 +14,7 @@ defaults: &defaults
 jobs:
   is_upstream:
     docker:
-      - image: cimg/python:3.9
+      - image: cimg/python:3.10
     steps:
       - run: |
           set -veuo pipefail
@@ -25,7 +25,7 @@ jobs:
 
   test_go:
     docker:
-      - image: golang:1.17
+      - image: golang:1.20
     steps:
       - checkout
       - run: make -C util/docker-compose-generate test
@@ -41,7 +41,7 @@ jobs:
 
   build_k8s_bundles:
     docker:
-    - image: cimg/go:1.16
+    - image: cimg/go:1.20
     working_directory: ~/repo
     <<: *environment
     steps:
