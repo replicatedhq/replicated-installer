@@ -470,7 +470,7 @@ def get_docker_deb_pkg_version(docker_version, lsb_dist, dist_version):
 
 def get_docker_rpm_pkg_version(docker_version, lsb_dist, dist_version):
     major, minor, _ = map(int, docker_version.split('.'))
-    if major == 18 or major == 19 or major == 20:
+    if major == 18 or major == 19 or major == 20 or major == 24:
         return ''  # unused
     elif major == 1:
         if lsb_dist == 'ol' or (lsb_dist in ('centos', 'rhel')
