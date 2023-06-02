@@ -9,7 +9,7 @@
     "min_docker_version": "1.7.1",
     "release_sequence": "246",
     "environment_tag_suffix": "staging",
-    "pinned_docker_version": "20.10.17",
+    "pinned_docker_version": "24.0.2",
     "replicated_port_range": "9874-9879:9874-9879/tcp",
     "replicated_install_url": "https://get.staging.replicated.com",
     "user_id": "999",
