@@ -151,7 +151,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          version: 17.06.0-ce
+          version: "20.10.23"
       - run: |
           export WORKDIR=`pwd`
           export CIRCLE_PROJECT_REPONAME=$PROJECT_NAME
@@ -172,7 +172,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          version: 17.06.0-ce
+          version: "20.10.23"
       - run: |
           export WORKDIR=`pwd`
           export CIRCLE_PROJECT_REPONAME=$PROJECT_NAME
