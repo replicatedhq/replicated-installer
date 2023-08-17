@@ -23,3 +23,6 @@ spec:
               $patch: delete
             - name: install-scripts
               containerPort: 80
+          resources:
+            limits: 
+              cpu: 4000m
