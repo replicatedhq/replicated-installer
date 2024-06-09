@@ -227,9 +227,6 @@ _installDocker() {
             yum install -y yum-utils
             logSuccess "Installed yum-utils"
         fi
-        getUrlCmd
-        rpm --import EXTRAS_KEY
-        rm EXTRAS_KEY
     fi
 
     _docker_install_url="{{ replicated_install_url }}/docker-install.sh"
