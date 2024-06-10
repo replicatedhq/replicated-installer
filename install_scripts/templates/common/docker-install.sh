@@ -217,18 +217,6 @@ _installDocker() {
         fi
     fi
 
-    # docker-ce 20.10+ includes docker-ce-rootless-extras, which has some depenendencies not
-    # Found in any of the yum repos available on RHEL on Azure.
-    # Also seen on Oracle Enterprise Linux.
-    compareDockerVersions "20.10.0" "${1}"
-    if { [ "$LSB_DIST" = "rhel" ] || [ "$LSB_DIST" = "ol" ] ; } && [ "$COMPARE_DOCKER_VERSIONS_RESULT" -le "0" ]; then
-        if ! yum list installed "yum-utils" >/dev/null 2>&1; then
-            logStep "Installing yum-utils"
-            yum install -y yum-utils
-            logSuccess "Installed yum-utils"
-        fi
-    fi
-
     _docker_install_url="{{ replicated_install_url }}/docker-install.sh"
     printf "${GREEN}Installing docker version ${1} from ${_docker_install_url}${NC}\n"
     getUrlCmd
