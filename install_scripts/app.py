@@ -19,6 +19,29 @@ app = Flask(__name__)
 
 _images = images.get_default_images()
 
+
+@app.errorhandler(Exception)
+def handle_error(e):
+    if isinstance(e, helpers.BadRequestException):
+        return str(e.message), 400
+    return "Internal Server Error", 500
+
+
+@app.before_request
+def validate_args():
+    query_args = {
+        k: v[0] if isinstance(v, list) and len(v) > 0 else v
+        for k, v in dict(request.args).items()
+    }
+    version_keys = ['replicated_tag', 'replicated_ui_tag', 'replicated_operator_tag',
+        'current_replicated_version', 'next_replicated_version', 'pinned_docker_version',
+        'kubernetes_version', 'docker_version']
+    for key in version_keys:
+        if key in query_args:
+            if semver.parse(query_args[key], loose=False) is None:
+                raise helpers.BadRequestException('Invalid value for {}: {}'.format(key, query_args[key]))
+
+
 @app.teardown_appcontext
 def teardown_db(exception):
     db.teardown()

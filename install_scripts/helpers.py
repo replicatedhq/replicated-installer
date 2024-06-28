@@ -16,6 +16,11 @@ _default_kubernetes_version = '1.15.12'
 _images = images.get_images()
 
 
+class BadRequestException(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
 def template_args(**kwargs):
     env = param.lookup('ENVIRONMENT', default='production')
     args = {
@@ -192,7 +197,7 @@ def get_best_version(arg_name, default_arg_name, replicated_channel, app_slug,
         elif is_valid_replicated_version(arg_version, replicated_channel,
                                          scheduler=scheduler):
             return arg_version
-        raise Exception('version {} does not exist'.format(arg_version))
+        raise BadRequestException('version {} does not exist'.format(arg_version))
 
     return get_current_replicated_version(replicated_channel,
                                           scheduler=scheduler)
@@ -333,7 +338,7 @@ def get_current_replicated_version(replicated_channel, scheduler=None):
     row = cursor.fetchone()
     cursor.close()
     if row is None:
-        raise Exception('no releases for product {} and channel {}'.format(
+        raise BadRequestException('no releases for product {} and channel {}'.format(
             product, replicated_channel))
     (version, ) = row
 
