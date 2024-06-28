@@ -14,7 +14,7 @@ deps:
 	pip install -r requirements.txt
 
 build:
-	docker build -t install-scripts -f deploy/Dockerfile.prod .
+	docker build --pull -t install-scripts -f deploy/Dockerfile.prod .
 
 dev:
 	docker build -t install-scripts-dev .
@@ -119,3 +119,8 @@ test:
 run:
 	/dcg --raw > install_scripts/templates/swarm/docker-compose-generate-safe.sh
 	python2 main.py
+
+.PHONY: scan
+scan: build
+	curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b bin
+	./bin/grype --fail-on medium --only-fixed install-scripts:latest
