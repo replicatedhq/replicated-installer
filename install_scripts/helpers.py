@@ -82,6 +82,34 @@ def get_arg(name, dflt=None):
     return make_shell_safe(request.args.get(name)) if request.args.get(name) else dflt
 
 
+def get_acme_challenge_response(challenge):
+    cursor = db.get().cursor()
+    query = ('SELECT tls_http_body FROM vendor_team_custom_hostname WHERE tls_acme_challenge = %s')
+    cursor.execute(query, (challenge, ))
+    row = cursor.fetchone()
+    cursor.close()
+
+    tls_http_body = ''
+    if row is not None:
+        (tls_http_body, ) = row
+
+    return tls_http_body
+
+
+def get_domain_challenge_response(challenge):
+    cursor = db.get().cursor()
+    query = ('SELECT domain_challenge_response FROM vendor_team_custom_hostname WHERE domain_challenge = %s')
+    cursor.execute(query, (challenge, ))
+    row = cursor.fetchone()
+    cursor.close()
+
+    domain_challenge_response = ''
+    if row is not None:
+        (domain_challenge_response, ) = row
+
+    return domain_challenge_response
+
+
 def get_pinned_docker_version(replicated_version, scheduler):
     version_info = semver.parse(replicated_version, loose=False)
     cursor = db.get().cursor()

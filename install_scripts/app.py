@@ -66,6 +66,22 @@ def get_metricz():
     return ''
 
 
+@app.route('/.well-known/acme-challenge/<challenge>')
+def get_acme_challenge_response(challenge):
+    response = helpers.get_acme_challenge_response(challenge)
+    if response == '':
+        return Response('', status=404)
+    return Response(response, mimetype='text/plain')
+
+
+@app.route('/.well-known/cf-custom-hostname-challenge/<challenge>')
+def get_domain_challenge_response(challenge):
+    response = helpers.get_domain_challenge_response(challenge)
+    if response == '':
+        return Response('', status=404)
+    return Response(response, mimetype='text/plain')
+
+
 @app.route('/docker-install.sh')
 def get_docker():
     docker_version = helpers.get_arg('docker_version',
