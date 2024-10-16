@@ -11,6 +11,7 @@ else
 endif
 
 deps:
+	python --version
 	pip install -r requirements.txt
 
 build:
