@@ -34,7 +34,7 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-      - run: sudo apt-get update; sudo apt-get install shunit2
+      - run: sudo apt-get update; sudo apt-get install shunit2 python3-pip
       - run: sudo pip install pytest # todo cache these
       - run: sudo make deps # todo cache these
       - run: make test
