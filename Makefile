@@ -11,7 +11,7 @@ else
 endif
 
 deps:
-	pip install -r requirements.txt
+	pip3 install -r requirements.txt
 
 build:
 	docker build --pull -t install-scripts -f deploy/Dockerfile.prod .
