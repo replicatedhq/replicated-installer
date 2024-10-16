@@ -4,7 +4,7 @@ COPY ./util/docker-compose-generate /docker-compose-generate
 RUN make build
 
 
-FROM python:2
+FROM python:3
 
 COPY --from=builder /docker-compose-generate/dcg /dcg
 RUN apt-get update && \
