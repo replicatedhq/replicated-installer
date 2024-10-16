@@ -11,6 +11,7 @@ else
 endif
 
 deps:
+	python -m ensurepip
 	python3 -m pip install -r requirements.txt
 
 build:
