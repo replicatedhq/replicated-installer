@@ -2,6 +2,7 @@ blinker==1.8.2
 boto3==1.35.42
 botocore==1.35.42
 click==8.1.7
+constant==0.0.4
 Flask==3.0.3
 iniconfig==2.0.0
 itsdangerous==2.2.0
