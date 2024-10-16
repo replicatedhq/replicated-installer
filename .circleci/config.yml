@@ -230,11 +230,18 @@ workflows:
 
   pull-request:
     jobs:
+      - is_upstream:
+          filters:
+            branches:
+              only: main
+
       - test_go:
           filters:
             branches:
               ignore: main
       - test_python:
+          requires:
+            - is_upstream
           filters:
             branches:
               ignore: main
