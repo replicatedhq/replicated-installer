@@ -34,9 +34,9 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-      - run: sudo apt-get update; sudo apt-get install shunit2
-      - run: sudo pip install pytest # todo cache these
-      - run: sudo make deps # todo cache these
+      - run: apt-get update; sudo apt-get install shunit2
+      - run: pip install pytest # todo cache these
+      - run: make deps # todo cache these
       - run: make test
 
   build_k8s_bundles:
