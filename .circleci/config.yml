@@ -35,7 +35,6 @@ jobs:
     steps:
       - checkout
       - run: sudo apt-get update; sudo apt-get install shunit2
-      - run: sudo python3 -m ensurepip
       - run: sudo python3 -m pip install pytest # todo cache these
       - run: sudo make deps # todo cache these
       - run: make test
