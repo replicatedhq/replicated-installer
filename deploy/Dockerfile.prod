@@ -1,4 +1,4 @@
-FROM golang:1.20 as builder
+FROM golang:1.20 AS builder
 WORKDIR /docker-compose-generate
 COPY ./util/docker-compose-generate /docker-compose-generate
 RUN make build
@@ -9,28 +9,51 @@ COPY --from=builder /docker-compose-generate/dcg /dcg
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         git \
-        nginx \
+        build-essential \
+        libpcre3 \
+        libpcre3-dev \
+        zlib1g \
+        zlib1g-dev \
+        libssl-dev \
         supervisor \
     && rm -rf /var/lib/apt/lists/*
 
+WORKDIR /tmp
+RUN curl -O http://nginx.org/download/nginx-1.24.0.tar.gz \
+    && tar -zxvf nginx-1.24.0.tar.gz \
+    && cd nginx-1.24.0 \
+    && ./configure \
+        --with-http_ssl_module \
+        --with-http_v2_module \
+        --with-http_gzip_static_module \
+    && make \
+    && make install \
+    && rm -rf /tmp/nginx-1.24.0*
+
+# Add Nginx binary location to PATH
+ENV PATH="/usr/local/nginx/sbin:$PATH"
+
+# Set up Nginx and Supervisor configurations
+RUN echo "daemon off;" >> /usr/local/nginx/conf/nginx.conf
+RUN rm /usr/local/nginx/conf/nginx.conf
+ADD ./nginx-app.conf /usr/local/nginx/conf/
+ADD ./supervisor-app.conf /etc/supervisor/conf.d/
+
+# Copy Python app files
 ADD ./requirements.txt /home/docker/code/
 RUN pip install -r /home/docker/code/requirements.txt
 
-RUN echo "daemon off;" >> /etc/nginx/nginx.conf
-RUN rm /etc/nginx/sites-enabled/default
-ADD ./nginx-app.conf /etc/nginx/sites-enabled/
-ADD ./supervisor-app.conf /etc/supervisor/conf.d/
-
 ADD ./uwsgi_params /home/docker/code/
 ADD ./uwsgi.ini /home/docker/code/
-
 ADD ./install_scripts /home/docker/code/install_scripts/
 ADD ./main.py /home/docker/code/
 ADD Manifest /home/docker/code/
 ADD LICENSE /home/docker/code/
 
+# Generate Docker compose template
 RUN /dcg --raw > /home/docker/code/install_scripts/templates/swarm/docker-compose-generate-safe.sh
 
+# Expose Nginx port
 EXPOSE 80
 
 CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf", "-n"]

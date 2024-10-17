@@ -4,11 +4,11 @@ services:
   install-scripts:
     build: .
     container_name: "replicated.install-scripts"
-    networks:
-      - default
-      - saas_default
-    external_links:
-      - replicated.saas.mysql:mysql
+    # networks:
+    #   - default
+    #   - saas_default
+    # external_links:
+    #   - replicated.saas.mysql:mysql
     ports:
       - "8090:5000"
     restart: always
@@ -24,6 +24,6 @@ services:
       - .:/usr/src/app
     command: [python, main.py]
 
-networks:
-  saas_default:
-    external: true
+# networks:
+#   saas_default:
+#     external: true
