@@ -34,9 +34,8 @@ RUN curl -O http://nginx.org/download/nginx-1.24.0.tar.gz \
 ENV PATH="/usr/local/nginx/sbin:$PATH"
 
 # Set up Nginx and Supervisor configurations
-RUN echo "daemon off;" >> /usr/local/nginx/conf/nginx.conf
 RUN rm /usr/local/nginx/conf/nginx.conf
-ADD ./nginx-app.conf /usr/local/nginx/conf/
+ADD ./nginx-app.conf /usr/local/nginx/conf/nginx.conf
 ADD ./supervisor-app.conf /etc/supervisor/conf.d/
 
 # Copy Python app files
