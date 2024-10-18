@@ -150,8 +150,7 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-      - setup_remote_docker:
-          version: "20.10.23"
+      - setup_remote_docker
       - run: |
           export WORKDIR=`pwd`
           export CIRCLE_PROJECT_REPONAME=$PROJECT_NAME
@@ -171,8 +170,7 @@ jobs:
       ECR_REPO: 799720048698.dkr.ecr.us-east-1.amazonaws.com
     steps:
       - checkout
-      - setup_remote_docker:
-          version: "20.10.23"
+      - setup_remote_docker
       - run: |
           export WORKDIR=`pwd`
           export CIRCLE_PROJECT_REPONAME=$PROJECT_NAME
