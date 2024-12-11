@@ -1,4 +1,4 @@
-boto3==1.7.25
+boto3==1.35.78
 Flask==0.12.3
 mysql-connector==2.1.7
 pytest==3.0.6
