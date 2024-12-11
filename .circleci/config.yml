@@ -14,7 +14,7 @@ defaults: &defaults
 jobs:
   is_upstream:
     docker:
-      - image: cimg/python:3.10
+      - image: cimg/python:3.12
     steps:
       - run: |
           set -veuo pipefail
