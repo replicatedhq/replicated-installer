@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-import constant
 from flask import Flask, Response, abort, redirect, render_template, request, \
     jsonify
 import semver
@@ -13,7 +12,7 @@ import urllib
 from shellescape import quote
 import tempfile
 
-from . import db, helpers, param, images
+from . import db, helpers, param, images, constant
 
 app = Flask(__name__)
 
