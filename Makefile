@@ -11,7 +11,7 @@ else
 endif
 
 deps:
-	pip install -r requirements.txt
+	pip3 install -r requirements.txt
 
 build:
 	docker build --pull -t install-scripts -f deploy/Dockerfile.prod .
@@ -113,12 +113,12 @@ shell_composer_linux:
 		install-scripts-dev \
 		/bin/bash
 test:
-	python2 -m pytest -v tests
+	python3 -m pytest -v tests
 	./test.sh
 
 run:
 	/dcg --raw > install_scripts/templates/swarm/docker-compose-generate-safe.sh
-	python2 main.py
+	python3 main.py
 
 .PHONY: scan
 scan: build

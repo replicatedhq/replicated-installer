@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-import constant
 from flask import Flask, Response, abort, redirect, render_template, request, \
     jsonify
 import semver
@@ -13,9 +12,11 @@ import urllib
 from shellescape import quote
 import tempfile
 
-from . import db, helpers, param, images
+from . import db, helpers, param, images, constant
 
-app = Flask(__name__)
+project_root = os.path.dirname(__file__)
+template_path = os.path.join(project_root, 'templates')
+app = Flask(__name__, template_folder=template_path)
 
 _images = images.get_default_images()
 
