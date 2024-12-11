@@ -1,5 +1,5 @@
 boto3==1.7.25
-Flask==0.12.3
+Flask==2.2.5
 mysql-connector==2.1.7
 pytest==3.0.6
 pytest-mock==1.5.0
