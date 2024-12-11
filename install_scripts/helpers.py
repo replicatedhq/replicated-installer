@@ -478,9 +478,11 @@ def does_customer_exist(customer_id):
 
 # Produce base64 encoding with linebreaks.
 def base64_encode(data):
+    if len(data) == 0:
+        return ''
     encoded = base64.b64encode(data)
     return '\n'.join(
-        encoded[pos:pos + 76] for pos in xrange(0, len(encoded), 76))
+        encoded[pos:pos + 76] for pos in range(0, len(encoded), 76))
 
 
 def get_docker_deb_pkg_version(docker_version, lsb_dist, dist_version):

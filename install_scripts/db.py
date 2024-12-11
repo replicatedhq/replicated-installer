@@ -26,7 +26,8 @@ def get():
         port=param.lookup('MYSQL_PORT'),
         database=database,
         user=param.lookup('MYSQL_USER'),
-        password=password)
+        password=password,
+        auth_plugin='mysql_native_password')
     return db
 
 
