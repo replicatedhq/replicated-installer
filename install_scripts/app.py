@@ -25,6 +25,7 @@ _images = images.get_default_images()
 def handle_error(e):
     if isinstance(e, helpers.BadRequestException):
         return str(e.message), 400
+    print(traceback.format_exc())
     return "Internal Server Error", 500
 
 
