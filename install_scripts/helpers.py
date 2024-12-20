@@ -310,17 +310,6 @@ def get_terms(app_slug, app_channel):
 
 
 def get_app_version_config(app_slug, app_channel):
-
-    # kubernetes and swarm yaml is not valid yaml
-    def handle_iter_exc(gen):
-        while True:
-            try:
-                yield next(gen)
-            except StopIteration:
-                raise
-            except Exception as exc:
-                print('Invalid yaml: {}:'.format(exc), file=sys.stderr)
-
     cursor = db.get().cursor()
     query = ('SELECT ar.config '
              'FROM app a '
@@ -335,10 +324,13 @@ def get_app_version_config(app_slug, app_channel):
     if row is None:
         return []
     (config_raw, ) = row
-    return [
-        doc for doc in handle_iter_exc(
-            yaml.load_all(base64.b64decode(config_raw)))
-    ]
+    config_decoded = base64.b64decode(config_raw)
+    return get_all_valid_yaml_files(config_decoded)
+
+# returns a list of all valid yaml files in the combined_config
+# if a file is invalid, it will be skipped
+def get_all_valid_yaml_files(combined_config):
+    return [doc for doc in yaml.safe_load_all(combined_config)]
 
 
 def get_current_replicated_version(replicated_channel, scheduler=None):
@@ -480,7 +472,7 @@ def does_customer_exist(customer_id):
 def base64_encode(data):
     if len(data) == 0:
         return ''
-    encoded = base64.b64encode(data)
+    encoded = bytes.decode(base64.b64encode(bytes(data, 'utf-8')))
     return '\n'.join(
         encoded[pos:pos + 76] for pos in range(0, len(encoded), 76))
 
