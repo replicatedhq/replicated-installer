@@ -1,6 +1,5 @@
 Install-Scripts
 ===============
-
 Python and nginx hosted scripts used to install and update Replicated.
 
 ## Setup
