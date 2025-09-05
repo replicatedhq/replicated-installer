@@ -1,11 +1,10 @@
-FROM golang:1.20 AS builder
+FROM golang:1.23 AS builder
 WORKDIR /docker-compose-generate
 COPY ./util/docker-compose-generate /docker-compose-generate
 RUN make build
 
 FROM python:3.12-bookworm
 
-COPY --from=builder /docker-compose-generate/dcg /dcg
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         git \
@@ -48,6 +47,8 @@ ADD ./install_scripts /home/docker/code/install_scripts/
 ADD ./main.py /home/docker/code/
 ADD Manifest /home/docker/code/
 ADD LICENSE /home/docker/code/
+
+COPY --from=builder /docker-compose-generate/dcg /dcg
 
 # Generate Docker compose template
 RUN /dcg --raw > /home/docker/code/install_scripts/templates/swarm/docker-compose-generate-safe.sh
