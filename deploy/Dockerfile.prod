@@ -10,8 +10,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         git \
         build-essential \
-        libpcre3 \
-        libpcre3-dev \
+        libpcre2-dev \
         zlib1g \
         zlib1g-dev \
         libssl-dev \
@@ -19,16 +18,16 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /tmp
-RUN curl -O http://nginx.org/download/nginx-1.24.0.tar.gz \
-    && tar -zxvf nginx-1.24.0.tar.gz \
-    && cd nginx-1.24.0 \
+RUN curl -O http://nginx.org/download/nginx-1.26.3.tar.gz \
+    && tar -zxvf nginx-1.26.3.tar.gz \
+    && cd nginx-1.26.3 \
     && ./configure \
         --with-http_ssl_module \
         --with-http_v2_module \
         --with-http_gzip_static_module \
     && make \
     && make install \
-    && rm -rf /tmp/nginx-1.24.0*
+    && rm -rf /tmp/nginx-1.26.3*
 
 # Add Nginx binary location to PATH
 ENV PATH="/usr/local/nginx/sbin:$PATH"
