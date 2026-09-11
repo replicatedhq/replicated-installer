@@ -1,0 +1,135 @@
+name: "depot: staging"
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: depot-latitude-staging
+  cancel-in-progress: false
+
+env:
+  DEPOT_REGISTRY: kxb4bdmwmg.registry.depot.dev
+  STAGING_IMAGE: kxb4bdmwmg.registry.depot.dev/nzh4z2519m/install-scripts
+
+jobs:
+  test-go:
+    if: github.repository == 'replicatedhq/replicated-installer'
+    runs-on: depot-ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.20"
+          cache-dependency-path: util/docker-compose-generate/go.sum
+      - run: make -C util/docker-compose-generate test
+
+  test-python:
+    if: github.repository == 'replicatedhq/replicated-installer'
+    runs-on: depot-ubuntu-latest
+    timeout-minutes: 20
+    env:
+      AWS_ACCESS_KEY_ID: testing
+      AWS_SECRET_ACCESS_KEY: testing
+      AWS_EC2_METADATA_DISABLED: "true"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libpcre2-dev shunit2
+          make deps
+      - name: Run Python and shell tests
+        run: make test
+
+  publish-latitude-staging:
+    needs:
+      - test-go
+      - test-python
+    if: github.repository == 'replicatedhq/replicated-installer' && github.ref == 'refs/heads/main'
+    runs-on: depot-ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check GitOps credentials
+        env:
+          GITOPS_DEPLOY_KEY: ${{ secrets.LATITUDE_GITOPS_DEPLOY_KEY }}
+        run: |
+          if [[ -z "$GITOPS_DEPLOY_KEY" ]]; then
+            echo "LATITUDE_GITOPS_DEPLOY_KEY is required" >&2
+            exit 1
+          fi
+      - uses: depot/setup-action@v1
+      - name: Log in to Depot Registry
+        run: printf '%s' "$DEPOT_TOKEN" | docker login "$DEPOT_REGISTRY" --username x-token --password-stdin
+      - name: Set image tag
+        id: version
+        run: echo "tag=${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
+      - name: Build and push install-scripts
+        uses: depot/build-push-action@v1
+        with:
+          project: nzh4z2519m
+          context: .
+          file: deploy/Dockerfile.prod
+          platforms: linux/amd64
+          pull: true
+          push: true
+          tags: ${{ env.STAGING_IMAGE }}:${{ steps.version.outputs.tag }}
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
+          cache: false
+      - name: Install Kustomize
+        run: go install sigs.k8s.io/kustomize/kustomize/v5@v5.7.1
+      - name: Render Latitude staging
+        env:
+          VERSION: ${{ steps.version.outputs.tag }}
+        run: |
+          cd kustomize/overlays/latitude-staging
+          kustomize edit set image "replicated/install-scripts=${STAGING_IMAGE}:${VERSION}"
+          kustomize build . > "$RUNNER_TEMP/install-scripts.yaml"
+          grep -Fq "image: ${STAGING_IMAGE}:${VERSION}" "$RUNNER_TEMP/install-scripts.yaml"
+      - name: Check out Latitude GitOps
+        uses: actions/checkout@v6
+        with:
+          repository: replicatedhq/gitops-deploy
+          ref: main
+          path: gitops-deploy
+          ssh-key: ${{ secrets.LATITUDE_GITOPS_DEPLOY_KEY }}
+      - name: Publish Latitude staging manifest
+        working-directory: gitops-deploy
+        env:
+          VERSION: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          manifest=staging/applications/install-scripts.yaml
+          grep -Eq '^[[:space:]]*-[[:space:]]+(\./)?install-scripts\.yaml[[:space:]]*$' staging/applications/kustomization.yaml
+          cp "$RUNNER_TEMP/install-scripts.yaml" "$manifest"
+          kustomize build staging/applications > /dev/null
+          git add -- "$manifest"
+          if git diff --cached --quiet; then
+            echo "Latitude install-scripts manifest is already current."
+            exit 0
+          fi
+          git config user.name replicated-ci
+          git config user.email replicated-ci@users.noreply.github.com
+          git commit -m "Update Latitude install-scripts to ${VERSION}"
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin main
+            kustomize build staging/applications > /dev/null
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            sleep "$((attempt * 2))"
+          done
+          echo "Failed to publish Latitude install-scripts after five attempts" >&2
+          exit 1
