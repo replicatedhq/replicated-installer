@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: default
+
+resources:
+  - ../../base
+  - service.yaml
+  - disruptionbudget.yaml
+
+patches:
+  - path: deployment.yaml
+
+images:
+  - name: replicated/install-scripts
+    newName: kxb4bdmwmg.registry.depot.dev/nzh4z2519m/install-scripts
