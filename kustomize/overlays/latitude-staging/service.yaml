@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: install-scripts
+  labels:
+    app: install-scripts
+spec:
+  type: ClusterIP
+  ports:
+    - name: install-scripts
+      port: 3000
+      targetPort: install-scripts
+  selector:
+    app: install-scripts

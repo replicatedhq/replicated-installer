@@ -1,0 +1,9 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: install-scripts
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: install-scripts

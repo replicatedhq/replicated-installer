@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: install-scripts
+spec:
+  replicas: 1
+  template:
+    spec:
+      imagePullSecrets:
+        - name: depot-registry-credentials
+      nodeSelector:
+        replicated.com/rke2-role: worker
+      containers:
+        - name: install-scripts
+          env:
+            - name: USE_EC2_PARAMETERS
+              value: "1"
+            - name: AWS_REGION
+              value: us-east-1
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: PROJECT_NAME
+              value: install-scripts
+          ports:
+            - containerPort: 5000
+              $patch: delete
+            - name: install-scripts
+              containerPort: 80
