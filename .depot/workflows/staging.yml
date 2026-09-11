@@ -57,17 +57,24 @@ jobs:
       - test-python
     if: github.repository == 'replicatedhq/replicated-installer' && github.ref == 'refs/heads/main'
     runs-on: depot-ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
+    env:
+      LATITUDE_KUBE_DNS_NAME: ${{ secrets.LATITUDE_KUBE_DNS_NAME }}
     steps:
       - uses: actions/checkout@v6
-      - name: Check GitOps credentials
+      - name: Check deployment credentials
         env:
-          GITOPS_DEPLOY_KEY: ${{ secrets.LATITUDE_GITOPS_DEPLOY_KEY }}
+          LATITUDE_GITOPS_DEPLOY_KEY: ${{ secrets.LATITUDE_GITOPS_DEPLOY_KEY }}
+          TAILSCALE_OAUTH_CLIENT_ID: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
+          TAILSCALE_OAUTH_CLIENT_SECRET: ${{ secrets.TAILSCALE_OAUTH_CLIENT_SECRET }}
         run: |
-          if [[ -z "$GITOPS_DEPLOY_KEY" ]]; then
-            echo "LATITUDE_GITOPS_DEPLOY_KEY is required" >&2
-            exit 1
-          fi
+          set -euo pipefail
+          for credential in LATITUDE_GITOPS_DEPLOY_KEY TAILSCALE_OAUTH_CLIENT_ID TAILSCALE_OAUTH_CLIENT_SECRET; do
+            if [[ -z "${!credential}" ]]; then
+              echo "$credential is required" >&2
+              exit 1
+            fi
+          done
       - uses: depot/setup-action@v1
       - name: Log in to Depot Registry
         run: printf '%s' "$DEPOT_TOKEN" | docker login "$DEPOT_REGISTRY" --username x-token --password-stdin
@@ -98,6 +105,46 @@ jobs:
           kustomize edit set image "replicated/install-scripts=${STAGING_IMAGE}:${VERSION}"
           kustomize build . > "$RUNNER_TEMP/install-scripts.yaml"
           grep -Fq "image: ${STAGING_IMAGE}:${VERSION}" "$RUNNER_TEMP/install-scripts.yaml"
+      - name: Install Flux CLI
+        uses: fluxcd/flux2/action@v2.8.7
+        with:
+          version: "2.8.7"
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: "v1.35.7"
+      - name: Connect to Tailnet
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+      - name: Configure Latitude staging access
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          umask 077
+          export KUBECONFIG="$RUNNER_TEMP/latitude-staging.kubeconfig"
+          latitude_ip="$(tailscale status --json | jq -er --arg dns_name "${LATITUDE_KUBE_DNS_NAME}." '
+            first(.Peer[] | select(.DNSName == $dns_name) | .TailscaleIPs[] | select(contains(":") | not))
+          ')"
+          kubectl config set-cluster latitude-staging \
+            --server="https://${latitude_ip}" --tls-server-name="$LATITUDE_KUBE_DNS_NAME"
+          kubectl config set-credentials tailscale-auth --token=unused
+          kubectl config set-context latitude-staging --cluster=latitude-staging --user=tailscale-auth
+          kubectl config use-context latitude-staging
+
+          # Fail before publishing if this CI identity cannot reconcile or watch the rollout.
+          for verb in get list; do
+            kubectl --request-timeout=30s auth can-i "$verb" kustomizations.kustomize.toolkit.fluxcd.io -n flux-system
+            kubectl --request-timeout=30s auth can-i "$verb" gitrepositories.source.toolkit.fluxcd.io -n flux-system
+          done
+          kubectl --request-timeout=30s auth can-i patch kustomizations.kustomize.toolkit.fluxcd.io/applications -n flux-system
+          kubectl --request-timeout=30s auth can-i patch gitrepositories.source.toolkit.fluxcd.io/flux-system -n flux-system
+          for verb in get list watch; do
+            kubectl --request-timeout=30s auth can-i "$verb" deployments.apps -n default
+          done
+          echo "KUBECONFIG=$KUBECONFIG" >> "$GITHUB_ENV"
       - name: Check out Latitude GitOps
         uses: actions/checkout@v6
         with:
@@ -133,3 +180,30 @@ jobs:
           done
           echo "Failed to publish Latitude install-scripts after five attempts" >&2
           exit 1
+      - name: Reconcile Latitude staging
+        timeout-minutes: 12
+        run: |
+          set -euo pipefail
+          # applications has wait: true, so this also waits for its health checks.
+          flux reconcile kustomization applications \
+            --namespace flux-system --with-source --timeout=10m
+      - name: Verify install-scripts rollout
+        timeout-minutes: 12
+        env:
+          VERSION: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          expected_image="${STAGING_IMAGE}:${VERSION}"
+          assert_image() {
+            local actual_image
+            actual_image="$(kubectl --request-timeout=30s -n default get deployment/install-scripts \
+              -o 'jsonpath={.spec.template.spec.containers[?(@.name=="install-scripts")].image}')"
+            if [[ "$actual_image" != "$expected_image" ]]; then
+              echo "install-scripts has image '$actual_image'; expected '$expected_image'" >&2
+              return 1
+            fi
+          }
+          assert_image
+          kubectl -n default rollout status deployment/install-scripts --timeout=10m
+          # A concurrent publisher must not replace our image while we watch the rollout.
+          assert_image
