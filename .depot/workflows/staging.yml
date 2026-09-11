@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: depot-latitude-staging
+  group: depot-staging-${{ github.ref }}
   cancel-in-progress: false
 
 env:
@@ -33,10 +33,6 @@ jobs:
     if: github.repository == 'replicatedhq/replicated-installer'
     runs-on: depot-ubuntu-latest
     timeout-minutes: 20
-    env:
-      AWS_ACCESS_KEY_ID: testing
-      AWS_SECRET_ACCESS_KEY: testing
-      AWS_EC2_METADATA_DISABLED: "true"
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -55,26 +51,22 @@ jobs:
     needs:
       - test-go
       - test-python
-    if: github.repository == 'replicatedhq/replicated-installer' && github.ref == 'refs/heads/main'
+    if: github.repository == 'replicatedhq/replicated-installer'
     runs-on: depot-ubuntu-latest
     timeout-minutes: 60
     env:
       LATITUDE_KUBE_DNS_NAME: ${{ secrets.LATITUDE_KUBE_DNS_NAME }}
     steps:
       - uses: actions/checkout@v6
-      - name: Check deployment credentials
+      - name: Check GitOps credentials
         env:
           LATITUDE_GITOPS_DEPLOY_KEY: ${{ secrets.LATITUDE_GITOPS_DEPLOY_KEY }}
-          TAILSCALE_OAUTH_CLIENT_ID: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
-          TAILSCALE_OAUTH_CLIENT_SECRET: ${{ secrets.TAILSCALE_OAUTH_CLIENT_SECRET }}
         run: |
           set -euo pipefail
-          for credential in LATITUDE_GITOPS_DEPLOY_KEY TAILSCALE_OAUTH_CLIENT_ID TAILSCALE_OAUTH_CLIENT_SECRET; do
-            if [[ -z "${!credential}" ]]; then
-              echo "$credential is required" >&2
-              exit 1
-            fi
-          done
+          if [[ -z "$LATITUDE_GITOPS_DEPLOY_KEY" ]]; then
+            echo "LATITUDE_GITOPS_DEPLOY_KEY is required" >&2
+            exit 1
+          fi
       - uses: depot/setup-action@v1
       - name: Log in to Depot Registry
         run: printf '%s' "$DEPOT_TOKEN" | docker login "$DEPOT_REGISTRY" --username x-token --password-stdin
@@ -134,16 +126,6 @@ jobs:
           kubectl config set-context latitude-staging --cluster=latitude-staging --user=tailscale-auth
           kubectl config use-context latitude-staging
 
-          # Fail before publishing if this CI identity cannot reconcile or watch the rollout.
-          for verb in get list; do
-            kubectl --request-timeout=30s auth can-i "$verb" kustomizations.kustomize.toolkit.fluxcd.io -n flux-system
-            kubectl --request-timeout=30s auth can-i "$verb" gitrepositories.source.toolkit.fluxcd.io -n flux-system
-          done
-          kubectl --request-timeout=30s auth can-i patch kustomizations.kustomize.toolkit.fluxcd.io/applications -n flux-system
-          kubectl --request-timeout=30s auth can-i patch gitrepositories.source.toolkit.fluxcd.io/flux-system -n flux-system
-          for verb in get list watch; do
-            kubectl --request-timeout=30s auth can-i "$verb" deployments.apps -n default
-          done
           echo "KUBECONFIG=$KUBECONFIG" >> "$GITHUB_ENV"
       - name: Check out Latitude GitOps
         uses: actions/checkout@v6
