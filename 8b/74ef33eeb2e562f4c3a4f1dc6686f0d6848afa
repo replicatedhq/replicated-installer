@@ -1,0 +1,27 @@
+tests/test_app.py
+  s_633f92b88d5227::t_46ab2025e01aca 3,50-51,53
+  s_633f92b88d5227::t_67d31613ff1a98 1-2,4-49,52,54-57
+install_scripts/app.py
+  s_633f92b88d5227::t_67d31613ff1a98 27-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8b74ef33eeb2e562f4c3a4f1dc6686f0d6848afa",
+  "prompts": {},
+  "humans": {
+    "h_4fb87d7c7fffe5": {
+      "author": "divolgin <dmitriy@replicated.com>"
+    }
+  },
+  "sessions": {
+    "s_633f92b88d5227": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0e8e2-a275-7402-b35f-a03f85aecdca",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "divolgin <dmitriy@replicated.com>"
+    }
+  }
+}
