@@ -24,7 +24,8 @@ _images = images.get_default_images()
 @app.errorhandler(Exception)
 def handle_error(e):
     if isinstance(e, helpers.BadRequestException):
-        return str(e.message), 400
+        return Response(str(e.message), status=400, mimetype='text/plain',
+                        headers={'X-Content-Type-Options': 'nosniff'})
     print(traceback.format_exc())
     return "Internal Server Error", 500
 
